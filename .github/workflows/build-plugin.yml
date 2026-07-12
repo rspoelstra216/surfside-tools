@@ -1,0 +1,71 @@
+name: Build WordPress Plugin
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Optional release tag, for example v1.2.0-dev25"
+        required: false
+        type: string
+      prerelease:
+        description: "Mark the GitHub Release as a prerelease"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build-plugin:
+    name: Build installable plugin ZIP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate plugin structure
+        run: |
+          test -f surfside-tools/surfside-tools.php
+          test -d surfside-tools/includes
+
+      - name: Build WordPress-ready ZIP
+        run: |
+          rm -rf build surfside-tools.zip
+          mkdir -p build/surfside-tools
+          rsync -a \
+            --exclude='.git*' \
+            --exclude='README.md' \
+            surfside-tools/ build/surfside-tools/
+          cd build
+          zip -r ../surfside-tools.zip surfside-tools
+
+      - name: Upload plugin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: surfside-tools-wordpress-plugin
+          path: surfside-tools.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create or update GitHub Release
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          release_flags=(--title "Surfside Tools ${RELEASE_TAG}" --generate-notes --target "${GITHUB_SHA}")
+          if [ "${PRERELEASE}" = "true" ]; then
+            release_flags+=(--prerelease)
+          fi
+
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release upload "${RELEASE_TAG}" surfside-tools.zip --clobber
+          else
+            gh release create "${RELEASE_TAG}" surfside-tools.zip "${release_flags[@]}"
+          fi
