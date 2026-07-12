@@ -120,11 +120,7 @@ add_action('wp_footer', 'surfside_tools_calendar_location_status_script', 99);
 add_action('admin_footer', 'surfside_tools_calendar_location_status_script', 99);
 
 /**
- * Add the saved meeting location to public calendar cards and detail modals.
- *
- * The core calendar renderer predates the separate Meeting Location field, so
- * this shared display layer enhances every existing public calendar layout
- * without duplicating the calendar or recurrence logic.
+ * Enhance public calendar displays with meeting locations and equal week rows.
  */
 function surfside_tools_calendar_public_meeting_locations() {
     if (is_admin()) {
@@ -147,23 +143,45 @@ function surfside_tools_calendar_public_meeting_locations() {
         }
     }
     wp_reset_postdata();
-
-    if (empty($meeting_locations)) {
-        return;
-    }
     ?>
     <style>
         @media (min-width: 901px) {
             .surfside-month-calendar-days {
-                grid-auto-rows: minmax(108px, auto);
+                grid-auto-rows: 150px;
                 align-items: stretch;
             }
             .surfside-month-calendar-day {
                 min-height: 0;
+                height: 150px;
+                overflow: hidden;
+            }
+            .surfside-month-calendar-day-events {
+                gap: 5px;
+            }
+            .surfside-month-calendar-item {
+                padding: 6px 7px;
+            }
+            .surfside-month-calendar-event-title {
+                display: -webkit-box;
+                -webkit-box-orient: vertical;
+                -webkit-line-clamp: 2;
+                overflow: hidden;
+            }
+            .surfside-month-calendar-location {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
         }
         .surfside-calendar-meeting-location-inline {
             font-weight: 700;
+        }
+        .surfside-month-calendar-more {
+            margin-top: 2px;
+            color: #0b4f9c;
+            font-size: 12px;
+            font-weight: 900;
+            line-height: 1.2;
         }
     </style>
     <script>
@@ -183,43 +201,68 @@ function surfside_tools_calendar_public_meeting_locations() {
                 var eventId = eventIdFromControl(controlId);
                 var meetingLocation = meetingLocations[eventId];
 
-                if (!meetingLocation) {
-                    return;
-                }
+                if (meetingLocation) {
+                    var listingLocation = button.querySelector('.surfside-public-calendar-location, .surfside-month-calendar-location');
+                    if (listingLocation && listingLocation.textContent.indexOf(meetingLocation) === -1) {
+                        var separator = document.createTextNode(' · ');
+                        var detail = document.createElement('span');
+                        detail.className = 'surfside-calendar-meeting-location-inline';
+                        detail.textContent = meetingLocation;
+                        listingLocation.appendChild(separator);
+                        listingLocation.appendChild(detail);
+                    }
 
-                var listingLocation = button.querySelector('.surfside-public-calendar-location, .surfside-month-calendar-location');
-                if (listingLocation && listingLocation.textContent.indexOf(meetingLocation) === -1) {
-                    var separator = document.createTextNode(' · ');
-                    var detail = document.createElement('span');
-                    detail.className = 'surfside-calendar-meeting-location-inline';
-                    detail.textContent = meetingLocation;
-                    listingLocation.appendChild(separator);
-                    listingLocation.appendChild(detail);
-                }
+                    var modal = controlId ? document.getElementById(controlId) : null;
+                    var meta = modal ? modal.querySelector('.surfside-event-modal-meta') : null;
+                    if (meta && !meta.querySelector('.surfside-event-meeting-location')) {
+                        var row = document.createElement('p');
+                        row.className = 'surfside-event-meeting-location';
 
-                var modal = controlId ? document.getElementById(controlId) : null;
-                var meta = modal ? modal.querySelector('.surfside-event-modal-meta') : null;
-                if (meta && !meta.querySelector('.surfside-event-meeting-location')) {
-                    var row = document.createElement('p');
-                    row.className = 'surfside-event-meeting-location';
+                        var label = document.createElement('strong');
+                        label.textContent = 'Meeting Location';
 
-                    var label = document.createElement('strong');
-                    label.textContent = 'Meeting Location';
+                        var value = document.createElement('span');
+                        value.textContent = meetingLocation;
 
-                    var value = document.createElement('span');
-                    value.textContent = meetingLocation;
-
-                    row.appendChild(label);
-                    row.appendChild(value);
-                    meta.appendChild(row);
+                        row.appendChild(label);
+                        row.appendChild(value);
+                        meta.appendChild(row);
+                    }
                 }
             });
         }
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', enhanceCalendarLocations);
-        } else {
+        function limitMonthCalendarEvents() {
+            document.querySelectorAll('.surfside-month-calendar-day-events').forEach(function (container) {
+                var events = Array.prototype.slice.call(container.querySelectorAll(':scope > .surfside-month-calendar-item'));
+                var existingMore = container.querySelector(':scope > .surfside-month-calendar-more');
+
+                if (existingMore) {
+                    existingMore.remove();
+                }
+
+                events.forEach(function (event, index) {
+                    event.hidden = index >= 2;
+                });
+
+                if (events.length > 2) {
+                    var more = document.createElement('div');
+                    more.className = 'surfside-month-calendar-more';
+                    more.textContent = '+' + (events.length - 2) + ' more';
+                    container.appendChild(more);
+                }
+            });
+        }
+
+        function initializeCalendarPolish() {
             enhanceCalendarLocations();
+            limitMonthCalendarEvents();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeCalendarPolish);
+        } else {
+            initializeCalendarPolish();
         }
     })();
     </script>
