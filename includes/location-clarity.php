@@ -118,3 +118,111 @@ function surfside_tools_calendar_location_status_script() {
 }
 add_action('wp_footer', 'surfside_tools_calendar_location_status_script', 99);
 add_action('admin_footer', 'surfside_tools_calendar_location_status_script', 99);
+
+/**
+ * Add the saved meeting location to public calendar cards and detail modals.
+ *
+ * The core calendar renderer predates the separate Meeting Location field, so
+ * this shared display layer enhances every existing public calendar layout
+ * without duplicating the calendar or recurrence logic.
+ */
+function surfside_tools_calendar_public_meeting_locations() {
+    if (is_admin()) {
+        return;
+    }
+
+    $query = new WP_Query(array(
+        'post_type' => 'surfside_event',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+        'no_found_rows' => true,
+    ));
+
+    $meeting_locations = array();
+    foreach ($query->posts as $event_id) {
+        $meeting_location = trim((string) get_post_meta($event_id, '_surfside_event_location_building_room', true));
+        if ($meeting_location !== '') {
+            $meeting_locations[(string) $event_id] = $meeting_location;
+        }
+    }
+    wp_reset_postdata();
+
+    if (empty($meeting_locations)) {
+        return;
+    }
+    ?>
+    <style>
+        @media (min-width: 901px) {
+            .surfside-month-calendar-days {
+                grid-auto-rows: minmax(108px, auto);
+                align-items: stretch;
+            }
+            .surfside-month-calendar-day {
+                min-height: 0;
+            }
+        }
+        .surfside-calendar-meeting-location-inline {
+            font-weight: 700;
+        }
+    </style>
+    <script>
+    (function () {
+        'use strict';
+
+        var meetingLocations = <?php echo wp_json_encode($meeting_locations); ?>;
+
+        function eventIdFromControl(controlId) {
+            var match = String(controlId || '').match(/surfside-event-detail(?:-card)?-(\d+)-/);
+            return match ? match[1] : '';
+        }
+
+        function enhanceCalendarLocations() {
+            document.querySelectorAll('.surfside-event-detail-button[aria-controls]').forEach(function (button) {
+                var controlId = button.getAttribute('aria-controls');
+                var eventId = eventIdFromControl(controlId);
+                var meetingLocation = meetingLocations[eventId];
+
+                if (!meetingLocation) {
+                    return;
+                }
+
+                var listingLocation = button.querySelector('.surfside-public-calendar-location, .surfside-month-calendar-location');
+                if (listingLocation && listingLocation.textContent.indexOf(meetingLocation) === -1) {
+                    var separator = document.createTextNode(' · ');
+                    var detail = document.createElement('span');
+                    detail.className = 'surfside-calendar-meeting-location-inline';
+                    detail.textContent = meetingLocation;
+                    listingLocation.appendChild(separator);
+                    listingLocation.appendChild(detail);
+                }
+
+                var modal = controlId ? document.getElementById(controlId) : null;
+                var meta = modal ? modal.querySelector('.surfside-event-modal-meta') : null;
+                if (meta && !meta.querySelector('.surfside-event-meeting-location')) {
+                    var row = document.createElement('p');
+                    row.className = 'surfside-event-meeting-location';
+
+                    var label = document.createElement('strong');
+                    label.textContent = 'Meeting Location';
+
+                    var value = document.createElement('span');
+                    value.textContent = meetingLocation;
+
+                    row.appendChild(label);
+                    row.appendChild(value);
+                    meta.appendChild(row);
+                }
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', enhanceCalendarLocations);
+        } else {
+            enhanceCalendarLocations();
+        }
+    })();
+    </script>
+    <?php
+}
+add_action('wp_footer', 'surfside_tools_calendar_public_meeting_locations', 98);
