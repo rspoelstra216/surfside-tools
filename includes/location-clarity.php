@@ -12,9 +12,9 @@ if (!defined('ABSPATH')) {
  */
 
 /**
- * Save the optional building or room value with the event.
+ * Save the optional meeting location value with the event.
  */
-function surfside_tools_save_event_building_room($post_id) {
+function surfside_tools_save_event_meeting_location($post_id) {
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
         return;
     }
@@ -27,13 +27,13 @@ function surfside_tools_save_event_building_room($post_id) {
         return;
     }
 
-    $building_room = sanitize_text_field(wp_unslash($_POST['event_location_building_room']));
-    update_post_meta($post_id, '_surfside_event_location_building_room', $building_room);
+    $meeting_location = sanitize_text_field(wp_unslash($_POST['event_location_building_room']));
+    update_post_meta($post_id, '_surfside_event_location_building_room', $meeting_location);
 }
-add_action('save_post_surfside_event', 'surfside_tools_save_event_building_room');
+add_action('save_post_surfside_event', 'surfside_tools_save_event_meeting_location');
 
 /**
- * Update the Calendar Manager location section and add Building / Room.
+ * Update the Calendar Manager location section and add Meeting Location.
  */
 function surfside_tools_filter_calendar_location_clarity($output, $tag) {
     if ($tag !== 'surfside_tools_calendar_manager' || !is_string($output)) {
@@ -52,23 +52,23 @@ function surfside_tools_filter_calendar_location_clarity($output, $tag) {
         $output
     );
 
-    $output = str_replace('>Loading Google Places…</p>', '>Connected to Google Places</p>', $output);
+    $output = str_replace('>Loading Google Places…</p>', '>🟢 Google Places Connected</p>', $output);
     $output = str_replace('<span>Location Name</span>', '<span>Venue</span>', $output);
     $output = str_replace('<span>Full Address</span>', '<span>Street Address</span>', $output);
 
     $event_id = isset($_GET['edit_event']) ? absint($_GET['edit_event']) : 0;
-    $building_room = $event_id ? get_post_meta($event_id, '_surfside_event_location_building_room', true) : '';
+    $meeting_location = $event_id ? get_post_meta($event_id, '_surfside_event_location_building_room', true) : '';
 
-    $building_room_field = sprintf(
-        '<label class="surfside-location-building-room"><span>Building / Room <small>(optional)</small></span><input type="text" name="event_location_building_room" class="surfside-location-building-room-input" value="%s" placeholder="e.g., Fellowship Hall, Building 4, Room 102"></label>',
-        esc_attr($building_room)
+    $meeting_location_field = sprintf(
+        '<label class="surfside-location-building-room"><span>Meeting Location <small>(optional)</small></span><input type="text" name="event_location_building_room" class="surfside-location-building-room-input" value="%s" placeholder="e.g., Fellowship Hall, Building 4, Room 102"></label>',
+        esc_attr($meeting_location)
     );
 
-    $location_fields_end = '</div>\n                        <div class="surfside-location-selected"';
-    if (strpos($output, $location_fields_end) !== false) {
+    $selected_marker = '<div class="surfside-location-selected"';
+    if (strpos($output, 'name="event_location_building_room"') === false && strpos($output, $selected_marker) !== false) {
         $output = str_replace(
-            $location_fields_end,
-            '</div>' . $building_room_field . '\n                        <div class="surfside-location-selected"',
+            $selected_marker,
+            $meeting_location_field . "\n                        " . $selected_marker,
             $output
         );
     }
@@ -91,8 +91,11 @@ function surfside_tools_calendar_location_status_script() {
 
         function normalizeGooglePlacesStatus() {
             document.querySelectorAll('[data-surfside-google-status]').forEach(function (status) {
-                if (status.textContent.indexOf('Google Places is ready') !== -1) {
-                    status.textContent = 'Connected to Google Places';
+                if (
+                    status.textContent.indexOf('Google Places is ready') !== -1 ||
+                    status.textContent.indexOf('Connected to Google Places') !== -1
+                ) {
+                    status.textContent = '🟢 Google Places Connected';
                 }
             });
         }
