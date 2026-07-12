@@ -1,0 +1,207 @@
+name: Release Surfside Tools
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version change"
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+      custom_version:
+        description: "Version without the v prefix; required when bump is custom"
+        required: false
+        type: string
+      prerelease:
+        description: "Mark this as a prerelease"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: surfside-tools-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Version, package, and publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out main with full history
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine next version
+        id: version
+        env:
+          BUMP: ${{ inputs.bump }}
+          CUSTOM_VERSION: ${{ inputs.custom_version }}
+        run: |
+          current=$(sed -n "s/.*Version: \([0-9][^ ]*\).*/\1/p" surfside-tools.php | head -n1)
+          stable_current=${current%%-*}
+          IFS='.' read -r major minor patch <<< "$stable_current"
+
+          case "$BUMP" in
+            major) next="$((major + 1)).0.0" ;;
+            minor) next="$major.$((minor + 1)).0" ;;
+            patch) next="$major.$minor.$((patch + 1))" ;;
+            custom)
+              next="${CUSTOM_VERSION#v}"
+              if [ -z "$next" ]; then
+                echo "custom_version is required when bump is custom" >&2
+                exit 1
+              fi
+              ;;
+          esac
+
+          if ! [[ "$next" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version: $next" >&2
+            exit 1
+          fi
+
+          if git rev-parse "v$next" >/dev/null 2>&1; then
+            echo "Tag v$next already exists" >&2
+            exit 1
+          fi
+
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+          echo "tag=v$next" >> "$GITHUB_OUTPUT"
+
+      - name: Update plugin version
+        env:
+          NEXT_VERSION: ${{ steps.version.outputs.next }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path('surfside-tools.php')
+          text = path.read_text()
+          version = os.environ['NEXT_VERSION']
+          text, header_count = re.subn(r'(\* Version:\s*)[^\s]+', rf'\g<1>{version}', text, count=1)
+          text, constant_count = re.subn(
+              r"define\('SURFSIDE_TOOLS_VERSION',\s*'[^']+'\);",
+              f"define('SURFSIDE_TOOLS_VERSION', '{version}');",
+              text,
+              count=1,
+          )
+          if header_count != 1 or constant_count != 1:
+              raise SystemExit('Could not update both plugin version locations')
+          path.write_text(text)
+          PY
+
+      - name: Generate changelog entry
+        env:
+          NEXT_VERSION: ${{ steps.version.outputs.next }}
+        run: |
+          previous_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          if [ -n "$previous_tag" ]; then
+            range="$previous_tag..HEAD"
+          else
+            range="HEAD"
+          fi
+
+          notes=$(git log "$range" --merges --pretty='- %s' | sed -n '/^- Merge pull request/p')
+          if [ -z "$notes" ]; then
+            notes=$(git log "$range" --pretty='- %s' --no-merges)
+          fi
+          if [ -z "$notes" ]; then
+            notes='- Maintenance release'
+          fi
+
+          release_date=$(date -u +%Y-%m-%d)
+          {
+            echo "# Changelog"
+            echo
+            echo "## [$NEXT_VERSION] - $release_date"
+            echo
+            echo "$notes"
+            echo
+            if [ -f CHANGELOG.md ]; then
+              sed '1{/^# Changelog$/d;}' CHANGELOG.md | sed '1{/^$/d;}'
+            fi
+          } > CHANGELOG.tmp
+          mv CHANGELOG.tmp CHANGELOG.md
+
+          {
+            echo "## What's changed"
+            echo
+            echo "$notes"
+          } > RELEASE_NOTES.md
+
+      - name: Validate plugin files
+        run: |
+          test -f surfside-tools.php
+          test -d includes
+          php -l surfside-tools.php
+          find includes -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Commit version and changelog
+        env:
+          NEXT_VERSION: ${{ steps.version.outputs.next }}
+        run: |
+          git add surfside-tools.php CHANGELOG.md
+          git commit -m "Release Surfside Tools $NEXT_VERSION"
+          git push origin HEAD:main
+
+      - name: Build WordPress-ready ZIP
+        run: |
+          rm -rf build surfside-tools.zip
+          mkdir -p build/surfside-tools
+          rsync -a \
+            --exclude='.git*' \
+            --exclude='.github' \
+            --exclude='.cpanel.yml' \
+            --exclude='build' \
+            --exclude='surfside-tools.zip' \
+            --exclude='README.md' \
+            --exclude='ROADMAP.md' \
+            --exclude='RELEASE_NOTES.md' \
+            ./ build/surfside-tools/
+          cd build
+          zip -r ../surfside-tools.zip surfside-tools
+
+      - name: Create tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          NEXT_VERSION: ${{ steps.version.outputs.next }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          release_args=(
+            "$RELEASE_TAG"
+            surfside-tools.zip
+            --title "Surfside Tools $NEXT_VERSION"
+            --notes-file RELEASE_NOTES.md
+            --target "$(git rev-parse HEAD)"
+          )
+          if [ "$PRERELEASE" = "true" ]; then
+            release_args+=(--prerelease)
+          fi
+          gh release create "${release_args[@]}"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: surfside-tools-${{ steps.version.outputs.next }}
+          path: surfside-tools.zip
+          if-no-files-found: error
+          retention-days: 30
