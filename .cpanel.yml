@@ -1,0 +1,7 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/surfuqnb/public_html/wp-content/plugins/surfside-tools/
+    - /bin/mkdir -p "$DEPLOYPATH"
+    - /bin/cp -R includes "$DEPLOYPATH"
+    - /bin/cp surfside-tools.php "$DEPLOYPATH"
