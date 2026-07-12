@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('SURFSIDE_TOOLS_VERSION', '1.2.0-dev23');
+define('SURFSIDE_TOOLS_VERSION', '1.2.0-dev24');
 define('SURFSIDE_TOOLS_PATH', plugin_dir_path(__FILE__));
 define('SURFSIDE_TOOLS_URL', plugin_dir_url(__FILE__));
 
