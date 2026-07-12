@@ -5,19 +5,9 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      release_tag:
-        description: "Optional release tag, for example v1.2.0-dev25"
-        required: false
-        type: string
-      prerelease:
-        description: "Mark the GitHub Release as a prerelease"
-        required: false
-        default: true
-        type: boolean
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-plugin:
@@ -32,6 +22,8 @@ jobs:
         run: |
           test -f surfside-tools.php
           test -d includes
+          php -l surfside-tools.php
+          find includes -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Build WordPress-ready ZIP
         run: |
@@ -40,9 +32,11 @@ jobs:
           rsync -a \
             --exclude='.git*' \
             --exclude='.github' \
+            --exclude='.cpanel.yml' \
             --exclude='build' \
             --exclude='surfside-tools.zip' \
             --exclude='README.md' \
+            --exclude='ROADMAP.md' \
             ./ build/surfside-tools/
           cd build
           zip -r ../surfside-tools.zip surfside-tools
@@ -54,21 +48,3 @@ jobs:
           path: surfside-tools.zip
           if-no-files-found: error
           retention-days: 30
-
-      - name: Create or update GitHub Release
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag != '' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
-          PRERELEASE: ${{ inputs.prerelease }}
-        run: |
-          release_flags=(--title "Surfside Tools ${RELEASE_TAG}" --generate-notes --target "${GITHUB_SHA}")
-          if [ "${PRERELEASE}" = "true" ]; then
-            release_flags+=(--prerelease)
-          fi
-
-          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
-            gh release upload "${RELEASE_TAG}" surfside-tools.zip --clobber
-          else
-            gh release create "${RELEASE_TAG}" surfside-tools.zip "${release_flags[@]}"
-          fi
