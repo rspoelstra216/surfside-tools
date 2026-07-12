@@ -30,8 +30,8 @@ jobs:
 
       - name: Validate plugin structure
         run: |
-          test -f surfside-tools/surfside-tools.php
-          test -d surfside-tools/includes
+          test -f surfside-tools.php
+          test -d includes
 
       - name: Build WordPress-ready ZIP
         run: |
@@ -39,8 +39,11 @@ jobs:
           mkdir -p build/surfside-tools
           rsync -a \
             --exclude='.git*' \
+            --exclude='.github' \
+            --exclude='build' \
+            --exclude='surfside-tools.zip' \
             --exclude='README.md' \
-            surfside-tools/ build/surfside-tools/
+            ./ build/surfside-tools/
           cd build
           zip -r ../surfside-tools.zip surfside-tools
 
