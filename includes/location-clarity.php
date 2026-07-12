@@ -154,34 +154,50 @@ function surfside_tools_calendar_public_meeting_locations() {
                 min-height: 0;
                 height: 150px;
                 overflow: hidden;
+                padding: 8px;
+            }
+            .surfside-month-calendar-date-number {
+                margin-bottom: 5px;
+            }
+            .surfside-month-calendar-date-number strong {
+                width: 26px;
+                height: 26px;
+                font-size: 14px;
             }
             .surfside-month-calendar-day-events {
-                gap: 5px;
+                gap: 4px;
             }
             .surfside-month-calendar-item {
-                padding: 6px 7px;
+                min-height: 42px;
+                padding: 4px 6px;
+                border-radius: 7px;
             }
             .surfside-month-calendar-event-title {
-                display: -webkit-box;
-                -webkit-box-orient: vertical;
-                -webkit-line-clamp: 2;
+                display: block;
+                margin-bottom: 1px;
                 overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                font-size: 13px;
+                line-height: 1.15;
+            }
+            .surfside-month-calendar-event-button span:not(.surfside-month-calendar-event-title) {
+                font-size: 11px;
+                line-height: 1.2;
             }
             .surfside-month-calendar-location {
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                display: none !important;
             }
         }
         .surfside-calendar-meeting-location-inline {
             font-weight: 700;
         }
         .surfside-month-calendar-more {
-            margin-top: 2px;
+            margin: 2px 0 0 6px;
             color: #0b4f9c;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 900;
-            line-height: 1.2;
+            line-height: 1.15;
         }
     </style>
     <script>
