@@ -37,14 +37,46 @@ function surfside_tools_calendar_suggestion_location_assets() {
         : array();
     ?>
     <style>
-        .surfside-calendar-location-detected {
+        .surfside-calendar-location-detected,
+        .surfside-calendar-location-required {
             margin-top: .65rem;
             padding: .55rem .7rem;
             border-radius: 8px;
-            background: #f1f7f5;
-            color: #285f52;
             font-size: .92rem;
             font-weight: 700;
+        }
+        .surfside-calendar-location-detected {
+            background: #f1f7f5;
+            color: #285f52;
+        }
+        .surfside-calendar-location-required {
+            background: #fff7df;
+            color: #744f00;
+        }
+        .surfside-calendar-location-required label {
+            display: block;
+            margin-bottom: .4rem;
+        }
+        .surfside-calendar-location-required input {
+            display: block;
+            width: 100%;
+            margin-top: .4rem;
+            padding: .55rem .65rem;
+            border: 1px solid #c49a3a;
+            border-radius: 7px;
+            background: #fff;
+            color: #1f2937;
+            font: inherit;
+            font-weight: 500;
+        }
+        .surfside-calendar-location-required input[aria-invalid="true"] {
+            outline: 2px solid #b42318;
+            outline-offset: 1px;
+        }
+        .surfside-calendar-location-required small {
+            display: block;
+            margin-top: .35rem;
+            font-weight: 500;
         }
     </style>
     <script>
@@ -112,6 +144,14 @@ function surfside_tools_calendar_suggestion_location_assets() {
             };
         }
 
+        function locationFromCard(card) {
+            const venueInput = card.querySelector('.surfside-calendar-required-venue');
+            return {
+                venue: venueInput ? clean(venueInput.value) : (card.dataset.surfsideVenue || ''),
+                meeting: card.dataset.surfsideMeetingLocation || ''
+            };
+        }
+
         if (announcementForm) {
             const datedAnnouncements = Array.from(announcementForm.querySelectorAll('textarea[name="announcement_items[]"]')).filter(function (textarea) {
                 return /\b(January|February|March|April|May|June|July|August|September|October|November|December|Jan\.?|Feb\.?|Mar\.?|Apr\.?|Jun\.?|Jul\.?|Aug\.?|Sep\.?|Sept\.?|Oct\.?|Nov\.?|Dec\.?)\s+\d{1,2}(?:st|nd|rd|th)?/i.test(textarea.value);
@@ -123,15 +163,23 @@ function surfside_tools_calendar_suggestion_location_assets() {
                 card.dataset.surfsideVenue = location.venue;
                 card.dataset.surfsideMeetingLocation = location.meeting;
 
+                const insertionTarget = card.querySelector('.surfside-calendar-recurrence-detected') || card.querySelector('.surfside-calendar-match') || card.querySelector('.surfside-calendar-suggestion-meta');
+
                 if (location.label) {
                     const notice = document.createElement('div');
                     notice.className = 'surfside-calendar-location-detected';
-                    notice.textContent = '📍 Location detected: ' + location.label;
-                    const recurrence = card.querySelector('.surfside-calendar-recurrence-detected');
-                    const match = card.querySelector('.surfside-calendar-match');
-                    if (recurrence) recurrence.insertAdjacentElement('afterend', notice);
-                    else if (match) match.insertAdjacentElement('afterend', notice);
-                    else card.querySelector('.surfside-calendar-suggestion-meta').insertAdjacentElement('afterend', notice);
+                    notice.textContent = location.meeting
+                        ? '📍 Meeting location detected: ' + location.label
+                        : '📍 Venue detected: ' + location.label;
+                    if (insertionTarget) insertionTarget.insertAdjacentElement('afterend', notice);
+
+                    if (location.meeting && !location.venue) {
+                        card.dataset.surfsideVenueRequired = '1';
+                        const required = document.createElement('div');
+                        required.className = 'surfside-calendar-location-required';
+                        required.innerHTML = '<label>Main venue required<input type="text" class="surfside-calendar-required-venue" placeholder="e.g., Surfside Community Fellowship" autocomplete="organization"></label><small>The announcement identifies “' + location.meeting.replace(/</g, '&lt;').replace(/>/g, '&gt;') + ',” but does not say which campus or venue it belongs to.</small>';
+                        notice.insertAdjacentElement('afterend', required);
+                    }
                 }
             });
 
@@ -139,10 +187,18 @@ function surfside_tools_calendar_suggestion_location_assets() {
                 const save = event.target.closest('.surfside-calendar-save-event');
                 if (save) {
                     const card = save.closest('.surfside-calendar-suggestion');
-                    activeLocation = card ? {
-                        venue: card.dataset.surfsideVenue || '',
-                        meeting: card.dataset.surfsideMeetingLocation || ''
-                    } : null;
+                    const location = card ? locationFromCard(card) : { venue: '', meeting: '' };
+                    if (card && card.dataset.surfsideVenueRequired === '1' && !location.venue) {
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+                        const input = card.querySelector('.surfside-calendar-required-venue');
+                        if (input) {
+                            input.focus();
+                            input.setAttribute('aria-invalid', 'true');
+                        }
+                        return;
+                    }
+                    activeLocation = location;
                 }
 
                 const review = event.target.closest('.surfside-calendar-review-link');
@@ -150,10 +206,7 @@ function surfside_tools_calendar_suggestion_location_assets() {
 
                 const card = review.closest('.surfside-calendar-suggestion');
                 if (!card) return;
-                const location = {
-                    venue: card.dataset.surfsideVenue || '',
-                    meeting: card.dataset.surfsideMeetingLocation || ''
-                };
+                const location = locationFromCard(card);
                 if (!location.venue && !location.meeting) return;
 
                 const cards = Array.from(document.querySelectorAll('.surfside-calendar-suggestion'));
@@ -184,6 +237,13 @@ function surfside_tools_calendar_suggestion_location_assets() {
                     window.open(url, '_blank', 'noopener');
                 }
             }, true);
+
+            document.addEventListener('input', function (event) {
+                if (!event.target.matches('.surfside-calendar-required-venue')) return;
+                event.target.removeAttribute('aria-invalid');
+                const card = event.target.closest('.surfside-calendar-suggestion');
+                if (card) card.dataset.surfsideVenue = clean(event.target.value);
+            });
         }
 
         const originalFetch = window.fetch;
