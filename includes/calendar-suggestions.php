@@ -73,15 +73,25 @@ function surfside_tools_calendar_suggestions_assets() {
             const match = text.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December|Jan\.?|Feb\.?|Mar\.?|Apr\.?|Jun\.?|Jul\.?|Aug\.?|Sep\.?|Sept\.?|Oct\.?|Nov\.?|Dec\.?)\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(20\d{2}))?/i);
             if (!match) return '';
             const key = match[1].replace('.', '').toLowerCase();
-            const year = parseInt(match[3] || fallbackYear, 10);
-            const date = new Date(year, months[key], parseInt(match[2], 10));
+            const explicitYear = match[3] ? parseInt(match[3], 10) : 0;
+            let year = explicitYear || parseInt(fallbackYear, 10);
+            let date = new Date(year, months[key], parseInt(match[2], 10));
+
+            if (!explicitYear) {
+                const today = new Date();
+                const ninetyDaysAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 90);
+                if (date < ninetyDaysAgo) {
+                    date = new Date(year + 1, months[key], parseInt(match[2], 10));
+                }
+            }
+
             return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
         }
 
         function parseTimes(text) {
             const range = text.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*[–—-]\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
             if (!range) return { start: '', end: '' };
-            let startMeridiem = range[3] || range[6];
+            const startMeridiem = range[3] || range[6];
             return {
                 start: normalizeTime(range[1], range[2], startMeridiem),
                 end: normalizeTime(range[4], range[5], range[6])
@@ -89,9 +99,11 @@ function surfside_tools_calendar_suggestions_assets() {
         }
 
         function titleFromAnnouncement(text) {
+            const monthPattern = '(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan\\.?|Feb\\.?|Mar\\.?|Apr\\.?|Jun\\.?|Jul\\.?|Aug\\.?|Sep\\.?|Sept\\.?|Oct\\.?|Nov\\.?|Dec\\.?)';
             let title = text
                 .replace(/^\s*\d+[.)]\s*/, '')
-                .split(/\s+(?:will be|is on|will take place|meets? on|on (?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday))\b/i)[0]
+                .replace(new RegExp('^Beginning\\s+(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\\s+' + monthPattern + '\\s+\\d{1,2}(?:st|nd|rd|th)?,?\\s*', 'i'), '')
+                .split(new RegExp('\\s+(?:will be|is on|will take place|meets? on|on\\s+(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|' + monthPattern + '))\\b', 'i'))[0]
                 .split(/[.!?]/)[0]
                 .trim();
             if (title.length > 90) title = title.slice(0, 87).trim() + '…';
@@ -111,12 +123,14 @@ function surfside_tools_calendar_suggestions_assets() {
             };
         }
 
-        const announcementForm = document.querySelector('.surfside-docx-save-form');
+        const announcementForm = document.querySelector('.surfside-weekly-update-publish-form, .surfside-docx-save-form');
         if (announcementForm) {
             const textareas = Array.from(announcementForm.querySelectorAll('textarea[name="announcement_items[]"]'));
             const announcementDate = announcementForm.querySelector('[name="announcement_date"]');
             const yearMatch = announcementDate && announcementDate.value.match(/20\d{2}/);
-            const fallbackYear = yearMatch ? yearMatch[0] : new Date().getFullYear();
+            const detectedYear = yearMatch ? parseInt(yearMatch[0], 10) : 0;
+            const currentYear = new Date().getFullYear();
+            const fallbackYear = detectedYear >= currentYear ? detectedYear : currentYear;
             const suggestions = textareas.map(function (textarea) {
                 return buildSuggestion(textarea.value, fallbackYear);
             }).filter(Boolean);
@@ -146,9 +160,12 @@ function surfside_tools_calendar_suggestions_assets() {
                     list.appendChild(card);
                 });
 
-                const preview = announcementForm.querySelector('.surfside-docx-preview');
+                const announcementReview = announcementForm.querySelector('.surfside-weekly-review-section');
+                const preview = announcementForm.querySelector('.surfside-docx-preview, .surfside-announcements');
                 if (preview) {
                     preview.insertAdjacentElement('afterend', section);
+                } else if (announcementReview) {
+                    announcementReview.appendChild(section);
                 } else {
                     announcementForm.appendChild(section);
                 }
