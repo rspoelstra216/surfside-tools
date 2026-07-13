@@ -171,9 +171,9 @@ jobs:
             --exclude='.github' \
             --exclude='.cpanel.yml' \
             --exclude='build' \
+            --exclude='docs' \
             --exclude='surfside-tools.zip' \
             --exclude='README.md' \
-            --exclude='ROADMAP.md' \
             --exclude='RELEASE_NOTES.md' \
             ./ build/surfside-tools/
           cd build
