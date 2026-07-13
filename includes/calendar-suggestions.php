@@ -36,16 +36,84 @@ function surfside_tools_calendar_suggestions_assets() {
         }
         .surfside-calendar-suggestion strong { display: block; margin-bottom: 0.35rem; }
         .surfside-calendar-suggestion-meta { margin: 0 0 0.75rem; color: #4b5563; }
-        .surfside-calendar-suggestion a {
+        .surfside-calendar-suggestion-button {
             display: inline-block;
             padding: 0.6rem 0.9rem;
+            border: 0;
             border-radius: 999px;
             background: #0f5ca8;
             color: #fff;
-            text-decoration: none;
+            font: inherit;
             font-weight: 600;
+            cursor: pointer;
         }
         .surfside-calendar-suggestion-note { margin-bottom: 0; font-size: 0.92rem; color: #4b5563; }
+        .surfside-calendar-suggestion-modal[hidden] { display: none; }
+        .surfside-calendar-suggestion-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 100000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.72);
+        }
+        .surfside-calendar-suggestion-dialog {
+            width: min(1180px, 96vw);
+            height: min(860px, 92vh);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+        }
+        .surfside-calendar-suggestion-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .surfside-calendar-suggestion-modal-header strong { font-size: 1.05rem; }
+        .surfside-calendar-suggestion-modal-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .surfside-calendar-suggestion-modal-actions a {
+            color: #0f5ca8;
+            font-weight: 600;
+        }
+        .surfside-calendar-suggestion-close {
+            width: 2.25rem;
+            height: 2.25rem;
+            border: 0;
+            border-radius: 999px;
+            background: #eef2f7;
+            font-size: 1.35rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .surfside-calendar-suggestion-frame {
+            width: 100%;
+            flex: 1;
+            border: 0;
+            background: #fff;
+        }
+        body.surfside-calendar-modal-open { overflow: hidden; }
+        @media (max-width: 700px) {
+            .surfside-calendar-suggestion-modal { padding: 0; }
+            .surfside-calendar-suggestion-dialog {
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+            }
+            .surfside-calendar-suggestion-modal-header { align-items: flex-start; }
+            .surfside-calendar-suggestion-modal-actions { gap: 0.5rem; }
+        }
     </style>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -106,6 +174,13 @@ function surfside_tools_calendar_suggestions_assets() {
                 .split(new RegExp('\\s+(?:will be|is on|will take place|meets? on|on\\s+(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|' + monthPattern + '))\\b', 'i'))[0]
                 .split(/[.!?]/)[0]
                 .trim();
+
+            if (/^the\s+adult\s+mission\s+trip\s+to\b/i.test(title)) {
+                title = 'Adult Mission Trip';
+            } else {
+                title = title.replace(/^the\s+/i, '');
+            }
+
             if (title.length > 90) title = title.slice(0, 87).trim() + '…';
             return title || 'New Event';
         }
@@ -123,6 +198,43 @@ function surfside_tools_calendar_suggestions_assets() {
             };
         }
 
+        function createModal() {
+            const modal = document.createElement('div');
+            modal.className = 'surfside-calendar-suggestion-modal';
+            modal.hidden = true;
+            modal.innerHTML = '<div class="surfside-calendar-suggestion-dialog" role="dialog" aria-modal="true" aria-labelledby="surfside-calendar-modal-title"><div class="surfside-calendar-suggestion-modal-header"><strong id="surfside-calendar-modal-title">Review Calendar Suggestion</strong><div class="surfside-calendar-suggestion-modal-actions"><a target="_blank" rel="noopener">Open in new tab</a><button type="button" class="surfside-calendar-suggestion-close" aria-label="Close calendar review">×</button></div></div><iframe class="surfside-calendar-suggestion-frame" title="Calendar Manager"></iframe></div>';
+            document.body.appendChild(modal);
+
+            const frame = modal.querySelector('iframe');
+            const newTab = modal.querySelector('a');
+            const closeButton = modal.querySelector('.surfside-calendar-suggestion-close');
+
+            function closeModal() {
+                modal.hidden = true;
+                frame.src = 'about:blank';
+                document.body.classList.remove('surfside-calendar-modal-open');
+            }
+
+            closeButton.addEventListener('click', closeModal);
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) closeModal();
+            });
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && !modal.hidden) closeModal();
+            });
+
+            return {
+                open: function (url) {
+                    frame.src = url;
+                    newTab.href = url;
+                    modal.hidden = false;
+                    document.body.classList.add('surfside-calendar-modal-open');
+                    closeButton.focus();
+                }
+            };
+        }
+
+        const modalController = createModal();
         const announcementForm = document.querySelector('.surfside-weekly-update-publish-form, .surfside-docx-save-form');
         if (announcementForm) {
             const textareas = Array.from(announcementForm.querySelectorAll('textarea[name="announcement_items[]"]'));
@@ -150,13 +262,16 @@ function surfside_tools_calendar_suggestions_assets() {
                         event_end_time: suggestion.end,
                         event_description: suggestion.description
                     });
+                    const reviewUrl = calendarUrl + '?' + params.toString();
                     const card = document.createElement('article');
                     card.className = 'surfside-calendar-suggestion';
                     const timeLabel = suggestion.start ? suggestion.start + (suggestion.end ? '–' + suggestion.end : '') : 'Time not detected';
-                    card.innerHTML = '<strong></strong><p class="surfside-calendar-suggestion-meta"></p><a>Review in Calendar</a>';
+                    card.innerHTML = '<strong></strong><p class="surfside-calendar-suggestion-meta"></p><button type="button" class="surfside-calendar-suggestion-button">Review in Calendar</button>';
                     card.querySelector('strong').textContent = suggestion.title;
                     card.querySelector('.surfside-calendar-suggestion-meta').textContent = suggestion.date + ' · ' + timeLabel;
-                    card.querySelector('a').href = calendarUrl + '?' + params.toString();
+                    card.querySelector('button').addEventListener('click', function () {
+                        modalController.open(reviewUrl);
+                    });
                     list.appendChild(card);
                 });
 
