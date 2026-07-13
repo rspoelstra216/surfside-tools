@@ -35,6 +35,7 @@ jobs:
             --exclude='.cpanel.yml' \
             --exclude='build' \
             --exclude='docs' \
+            --exclude='scripts' \
             --exclude='surfside-tools.zip' \
             --exclude='README.md' \
             ./ build/surfside-tools/
