@@ -30,5 +30,6 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/productivity-modal-tracking.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/frontend-settings.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/google-places-regression-fix.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/final-productivity-fixes.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/weekly-update-google-predictions.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/location-clarity.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';
