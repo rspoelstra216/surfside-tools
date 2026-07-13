@@ -26,5 +26,6 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-location-search
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-manager-refinements.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/saved-places-settings.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/productivity-finish.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/productivity-modal-tracking.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/location-clarity.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';
