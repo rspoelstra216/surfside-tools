@@ -20,5 +20,6 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-manager.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestions.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-duplicates.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-completion.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-one-click.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/location-clarity.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';
