@@ -69,6 +69,10 @@ function surfside_tools_calendar_suggestion_location_assets() {
             font: inherit;
             font-weight: 500;
         }
+        .surfside-calendar-location-required input[aria-invalid="true"] {
+            outline: 2px solid #b42318;
+            outline-offset: 1px;
+        }
         .surfside-calendar-location-required small {
             display: block;
             margin-top: .35rem;
