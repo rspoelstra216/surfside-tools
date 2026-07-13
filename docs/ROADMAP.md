@@ -77,6 +77,10 @@ These ideas are intentionally unscheduled. An idea moves into a GitHub Issue and
 
 ### Productivity
 
+- **Save Announcement as Event:** provide a one-click action beside a detected announcement when it is clearly a new event
+- Before saving, compare the suggestion with existing one-time and recurring calendar entries
+- When a likely duplicate exists, show **Already on Calendar** or **View/Edit Existing** instead of creating another event
+- Allow recurring announcements to be ignored without requiring staff to process them again
 - Create an announcement from an event
 - AI suggestions from the Weekly Update
 - Detect dates, times, venues, and recurrence from announcement text
