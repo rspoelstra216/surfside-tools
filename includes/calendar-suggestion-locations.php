@@ -173,7 +173,7 @@ function surfside_tools_calendar_suggestion_location_assets() {
                         card.dataset.surfsideVenueRequired = '1';
                         const required = document.createElement('div');
                         required.className = 'surfside-calendar-location-required';
-                        required.innerHTML = '<label>Venue required<input type="text" class="surfside-calendar-required-venue" placeholder="e.g., Surfside Community Fellowship" autocomplete="organization"></label><small>“' + location.meeting.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '” identifies the room or building, but the announcement does not identify the main venue.</small>';
+                        required.innerHTML = '<label>Main venue required<input type="text" class="surfside-calendar-required-venue" placeholder="e.g., Surfside Community Fellowship" autocomplete="organization"></label><small>The announcement identifies “' + location.meeting.replace(/</g, '&lt;').replace(/>/g, '&gt;') + ',” but does not say which campus or venue it belongs to.</small>';
                         notice.insertAdjacentElement('afterend', required);
                     }
                 }
