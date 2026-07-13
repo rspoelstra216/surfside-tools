@@ -17,5 +17,6 @@ define('SURFSIDE_TOOLS_URL', plugin_dir_url(__FILE__));
 require_once SURFSIDE_TOOLS_PATH . 'includes/core-weekly-tools.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-dashboard.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-manager.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestions.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/location-clarity.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';
