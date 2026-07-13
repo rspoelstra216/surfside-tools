@@ -25,6 +25,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: surfside-tools-release
@@ -108,44 +109,19 @@ jobs:
           path.write_text(text)
           PY
 
-      - name: Generate changelog entry
-        env:
-          NEXT_VERSION: ${{ steps.version.outputs.next }}
+      - name: Determine previous release tag
+        id: release_range
         run: |
           previous_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
-          if [ -n "$previous_tag" ]; then
-            range="$previous_tag..HEAD"
-          else
-            range="HEAD"
-          fi
+          echo "previous_tag=$previous_tag" >> "$GITHUB_OUTPUT"
 
-          notes=$(git log "$range" --merges --pretty='- %s' | sed -n '/^- Merge pull request/p')
-          if [ -z "$notes" ]; then
-            notes=$(git log "$range" --pretty='- %s' --no-merges)
-          fi
-          if [ -z "$notes" ]; then
-            notes='- Maintenance release'
-          fi
-
-          release_date=$(date -u +%Y-%m-%d)
-          {
-            echo "# Changelog"
-            echo
-            echo "## [$NEXT_VERSION] - $release_date"
-            echo
-            echo "$notes"
-            echo
-            if [ -f CHANGELOG.md ]; then
-              sed '1{/^# Changelog$/d;}' CHANGELOG.md | sed '1{/^$/d;}'
-            fi
-          } > CHANGELOG.tmp
-          mv CHANGELOG.tmp CHANGELOG.md
-
-          {
-            echo "## What's changed"
-            echo
-            echo "$notes"
-          } > RELEASE_NOTES.md
+      - name: Generate readable changelog and release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          NEXT_VERSION: ${{ steps.version.outputs.next }}
+          PREVIOUS_TAG: ${{ steps.release_range.outputs.previous_tag }}
+        run: python3 scripts/release_notes.py
 
       - name: Validate plugin files
         run: |
@@ -172,6 +148,7 @@ jobs:
             --exclude='.cpanel.yml' \
             --exclude='build' \
             --exclude='docs' \
+            --exclude='scripts' \
             --exclude='surfside-tools.zip' \
             --exclude='README.md' \
             --exclude='RELEASE_NOTES.md' \
