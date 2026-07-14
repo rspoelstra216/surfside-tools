@@ -33,4 +33,5 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/final-productivity-fixes.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/weekly-update-native-google-places.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/location-clarity.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-page-registration-fix.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';
