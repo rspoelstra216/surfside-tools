@@ -36,7 +36,8 @@ Additional references:
 - Announcements parser
 - Sermon notes parser
 - Unified weekly update workflow
-- Front-end staff dashboard pages
+- Front-end Staff Dashboard pages
+- Manage Homepage photo workflow and public carousel
 - Calendar Manager and recurring events
 - Calendar suggestions, recurrence, location, and duplicate detection
 - Google Places and saved locations
@@ -52,7 +53,9 @@ Additional references:
 - `[surfside_staff_dashboard]`
 - `[surfside_staff_weekly_update]`
 - `[surfside_staff_calendar]`
+- `[surfside_staff_homepage]`
 - `[surfside_staff_settings]`
+- `[surfside_photo_carousel]`
 - `[surfside_tools_upcoming_events]`
 - `[surfside_tools_calendar]`
 - `[surfside_events]`
@@ -64,6 +67,7 @@ Additional references:
 - `/dashboard`
 - `/dashboard/weekly-update`
 - `/dashboard/calendar`
+- `/dashboard/homepage`
 - `/dashboard/settings`
 
 ## Deployment
