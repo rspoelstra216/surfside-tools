@@ -5,10 +5,14 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Loads Google Places reliably on dynamically rendered Weekly Update venue
- * fields and reinitializes autocomplete if later scripts add or replace fields.
+ * Enqueue Google Places early enough for WordPress to print the script.
+ *
+ * The previous implementation called wp_enqueue_script() from wp_footer at
+ * priority 80. WordPress prints footer scripts much earlier, so the library was
+ * never included on the Weekly Update page unless Calendar Manager had already
+ * enqueued it independently.
  */
-function surfside_tools_google_places_regression_fix_assets() {
+function surfside_tools_google_places_regression_fix_enqueue_api() {
     if (!is_user_logged_in() || !current_user_can('upload_files')) {
         return;
     }
@@ -21,7 +25,11 @@ function surfside_tools_google_places_regression_fix_assets() {
         return;
     }
 
-    if (!wp_script_is('surfside-google-places-fix-api', 'enqueued') && !wp_script_is('surfside-google-places-fix-api', 'done')) {
+    if (
+        !wp_script_is('surfside-google-places-fix-api', 'registered') &&
+        !wp_script_is('surfside-google-places-fix-api', 'enqueued') &&
+        !wp_script_is('surfside-google-places-fix-api', 'done')
+    ) {
         wp_enqueue_script(
             'surfside-google-places-fix-api',
             add_query_arg(array(
@@ -33,6 +41,16 @@ function surfside_tools_google_places_regression_fix_assets() {
             null,
             true
         );
+    }
+}
+add_action('wp_enqueue_scripts', 'surfside_tools_google_places_regression_fix_enqueue_api', 20);
+
+/**
+ * Attach Google Places to dynamically rendered Weekly Update venue fields.
+ */
+function surfside_tools_google_places_regression_fix_assets() {
+    if (!is_user_logged_in() || !current_user_can('upload_files')) {
+        return;
     }
     ?>
     <script>
@@ -58,11 +76,22 @@ function surfside_tools_google_places_regression_fix_assets() {
         }
 
         function initializeField(input) {
-            if (!input || input.dataset.surfsideGooglePlacesReady === '1') return false;
-            if (!(window.google && google.maps && google.maps.places && google.maps.places.Autocomplete)) return false;
+            if (!input) return false;
+            if (
+                input.dataset.surfsideGooglePlacesReady === '1' ||
+                input.dataset.surfsideNativeGoogleReady === '1'
+            ) {
+                return true;
+            }
+            if (!(window.google && google.maps && google.maps.places && google.maps.places.Autocomplete)) {
+                return false;
+            }
+
+            const card = input.closest('.surfside-calendar-suggestion');
+            if (!card) return false;
 
             input.dataset.surfsideGooglePlacesReady = '1';
-            const card = input.closest('.surfside-calendar-suggestion');
+            input.setAttribute('autocomplete', 'off');
             const autocomplete = new google.maps.places.Autocomplete(input, {
                 fields: ['name', 'formatted_address', 'place_id', 'geometry', 'url'],
                 types: ['establishment']
@@ -81,14 +110,17 @@ function surfside_tools_google_places_regression_fix_assets() {
         const timer = window.setInterval(function () {
             attempts++;
             initializeAll();
-            if ((window.google && google.maps && google.maps.places) || attempts >= 120) {
-                if (attempts >= 120 || document.querySelectorAll('.surfside-calendar-required-venue:not([data-surfside-google-places-ready="1"])').length === 0) {
-                    window.clearInterval(timer);
-                }
+            if (attempts >= 120 || document.querySelectorAll('.surfside-calendar-required-venue:not(.pac-target-input)').length === 0) {
+                window.clearInterval(timer);
             }
         }, 250);
 
         document.addEventListener('DOMContentLoaded', initializeAll);
+        document.addEventListener('focusin', function (event) {
+            if (event.target && event.target.matches('.surfside-calendar-required-venue')) {
+                initializeField(event.target);
+            }
+        });
         new MutationObserver(initializeAll).observe(document.documentElement, { childList: true, subtree: true });
     })();
     </script>
