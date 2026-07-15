@@ -48,6 +48,13 @@ Dashboard Intelligence begins after the 2.0.0 release.
 
 The goal is to turn the Staff Dashboard from a launcher into a concise status center that answers what is current and what needs attention before staff open another page.
 
+### Milestone progress
+
+- **In review — Status cards:** Weekly Update, active calendar events, homepage photos, and settings context from one shared data provider
+- **Planned — Alerts and attention items:** clear, actionable states without unnecessary warnings
+- **Planned — Recent activity:** useful history where it reduces uncertainty
+- **Planned — Quick-action refinement:** preserve simple navigation while reducing repeated clicks
+
 ### Initial outcomes
 
 - Homepage photo count and last-updated information
