@@ -50,8 +50,8 @@ The goal is to turn the Staff Dashboard from a launcher into a concise status ce
 
 ### Milestone progress
 
-- **In review — Status cards:** Weekly Update, active calendar events, homepage photos, and settings context from one shared data provider
-- **Planned — Alerts and attention items:** clear, actionable states without unnecessary warnings
+- **Complete — Status cards:** Weekly Update, active calendar events, homepage photos, and settings context from one shared data provider
+- **In review — Alerts and attention items:** actionable summary alerts, Monday-based weekly staleness, and health states for calendar, homepage, and settings
 - **Planned — Recent activity:** useful history where it reduces uncertainty
 - **Planned — Quick-action refinement:** preserve simple navigation while reducing repeated clicks
 
