@@ -1,5 +1,55 @@
 # Changelog
 
+## [2.0.0] - 2026-07-15
+
+### Added
+
+- Added a unified development handbook containing the project roadmap, capabilities, Nice Ideas, decisions, and working process. ([#36](https://github.com/rspoelstra216/surfside-tools/pull/36))
+- Added milestone retrospectives and a durable record of project design principles. ([#36](https://github.com/rspoelstra216/surfside-tools/pull/36))
+- Added a front-end Manage Homepage tool for homepage carousel photos. ([#37](https://github.com/rspoelstra216/surfside-tools/pull/37))
+- Added uploading, replacement, removal, and drag-and-drop ordering for carousel images. ([#37](https://github.com/rspoelstra216/surfside-tools/pull/37))
+- Added automatic migration of the existing ACF carousel data. ([#37](https://github.com/rspoelstra216/surfside-tools/pull/37))
+- Added compact inline editing controls for homepage carousel photos. ([#39](https://github.com/rspoelstra216/surfside-tools/pull/39))
+- Added a sticky save bar and selected-file confirmation for new uploads. ([#39](https://github.com/rspoelstra216/surfside-tools/pull/39))
+- Added automatic homepage cache invalidation after carousel photos are added, removed, replaced, or reordered. ([#41](https://github.com/rspoelstra216/surfside-tools/pull/41))
+- Added editable CSS overrides for reveal animations and all countdown displays to the front-end Settings page. ([#44](https://github.com/rspoelstra216/surfside-tools/pull/44))
+- Added the current built-in reveal and countdown CSS as a collapsible reference in Settings. ([#45](https://github.com/rspoelstra216/surfside-tools/pull/45))
+
+### Improved
+
+- Project documentation now has one clear starting point instead of overlapping roadmap, decisions, and contribution files. ([#36](https://github.com/rspoelstra216/surfside-tools/pull/36))
+- The README now links directly to the living handbook and current staff features. ([#36](https://github.com/rspoelstra216/surfside-tools/pull/36))
+- Homepage photos are now managed from the same Staff Dashboard as Weekly Update, Calendar, and Settings. ([#37](https://github.com/rspoelstra216/surfside-tools/pull/37))
+- The existing public carousel shortcode and appearance are preserved during migration. ([#37](https://github.com/rspoelstra216/surfside-tools/pull/37))
+- The Development Handbook now records the three Staff Dashboard consolidation phases. ([#37](https://github.com/rspoelstra216/surfside-tools/pull/37))
+- Staff dashboard pages can repair themselves when a newly deployed tool adds a page without changing the plugin version. ([#38](https://github.com/rspoelstra216/surfside-tools/pull/38))
+- The Manage Homepage gallery now displays up to four compact thumbnails per row instead of two large cards. ([#39](https://github.com/rspoelstra216/surfside-tools/pull/39))
+- Homepage photo maintenance requires substantially less scrolling while preserving drag-and-drop ordering. ([#39](https://github.com/rspoelstra216/surfside-tools/pull/39))
+- Add Photos is now available at the top of the carousel section. ([#39](https://github.com/rspoelstra216/surfside-tools/pull/39))
+- Homepage photos now use a clear, dedicated drag handle for reordering. ([#40](https://github.com/rspoelstra216/surfside-tools/pull/40))
+- Manage Homepage changes now appear on the public homepage without a manual cache purge. ([#41](https://github.com/rspoelstra216/surfside-tools/pull/41))
+- The Surfside Tools carousel shortcode remains authoritative during the transition away from Code Snippets. ([#41](https://github.com/rspoelstra216/surfside-tools/pull/41))
+- The homepage photo carousel now breaks out of the narrow theme content column and scales across the viewport. ([#42](https://github.com/rspoelstra216/surfside-tools/pull/42))
+- Carousel width styling is now owned by Surfside Tools instead of Additional CSS. ([#42](https://github.com/rspoelstra216/surfside-tools/pull/42))
+- Visual utility styling can now be adjusted without returning to WordPress Additional CSS or Code Snippets. ([#44](https://github.com/rspoelstra216/surfside-tools/pull/44))
+- Administrators can now see the exact default rule before creating an override instead of editing blindly. ([#45](https://github.com/rspoelstra216/surfside-tools/pull/45))
+
+### Fixed
+
+- Eliminated duplicate planning lists that could drift apart or become difficult to locate. ([#36](https://github.com/rspoelstra216/surfside-tools/pull/36))
+- Removed the long-term need to maintain separate ACF fields and Code Snippets for the homepage carousel. ([#37](https://github.com/rspoelstra216/surfside-tools/pull/37))
+- Fixed **Manage Homepage** opening a Page Not Found screen after deployment. ([#38](https://github.com/rspoelstra216/surfside-tools/pull/38))
+- Prevented the carousel editor from dominating the entire Manage Homepage page as more homepage tools are added later. ([#39](https://github.com/rspoelstra216/surfside-tools/pull/39))
+- Fixed the prohibited-circle cursor and failed reordering when dragging carousel photos. ([#40](https://github.com/rspoelstra216/surfside-tools/pull/40))
+- Fixed newly added photos and reordered photos remaining stale on the public homepage. ([#41](https://github.com/rspoelstra216/surfside-tools/pull/41))
+- Fixed the carousel shrinking back into the narrow content column when its legacy Additional CSS rule was removed. ([#42](https://github.com/rspoelstra216/surfside-tools/pull/42))
+
+### Additional Changes
+
+### Consolidate reveal and countdown utilities ([#43](https://github.com/rspoelstra216/surfside-tools/pull/43))
+
+- Moves Reveal on Scroll and all three countdown snippets into Surfside Tools while preserving the existing shortcode names and CSS classes.
+
 ## [1.3.0] - 2026-07-14
 
 ### Added
