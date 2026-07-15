@@ -40,4 +40,5 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-carousel-cache-sync.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-carousel-full-width.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities-settings.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-intelligence.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';
