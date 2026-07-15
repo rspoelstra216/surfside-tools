@@ -52,8 +52,8 @@ The goal is to turn the Staff Dashboard from a launcher into a concise status ce
 
 - **Complete — Status cards:** Weekly Update, calendar, homepage photos, and settings context from one shared data provider
 - **Complete — Alerts and attention items:** actionable summary alerts and health states for weekly content, calendar, homepage, and settings
-- **In review — Recent activity and intelligence refinements:** visible announcement dates drive weekly freshness, the calendar uses a clear 30-day occurrence count, and useful recent changes appear in one place
-- **Planned — Quick-action refinement:** preserve simple navigation while reducing repeated clicks
+- **Complete — Recent activity and intelligence refinements:** visible announcement dates drive weekly freshness, the calendar uses a clear 30-day occurrence count, and useful recent changes appear in one place
+- **In review — Dashboard polish and contextual actions:** prominent metrics, consistent card alignment, context-aware buttons, refined activity presentation, and intentional mobile behavior
 
 ### Initial outcomes
 
