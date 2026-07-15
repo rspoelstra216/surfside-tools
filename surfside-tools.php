@@ -42,4 +42,5 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities-settings.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-intelligence.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-recent-activity.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-polish.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';
