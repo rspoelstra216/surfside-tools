@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.1.0] - 2026-07-15
+
+### Additional Changes
+
+### Refresh project documentation after v2.0.0 ([#46](https://github.com/rspoelstra216/surfside-tools/pull/46))
+
+- Refreshes the repository documentation after the Surfside Tools 2.0.0 release and establishes Dashboard Intelligence as the next development phase.
+
+### Add Dashboard Intelligence status cards ([#47](https://github.com/rspoelstra216/surfside-tools/pull/47))
+
+- Begins Milestone 6 by turning the Staff Dashboard into a useful website status center while preserving the existing navigation tools underneath.
+
+### Add Dashboard Intelligence alerts and attention states ([#48](https://github.com/rspoelstra216/surfside-tools/pull/48))
+
+- Adds actionable dashboard alerts and health states for Weekly Update, Calendar, Homepage, and Settings.
+
+### Add dashboard recent activity and intelligence refinements ([#49](https://github.com/rspoelstra216/surfside-tools/pull/49))
+
+- Continues Milestone 6 by adding Recent Activity and refining the Weekly Update and Calendar intelligence based on live dashboard testing.
+
+### Polish Dashboard Intelligence and contextual actions ([#50](https://github.com/rspoelstra216/surfside-tools/pull/50))
+
+- Completes the planned Dashboard Intelligence work with a focused presentation and usability pass. The dashboard keeps the same data and workflows while becoming easier to scan and more intentional on mobile.
+
 ## [2.0.0] - 2026-07-15
 
 ### Added
