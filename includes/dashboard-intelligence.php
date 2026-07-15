@@ -9,7 +9,7 @@ function surfside_tools_dashboard_status_data() {
     $message = function_exists('surfside_tools_get_message_data') ? (array) surfside_tools_get_message_data() : array();
 
     $announcement_items = array();
-    foreach (array('announcements', 'items', 'announcement_items') as $key) {
+    foreach (array('items', 'announcement_items') as $key) {
         if (!empty($announcements[$key]) && is_array($announcements[$key])) {
             $announcement_items = $announcements[$key];
             break;
@@ -25,11 +25,16 @@ function surfside_tools_dashboard_status_data() {
     $today = wp_date('Y-m-d');
     $range_end = wp_date('Y-m-d', current_time('timestamp') + (DAY_IN_SECONDS * 366));
     $occurrences = array();
+    $active_event_ids = array();
 
     if (function_exists('surfside_tools_calendar_get_all_events') && function_exists('surfside_tools_calendar_event_occurrences')) {
         foreach (surfside_tools_calendar_get_all_events() as $event) {
-            foreach (surfside_tools_calendar_event_occurrences($event, $today, $range_end) as $occurrence) {
-                $occurrences[] = $occurrence;
+            $event_occurrences = surfside_tools_calendar_event_occurrences($event, $today, $range_end);
+            if ($event_occurrences) {
+                $active_event_ids[absint($event['id'] ?? 0)] = true;
+                foreach ($event_occurrences as $occurrence) {
+                    $occurrences[] = $occurrence;
+                }
             }
         }
     }
@@ -52,7 +57,7 @@ function surfside_tools_dashboard_status_data() {
             'message_date' => (string) ($message['date'] ?? ''),
         ),
         'calendar' => array(
-            'upcoming_count' => count($occurrences),
+            'upcoming_count' => count(array_filter(array_keys($active_event_ids))),
             'next' => $occurrences ? $occurrences[0] : null,
         ),
         'homepage' => array(
@@ -97,7 +102,7 @@ function surfside_tools_dashboard_next_event_text($event) {
 
 function surfside_tools_dashboard_intelligence_styles() {
     wp_add_inline_style('surfside-tools-staff-dashboard', '
-        .surfside-dashboard-greeting{margin:0 0 24px}.surfside-dashboard-greeting h2{margin:0 0 6px;font-size:clamp(27px,4vw,38px);letter-spacing:-.035em;color:#071b3a}.surfside-dashboard-section-title{margin:0 0 16px;font-size:clamp(22px,3vw,30px);color:#071b3a}.surfside-dashboard-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:34px}.surfside-dashboard-status-card{display:flex;flex-direction:column;min-height:225px;padding:24px;border:1px solid rgba(7,27,58,.12);border-radius:18px;background:#fff;box-shadow:0 10px 26px rgba(7,27,58,.065)}.surfside-dashboard-status-head{display:flex;align-items:center;gap:13px;margin-bottom:18px}.surfside-dashboard-status-head .surfside-staff-icon{width:48px;height:48px}.surfside-dashboard-status-head .surfside-staff-icon svg{width:25px;height:25px}.surfside-dashboard-status-card h3{margin:0;font-size:23px;letter-spacing:-.025em;color:#071b3a}.surfside-dashboard-stat{font-size:30px;line-height:1;font-weight:800;color:#071b3a;margin-bottom:8px}.surfside-dashboard-detail{margin:5px 0;color:#46526a;line-height:1.45}.surfside-dashboard-detail strong{color:#071b3a}.surfside-dashboard-status-card .surfside-staff-actions{margin-top:auto;padding-top:18px}.surfside-dashboard-quick-actions{margin-top:10px}.surfside-dashboard-status-good{display:inline-flex;align-items:center;gap:6px;color:#148944;font-weight:700}.surfside-dashboard-status-neutral{color:#637086;font-weight:700}@media(max-width:760px){.surfside-dashboard-status-grid{grid-template-columns:1fr}.surfside-dashboard-status-card{min-height:auto}}
+        .surfside-dashboard-greeting{margin:0 0 24px}.surfside-dashboard-greeting h2{margin:0 0 6px;font-size:clamp(27px,4vw,38px);letter-spacing:-.035em;color:#071b3a}.surfside-dashboard-section-title{margin:0 0 16px;font-size:clamp(22px,3vw,30px);color:#071b3a}.surfside-dashboard-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:34px}.surfside-dashboard-status-card{display:flex;flex-direction:column;min-height:225px;padding:24px;border:1px solid rgba(7,27,58,.12);border-radius:18px;background:#fff;box-shadow:0 10px 26px rgba(7,27,58,.065)}.surfside-dashboard-status-head{display:flex;align-items:center;gap:13px;margin-bottom:18px}.surfside-dashboard-status-head .surfside-staff-icon{width:48px;height:48px}.surfside-dashboard-status-head .surfside-staff-icon svg{width:25px;height:25px}.surfside-dashboard-status-card h3{margin:0;font-size:23px;letter-spacing:-.025em;color:#071b3a}.surfside-dashboard-stat{font-size:30px;line-height:1;font-weight:800;color:#071b3a;margin-bottom:8px}.surfside-dashboard-detail{margin:5px 0;color:#46526a;line-height:1.45}.surfside-dashboard-detail strong{color:#071b3a}.surfside-dashboard-status-card .surfside-staff-actions{margin-top:auto;padding-top:18px}.surfside-dashboard-quick-actions{margin-top:10px}.surfside-dashboard-quick-actions .surfside-staff-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.surfside-dashboard-quick-actions .surfside-staff-card{min-height:230px}.surfside-dashboard-status-good{display:inline-flex;align-items:center;gap:6px;color:#148944;font-weight:700}.surfside-dashboard-status-neutral{color:#637086;font-weight:700}@media(max-width:1000px){.surfside-dashboard-quick-actions .surfside-staff-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:760px){.surfside-dashboard-status-grid,.surfside-dashboard-quick-actions .surfside-staff-grid{grid-template-columns:1fr}.surfside-dashboard-status-card{min-height:auto}}
     ');
 }
 
@@ -149,7 +154,7 @@ function surfside_tools_dashboard_intelligence_shortcode() {
 
             <article class="surfside-dashboard-status-card">
                 <div class="surfside-dashboard-status-head"><span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('calendar'); ?></span><h3>Calendar</h3></div>
-                <div class="surfside-dashboard-stat"><?php echo esc_html($data['calendar']['upcoming_count']); ?> upcoming</div>
+                <div class="surfside-dashboard-stat"><?php echo esc_html($data['calendar']['upcoming_count']); ?> active events</div>
                 <p class="surfside-dashboard-detail"><strong>Next event:</strong><br><?php echo esc_html(surfside_tools_dashboard_next_event_text($data['calendar']['next'])); ?></p>
                 <div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url('calendar')); ?>">Manage Calendar <span class="surfside-staff-arrow">›</span></a></div>
             </article>
