@@ -4,9 +4,9 @@ This is the concise entry point for current Surfside Tools development. For arch
 
 ## Current version
 
-**2.0.0** — released July 15, 2026
+**2.1.0** — released July 2026
 
-Version 2.0 marks the transition from a collection of custom WordPress tools into a unified front-end website-management platform for Surfside Community Fellowship.
+Version 2.1 completes Dashboard Intelligence and gives church staff a concise, actionable overview of weekly content, calendar activity, homepage photos, settings health, and recent changes.
 
 ## Project vision
 
@@ -21,63 +21,91 @@ Surfside Tools should let church staff perform routine website maintenance throu
 - Keep related workflows together.
 - Preserve review, confirmation, duplicate protection, and undo.
 - Build focused, testable pull requests.
+- Avoid adding dashboard information that is not clearly actionable.
 
-## Completed through 2.0.0
+## Completed milestones
 
-- Weekly Update DOCX import and publishing
-- Announcement and sermon-note workflows
-- Front-end Staff Dashboard
-- Native Calendar Manager and public calendar views
-- Recurring events and meeting-location support
-- Google Places and Saved Places
-- Calendar suggestions from announcement text
-- Recurrence, location, and duplicate detection
-- One-click, reviewed, and batch event creation
+### Milestone 1 — Weekly Update Foundation
+
+- DOCX upload and parsing
+- Announcement publishing
+- Sermon-note publishing
+
+### Milestone 2 — Native Calendar
+
+- Calendar Manager
+- Recurring events
+- Public calendar views
+- Meeting-location support
+
+### Milestone 3 — Google Places Integration
+
+- Google Places search
+- Saved Places
+- Address and location reuse
+
+### Milestone 4 — Staff Dashboard
+
+- Front-end management interface
+- Weekly Update, Calendar, Manage Homepage, and Settings workflows
+
+### Milestone 5 — Platform Consolidation
+
+**Released as 2.0.0**
+
+- Homepage carousel management
 - Front-end Settings
-- Manage Homepage photo workflow
-- Drag-and-drop carousel ordering
-- Automatic carousel cache invalidation
-- Full-width public carousel
 - Reveal and countdown utilities
-- Visual CSS override editor and built-in CSS reference
+- Visual CSS controls
 - Retirement of routine Simple Calendar, ACF carousel, and Code Snippets dependencies
 
-## Current phase: Dashboard Intelligence
+### Milestone 6 — Dashboard Intelligence
 
-Dashboard Intelligence begins after the 2.0.0 release.
+**Released as 2.1.0**
 
-The goal is to turn the Staff Dashboard from a launcher into a concise status center that answers what is current and what needs attention before staff open another page.
+- Website Status cards
+- Actionable summary alerts
+- Weekly freshness detection
+- Thirty-day calendar intelligence
+- Homepage and settings health
+- Recent Activity
+- Context-aware actions
+- Desktop and mobile dashboard polish
 
-### Milestone progress
+## Current milestone
 
-- **Complete — Status cards:** Weekly Update, calendar, homepage photos, and settings context from one shared data provider
-- **Complete — Alerts and attention items:** actionable summary alerts and health states for weekly content, calendar, homepage, and settings
-- **Complete — Recent activity and intelligence refinements:** visible announcement dates drive weekly freshness, the calendar uses a clear 30-day occurrence count, and useful recent changes appear in one place
-- **In review — Dashboard polish and contextual actions:** prominent metrics, consistent card alignment, context-aware buttons, refined activity presentation, and intentional mobile behavior
+### Milestone 7 — Website Management
 
-### Initial outcomes
+Continue moving routine website administration out of WordPress Admin and into Surfside Tools through focused, staff-friendly front-end workflows.
 
-- Homepage photo count and last-updated information
-- Calendar event count and next-event context
-- Weekly Update publication status
-- Pending or incomplete calendar suggestions where relevant
-- Clear attention states without overwhelming the dashboard
-- Recent activity only where it reduces uncertainty
-- Quick actions that preserve simple navigation
+### Planned areas
 
-### Guardrails
+- Homepage hero content
+- Featured events
+- Ministry highlights
+- Service information
+- Livestream links and related content
+- Staff information
+- Other frequently updated website content that provides clear value to church staff
 
-- Do not create a card for every possible metric.
-- Do not introduce warnings staff cannot act on.
-- Prefer useful context over decorative statistics.
-- Keep the dashboard fast and understandable at a glance.
-- Reuse existing plugin data instead of creating duplicate tracking systems.
+These are roadmap directions, not committed release scope. Each area should be evaluated before implementation to confirm that it is updated often enough to justify a dedicated front-end workflow.
 
-## Next planned phase: Website Management
+### Success criteria
 
-After Dashboard Intelligence, Surfside Tools may expand beyond carousel photos to manage additional website content from the front end, including homepage hero content, featured events, ministry highlights, service information, livestream links, and staff information.
+- Routine edits can be completed without opening WordPress Admin.
+- Management pages remain simple and task-focused.
+- Changes are immediately understandable on the public website.
+- New tools do not add unnecessary layers, clicks, or dashboard clutter.
+- Existing WordPress content remains compatible and maintainable.
 
-These are roadmap directions, not committed release scope.
+## Release history
+
+| Version | Focus |
+| --- | --- |
+| 1.0.0 | Initial Surfside Tools release |
+| 1.5.0 | Major feature expansion |
+| 2.0.0 | Platform Consolidation |
+| 2.1.0 | Dashboard Intelligence |
 
 ## Development workflow
 
@@ -93,7 +121,7 @@ These are roadmap directions, not committed release scope.
 ## Documentation ownership
 
 - `README.md` — product overview and documentation links
-- `DEVELOPMENT.md` — current version and development direction
+- `DEVELOPMENT.md` — current version, completed milestones, and active development direction
 - `docs/DEVELOPMENT.md` — detailed living handbook
 - `CHANGELOG.md` — official release history generated by the release workflow
 - GitHub Releases — versioned notes and installable ZIP packages
