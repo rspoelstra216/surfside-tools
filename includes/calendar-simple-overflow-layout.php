@@ -24,7 +24,7 @@ function surfside_tools_calendar_simple_overflow_layout() {
 
         .surfside-month-calendar-more-item {
             border-left-color: #0b4f9c !important;
-            background: #ffffff !important;
+            background: #f7fbff !important;
         }
 
         .surfside-month-calendar-more-item .surfside-month-calendar-more {
@@ -41,7 +41,7 @@ function surfside_tools_calendar_simple_overflow_layout() {
             border: 0 !important;
             border-radius: 0 !important;
             background: transparent !important;
-            color: #0b4f9c !important;
+            color: inherit !important;
             text-align: left !important;
             font: inherit !important;
             cursor: pointer !important;
@@ -50,8 +50,20 @@ function surfside_tools_calendar_simple_overflow_layout() {
         }
 
         .surfside-month-calendar-more-item .surfside-month-calendar-event-title {
-            margin-bottom: 0 !important;
-            color: #0b4f9c !important;
+            display: block !important;
+            margin: 0 0 3px !important;
+            color: #071b3a !important;
+            font-size: 15px !important;
+            font-weight: 900 !important;
+            line-height: 1.18 !important;
+        }
+
+        .surfside-month-calendar-more-prompt {
+            display: block !important;
+            margin: 0 !important;
+            color: #34425e !important;
+            font-size: 12px !important;
+            line-height: 1.35 !important;
         }
 
         .surfside-month-calendar-more-item:hover,
@@ -59,9 +71,23 @@ function surfside_tools_calendar_simple_overflow_layout() {
             background: #eef6ff !important;
         }
 
+        .surfside-month-calendar-more-item .surfside-month-calendar-more:focus-visible {
+            outline: 3px solid rgba(11,79,156,.24) !important;
+            outline-offset: 3px !important;
+            border-radius: 4px !important;
+        }
+
         @media (max-width: 900px) {
             .surfside-month-calendar-more-item {
                 padding: 10px 12px !important;
+            }
+
+            .surfside-month-calendar-more-item .surfside-month-calendar-event-title {
+                font-size: 17px !important;
+            }
+
+            .surfside-month-calendar-more-prompt {
+                font-size: 14px !important;
             }
         }
     </style>
@@ -70,9 +96,8 @@ function surfside_tools_calendar_simple_overflow_layout() {
 add_action('wp_head', 'surfside_tools_calendar_simple_overflow_layout', 99);
 
 /**
- * Convert the renderer's overflow button into a normal calendar card before
- * the shortcode HTML is sent to the browser. This deliberately happens on the
- * server rather than relying on footer JavaScript to locate and rebuild it.
+ * Convert the renderer's overflow button into a normal two-line calendar card
+ * before the shortcode HTML is sent to the browser.
  */
 function surfside_tools_calendar_render_overflow_card($output, $tag, $attr, $m) {
     if ($tag !== 'surfside_month_calendar' || strpos($output, 'surfside-month-calendar-more') === false) {
@@ -92,9 +117,18 @@ function surfside_tools_calendar_render_overflow_card($output, $tag, $attr, $m) 
                 1
             );
 
+            $label = trim(wp_strip_all_tags($matches[2]));
+            $count = 0;
+            if (preg_match('/(\d+)/', $label, $count_match)) {
+                $count = absint($count_match[1]);
+            }
+
+            $title = $count === 1 ? '1 more event' : $count . ' more events';
+
             return '<article class="surfside-month-calendar-item surfside-month-calendar-more-item">'
                 . '<button' . $attributes . '>'
-                . '<span class="surfside-month-calendar-event-title">' . $matches[2] . '</span>'
+                . '<span class="surfside-month-calendar-event-title">' . esc_html($title) . '</span>'
+                . '<span class="surfside-month-calendar-more-prompt">Tap to view →</span>'
                 . '</button>'
                 . '</article>';
         },
