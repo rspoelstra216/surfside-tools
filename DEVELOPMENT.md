@@ -82,10 +82,11 @@ Improve the public calendar so visitors can explore busy days, print a useful mo
 ### Milestone roadmap
 
 - **PRs #52–#66 — Interactive Day Details:** completed the accessible crowded-day modal and the final one-event-plus-overflow-card presentation.
-- **PR #67 — Printable Monthly Calendar:** add a deliberate print layout and Print Calendar action.
-- **PR #68 — Calendar Integration:** provide ICS downloads plus Apple Calendar and Google Calendar actions for individual event occurrences.
-- **PR #69 — Event Images:** add optional event images for event details and appropriate public event views without placing images inside the compact monthly grid.
-- **PR #70 — Today at Surfside:** add a `[surfside_today]` shortcode for homepage and other public placements. On service days, include service information and the current sermon title; on other days, show today’s events or the next upcoming event.
+- **PR #67 — Printable Monthly Calendar:** added the initial print action and print-only calendar.
+- **PR #68 — Printable Calendar Polish:** isolate printing in a dedicated document, eliminate blank pages, improve one-page landscape output, and reduce the prominence of the on-page Print control.
+- **PR #69 — Calendar Integration:** provide ICS downloads plus Apple Calendar and Google Calendar actions for individual event occurrences.
+- **PR #70 — Event Images:** add optional event images for event details and appropriate public event views without placing images inside the compact monthly grid.
+- **PR #71 — Today at Surfside:** add a `[surfside_today]` shortcode for homepage and other public placements. On service days, include service information and the current sermon title; on other days, show today’s events or the next upcoming event.
 
 ### Interactive Day Details decisions
 
