@@ -15,21 +15,14 @@ function surfside_tools_calendar_day_details_assets() {
     $loaded = true;
 
     wp_add_inline_style('surfside-tools-calendar-manager', '
-        .surfside-month-calendar-more{display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:22px;border:1px solid rgba(11,79,156,.25);border-radius:7px;padding:3px 6px;background:#fff;color:#0b4f9c;font:inherit;font-size:10px;font-weight:900;line-height:1.1;cursor:pointer;white-space:normal;overflow-wrap:anywhere;box-sizing:border-box}
+        .surfside-month-calendar-more{display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:30px;border:1px solid rgba(11,79,156,.25);border-radius:9px;padding:6px 8px;background:#fff;color:#0b4f9c;font:inherit;font-size:11px;font-weight:900;line-height:1.15;cursor:pointer;box-sizing:border-box}
         .surfside-month-calendar-more:hover,.surfside-month-calendar-more:focus-visible{background:#eef6ff;border-color:#0b4f9c}.surfside-month-calendar-more:focus-visible{outline:3px solid rgba(11,79,156,.24);outline-offset:2px}
-        .surfside-month-calendar-day.surfside-month-calendar-has-overflow{position:relative}
-        .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-day-events{gap:3px;padding-bottom:25px;min-width:0}
-        .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-item,.surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-event-button{min-width:0;max-width:100%;box-sizing:border-box}
-        .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-event-button{padding:5px 6px}
-        .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-event-title{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;white-space:normal;overflow-wrap:anywhere;line-height:1.05}
-        .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-event-button span:not(.surfside-month-calendar-event-title){font-size:9px;line-height:1.05}
-        .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-more{position:absolute;left:6px;right:6px;bottom:6px;width:auto}
         .surfside-day-modal[hidden]{display:none!important}.surfside-day-modal{position:fixed;inset:0;z-index:999998;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;visibility:hidden;transition:opacity 180ms ease,visibility 180ms ease}.surfside-day-modal.is-open{opacity:1;visibility:visible}
         .surfside-day-modal-backdrop{position:absolute;inset:0;background:rgba(7,27,58,.62);backdrop-filter:blur(3px)}.surfside-day-modal-card{position:relative;z-index:1;width:min(680px,100%);max-height:min(760px,calc(100vh - 48px));overflow:auto;border-radius:20px;padding:30px;background:#fff;box-shadow:0 24px 80px rgba(7,27,58,.28);color:#34425e;transform:translateY(10px) scale(.985);transition:transform 180ms ease}.surfside-day-modal.is-open .surfside-day-modal-card{transform:none}
         .surfside-day-modal-card h2{margin:0 44px 6px 0;color:#071b3a;font-size:clamp(1.7rem,4vw,2.35rem);line-height:1.12}.surfside-day-modal-summary{margin:0 0 20px;color:#5b667a}.surfside-day-modal-list{display:grid;gap:12px}
         .surfside-day-modal-event{width:100%;border:1px solid rgba(7,27,58,.12);border-left:4px solid #0b4f9c;border-radius:13px;padding:14px 16px;background:#f8fbff;text-align:left;color:inherit;font:inherit;cursor:pointer}.surfside-day-modal-event:hover,.surfside-day-modal-event:focus-visible{border-color:#0b4f9c;background:#eef6ff}.surfside-day-modal-event:focus-visible{outline:3px solid rgba(11,79,156,.24);outline-offset:2px}.surfside-day-modal-event strong{display:block;margin-bottom:5px;color:#071b3a;font-size:1.05rem}.surfside-day-modal-event span{display:block;color:#46536a;font-size:.92rem;line-height:1.4}
         .surfside-day-modal-close{position:absolute;top:14px;right:16px;width:38px;height:38px;border:0;border-radius:999px;background:#eef6ff;color:#0b4f9c;font-size:28px;line-height:1;cursor:pointer}
-        @media(max-width:900px){.surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-day-events{padding-bottom:0}.surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-more{position:static;width:100%;min-height:44px;font-size:14px}.surfside-day-modal{align-items:flex-end;padding:12px}.surfside-day-modal-card{width:100%;max-height:85vh;border-radius:20px 20px 0 0;padding:24px 20px}}
+        @media(max-width:900px){.surfside-month-calendar-more{min-height:44px;font-size:14px}.surfside-day-modal{align-items:flex-end;padding:12px}.surfside-day-modal-card{width:100%;max-height:85vh;border-radius:20px 20px 0 0;padding:24px 20px}}
         @media(prefers-reduced-motion:reduce){.surfside-day-modal,.surfside-day-modal-card{transition:none}}
     ');
 
@@ -74,11 +67,12 @@ function surfside_tools_calendar_render_month_grid_interactive($events, $month_s
                     $date = date('Y-m-d', $day_ts);
                     $is_current_month = date('m', $day_ts) === $month_number;
                     $day_events = isset($events_by_date[$date]) ? array_values($events_by_date[$date]) : array();
-                    $visible_events = array_slice($day_events, 0, 2);
-                    $overflow_count = max(0, count($day_events) - 2);
+                    $has_overflow = count($day_events) >= 3;
+                    $visible_events = array_slice($day_events, 0, $has_overflow ? 1 : 2);
+                    $overflow_count = $has_overflow ? count($day_events) - 1 : 0;
                     $day_modal_id = 'surfside-day-detail-' . str_replace('-', '', $date);
                     ?>
-                    <div class="surfside-month-calendar-day<?php echo $is_current_month ? '' : ' surfside-month-calendar-muted'; ?><?php echo $day_events ? ' surfside-month-calendar-has-events' : ''; ?><?php echo $overflow_count > 0 ? ' surfside-month-calendar-has-overflow' : ''; ?>" role="cell">
+                    <div class="surfside-month-calendar-day<?php echo $is_current_month ? '' : ' surfside-month-calendar-muted'; ?><?php echo $day_events ? ' surfside-month-calendar-has-events' : ''; ?><?php echo $has_overflow ? ' surfside-month-calendar-has-overflow' : ''; ?>" role="cell">
                         <div class="surfside-month-calendar-date-number"><span><?php echo esc_html(date_i18n('D', $day_ts)); ?></span><strong><?php echo esc_html(date_i18n('j', $day_ts)); ?></strong></div>
                         <?php if ($day_events) : ?>
                             <div class="surfside-month-calendar-day-events">
@@ -95,7 +89,7 @@ function surfside_tools_calendar_render_month_grid_interactive($events, $month_s
                                     </article>
                                 <?php endforeach; ?>
                                 <?php if ($overflow_count > 0) : ?>
-                                    <button type="button" class="surfside-month-calendar-more" data-surfside-day-open aria-haspopup="dialog" aria-controls="<?php echo esc_attr($day_modal_id); ?>">+<?php echo esc_html($overflow_count); ?> more <?php echo $overflow_count === 1 ? 'event' : 'events'; ?></button>
+                                    <button type="button" class="surfside-month-calendar-more" data-surfside-day-open aria-haspopup="dialog" aria-controls="<?php echo esc_attr($day_modal_id); ?>">View <?php echo esc_html($overflow_count); ?> more →</button>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>
