@@ -64,7 +64,7 @@ function surfside_tools_calendar_add_print_view($output, $tag, $attr, $m) {
 
     $button = '<div class="surfside-print-calendar-controls">'
         . '<button type="button" class="surfside-print-calendar-button" data-surfside-print-calendar>'
-        . '<span aria-hidden="true">🖨️</span> Print Calendar'
+        . '<span aria-hidden="true">🖨️</span><span>Print</span>'
         . '</button>'
         . '</div>';
 
@@ -93,168 +93,94 @@ function surfside_tools_calendar_print_assets() {
         .surfside-print-calendar-controls {
             display: flex;
             justify-content: flex-end;
-            margin: 0 0 14px;
+            margin: -2px 0 8px;
         }
 
         .surfside-print-calendar-button {
             display: inline-flex;
             align-items: center;
-            gap: 7px;
-            border: 1px solid rgba(11, 79, 156, .25);
-            border-radius: 999px;
-            padding: 9px 14px;
-            background: #fff;
+            gap: 5px;
+            border: 0;
+            border-radius: 7px;
+            padding: 5px 8px;
+            background: transparent;
             color: #0b4f9c;
             font: inherit;
-            font-weight: 800;
+            font-size: .82rem;
+            font-weight: 700;
+            line-height: 1;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(7, 27, 58, .04);
+            opacity: .78;
         }
 
         .surfside-print-calendar-button:hover,
         .surfside-print-calendar-button:focus-visible {
             background: #eef6ff;
-            border-color: #0b4f9c;
+            opacity: 1;
         }
 
         .surfside-print-calendar-button:focus-visible {
-            outline: 3px solid rgba(11, 79, 156, .24);
+            outline: 2px solid rgba(11, 79, 156, .28);
             outline-offset: 2px;
         }
 
         .surfside-print-calendar-only {
             display: none;
         }
-
-        @media print {
-            @page {
-                size: landscape;
-                margin: .35in;
-            }
-
-            html,
-            body {
-                background: #fff !important;
-            }
-
-            body * {
-                visibility: hidden !important;
-            }
-
-            .surfside-print-calendar-only,
-            .surfside-print-calendar-only * {
-                visibility: visible !important;
-            }
-
-            .surfside-print-calendar-only {
-                display: block !important;
-                position: absolute;
-                inset: 0 auto auto 0;
-                width: 100%;
-                margin: 0;
-                color: #000;
-                background: #fff;
-                font-family: Arial, Helvetica, sans-serif;
-            }
-
-            .surfside-print-calendar-header {
-                display: flex;
-                align-items: flex-end;
-                justify-content: space-between;
-                margin: 0 0 10pt;
-                padding-bottom: 6pt;
-                border-bottom: 2px solid #000;
-            }
-
-            .surfside-print-calendar-header h1 {
-                margin: 0;
-                color: #000;
-                font-size: 22pt;
-                line-height: 1;
-            }
-
-            .surfside-print-calendar-header p {
-                margin: 0;
-                color: #000;
-                font-size: 9pt;
-                font-weight: 700;
-            }
-
-            .surfside-print-calendar-grid {
-                display: grid;
-                grid-template-columns: repeat(7, minmax(0, 1fr));
-                width: 100%;
-                border-top: 1px solid #000;
-                border-left: 1px solid #000;
-                break-inside: avoid-page;
-                page-break-inside: avoid;
-            }
-
-            .surfside-print-calendar-weekday {
-                padding: 4pt 3pt;
-                border-right: 1px solid #000;
-                border-bottom: 1px solid #000;
-                text-align: center;
-                text-transform: uppercase;
-                font-size: 7.5pt;
-                font-weight: 800;
-            }
-
-            .surfside-print-calendar-day {
-                min-height: .92in;
-                padding: 4pt;
-                border-right: 1px solid #000;
-                border-bottom: 1px solid #000;
-                overflow: hidden;
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-
-            .surfside-print-calendar-day.is-outside-month {
-                color: #777;
-                background: #f3f3f3 !important;
-            }
-
-            .surfside-print-calendar-date {
-                display: block;
-                margin-bottom: 3pt;
-                font-size: 8.5pt;
-            }
-
-            .surfside-print-calendar-event {
-                margin: 0 0 3pt;
-                padding-top: 2pt;
-                border-top: .5pt solid #888;
-                font-size: 6.8pt;
-                line-height: 1.15;
-            }
-
-            .surfside-print-calendar-event strong,
-            .surfside-print-calendar-event span {
-                display: block;
-                color: inherit;
-            }
-
-            .surfside-print-calendar-event strong {
-                font-size: 7.2pt;
-            }
-
-            .surfside-print-calendar-controls,
-            .surfside-month-calendar-nav,
-            .surfside-month-calendar-grid-wrap,
-            .surfside-day-modal,
-            .surfside-event-modal,
-            #wpadminbar {
-                display: none !important;
-            }
-        }
     </style>
     <script id="surfside-calendar-print-script">
-    document.addEventListener('click', function (event) {
-        var button = event.target.closest('[data-surfside-print-calendar]');
-        if (!button) return;
-        window.print();
-    });
+    (function () {
+        'use strict';
+
+        var printStyles = `
+            @page { size: landscape; margin: .28in; }
+            * { box-sizing: border-box; }
+            html, body { margin: 0; padding: 0; background: #fff; color: #000; font-family: Arial, Helvetica, sans-serif; }
+            .surfside-print-calendar-only { display: block; width: 100%; }
+            .surfside-print-calendar-header { display: flex; align-items: flex-end; justify-content: space-between; margin: 0 0 7pt; padding-bottom: 5pt; border-bottom: 1.5pt solid #000; }
+            .surfside-print-calendar-header h1 { margin: 0; font-size: 19pt; line-height: 1; }
+            .surfside-print-calendar-header p { margin: 0; font-size: 8pt; font-weight: 700; }
+            .surfside-print-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); width: 100%; border-top: 1px solid #000; border-left: 1px solid #000; break-inside: avoid-page; page-break-inside: avoid; }
+            .surfside-print-calendar-weekday { padding: 3pt 2pt; border-right: 1px solid #000; border-bottom: 1px solid #000; text-align: center; text-transform: uppercase; font-size: 7pt; font-weight: 800; }
+            .surfside-print-calendar-day { min-height: .82in; padding: 3pt; border-right: 1px solid #000; border-bottom: 1px solid #000; overflow: hidden; break-inside: avoid; page-break-inside: avoid; }
+            .surfside-print-calendar-day.is-outside-month { color: #666; background: #f3f3f3; }
+            .surfside-print-calendar-date { display: block; margin-bottom: 2pt; font-size: 8pt; }
+            .surfside-print-calendar-event { margin: 0 0 2pt; padding-top: 1.5pt; border-top: .5pt solid #888; font-size: 6.2pt; line-height: 1.08; }
+            .surfside-print-calendar-event strong, .surfside-print-calendar-event span { display: block; color: inherit; }
+            .surfside-print-calendar-event strong { font-size: 6.7pt; }
+        `;
+
+        document.addEventListener('click', function (event) {
+            var button = event.target.closest('[data-surfside-print-calendar]');
+            if (!button) return;
+
+            var calendar = button.closest('.surfside-month-calendar');
+            var printView = calendar ? calendar.querySelector('.surfside-print-calendar-only') : null;
+            if (!printView) return;
+
+            var printWindow = window.open('', 'surfsideCalendarPrint', 'width=1200,height=800');
+            if (!printWindow) {
+                window.print();
+                return;
+            }
+
+            printWindow.document.open();
+            printWindow.document.write(
+                '<!doctype html><html><head><meta charset="utf-8">' +
+                '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+                '<title>Surfside Monthly Calendar</title>' +
+                '<style>' + printStyles + '</style></head><body>' +
+                printView.outerHTML.replace(' aria-hidden="true"', '') +
+                '</body></html>'
+            );
+            printWindow.document.close();
+            printWindow.focus();
+
+            window.setTimeout(function () {
+                printWindow.print();
+            }, 250);
+        });
+    })();
     </script>
     <?php
 }
