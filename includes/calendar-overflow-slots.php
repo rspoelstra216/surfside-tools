@@ -15,19 +15,21 @@ function surfside_tools_calendar_overflow_slots() {
 
     wp_add_inline_style('surfside-tools-calendar-manager', '
         @media (min-width: 901px) {
-            .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-day-events {
+            body .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-day-events {
                 display: grid !important;
                 grid-template-rows: 24px 24px 20px !important;
+                grid-auto-rows: 0 !important;
                 gap: 2px !important;
                 height: 72px !important;
+                min-height: 72px !important;
                 max-height: 72px !important;
                 padding: 0 !important;
-                overflow: hidden !important;
+                overflow: visible !important;
                 align-content: start !important;
             }
 
-            .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-item,
-            .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-event-button {
+            body .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-item,
+            body .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-event-button {
                 width: 100% !important;
                 min-width: 0 !important;
                 height: 24px !important;
@@ -38,13 +40,13 @@ function surfside_tools_calendar_overflow_slots() {
                 overflow: hidden !important;
             }
 
-            .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-event-button {
+            body .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-event-button {
                 display: block !important;
                 padding: 3px 6px !important;
                 text-align: left !important;
             }
 
-            .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-event-title {
+            body .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-event-title {
                 display: block !important;
                 width: 100% !important;
                 overflow: hidden !important;
@@ -54,13 +56,17 @@ function surfside_tools_calendar_overflow_slots() {
                 line-height: 18px !important;
             }
 
-            .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-event-button span:not(.surfside-month-calendar-event-title) {
+            body .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-event-button span:not(.surfside-month-calendar-event-title) {
                 display: none !important;
             }
 
-            .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-more {
+            body .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-more {
+                grid-row: 3 !important;
                 position: static !important;
+                inset: auto !important;
                 display: flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
                 align-items: center !important;
                 justify-content: center !important;
                 width: 100% !important;
@@ -76,6 +82,7 @@ function surfside_tools_calendar_overflow_slots() {
                 overflow: hidden !important;
                 text-overflow: ellipsis !important;
                 box-sizing: border-box !important;
+                z-index: 1 !important;
             }
         }
     ');
