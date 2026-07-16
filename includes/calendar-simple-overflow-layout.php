@@ -28,8 +28,6 @@ function surfside_tools_calendar_simple_overflow_layout() {
         }
 
         .surfside-month-calendar-more-item .surfside-month-calendar-more {
-            position: static !important;
-            inset: auto !important;
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
@@ -72,35 +70,35 @@ function surfside_tools_calendar_simple_overflow_layout() {
 add_action('wp_head', 'surfside_tools_calendar_simple_overflow_layout', 99);
 
 /**
- * The original calendar renderer outputs the Day Details trigger as a bare
- * button. Wrap it in the same article structure as event cards so it follows
- * the calendar's proven two-card layout instead of relying on special sizing.
+ * Convert the renderer's overflow button into a normal calendar card before
+ * the shortcode HTML is sent to the browser. This deliberately happens on the
+ * server rather than relying on footer JavaScript to locate and rebuild it.
  */
-function surfside_tools_calendar_wrap_overflow_action() {
-    ?>
-    <script id="surfside-calendar-wrap-overflow-action">
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.surfside-month-calendar-more').forEach(function (button) {
-            if (button.closest('.surfside-month-calendar-more-item')) {
-                return;
-            }
+function surfside_tools_calendar_render_overflow_card($output, $tag, $attr, $m) {
+    if ($tag !== 'surfside_month_calendar' || strpos($output, 'surfside-month-calendar-more') === false) {
+        return $output;
+    }
 
-            var card = document.createElement('article');
-            card.className = 'surfside-month-calendar-item surfside-month-calendar-more-item';
+    return preg_replace_callback(
+        '~<button\b([^>]*\bclass="[^"]*\bsurfside-month-calendar-more\b[^"]*"[^>]*)>(.*?)</button>~s',
+        function ($matches) {
+            $attributes = preg_replace_callback(
+                '~\bclass="([^"]*)"~',
+                function ($class_match) {
+                    $classes = trim($class_match[1] . ' surfside-month-calendar-event-button');
+                    return 'class="' . esc_attr($classes) . '"';
+                },
+                $matches[1],
+                1
+            );
 
-            var label = document.createElement('span');
-            label.className = 'surfside-month-calendar-event-title';
-            label.textContent = button.textContent.trim();
-
-            button.textContent = '';
-            button.classList.add('surfside-month-calendar-event-button');
-            button.appendChild(label);
-
-            button.parentNode.insertBefore(card, button);
-            card.appendChild(button);
-        });
-    });
-    </script>
-    <?php
+            return '<article class="surfside-month-calendar-item surfside-month-calendar-more-item">'
+                . '<button' . $attributes . '>'
+                . '<span class="surfside-month-calendar-event-title">' . $matches[2] . '</span>'
+                . '</button>'
+                . '</article>';
+        },
+        $output
+    );
 }
-add_action('wp_footer', 'surfside_tools_calendar_wrap_overflow_action', 99);
+add_filter('do_shortcode_tag', 'surfside_tools_calendar_render_overflow_card', 20, 4);
