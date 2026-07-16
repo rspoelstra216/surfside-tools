@@ -7,18 +7,20 @@ if (!defined('ABSPATH')) {
 /**
  * Keep the simplified crowded-day layout in normal flow: one standard event
  * card followed by the Day Details action, without changing calendar rows.
+ *
+ * This CSS is printed in wp_head because the calendar stylesheet itself is
+ * enqueued later, while the shortcode is rendering. Attaching these rules to
+ * wp_enqueue_scripts meant the function ran before the calendar style existed.
  */
 function surfside_tools_calendar_simple_overflow_layout() {
-    if (!wp_style_is('surfside-tools-calendar-manager', 'enqueued')) {
-        return;
-    }
-
-    wp_add_inline_style('surfside-tools-calendar-manager', '
+    ?>
+    <style id="surfside-calendar-simple-overflow-layout">
         .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-day-events {
             display: grid !important;
             grid-template-rows: auto 30px !important;
             gap: 6px !important;
             height: auto !important;
+            min-height: 0 !important;
             max-height: none !important;
             padding: 0 !important;
             overflow: visible !important;
@@ -60,6 +62,7 @@ function surfside_tools_calendar_simple_overflow_layout() {
                 max-height: none !important;
             }
         }
-    ');
+    </style>
+    <?php
 }
-add_action('wp_enqueue_scripts', 'surfside_tools_calendar_simple_overflow_layout', 200);
+add_action('wp_head', 'surfside_tools_calendar_simple_overflow_layout', 99);
