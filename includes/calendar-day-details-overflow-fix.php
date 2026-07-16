@@ -5,8 +5,8 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Keep monthly-calendar overflow controls visible and recover a missing
- * control from the already-rendered Day Details modal when necessary.
+ * Keep monthly-calendar overflow controls visible and ensure busy calendar
+ * rows grow tall enough to contain two events plus the overflow action.
  */
 function surfside_tools_calendar_day_details_overflow_fix() {
     if (!wp_script_is('surfside-tools-calendar-day-details', 'enqueued')) {
@@ -14,6 +14,22 @@ function surfside_tools_calendar_day_details_overflow_fix() {
     }
 
     wp_add_inline_style('surfside-tools-calendar-manager', '
+        .surfside-month-calendar-days {
+            grid-auto-rows:minmax(128px, auto) !important;
+            align-items:stretch !important;
+        }
+        .surfside-month-calendar-day {
+            height:auto !important;
+            overflow:visible !important;
+            box-sizing:border-box !important;
+        }
+        .surfside-month-calendar-day.surfside-month-calendar-has-overflow {
+            min-height:205px !important;
+        }
+        .surfside-month-calendar-day-events {
+            min-width:0 !important;
+            overflow:visible !important;
+        }
         .surfside-month-calendar-day-events .surfside-month-calendar-more-wrap {
             display:block !important;
             visibility:visible !important;
@@ -29,6 +45,11 @@ function surfside_tools_calendar_day_details_overflow_fix() {
             width:100% !important;
             position:relative !important;
             z-index:2 !important;
+        }
+        @media (max-width:900px) {
+            .surfside-month-calendar-day.surfside-month-calendar-has-overflow {
+                min-height:0 !important;
+            }
         }
     ');
 
@@ -46,6 +67,8 @@ function surfside_tools_calendar_day_details_overflow_fix() {
 
             var overflowCount = modal.querySelectorAll('[data-surfside-day-event]').length - 2;
             if (overflowCount < 1) return;
+
+            dayCell.classList.add('surfside-month-calendar-has-overflow');
 
             var button = eventsContainer.querySelector('[data-surfside-day-open]');
             if (!button) {
