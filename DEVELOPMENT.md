@@ -81,22 +81,21 @@ Improve the public calendar so visitors can explore busy days, print a useful mo
 
 ### Milestone roadmap
 
-- **PR #52 — Interactive Day Details:** show no more than two events in a monthly-calendar cell and open an accessible day modal from the `+N more events` button. Every event in the modal opens its existing event details.
-- **PR #53 — Printable Monthly Calendar:** add a deliberate print layout and Print Calendar action.
-- **PR #54 — Add to Calendar:** provide ICS downloads plus Apple Calendar and Google Calendar actions for individual event occurrences.
-- **PR #55 — Featured Event Images:** add optional event images for event details and appropriate public event views without placing images inside the compact monthly grid.
-- **PR #56 — Today at Surfside:** add a `[surfside_today]` shortcode for homepage and other public placements. On service days, include service information and the current sermon title; on other days, show today’s events or the next upcoming event.
+- **PRs #52–#66 — Interactive Day Details:** completed the accessible crowded-day modal and the final one-event-plus-overflow-card presentation.
+- **PR #67 — Printable Monthly Calendar:** add a deliberate print layout and Print Calendar action.
+- **PR #68 — Calendar Integration:** provide ICS downloads plus Apple Calendar and Google Calendar actions for individual event occurrences.
+- **PR #69 — Event Images:** add optional event images for event details and appropriate public event views without placing images inside the compact monthly grid.
+- **PR #70 — Today at Surfside:** add a `[surfside_today]` shortcode for homepage and other public placements. On service days, include service information and the current sermon title; on other days, show today’s events or the next upcoming event.
 
-### PR #52 decisions
+### Interactive Day Details decisions
 
-- Show a maximum of two event summaries in each monthly-calendar day.
+- Show one normal event card plus an overflow card on dates with three or more events.
+- Display the overflow card as `N more events` and `Tap to view →`.
 - Use a modal rather than inline expansion.
 - Display all events for the selected date in the modal.
 - Keep every event clickable and connected to the standard event-detail modal.
-- Use a subtle fade animation.
 - Support Escape, click-outside closing, keyboard focus containment, and focus return.
-- Present the overflow control as a clear, full-width mobile button.
-- Reserve the dedicated full-day page as a future enhancement; do not add a nonfunctional link.
+- Reserve the dedicated full-day page as a future enhancement.
 
 ### Success criteria
 
