@@ -10,7 +10,7 @@ Version 2.1 completes Dashboard Intelligence and gives church staff a concise, a
 
 ## Project vision
 
-Surfside Tools should let church staff perform routine website maintenance through clear front-end workflows without needing WordPress Admin.
+Surfside Tools should let church staff perform routine website maintenance through clear front-end workflows without needing WordPress Admin, while giving visitors a useful and accessible public website experience.
 
 ## Design principles
 
@@ -22,6 +22,7 @@ Surfside Tools should let church staff perform routine website maintenance throu
 - Preserve review, confirmation, duplicate protection, and undo.
 - Build focused, testable pull requests.
 - Avoid adding dashboard information that is not clearly actionable.
+- Favor accessible public experiences that work well on desktop and mobile.
 
 ## Completed milestones
 
@@ -74,29 +75,43 @@ Surfside Tools should let church staff perform routine website maintenance throu
 
 ## Current milestone
 
-### Milestone 7 — Website Management
+### Milestone 7 — Calendar Experience
 
-Continue moving routine website administration out of WordPress Admin and into Surfside Tools through focused, staff-friendly front-end workflows.
+Improve the public calendar so visitors can explore busy days, print a useful monthly schedule, save events to personal calendars, and discover what is happening at Surfside today.
 
-### Planned areas
+### Milestone roadmap
 
-- Homepage hero content
-- Featured events
-- Ministry highlights
-- Service information
-- Livestream links and related content
-- Staff information
-- Other frequently updated website content that provides clear value to church staff
+- **PR #52 — Interactive Day Details:** show no more than two events in a monthly-calendar cell and open an accessible day modal from the `+N more events` button. Every event in the modal opens its existing event details.
+- **PR #53 — Printable Monthly Calendar:** add a deliberate print layout and Print Calendar action.
+- **PR #54 — Add to Calendar:** provide ICS downloads plus Apple Calendar and Google Calendar actions for individual event occurrences.
+- **PR #55 — Featured Event Images:** add optional event images for event details and appropriate public event views without placing images inside the compact monthly grid.
+- **PR #56 — Today at Surfside:** add a `[surfside_today]` shortcode for homepage and other public placements. On service days, include service information and the current sermon title; on other days, show today’s events or the next upcoming event.
 
-These are roadmap directions, not committed release scope. Each area should be evaluated before implementation to confirm that it is updated often enough to justify a dedicated front-end workflow.
+### PR #52 decisions
+
+- Show a maximum of two event summaries in each monthly-calendar day.
+- Use a modal rather than inline expansion.
+- Display all events for the selected date in the modal.
+- Keep every event clickable and connected to the standard event-detail modal.
+- Use a subtle fade animation.
+- Support Escape, click-outside closing, keyboard focus containment, and focus return.
+- Present the overflow control as a clear, full-width mobile button.
+- Reserve the dedicated full-day page as a future enhancement; do not add a nonfunctional link.
 
 ### Success criteria
 
-- Routine edits can be completed without opening WordPress Admin.
-- Management pages remain simple and task-focused.
-- Changes are immediately understandable on the public website.
-- New tools do not add unnecessary layers, clicks, or dashboard clutter.
-- Existing WordPress content remains compatible and maintainable.
+- Busy calendar days remain readable without hiding events.
+- Monthly calendar interaction is accessible by keyboard and touch.
+- Visitors can print and save calendar information without manual copying.
+- Event imagery improves discovery without cluttering compact views.
+- The homepage can automatically show what is happening today.
+- The milestone creates a reusable foundation for a future dedicated day page.
+
+## Future milestone direction
+
+### Website Management
+
+Website Management remains planned for a later milestone. Potential areas include homepage hero content, featured events, ministry highlights, service information, livestream links, staff information, and other frequently updated content that clearly benefits from a dedicated front-end workflow.
 
 ## Release history
 
