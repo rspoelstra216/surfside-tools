@@ -97,7 +97,7 @@ function surfside_tools_portal_assets() {
     wp_register_style('surfside-tools-portal', false, array(), SURFSIDE_TOOLS_VERSION);
     wp_enqueue_style('surfside-tools-portal');
     wp_add_inline_style('surfside-tools-portal', '
-        .surfside-portal{--surfside-portal-navy:#071b3a;--surfside-portal-blue:#0b4f9c;max-width:900px;margin:0 auto;padding:clamp(16px,3vw,28px) 0;color:var(--surfside-portal-navy)}
+        .surfside-portal{--surfside-portal-navy:#071b3a;--surfside-portal-blue:#0b4f9c;width:min(900px,calc(100vw - 32px));max-width:none;margin-left:50%;margin-right:0;padding:clamp(16px,3vw,28px) 0;color:var(--surfside-portal-navy);transform:translateX(-50%)}
         .surfside-portal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
         .surfside-portal-card{display:flex;min-width:0;min-height:230px;color:inherit!important;text-decoration:none!important;border:1px solid rgba(7,27,58,.06);border-radius:20px;background:#fff;box-shadow:0 10px 28px rgba(7,27,58,.09);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
         .surfside-portal-card.is-featured{grid-column:1/-1;min-height:230px}
