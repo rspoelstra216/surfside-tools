@@ -5,7 +5,7 @@ Surfside Tools is a custom WordPress website-management platform built for Surfs
 It gives church staff clear front-end workflows for weekly publishing, calendar management, homepage photos, locations, and settings without requiring routine access to WordPress administration.
 
 **Current release:** `2.2.0`  
-**Current development phase:** Milestone 8 — Website Management
+**Current development phase:** Milestone 8 — Church Portal
 
 ## Guiding principle
 
@@ -165,8 +165,12 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 - Milestone 6 — Dashboard Intelligence
 - Milestone 7 — Calendar Experience
 
-### Current: Milestone 8 — Website Management
+### Current: Milestone 8 — Church Portal
 
-The next phase expands Surfside Tools beyond weekly publishing, calendars, and homepage photos so church staff can manage additional high-value website content through simple front-end workflows.
+The next phase moves the public church portal into Surfside Tools through a plugin-owned `[surfside_portal]` shortcode. The shortcode will preserve the portal's current visitor pathways while replacing page-specific custom markup and CSS with a responsive, version-controlled plugin experience.
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for current goals, candidate features, and the organized future-ideas backlog.
+### Planned: Milestone 9 — Website Management
+
+After the portal migration, Surfside Tools will expand front-end management to additional high-value website content such as service information, homepage content, livestream destinations, staff details, giving information, and contact details.
+
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the portal scope, migration plan, future Website Management candidates, and organized backlog.
