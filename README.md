@@ -51,6 +51,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - Printable monthly calendar
 - Apple Calendar, Google Calendar, and downloadable event actions
 - Event images in standard event details without cluttering compact month cells
+- Automatic Today at Surfside summary for service days, today’s events, or the next upcoming event
 
 ### Manage Homepage
 
@@ -101,6 +102,9 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - `[surfside_events]`
 - `[surfside_this_week]`
 - `[surfside_month_calendar]`
+- `[surfside_today]`
+
+`[surfside_today]` supports optional `title`, `events_url`, and `show_link="no"` attributes.
 
 ### Visual utilities
 
@@ -161,7 +165,7 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 
 ### Current: Calendar Experience
 
-The current milestone improves crowded-day exploration, printing, personal-calendar actions, optional event imagery, and an upcoming `Today at Surfside` public display.
+The current milestone improves crowded-day exploration, printing, personal-calendar actions, optional event imagery, and an automatic `Today at Surfside` public display.
 
 ### Future: Website Management
 
