@@ -20,6 +20,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-manager.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-day-details.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-simple-overflow-layout.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-print.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-integration.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestions.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-duplicates.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-completion.php';
