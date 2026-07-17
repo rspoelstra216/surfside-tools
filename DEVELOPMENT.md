@@ -84,8 +84,8 @@ Improve the public calendar so visitors can explore busy days, print a useful mo
 - **Interactive Day Details — complete (PRs #52–#66):** accessible crowded-day modal and the final one-event-plus-overflow-card presentation.
 - **Printable Monthly Calendar — complete (PRs #67–#68):** dedicated print document, reliable one-page landscape output, and a restrained on-page Print control.
 - **Calendar Integration — complete (PRs #69–#72):** individual-occurrence Apple Calendar, Google Calendar, and ICS actions with branded, responsive controls.
-- **Event Images — in progress (starting with PR #73):** add optional event images for event details and appropriate public event views without placing images inside the compact monthly grid.
-- **Today at Surfside — planned:** add a `[surfside_today]` shortcode for homepage and other public placements. On service days, include service information and the current sermon title; on other days, show today’s events or the next upcoming event.
+- **Event Images — complete (PR #73):** optional Media Library images in Calendar Manager and standard public event details without cluttering compact calendar views.
+- **Today at Surfside — in review (PR #74):** adds a `[surfside_today]` shortcode for homepage and other public placements. On service days it includes service information and the current sermon title; on other days it shows today’s events or the next upcoming event.
 
 ### Interactive Day Details decisions
 
@@ -113,6 +113,16 @@ Improve the public calendar so visitors can explore busy days, print a useful mo
 - Show images in standard public event-detail modals.
 - Keep images out of compact monthly calendar cells and crowded-day lists.
 - Use the attachment alt text when available and fall back to the event title.
+
+### Today at Surfside decisions
+
+- Provide a reusable `[surfside_today]` shortcode suitable for the homepage or other public pages.
+- Use the site timezone and native recurring-event occurrence engine.
+- Treat Saturday at 6:00 PM and Sunday at 9:45 AM as service-day defaults while keeping the schedule filterable.
+- Show the current sermon title on service days when one has been published.
+- Show all events scheduled today; when there are none on a non-service day, show the next upcoming event.
+- Reuse optional event images in the larger Today at Surfside cards without adding them to compact calendar cells.
+- Include a configurable link to the full calendar.
 
 ### Success criteria
 
