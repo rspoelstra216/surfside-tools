@@ -136,76 +136,51 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
 
 ## Milestones
 
-### Complete — Foundation
+### Complete — Milestones 1–7
 
-Established the plugin structure, Weekly Update import and publishing, public shortcodes, and the front-end Staff Dashboard.
+Surfside Tools has completed Weekly Update Foundation, Native Calendar, Google Places, Staff Dashboard, Platform Consolidation, Dashboard Intelligence, and Calendar Experience.
 
-### Complete — Calendar (1.2.x)
+Version 2.2.0 completed Calendar Experience with accessible crowded-day details, printable monthly calendars, personal-calendar actions, optional event images, `[surfside_today]`, and final dashboard cleanup.
 
-Established event management, recurrence, weekly and monthly displays, Google Places, venue and meeting-location support, calendar layout polish, cPanel deployment, and automated releases.
+### Current — Milestone 8: Church Portal
 
-### Complete — Productivity (v1.3.0)
+Move the public church portal into Surfside Tools through a plugin-owned `[surfside_portal]` shortcode. This replaces substantial page-specific custom markup and CSS with a responsive, accessible, version-controlled experience.
 
-Transformed Weekly Update from a document importer into an intelligent publishing workflow with calendar suggestions, recurrence and location detection, duplicate confidence scoring, one-click and batch event creation, undo, Saved Places, front-end Settings, and polished release automation.
+The existing site header, welcome image, and footer remain outside the shortcode. The shortcode owns the portal launcher and its presentation.
 
-**Retrospective**
+#### Portal inventory
 
-- What went well: small deploy-and-verify PRs; one-page secretary workflow; useful calendar intelligence.
-- What should improve: avoid long planning loops after approval; diagnose the actual runtime path before stacking fixes; keep planning information here rather than chat.
-- What we learned: enqueue dynamic dependencies early; screenshots and browser inspection isolate failures quickly; milestones should end with a release and updated project memory.
+- Full-width Live Slides card
+- First Time Here
+- Message Notes
+- Announcements
+- This Week's Events
+- Prayer Request
+- Ministry Opportunities
+- Give Online
+- Explore Surfside
 
-### Current — Staff Dashboard and Tool Consolidation (1.4)
+#### Delivery sequence
 
-The goal is to make Surfside Tools the only website-management plugin church staff need for routine work. Build and consolidate the tools first, then refine the dashboard around the completed toolset.
+1. Portal foundation and current destination parity
+2. Weekly Message Notes and Announcements integration
+3. Native This Week calendar integration
+4. Service-day intelligence where useful
+5. Front-end portal destination settings
+6. Shortcode migration, live verification, and old CSS cleanup
 
-#### Phase 1 — Manage Homepage
+#### Durable portal decisions
 
-- Replace the ACF-backed homepage carousel workflow
-- Preserve the existing public carousel shortcode during migration
-- Add a Staff Dashboard card labeled **Manage Homepage**
-- Provide front-end uploading, replacement, removal, and ordering
-- Verify the imported carousel before deactivating ACF and the Photo Carousel / Photo Update snippets
+- Use `[surfside_portal]` as the single page-level integration point.
+- Preserve the prominent Live Slides hierarchy and two-column desktop launcher.
+- Keep the site header, welcome image, and footer outside the shortcode.
+- Reuse existing Surfside Tools content and calendar sources instead of duplicating data.
+- Keep entire cards understandable and interactive on desktop, keyboard, and touch interfaces.
+- Remove old portal CSS only after the shortcode replacement is deployed and verified.
 
-#### Phase 2 — Audit and consolidate snippets
+### Planned — Milestone 9: Website Management
 
-Review each remaining Code Snippets entry and classify it as:
-
-- Already replaced and safe to retire
-- Appropriate for Surfside Tools
-- Appropriate for the theme
-- Still required as a standalone snippet
-
-Initial audit list:
-
-- Weekly Announcements
-- Weekly Message
-- Weekly Update Form
-- Reveal on Scroll
-- Service Countdown Timer
-- Compact Countdown Timer
-- Sunday Countdown
-- Never Cache Front-End Admin Pages
-
-#### Phase 3 — Refine the Staff Dashboard
-
-Once the toolset is known and consolidated:
-
-- Turn launcher cards into useful status cards
-- Show current content and last-updated information
-- Add upcoming-event context
-- Surface items needing attention
-- Add recent activity where it provides clear value
-- Keep the dashboard focused rather than adding a card for every possible function
-
-These phases are the current direction, not a promise that every possible enhancement ships in one release.
-
-### Future — Public Release (2.0)
-
-- Reduce Surfside-specific assumptions where practical
-- Add configuration and onboarding guidance
-- Complete installation and administrator documentation
-- Review security, accessibility, migration, and upgrade behavior
-- Establish a stable public-facing feature set
+Expand front-end management to additional high-value website content after the portal migration. Candidate areas include homepage hero content, service times and locations, featured events, ministry highlights, staff directory content, livestream destinations, giving content, footer and contact information, and additional homepage blocks.
 
 ## Nice Ideas
 
