@@ -4,8 +4,8 @@ Surfside Tools is a custom WordPress website-management platform built for Surfs
 
 It gives church staff clear front-end workflows for weekly publishing, calendar management, homepage photos, locations, and settings without requiring routine access to WordPress administration.
 
-**Current release:** `2.1.0`  
-**Current development phase:** Calendar Experience complete; preparing the next minor release
+**Current release:** `2.2.0`  
+**Current development phase:** Milestone 8 — Website Management
 
 ## Guiding principle
 
@@ -19,7 +19,8 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 
 - Front-end dashboard for routine website management
 - Weekly Update, Calendar, Manage Homepage, and Settings tools
-- Actionable website-status summaries focused on current needs
+- Actionable Website Status summaries focused on current needs
+- Direct Quick Actions for common staff workflows
 - Login and capability protection
 - Consistent navigation and front-end workflows
 
@@ -47,7 +48,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 ### Public calendar experience
 
 - Accessible event-detail modals
-- Crowded-day details without hiding events
+- Interactive crowded-day details without hiding events
 - Printable monthly calendar
 - Apple Calendar, Google Calendar, and downloadable event actions
 - Event images in standard event details without cluttering compact month cells
@@ -121,7 +122,7 @@ The repository root is the WordPress plugin root.
 - `docs/` — detailed project handbook and supporting documentation
 - `.github/workflows/` — validation, builds, and release automation
 - `.cpanel.yml` — cPanel deployment recipe
-- `CHANGELOG.md` — official generated release history
+- `CHANGELOG.md` — official release history
 - `DEVELOPMENT.md` — concise current-development entry point
 
 ## Documentation
@@ -130,9 +131,10 @@ Start with:
 
 - [Current development status](DEVELOPMENT.md)
 - [Detailed development handbook](docs/DEVELOPMENT.md)
+- [Project roadmap](docs/ROADMAP.md)
 - [Release changelog](CHANGELOG.md)
 
-Compatibility references remain available under `docs/` for roadmap, decisions, and contribution history.
+Compatibility references remain available under `docs/` for decisions and contribution history.
 
 ## Development workflow
 
@@ -153,20 +155,18 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 
 ## Roadmap
 
-### Completed through 2.1.0
+### Completed through 2.2.0
 
-- Weekly Update publishing foundation
-- Native calendar and public displays
-- Google Places and Saved Places
-- Staff Dashboard and front-end Settings
-- Manage Homepage and carousel migration
-- Platform consolidation
-- Dashboard Intelligence
+- Milestone 1 — Weekly Update Foundation
+- Milestone 2 — Native Calendar
+- Milestone 3 — Google Places
+- Milestone 4 — Staff Dashboard
+- Milestone 5 — Platform Consolidation
+- Milestone 6 — Dashboard Intelligence
+- Milestone 7 — Calendar Experience
 
-### Calendar Experience — complete
+### Current: Milestone 8 — Website Management
 
-The completed milestone adds crowded-day exploration, printing, personal-calendar actions, optional event imagery, and the automatic `Today at Surfside` public display. PR #75 provides the final dashboard cleanup before the next minor release.
+The next phase expands Surfside Tools beyond weekly publishing, calendars, and homepage photos so church staff can manage additional high-value website content through simple front-end workflows.
 
-### Future: Website Management
-
-Future work may expand Manage Homepage and the Staff Dashboard to additional editable website content such as hero content, featured events, ministry highlights, service information, and staff details.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for current goals, candidate features, and the organized future-ideas backlog.
