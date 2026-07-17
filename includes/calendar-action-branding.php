@@ -46,6 +46,19 @@ function surfside_tools_calendar_action_branding_assets() {
             background: #eef6ff;
             color: #0b4f9c;
         }
+        @media (min-width: 601px) {
+            .surfside-event-calendar-actions {
+                flex-wrap: nowrap;
+            }
+            .surfside-event-calendar-action {
+                flex: 0 1 auto;
+                min-width: 0;
+                padding: 8px 9px;
+                gap: 7px;
+                font-size: .82rem;
+                white-space: nowrap;
+            }
+        }
     </style>
     <script id="surfside-calendar-action-branding-script">
     (function () {
@@ -96,7 +109,7 @@ function surfside_tools_calendar_action_branding_assets() {
                     } else if (action === 'google') {
                         decorate(link, 'google', 'Add to Google Calendar');
                     } else if (client === 'download') {
-                        decorate(link, 'download', 'Download Calendar');
+                        decorate(link, 'download', 'Download Event');
                     }
                 });
             });
