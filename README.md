@@ -4,8 +4,8 @@ Surfside Tools is a custom WordPress website-management platform built for Surfs
 
 It gives church staff clear front-end workflows for weekly publishing, calendar management, homepage photos, locations, and settings without requiring routine access to WordPress administration.
 
-**Current release:** `2.0.0`  
-**Current development phase:** Dashboard Intelligence
+**Current release:** `2.1.0`  
+**Current development phase:** Calendar Experience
 
 ## Guiding principle
 
@@ -19,6 +19,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 
 - Front-end dashboard for routine website management
 - Weekly Update, Calendar, Manage Homepage, and Settings tools
+- Actionable website-status summaries and recent activity
 - Login and capability protection
 - Consistent navigation and front-end workflows
 
@@ -39,8 +40,17 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - Repeat-until dates
 - Separate venue, address, and meeting-location fields
 - Google Places and saved locations
+- Optional event images selected from the WordPress Media Library
 - Active-event management and recently past events
 - Public upcoming, weekly, and monthly calendar displays
+
+### Public calendar experience
+
+- Accessible event-detail modals
+- Crowded-day details without hiding events
+- Printable monthly calendar
+- Apple Calendar, Google Calendar, and downloadable event actions
+- Event images in standard event details without cluttering compact month cells
 
 ### Manage Homepage
 
@@ -139,20 +149,19 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 
 ## Roadmap
 
-### Completed with 2.0.0
+### Completed through 2.1.0
 
-- Staff Dashboard foundation
+- Weekly Update publishing foundation
 - Native calendar and public displays
-- Weekly Update calendar intelligence
 - Google Places and Saved Places
-- Front-end Settings
+- Staff Dashboard and front-end Settings
 - Manage Homepage and carousel migration
-- Code Snippets retirement
-- Visual utility consolidation
+- Platform consolidation
+- Dashboard Intelligence
 
-### Current: Dashboard Intelligence
+### Current: Calendar Experience
 
-The next phase turns the Staff Dashboard from a launcher into a useful status center with current-content summaries, last-updated information, upcoming-event context, attention items, and recent activity where it adds clear value.
+The current milestone improves crowded-day exploration, printing, personal-calendar actions, optional event imagery, and an upcoming `Today at Surfside` public display.
 
 ### Future: Website Management
 
