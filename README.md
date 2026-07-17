@@ -5,7 +5,7 @@ Surfside Tools is a custom WordPress website-management platform built for Surfs
 It gives church staff clear front-end workflows for weekly publishing, calendar management, homepage photos, locations, and settings without requiring routine access to WordPress administration.
 
 **Current release:** `2.1.0`  
-**Current development phase:** Calendar Experience
+**Current development phase:** Calendar Experience complete; preparing the next minor release
 
 ## Guiding principle
 
@@ -19,7 +19,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 
 - Front-end dashboard for routine website management
 - Weekly Update, Calendar, Manage Homepage, and Settings tools
-- Actionable website-status summaries and recent activity
+- Actionable website-status summaries focused on current needs
 - Login and capability protection
 - Consistent navigation and front-end workflows
 
@@ -163,9 +163,9 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 - Platform consolidation
 - Dashboard Intelligence
 
-### Current: Calendar Experience
+### Calendar Experience — complete
 
-The current milestone improves crowded-day exploration, printing, personal-calendar actions, optional event imagery, and an automatic `Today at Surfside` public display.
+The completed milestone adds crowded-day exploration, printing, personal-calendar actions, optional event imagery, and the automatic `Today at Surfside` public display. PR #75 provides the final dashboard cleanup before the next minor release.
 
 ### Future: Website Management
 

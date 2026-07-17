@@ -9,7 +9,7 @@ function surfside_tools_dashboard_action_label($key, $status) {
 
     $labels = array(
         'weekly' => $needs_attention ? 'Prepare Weekly Update' : 'Open Weekly Update',
-        'calendar' => $needs_attention ? 'Review Calendar' : 'Open Calendar',
+        'calendar' => $needs_attention ? 'Review Calendar' : 'Manage Calendar',
         'homepage' => $needs_attention ? 'Review Homepage Photos' : 'Open Homepage Manager',
         'settings' => $needs_attention ? 'Fix Settings' : 'Open Settings',
     );
@@ -23,7 +23,7 @@ function surfside_tools_dashboard_stat_block($number, $label) {
 
 function surfside_tools_dashboard_polish_styles() {
     wp_add_inline_style('surfside-tools-staff-dashboard', '
-        .surfside-dashboard-status-grid{align-items:stretch}.surfside-dashboard-status-card{min-height:100%;padding:26px}.surfside-dashboard-status-head{justify-content:space-between;align-items:flex-start}.surfside-dashboard-status-title{display:flex;align-items:center;gap:13px}.surfside-dashboard-health{margin:0}.surfside-dashboard-metric{display:flex;align-items:baseline;gap:10px;margin:8px 0 14px}.surfside-dashboard-metric strong{font-size:clamp(42px,6vw,58px);line-height:.9;letter-spacing:-.055em;color:#071b3a}.surfside-dashboard-metric span{max-width:170px;font-size:15px;line-height:1.25;font-weight:750;color:#556178}.surfside-dashboard-status-content{display:flex;flex-direction:column;flex:1}.surfside-dashboard-status-card .surfside-staff-actions{padding-top:20px}.surfside-dashboard-status-card .surfside-staff-button,.surfside-dashboard-status-card .surfside-staff-button-secondary{width:100%;justify-content:center}.surfside-dashboard-activity-item{align-items:flex-start;min-height:100%}.surfside-dashboard-activity-item>span:last-child{min-width:0}.surfside-dashboard-activity-time{font-size:12px!important;text-transform:uppercase;letter-spacing:.045em;font-weight:700;color:#7a8496!important}.surfside-dashboard-quick-actions .surfside-staff-card{min-height:215px;padding:22px}.surfside-dashboard-quick-actions .surfside-staff-card h2{font-size:21px}.surfside-dashboard-quick-actions .surfside-staff-card p{font-size:14px}.surfside-dashboard-summary{position:relative;overflow:hidden}.surfside-dashboard-summary:before{content:"";position:absolute;inset:0 auto 0 0;width:6px;background:currentColor;opacity:.55}@media(max-width:760px){.surfside-staff-shell{padding-left:14px;padding-right:14px}.surfside-dashboard-greeting{margin-bottom:18px}.surfside-dashboard-greeting h2{font-size:30px}.surfside-dashboard-summary{padding:20px 20px 20px 22px}.surfside-dashboard-status-card{padding:20px}.surfside-dashboard-status-head{gap:12px}.surfside-dashboard-status-title{align-items:flex-start}.surfside-dashboard-status-head .surfside-staff-icon{width:42px;height:42px}.surfside-dashboard-status-card h3{font-size:21px}.surfside-dashboard-metric{align-items:flex-end}.surfside-dashboard-metric strong{font-size:48px}.surfside-dashboard-metric span{padding-bottom:3px}.surfside-dashboard-detail{font-size:15px}.surfside-dashboard-status-card .surfside-staff-actions a{min-height:48px}.surfside-dashboard-activity-item{padding:16px}.surfside-dashboard-quick-actions .surfside-staff-card{min-height:auto}.surfside-dashboard-quick-actions .surfside-staff-actions a{width:100%;justify-content:center}}
+        .surfside-dashboard-status-grid{align-items:stretch}.surfside-dashboard-status-card{min-height:100%;padding:26px}.surfside-dashboard-status-head{justify-content:space-between;align-items:flex-start}.surfside-dashboard-status-title{display:flex;align-items:center;gap:13px}.surfside-dashboard-health{margin:0}.surfside-dashboard-metric{display:flex;align-items:baseline;gap:10px;margin:8px 0 14px}.surfside-dashboard-metric strong{font-size:clamp(42px,6vw,58px);line-height:.9;letter-spacing:-.055em;color:#071b3a}.surfside-dashboard-metric span{max-width:170px;font-size:15px;line-height:1.25;font-weight:750;color:#556178}.surfside-dashboard-status-content{display:flex;flex-direction:column;flex:1}.surfside-dashboard-status-card .surfside-staff-actions{padding-top:20px}.surfside-dashboard-status-card .surfside-staff-button,.surfside-dashboard-status-card .surfside-staff-button-secondary{width:100%;justify-content:center}.surfside-dashboard-quick-actions{margin-top:0}.surfside-dashboard-quick-actions .surfside-staff-card{min-height:215px;padding:22px}.surfside-dashboard-quick-actions .surfside-staff-card h2{font-size:21px}.surfside-dashboard-quick-actions .surfside-staff-card p{font-size:14px}.surfside-dashboard-summary{position:relative;overflow:hidden}.surfside-dashboard-summary:before{content:"";position:absolute;inset:0 auto 0 0;width:6px;background:currentColor;opacity:.55}@media(max-width:760px){.surfside-staff-shell{padding-left:14px;padding-right:14px}.surfside-dashboard-greeting{margin-bottom:18px}.surfside-dashboard-greeting h2{font-size:30px}.surfside-dashboard-summary{padding:20px 20px 20px 22px}.surfside-dashboard-status-card{padding:20px}.surfside-dashboard-status-head{gap:12px}.surfside-dashboard-status-title{align-items:flex-start}.surfside-dashboard-status-head .surfside-staff-icon{width:42px;height:42px}.surfside-dashboard-status-card h3{font-size:21px}.surfside-dashboard-metric{align-items:flex-end}.surfside-dashboard-metric strong{font-size:48px}.surfside-dashboard-metric span{padding-bottom:3px}.surfside-dashboard-detail{font-size:15px}.surfside-dashboard-status-card .surfside-staff-actions a{min-height:48px}.surfside-dashboard-quick-actions .surfside-staff-card{min-height:auto}.surfside-dashboard-quick-actions .surfside-staff-actions a{width:100%;justify-content:center}}
     ');
 }
 
@@ -42,7 +42,6 @@ function surfside_tools_dashboard_intelligence_shortcode_v3() {
     }
 
     surfside_tools_dashboard_intelligence_styles();
-    surfside_tools_dashboard_recent_activity_styles();
     surfside_tools_dashboard_polish_styles();
 
     $data = surfside_tools_dashboard_status_data();
@@ -128,27 +127,11 @@ function surfside_tools_dashboard_intelligence_shortcode_v3() {
             <?php endforeach; ?>
         </div>
 
-        <section class="surfside-dashboard-activity">
-            <h2 class="surfside-dashboard-section-title">Recent Activity</h2>
-            <?php if ($context['activities']) : ?>
-                <div class="surfside-dashboard-activity-list">
-                    <?php foreach ($context['activities'] as $activity) : ?>
-                        <a class="surfside-dashboard-activity-item" href="<?php echo esc_url($activity['url']); ?>">
-                            <span class="surfside-dashboard-activity-marker" aria-hidden="true"></span>
-                            <span><strong><?php echo esc_html($activity['title']); ?></strong><span><?php echo esc_html($activity['detail']); ?></span><span class="surfside-dashboard-activity-time"><?php echo esc_html(wp_date('F j, Y g:i A', $activity['timestamp'])); ?></span></span>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            <?php else : ?>
-                <div class="surfside-dashboard-activity-empty">Recent activity will appear as staff use Surfside Tools.</div>
-            <?php endif; ?>
-        </section>
-
         <section class="surfside-dashboard-quick-actions">
             <h2 class="surfside-dashboard-section-title">Quick Actions</h2>
             <div class="surfside-staff-grid">
                 <article class="surfside-staff-card"><span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('upload'); ?></span><h2>Weekly Update</h2><p>Upload DOCX files, review, and publish.</p><div class="surfside-staff-actions"><a class="surfside-staff-button" href="<?php echo esc_url(surfside_tools_staff_page_url('weekly-update')); ?>">Open Weekly Update <span class="surfside-staff-arrow">›</span></a></div></article>
-                <article class="surfside-staff-card"><span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('calendar'); ?></span><h2>Calendar</h2><p>Manage church calendar events.</p><div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url('calendar')); ?>">Open Calendar <span class="surfside-staff-arrow">›</span></a></div></article>
+                <article class="surfside-staff-card"><span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('calendar'); ?></span><h2>Calendar</h2><p>Manage church calendar events.</p><div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url('calendar')); ?>">Manage Calendar <span class="surfside-staff-arrow">›</span></a></div></article>
                 <article class="surfside-staff-card"><span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('document'); ?></span><h2>Manage Homepage</h2><p>Manage homepage carousel photos.</p><div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url('homepage')); ?>">Open Homepage Manager <span class="surfside-staff-arrow">›</span></a></div></article>
                 <article class="surfside-staff-card"><span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('settings'); ?></span><h2>Settings</h2><p>Manage Google Maps, saved places, and preferences.</p><div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url('settings')); ?>">Open Settings <span class="surfside-staff-arrow">›</span></a></div></article>
             </div>

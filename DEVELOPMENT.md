@@ -6,7 +6,7 @@ This is the concise entry point for current Surfside Tools development. For arch
 
 **2.1.0** — released July 2026
 
-Version 2.1 completes Dashboard Intelligence and gives church staff a concise, actionable overview of weekly content, calendar activity, homepage photos, settings health, and recent changes.
+Version 2.1 completes Dashboard Intelligence and gives church staff a concise, actionable overview of weekly content, calendar activity, homepage photos, and settings health.
 
 ## Project vision
 
@@ -69,62 +69,33 @@ Surfside Tools should let church staff perform routine website maintenance throu
 - Weekly freshness detection
 - Thirty-day calendar intelligence
 - Homepage and settings health
-- Recent Activity
 - Context-aware actions
 - Desktop and mobile dashboard polish
 
-## Current milestone
-
 ### Milestone 7 — Calendar Experience
 
-Improve the public calendar so visitors can explore busy days, print a useful monthly schedule, save events to personal calendars, and discover what is happening at Surfside today.
+**Complete through PR #75; awaiting the next minor release**
 
-### Milestone roadmap
+- **Interactive Day Details (PRs #52–#66):** accessible crowded-day modal and the final one-event-plus-overflow-card presentation.
+- **Printable Monthly Calendar (PRs #67–#68):** dedicated print document, reliable one-page landscape output, and a restrained on-page Print control.
+- **Calendar Integration (PRs #69–#72):** individual-occurrence Apple Calendar, Google Calendar, and ICS actions with branded, responsive controls.
+- **Event Images (PR #73):** optional Media Library images in Calendar Manager and standard public event details without cluttering compact calendar views.
+- **Today at Surfside (PR #74):** reusable `[surfside_today]` display for service information, today’s events, or the next upcoming event.
+- **Dashboard cleanup (PR #75):** clearer Manage Calendar actions and removal of the prominent Recent Activity feed.
 
-- **Interactive Day Details — complete (PRs #52–#66):** accessible crowded-day modal and the final one-event-plus-overflow-card presentation.
-- **Printable Monthly Calendar — complete (PRs #67–#68):** dedicated print document, reliable one-page landscape output, and a restrained on-page Print control.
-- **Calendar Integration — complete (PRs #69–#72):** individual-occurrence Apple Calendar, Google Calendar, and ICS actions with branded, responsive controls.
-- **Event Images — complete (PR #73):** optional Media Library images in Calendar Manager and standard public event details without cluttering compact calendar views.
-- **Today at Surfside — in review (PR #74):** adds a `[surfside_today]` shortcode for homepage and other public placements. On service days it includes service information and the current sermon title; on other days it shows today’s events or the next upcoming event.
-
-### Interactive Day Details decisions
+### Calendar Experience decisions
 
 - Show one normal event card plus an overflow card on dates with three or more events.
-- Display the overflow card as `N more events` and `Tap to view →`.
-- Use a modal rather than inline expansion.
-- Display all events for the selected date in the modal.
-- Keep every event clickable and connected to the standard event-detail modal.
-- Support Escape, click-outside closing, keyboard focus containment, and focus return.
-- Reserve the dedicated full-day page as a future enhancement.
-
-### Calendar Integration decisions
-
-- Export the individual occurrence the visitor opened, not an entire recurring series.
-- Offer Apple Calendar, Google Calendar, and standards-based ICS download actions.
-- Include title, occurrence date, time, description, and location details when available.
-- Treat events without a start time as all-day events.
-- Keep calendar actions inside the standard event-details modal so compact month cells and Day Details remain uncluttered.
-
-### Event Images decisions
-
-- Make the image optional for every event.
-- Let staff choose, replace, or remove an image from the front-end Calendar Manager.
-- Reuse the WordPress Media Library rather than creating a separate upload system.
-- Show images in standard public event-detail modals.
-- Keep images out of compact monthly calendar cells and crowded-day lists.
-- Use the attachment alt text when available and fall back to the event title.
-
-### Today at Surfside decisions
-
-- Provide a reusable `[surfside_today]` shortcode suitable for the homepage or other public pages.
-- Use the site timezone and native recurring-event occurrence engine.
+- Display all events for a selected crowded day in an accessible modal.
+- Export the individual occurrence a visitor opened rather than an entire recurring series.
+- Offer Apple Calendar, Google Calendar, and standards-based ICS actions.
+- Make event imagery optional and keep it out of compact monthly cells and crowded-day lists.
+- Use the site timezone and the native recurring-event engine for `[surfside_today]`.
 - Treat Saturday at 6:00 PM and Sunday at 9:45 AM as service-day defaults while keeping the schedule filterable.
 - Show the current sermon title on service days when one has been published.
-- Show all events scheduled today; when there are none on a non-service day, show the next upcoming event.
-- Reuse optional event images in the larger Today at Surfside cards without adding them to compact calendar cells.
-- Include a configurable link to the full calendar.
+- Keep the dashboard focused on actionable status and management links rather than a prominent activity feed.
 
-### Success criteria
+### Calendar Experience success criteria
 
 - Busy calendar days remain readable without hiding events.
 - Monthly calendar interaction is accessible by keyboard and touch.
@@ -132,6 +103,12 @@ Improve the public calendar so visitors can explore busy days, print a useful mo
 - Event imagery improves discovery without cluttering compact views.
 - The homepage can automatically show what is happening today.
 - The milestone creates a reusable foundation for a future dedicated day page.
+
+## Current direction
+
+### Release preparation
+
+After PR #75 is merged and deployed, verify the final dashboard layout and Sunday behavior of `[surfside_today]`, then issue the next minor Surfside Tools release.
 
 ## Future milestone direction
 
