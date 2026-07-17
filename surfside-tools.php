@@ -22,6 +22,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-simple-overflow-layout.php
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-print.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-integration.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-action-branding.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-event-images.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestions.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-duplicates.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-completion.php';
