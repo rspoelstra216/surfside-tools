@@ -1,5 +1,133 @@
 # Changelog
 
+## [2.2.0] - 2026-07-17
+
+### Added
+
+- Optional event images in Calendar Manager and public event details. ([#73](https://github.com/rspoelstra216/surfside-tools/pull/73))
+- `[surfside_today]` public shortcode for service information, today’s events, and the next upcoming event. ([#74](https://github.com/rspoelstra216/surfside-tools/pull/74))
+- Optional shortcode attributes for `title`, `events_url`, and `show_link="no"`. ([#74](https://github.com/rspoelstra216/surfside-tools/pull/74))
+
+### Improved
+
+- Project documentation now reflects release 2.1.0, Calendar Experience, and Calendar Integration completion across PRs #69–#72. ([#73](https://github.com/rspoelstra216/surfside-tools/pull/73))
+- Event images can now support discovery in the larger Today at Surfside cards. ([#74](https://github.com/rspoelstra216/surfside-tools/pull/74))
+- Calendar Experience documentation now marks Event Images complete in PR #73 and Today at Surfside in review in PR #74. ([#74](https://github.com/rspoelstra216/surfside-tools/pull/74))
+- Dashboard language now consistently describes the Calendar as a management workflow. ([#75](https://github.com/rspoelstra216/surfside-tools/pull/75))
+- The dashboard is more focused and less cluttered, with actionable Website Status flowing directly into Quick Actions. ([#75](https://github.com/rspoelstra216/surfside-tools/pull/75))
+- ### Removed ([#75](https://github.com/rspoelstra216/surfside-tools/pull/75))
+- The prominent Recent Activity feed from the main Staff Dashboard. ([#75](https://github.com/rspoelstra216/surfside-tools/pull/75))
+- ### Documentation ([#75](https://github.com/rspoelstra216/surfside-tools/pull/75))
+- Calendar Experience is recorded as complete through PR #75. ([#75](https://github.com/rspoelstra216/surfside-tools/pull/75))
+- Release preparation now calls for final dashboard verification and Sunday testing of `[surfside_today]`. ([#75](https://github.com/rspoelstra216/surfside-tools/pull/75))
+
+### Fixed
+
+- Removed stale README and roadmap references to Dashboard Intelligence as the active phase. ([#73](https://github.com/rspoelstra216/surfside-tools/pull/73))
+- Removed the stale roadmap status that still described Event Images as in progress after PR #73 merged. ([#74](https://github.com/rspoelstra216/surfside-tools/pull/74))
+
+### Additional Changes
+
+### Refresh development roadmap ([#51](https://github.com/rspoelstra216/surfside-tools/pull/51))
+
+- Documentation update for the current release and next milestone.
+
+### Add interactive monthly calendar day details ([#52](https://github.com/rspoelstra216/surfside-tools/pull/52))
+
+- Begins Milestone 7 — Calendar Experience by replacing crowded monthly-calendar cells with an interactive, accessible day-details experience.
+
+### Fix missing monthly calendar overflow button ([#53](https://github.com/rspoelstra216/surfside-tools/pull/53))
+
+- Fixes the missing `+N more events` control introduced with PR #52.
+
+### Fix clipped monthly calendar overflow controls ([#54](https://github.com/rspoelstra216/surfside-tools/pull/54))
+
+- Fixes the actual cause of the partially hidden `+N more events` button: busy monthly-calendar rows were not growing tall enough to contain two event cards plus the overflow action.
+
+### Fix monthly calendar horizontal clipping ([#55](https://github.com/rspoelstra216/surfside-tools/pull/55))
+
+- Fixes the monthly calendar being cut off along the right edge when it breaks out of the theme's narrow content column.
+
+### Refine monthly calendar width and event text wrapping ([#56](https://github.com/rspoelstra216/surfside-tools/pull/56))
+
+- Corrects the overly wide monthly calendar introduced by PR #55 and makes long event text wrap within each day cell instead of being clipped.
+
+### Consolidate monthly calendar width rules ([#57](https://github.com/rspoelstra216/surfside-tools/pull/57))
+
+- Corrects the monthly calendar remaining too wide after PR #56 by removing the competing full-viewport rule and establishing one authoritative width definition.
+
+### Reset monthly calendar layout while preserving Day Details ([#58](https://github.com/rspoelstra216/surfside-tools/pull/58))
+
+- Restore the v2.1.0 monthly calendar layout while keeping the interactive Day Details feature from PR #52.
+
+### Fit calendar overflow controls inside fixed day cells ([#59](https://github.com/rspoelstra216/surfside-tools/pull/59))
+
+- Preserves the restored v2.1.0 calendar dimensions while making the `+N more events` action visible inside the original fixed-height day cell.
+
+### Keep +N control in the third overflow row ([#60](https://github.com/rspoelstra216/surfside-tools/pull/60))
+
+- Fixes the remaining issue where overflow days switched to compact event rows but the `+N more events` control was still hidden.
+
+### Simplify crowded calendar days ([#61](https://github.com/rspoelstra216/surfside-tools/pull/61))
+
+- Replaces the compressed three-row overflow treatment with a simpler, consistent monthly-calendar pattern.
+
+### Keep crowded-day overflow action visible ([#62](https://github.com/rspoelstra216/surfside-tools/pull/62))
+
+- Fixes the remaining issue where crowded calendar days show the first normal event card but hide the `View N more →` action.
+
+### Load crowded-day calendar layout at the correct time ([#63](https://github.com/rspoelstra216/surfside-tools/pull/63))
+
+- Fixes the reason `View 3 more →` still did not appear after PR #62.
+
+### Render crowded-day overflow as a normal calendar card ([#64](https://github.com/rspoelstra216/surfside-tools/pull/64))
+
+- Stops treating `View N more →` as a special standalone control and renders it with the same card structure already used successfully by normal calendar events.
+
+### Render crowded-day overflow card on the server ([#65](https://github.com/rspoelstra216/surfside-tools/pull/65))
+
+- Restores the overflow action as server-rendered calendar markup instead of trying to reconstruct it later with JavaScript.
+
+### Polish crowded-day overflow card ([#66](https://github.com/rspoelstra216/surfside-tools/pull/66))
+
+- Refines the now-working crowded-day overflow card into the agreed two-line presentation:
+- `3 more events`
+- `Tap to view →`
+
+### Add printable monthly calendar ([#67](https://github.com/rspoelstra216/surfside-tools/pull/67))
+
+- Adds a dedicated print experience to `[surfside_month_calendar]` without changing the interactive calendar layout.
+
+### Polish printable calendar output ([#68](https://github.com/rspoelstra216/surfside-tools/pull/68))
+
+- Fixes the printable-calendar output after reviewing the live six-page PDF and makes the on-page Print control less visually prominent.
+
+### Add personal calendar integration ([#69](https://github.com/rspoelstra216/surfside-tools/pull/69))
+
+- Adds personal-calendar actions to public Surfside event details for the exact occurrence a visitor opened.
+
+### Rename calendar download action ([#70](https://github.com/rspoelstra216/surfside-tools/pull/70))
+
+- Rename the public event action from **Download ICS** to **Download Calendar**.
+- Keep the existing `.ics` download behavior unchanged.
+- This is a small follow-up to PR #69 so the calendar option is clearer to visitors.
+
+### Add friendly branded calendar actions ([#71](https://github.com/rspoelstra216/surfside-tools/pull/71))
+
+- Rename the event actions to **Add to Apple Calendar**, **Add to Google Calendar**, and **Download Calendar**.
+- Add an Apple logo, a Google Calendar-style brand icon, and a download icon.
+- Add subtle Apple, Google, and Surfside-branded hover/focus colors.
+- Keep the existing button sizing and calendar behavior unchanged.
+- This is a visual follow-up to PR #70.
+
+### Tighten calendar action layout ([#72](https://github.com/rspoelstra216/surfside-tools/pull/72))
+
+- Rename **Download Calendar** to **Download Event**.
+- Keep all three calendar actions on one row on desktop-sized event cards.
+- Reduce horizontal padding, icon spacing, and desktop label size to remove excess dead space.
+- Preserve the existing mobile stacked layout, branding, icons, and calendar behavior.
+- This is a focused layout follow-up to PR #71.
+
 ## [2.1.0] - 2026-07-15
 
 ### Additional Changes
