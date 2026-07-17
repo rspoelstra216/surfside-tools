@@ -320,7 +320,7 @@ function surfside_tools_calendar_integration_assets() {
 
                 addAction(actions, 'Apple Calendar', actionUrl('ics', eventId, date, 'apple'), false);
                 addAction(actions, 'Google Calendar', actionUrl('google', eventId, date, ''), true);
-                addAction(actions, 'Download ICS', actionUrl('ics', eventId, date, 'download'), false);
+                addAction(actions, 'Download Calendar', actionUrl('ics', eventId, date, 'download'), false);
 
                 card.appendChild(actions);
                 modal.dataset.surfsideCalendarActions = '1';
