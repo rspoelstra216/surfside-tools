@@ -4,13 +4,13 @@ This is the concise entry point for current Surfside Tools development. For arch
 
 ## Current version
 
-**2.1.0** — released July 2026
+**2.2.0** — released July 17, 2026
 
-Version 2.1 completes Dashboard Intelligence and gives church staff a concise, actionable overview of weekly content, calendar activity, homepage photos, and settings health.
+Version 2.2 completes Calendar Experience with accessible crowded-day details, printable monthly calendars, personal-calendar actions, optional event images, the `[surfside_today]` shortcode, and final dashboard cleanup.
 
 ## Project vision
 
-Surfside Tools should let church staff perform routine website maintenance through clear front-end workflows without needing WordPress Admin, while giving visitors a useful and accessible public website experience.
+Surfside Tools should let church staff perform routine website maintenance through clear front-end workflows without needing WordPress Admin, while giving visitors useful and accessible public website experiences.
 
 ## Design principles
 
@@ -23,98 +23,53 @@ Surfside Tools should let church staff perform routine website maintenance throu
 - Build focused, testable pull requests.
 - Avoid adding dashboard information that is not clearly actionable.
 - Favor accessible public experiences that work well on desktop and mobile.
+- Move reusable public experiences into version-controlled plugin shortcodes instead of maintaining substantial page-specific CSS.
 
 ## Completed milestones
 
-### Milestone 1 — Weekly Update Foundation
-
-- DOCX upload and parsing
-- Announcement publishing
-- Sermon-note publishing
-
-### Milestone 2 — Native Calendar
-
-- Calendar Manager
-- Recurring events
-- Public calendar views
-- Meeting-location support
-
-### Milestone 3 — Google Places Integration
-
-- Google Places search
-- Saved Places
-- Address and location reuse
-
-### Milestone 4 — Staff Dashboard
-
-- Front-end management interface
-- Weekly Update, Calendar, Manage Homepage, and Settings workflows
-
-### Milestone 5 — Platform Consolidation
-
-**Released as 2.0.0**
-
-- Homepage carousel management
-- Front-end Settings
-- Reveal and countdown utilities
-- Visual CSS controls
-- Retirement of routine Simple Calendar, ACF carousel, and Code Snippets dependencies
-
-### Milestone 6 — Dashboard Intelligence
-
-**Released as 2.1.0**
-
-- Website Status cards
-- Actionable summary alerts
-- Weekly freshness detection
-- Thirty-day calendar intelligence
-- Homepage and settings health
-- Context-aware actions
-- Desktop and mobile dashboard polish
-
-### Milestone 7 — Calendar Experience
-
-**Complete through PR #75; awaiting the next minor release**
-
-- **Interactive Day Details (PRs #52–#66):** accessible crowded-day modal and the final one-event-plus-overflow-card presentation.
-- **Printable Monthly Calendar (PRs #67–#68):** dedicated print document, reliable one-page landscape output, and a restrained on-page Print control.
-- **Calendar Integration (PRs #69–#72):** individual-occurrence Apple Calendar, Google Calendar, and ICS actions with branded, responsive controls.
-- **Event Images (PR #73):** optional Media Library images in Calendar Manager and standard public event details without cluttering compact calendar views.
-- **Today at Surfside (PR #74):** reusable `[surfside_today]` display for service information, today’s events, or the next upcoming event.
-- **Dashboard cleanup (PR #75):** clearer Manage Calendar actions and removal of the prominent Recent Activity feed.
-
-### Calendar Experience decisions
-
-- Show one normal event card plus an overflow card on dates with three or more events.
-- Display all events for a selected crowded day in an accessible modal.
-- Export the individual occurrence a visitor opened rather than an entire recurring series.
-- Offer Apple Calendar, Google Calendar, and standards-based ICS actions.
-- Make event imagery optional and keep it out of compact monthly cells and crowded-day lists.
-- Use the site timezone and the native recurring-event engine for `[surfside_today]`.
-- Treat Saturday at 6:00 PM and Sunday at 9:45 AM as service-day defaults while keeping the schedule filterable.
-- Show the current sermon title on service days when one has been published.
-- Keep the dashboard focused on actionable status and management links rather than a prominent activity feed.
-
-### Calendar Experience success criteria
-
-- Busy calendar days remain readable without hiding events.
-- Monthly calendar interaction is accessible by keyboard and touch.
-- Visitors can print and save calendar information without manual copying.
-- Event imagery improves discovery without cluttering compact views.
-- The homepage can automatically show what is happening today.
-- The milestone creates a reusable foundation for a future dedicated day page.
+- Milestone 1 — Weekly Update Foundation
+- Milestone 2 — Native Calendar
+- Milestone 3 — Google Places
+- Milestone 4 — Staff Dashboard
+- Milestone 5 — Platform Consolidation, released as 2.0.0
+- Milestone 6 — Dashboard Intelligence, released as 2.1.0
+- Milestone 7 — Calendar Experience, released as 2.2.0
 
 ## Current direction
 
-### Release preparation
+### Milestone 8 — Church Portal
 
-After PR #75 is merged and deployed, verify the final dashboard layout and Sunday behavior of `[surfside_today]`, then issue the next minor Surfside Tools release.
+Move the public church portal into Surfside Tools through a plugin-owned `[surfside_portal]` shortcode.
 
-## Future milestone direction
+The shortcode will preserve the current portal hierarchy:
 
-### Website Management
+- A prominent full-width Live Slides destination
+- First Time Here
+- Message Notes
+- Announcements
+- This Week's Events
+- Prayer Request
+- Ministry Opportunities
+- Give Online
+- Explore Surfside
 
-Website Management remains planned for a later milestone. Potential areas include homepage hero content, featured events, ministry highlights, service information, livestream links, staff information, and other frequently updated content that clearly benefits from a dedicated front-end workflow.
+The existing site header, welcome image, and footer remain outside the shortcode. The shortcode will own the portal cards, responsive layout, interaction states, and supporting CSS.
+
+Work will proceed through focused pull requests covering the portal foundation, weekly-content integration, calendar integration, service-day behavior, portal settings, and final migration and CSS cleanup.
+
+### Milestone 8 success criteria
+
+- The Portal page is rendered by a single shortcode.
+- The current destinations and familiar visual hierarchy are preserved.
+- Weekly content and calendar data are reused rather than duplicated.
+- The layout works well on desktop and mobile.
+- Obsolete portal-specific CSS is removed only after live verification.
+
+## Planned direction
+
+### Milestone 9 — Website Management
+
+After the portal migration, expand Surfside Tools front-end management to additional high-value website content such as homepage hero content, service times and locations, featured events, ministry highlights, staff information, livestream destinations, giving content, footer information, and contact details.
 
 ## Release history
 
@@ -124,6 +79,7 @@ Website Management remains planned for a later milestone. Potential areas includ
 | 1.5.0 | Major feature expansion |
 | 2.0.0 | Platform Consolidation |
 | 2.1.0 | Dashboard Intelligence |
+| 2.2.0 | Calendar Experience |
 
 ## Development workflow
 
@@ -141,5 +97,6 @@ Website Management remains planned for a later milestone. Potential areas includ
 - `README.md` — product overview and documentation links
 - `DEVELOPMENT.md` — current version, completed milestones, and active development direction
 - `docs/DEVELOPMENT.md` — detailed living handbook
+- `docs/ROADMAP.md` — concise milestone roadmap and delivery plan
 - `CHANGELOG.md` — official release history generated by the release workflow
 - GitHub Releases — versioned notes and installable ZIP packages
