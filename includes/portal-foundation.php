@@ -97,17 +97,15 @@ function surfside_tools_portal_assets() {
     wp_register_style('surfside-tools-portal', false, array(), SURFSIDE_TOOLS_VERSION);
     wp_enqueue_style('surfside-tools-portal');
     wp_add_inline_style('surfside-tools-portal', '
-        .surfside-portal{--surfside-portal-navy:#071b3a;--surfside-portal-blue:#0b4f9c;width:100%!important;max-width:900px!important;margin-left:auto!important;margin-right:auto!important;padding:clamp(16px,3vw,28px) 0;color:var(--surfside-portal-navy);transform:none}
-        .surfside-portal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-        .surfside-portal-card{display:flex;min-width:0;min-height:230px;color:inherit!important;text-decoration:none!important;border:1px solid rgba(7,27,58,.06);border-radius:20px;background:#fff;box-shadow:0 10px 28px rgba(7,27,58,.09);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
-        .surfside-portal-card.is-featured{grid-column:1/-1;min-height:230px}
-        .surfside-portal-card:hover{transform:translateY(-3px);border-color:rgba(11,79,156,.22);box-shadow:0 16px 34px rgba(7,27,58,.13)}
+        .surfside-portal-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;width:100%!important;max-width:900px!important;margin:0 auto!important;padding:clamp(16px,3vw,28px) 0;color:#071b3a}
+        .surfside-portal-card{display:block;min-width:0;min-height:175px;padding:28px 22px;border-radius:18px;background:#fff;color:inherit!important;text-align:center;text-decoration:none!important;box-shadow:0 4px 18px rgba(0,0,0,.08);transition:transform .18s ease,box-shadow .18s ease}
+        .surfside-portal-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.12)}
         .surfside-portal-card:focus-visible{outline:4px solid rgba(11,79,156,.28);outline-offset:4px}
-        .surfside-portal-card-content{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:clamp(28px,5vw,48px) clamp(22px,4vw,42px);text-align:center}
-        .surfside-portal-icon{display:block;margin-bottom:16px;font-size:30px;line-height:1}
-        .surfside-portal-card h2{margin:0;color:var(--surfside-portal-navy);font-size:clamp(28px,3vw,36px);line-height:1.12;letter-spacing:-.035em}
-        .surfside-portal-card p{max-width:720px;margin:10px auto 0;color:#111827;font-size:clamp(17px,2vw,20px);line-height:1.45}
-        @media(max-width:700px){.surfside-portal{padding-inline:4px}.surfside-portal-grid{grid-template-columns:1fr;gap:14px}.surfside-portal-card,.surfside-portal-card.is-featured{grid-column:auto;min-height:190px}.surfside-portal-card-content{padding:30px 22px}.surfside-portal-card h2{font-size:28px}.surfside-portal-card p{font-size:17px}}
+        .surfside-portal-card.featured{grid-column:1/-1;background:#fff;text-align:center}
+        .surfside-portal-card h3{margin:8px 0 6px;color:#071b3a;font-size:clamp(28px,3vw,36px);line-height:1.12;letter-spacing:-.035em}
+        .surfside-portal-card p{margin:0;color:#111827;font-size:clamp(17px,2vw,20px);line-height:1.45}
+        .portal-icon{font-size:2rem;line-height:1}
+        @media(max-width:600px){.surfside-portal-grid{grid-template-columns:1fr}.surfside-portal-card{min-height:175px}.surfside-portal-card h3{font-size:28px}.surfside-portal-card p{font-size:17px}}
         @media(prefers-reduced-motion:reduce){.surfside-portal-card{transition:none}.surfside-portal-card:hover{transform:none}}
     ');
 }
@@ -134,8 +132,7 @@ function surfside_tools_portal_shortcode($atts = array()) {
 
     ob_start();
     ?>
-    <nav class="surfside-portal" aria-label="Surfside portal">
-        <div class="surfside-portal-grid">
+    <nav class="surfside-portal-grid" aria-label="Surfside portal">
             <?php foreach ($cards as $card) :
                 $url = trim((string) ($card['url'] ?? ''));
                 if ($url === '') {
@@ -143,17 +140,15 @@ function surfside_tools_portal_shortcode($atts = array()) {
                 }
                 $classes = 'surfside-portal-card';
                 if (!empty($card['featured'])) {
-                    $classes .= ' is-featured';
+                    $classes .= ' featured';
                 }
                 ?>
                 <a class="<?php echo esc_attr($classes); ?>" href="<?php echo esc_url($url); ?>" data-portal-card="<?php echo esc_attr($card['key'] ?? ''); ?>">
-                    <span class="surfside-portal-card-content">
-                        <span class="surfside-portal-icon" aria-hidden="true"><?php echo esc_html($card['icon'] ?? ''); ?></span>
-                        <h2><?php echo esc_html($card['title'] ?? ''); ?></h2>
-                        <?php if (!empty($card['description'])) : ?>
-                            <p><?php echo esc_html($card['description']); ?></p>
-                        <?php endif; ?>
-                    </span>
+                    <div class="portal-icon" aria-hidden="true"><?php echo esc_html($card['icon'] ?? ''); ?></div>
+                    <h3><?php echo esc_html($card['title'] ?? ''); ?></h3>
+                    <?php if (!empty($card['description'])) : ?>
+                        <p><?php echo esc_html($card['description']); ?></p>
+                    <?php endif; ?>
                 </a>
             <?php endforeach; ?>
         </div>
