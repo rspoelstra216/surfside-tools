@@ -5,7 +5,7 @@ Surfside Tools is a custom WordPress website-management platform built for Surfs
 It gives church staff clear front-end workflows for weekly publishing, calendar management, homepage photos, locations, and settings without requiring routine access to WordPress administration.
 
 **Current release:** `2.2.0`  
-**Current development phase:** Milestone 8 — Church Portal
+**Current development phase:** Milestone 9 — Website Management
 
 ## Guiding principle
 
@@ -53,6 +53,16 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - Apple Calendar, Google Calendar, and downloadable event actions
 - Event images in standard event details without cluttering compact month cells
 - Automatic Today at Surfside summary for service days, today’s events, or the next upcoming event
+
+### Church Portal
+
+- Plugin-owned `[surfside_portal]` visitor launcher
+- Full-width Live Slides destination with connection-instructions routing
+- Responsive two-column desktop and single-column mobile card layout
+- Plugin-rendered Message Notes and Announcements dialogs
+- Native seven-day event dialog
+- Accessible keyboard focus, native dialog behavior, scroll containment, and reduced-motion support
+- Portal markup and styling version-controlled inside Surfside Tools
 
 ### Manage Homepage
 
@@ -104,6 +114,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - `[surfside_this_week]`
 - `[surfside_month_calendar]`
 - `[surfside_today]`
+- `[surfside_portal]`
 
 `[surfside_today]` supports optional `title`, `events_url`, and `show_link="no"` attributes.
 
@@ -155,7 +166,7 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 
 ## Roadmap
 
-### Completed through 2.2.0
+### Completed through Milestone 8
 
 - Milestone 1 — Weekly Update Foundation
 - Milestone 2 — Native Calendar
@@ -164,13 +175,12 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 - Milestone 5 — Platform Consolidation
 - Milestone 6 — Dashboard Intelligence
 - Milestone 7 — Calendar Experience
+- Milestone 8 — Church Portal
 
-### Current: Milestone 8 — Church Portal
+Milestone 8 is complete through PR #83 and is planned for the next minor release.
 
-The next phase moves the public church portal into Surfside Tools through a plugin-owned `[surfside_portal]` shortcode. The shortcode will preserve the portal's current visitor pathways while replacing page-specific custom markup and CSS with a responsive, version-controlled plugin experience.
+### Current: Milestone 9 — Website Management
 
-### Planned: Milestone 9 — Website Management
+The next phase expands Surfside Tools front-end management to additional high-value website content such as service information, homepage content, livestream destinations, staff details, giving information, and contact details.
 
-After the portal migration, Surfside Tools will expand front-end management to additional high-value website content such as service information, homepage content, livestream destinations, staff details, giving information, and contact details.
-
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the portal scope, migration plan, future Website Management candidates, and organized backlog.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for current Website Management candidates and the organized backlog.
