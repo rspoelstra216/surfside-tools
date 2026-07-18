@@ -53,7 +53,8 @@ function surfside_tools_portal_cards($atts = array()) {
             'title' => 'This Week’s Events',
             'description' => 'See what’s happening at Surfside over the next seven days.',
             'icon' => '📅',
-            'url' => (string) ($atts['events_url'] ?? surfside_tools_portal_url('events/')),
+            'url' => '#',
+            'dialog' => 'this-week',
         ),
         array(
             'key' => 'prayer',
@@ -182,6 +183,14 @@ function surfside_tools_portal_shortcode($atts = array()) {
             <button type="button" class="surfside-portal-dialog-close" data-dialog-close>Close</button>
         </div>
         <div class="surfside-portal-dialog-body"><?php echo do_shortcode('[surfside_tools_announcements]'); ?></div>
+    </dialog>
+
+    <dialog id="<?php echo esc_attr($portal_id . '-this-week'); ?>" class="surfside-portal-dialog" aria-labelledby="<?php echo esc_attr($portal_id . '-this-week-title'); ?>">
+        <div class="surfside-portal-dialog-header">
+            <h2 id="<?php echo esc_attr($portal_id . '-this-week-title'); ?>">This Week’s Events</h2>
+            <button type="button" class="surfside-portal-dialog-close" data-dialog-close>Close</button>
+        </div>
+        <div class="surfside-portal-dialog-body"><?php echo do_shortcode('[surfside_this_week]'); ?></div>
     </dialog>
 
     <script>
