@@ -34,42 +34,33 @@ Surfside Tools should let church staff perform routine website maintenance throu
 - Milestone 5 — Platform Consolidation, released as 2.0.0
 - Milestone 6 — Dashboard Intelligence, released as 2.1.0
 - Milestone 7 — Calendar Experience, released as 2.2.0
+- Milestone 8 — Church Portal, complete through PR #83 and awaiting the next minor release
 
-## Current direction
+## Completed direction
 
 ### Milestone 8 — Church Portal
 
-Move the public church portal into Surfside Tools through a plugin-owned `[surfside_portal]` shortcode.
+The public church portal is now rendered through the plugin-owned `[surfside_portal]` shortcode.
 
-The shortcode will preserve the current portal hierarchy:
+Delivered through PRs #78–#83:
 
-- A prominent full-width Live Slides destination
-- First Time Here
-- Message Notes
-- Announcements
-- This Week's Events
-- Prayer Request
-- Ministry Opportunities
-- Give Online
-- Explore Surfside
+- The established nine-card portal hierarchy and visual presentation
+- Responsive desktop and mobile layouts
+- Plugin-rendered Message Notes and Announcements dialogs
+- Native This Week calendar dialog
+- Prayer Request routing to the Contact section
+- Live Slides routing through the public Wi-Fi instructions page
+- Accessible keyboard, dialog, scrolling, and reduced-motion behavior
 
-The existing site header, welcome image, and footer remain outside the shortcode. The shortcode will own the portal cards, responsive layout, interaction states, and supporting CSS.
+The Portal page retains its site header, welcome image, and footer outside the shortcode. Portal launcher markup, interaction, and CSS now belong to Surfside Tools.
 
-Work will proceed through focused pull requests covering the portal foundation, weekly-content integration, calendar integration, service-day behavior, portal settings, and final migration and CSS cleanup.
-
-### Milestone 8 success criteria
-
-- The Portal page is rendered by a single shortcode.
-- The current destinations and familiar visual hierarchy are preserved.
-- Weekly content and calendar data are reused rather than duplicated.
-- The layout works well on desktop and mobile.
-- Obsolete portal-specific CSS is removed only after live verification.
-
-## Planned direction
+## Current direction
 
 ### Milestone 9 — Website Management
 
-After the portal migration, expand Surfside Tools front-end management to additional high-value website content such as homepage hero content, service times and locations, featured events, ministry highlights, staff information, livestream destinations, giving content, footer information, and contact details.
+Expand Surfside Tools front-end management to additional high-value website content such as homepage hero content, service times and locations, featured events, ministry highlights, staff information, livestream destinations, giving content, footer information, and contact details.
+
+The exact feature order will continue to be defined one focused pull request at a time.
 
 ## Release history
 
