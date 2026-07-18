@@ -7,7 +7,7 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 ## Current release
 
 **Version:** `2.2.0`  
-**Current milestone:** Milestone 8 — Website Management
+**Current milestone:** Milestone 9 — Website Management
 
 ## Completed milestones
 
@@ -18,52 +18,38 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 - ✅ Milestone 5 — Platform Consolidation
 - ✅ Milestone 6 — Dashboard Intelligence
 - ✅ Milestone 7 — Calendar Experience
+- ✅ Milestone 8 — Church Portal
 
 Milestone 7 was completed in version 2.2.0 with interactive crowded-day details, printable monthly calendars, Apple and Google Calendar actions, downloadable events, optional event images, the `[surfside_today]` shortcode, and final dashboard cleanup.
 
-## Current milestone
+## Completed milestone
 
 ### Milestone 8 — Church Portal
 
-Move the public church portal into Surfside Tools through a plugin-owned `[surfside_portal]` shortcode. The goal is to replace the portal page's substantial custom markup and CSS with a responsive, accessible, version-controlled experience while preserving its familiar visitor pathways.
+Milestone 8 moved the public church portal into Surfside Tools through a plugin-owned `[surfside_portal]` shortcode.
 
-The WordPress Portal page should ultimately contain only the shortcode. The existing site header, welcome image, and footer remain page or theme content outside the shortcode.
+Delivered through PRs #78–#83:
 
-### Current portal inventory
+- Portal foundation with the existing nine-destination hierarchy
+- Plugin-owned portal markup and established card styling
+- Responsive two-column desktop and single-column mobile layouts
+- Message Notes and Announcements rendered in accessible dialogs
+- Native This Week events rendered in a portal dialog
+- Prayer Request routing to the Contact section
+- Live Slides routing through the public Wi-Fi instructions page
+- Keyboard focus, native dialog behavior, scroll containment, and reduced-motion support
 
-- A prominent full-width **Live Slides** card
-- **First Time Here**
-- **Message Notes**
-- **Announcements**
-- **This Week's Events**
-- **Prayer Request**
-- **Ministry Opportunities**
-- **Give Online**
-- **Explore Surfside**
+The Portal page can now use a single shortcode for its launcher. The site header, welcome image, and footer remain page or theme content outside the shortcode.
 
-On wider screens, the eight standard destinations use a two-column card grid. The layout must collapse cleanly on mobile and keep each complete card as a clear interactive target.
+### Milestone 8 outcome
 
-### Planned delivery
+- Routine portal layout changes no longer require page-specific HTML or CSS.
+- Weekly content and events reuse existing Surfside Tools sources.
+- Visitors remain inside the mobile-focused portal for notes, announcements, and this week's events.
+- The established visual hierarchy is preserved across desktop and mobile.
+- Portal behavior is version-controlled and deployable through the normal GitHub workflow.
 
-Build and verify the portal through focused pull requests:
-
-1. **Portal foundation** — Add `[surfside_portal]`, reproduce the current card hierarchy and responsive layout, and preserve existing destinations.
-2. **Weekly content integration** — Connect Message Notes and Announcements to the content already published through Surfside Tools.
-3. **Calendar integration** — Connect This Week's Events to the native Surfside calendar.
-4. **Service-day experience** — Reuse the native calendar and service-day intelligence where it improves the portal without cluttering the launcher.
-5. **Portal settings** — Provide front-end configuration for destinations that cannot be derived automatically, including Live Slides.
-6. **Migration and cleanup** — Replace the Portal page content with `[surfside_portal]`, verify desktop and mobile behavior, and remove obsolete portal-specific CSS only after the shortcode is confirmed live.
-
-### Success criteria
-
-- The Portal page is rendered by a single shortcode.
-- Routine portal changes do not require editing page-specific HTML or CSS.
-- Existing visitor destinations remain available throughout migration.
-- Weekly content and events come from their existing Surfside Tools sources rather than duplicated markup.
-- The portal remains recognizable, accessible, responsive, and easy to use on a phone during worship.
-- The old custom portal CSS is removed only after the replacement is deployed and verified.
-
-## Planned milestone
+## Current milestone
 
 ### Milestone 9 — Website Management
 
