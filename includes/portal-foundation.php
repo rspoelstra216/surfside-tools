@@ -151,7 +151,6 @@ function surfside_tools_portal_shortcode($atts = array()) {
                     <?php endif; ?>
                 </a>
             <?php endforeach; ?>
-        </div>
     </nav>
     <?php
     return ob_get_clean();
