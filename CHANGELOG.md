@@ -1,5 +1,54 @@
 # Changelog
 
+## [2.3.0] - 2026-07-18
+
+### Added
+
+- Documented the Church Portal milestone, current portal inventory, delivery sequence, success criteria, and durable implementation decisions. ([#77](https://github.com/rspoelstra216/surfside-tools/pull/77))
+- Added the `[surfside_portal]` public shortcode. ([#78](https://github.com/rspoelstra216/surfside-tools/pull/78))
+- Added the current nine-destination portal hierarchy. ([#78](https://github.com/rspoelstra216/surfside-tools/pull/78))
+- Added responsive one- and two-column card layouts. ([#78](https://github.com/rspoelstra216/surfside-tools/pull/78))
+- Added keyboard focus, hover, touch-friendly card targets, and reduced-motion handling. ([#78](https://github.com/rspoelstra216/surfside-tools/pull/78))
+- Added shortcode URL attributes and a filterable card definition. ([#78](https://github.com/rspoelstra216/surfside-tools/pull/78))
+- Captured the existing portal card CSS inside Surfside Tools. ([#80](https://github.com/rspoelstra216/surfside-tools/pull/80))
+- Added plugin-rendered Message Notes and Announcements dialogs to `[surfside_portal]`. ([#81](https://github.com/rspoelstra216/surfside-tools/pull/81))
+- Added full-screen mobile dialog presentation and centered desktop presentation. ([#81](https://github.com/rspoelstra216/surfside-tools/pull/81))
+- Added sticky dialog headers, prominent Close buttons, backdrop closing, scroll containment, and focus restoration. ([#81](https://github.com/rspoelstra216/surfside-tools/pull/81))
+- Added a This Week’s Events portal dialog using the native Surfside Tools calendar shortcode. ([#82](https://github.com/rspoelstra216/surfside-tools/pull/82))
+- Documented the completed Church Portal capability and durable implementation decisions. ([#84](https://github.com/rspoelstra216/surfside-tools/pull/84))
+- Added `[surfside_portal]` and the portal feature set to the product overview. ([#84](https://github.com/rspoelstra216/surfside-tools/pull/84))
+
+### Improved
+
+- Project documentation now reflects the released 2.2.0 codebase and the transition from Calendar Experience to Website Management. ([#76](https://github.com/rspoelstra216/surfside-tools/pull/76))
+- The changelog presents a concise release history instead of raw implementation-by-implementation detail. ([#76](https://github.com/rspoelstra216/surfside-tools/pull/76))
+- The roadmap now clearly separates completed milestones, current work, candidate Website Management areas, and future ideas. ([#76](https://github.com/rspoelstra216/surfside-tools/pull/76))
+- Moved Website Management to Milestone 9. ([#77](https://github.com/rspoelstra216/surfside-tools/pull/77))
+- Updated the concise development guide to version 2.2.0 and the current post-release direction. ([#77](https://github.com/rspoelstra216/surfside-tools/pull/77))
+- Aligned the README, roadmap, and detailed handbook around the portal-first plan. ([#77](https://github.com/rspoelstra216/surfside-tools/pull/77))
+- Expanded the portal to the intended desktop width without requiring page-level custom CSS. ([#79](https://github.com/rspoelstra216/surfside-tools/pull/79))
+- Matched the shortcode markup to the existing `surfside-portal-grid`, `surfside-portal-card`, `featured`, and `portal-icon` class structure. ([#80](https://github.com/rspoelstra216/surfside-tools/pull/80))
+- Preserved plugin accessibility enhancements while matching the current visual presentation. ([#80](https://github.com/rspoelstra216/surfside-tools/pull/80))
+- Kept weekly content inside the portal instead of navigating visitors to separate pages. ([#81](https://github.com/rspoelstra216/surfside-tools/pull/81))
+- Reused the existing Surfside Tools weekly-content sources directly. ([#81](https://github.com/rspoelstra216/surfside-tools/pull/81))
+- Kept the seven-day event view inside the mobile-focused portal instead of redirecting to the full Events page. ([#82](https://github.com/rspoelstra216/surfside-tools/pull/82))
+- Routed Live Slides through the public connection-instructions page. ([#83](https://github.com/rspoelstra216/surfside-tools/pull/83))
+- Moved Website Management from planned work to the current Milestone 9. ([#84](https://github.com/rspoelstra216/surfside-tools/pull/84))
+- Updated the roadmap, concise development guide, and detailed handbook to reflect the post-portal direction. ([#84](https://github.com/rspoelstra216/surfside-tools/pull/84))
+- Recorded the decision to route Live Slides through public Wi-Fi instructions instead of unreliable IP-based detection. ([#84](https://github.com/rspoelstra216/surfside-tools/pull/84))
+
+### Fixed
+
+- Removed outdated development status that still described Calendar Experience as awaiting release. ([#77](https://github.com/rspoelstra216/surfside-tools/pull/77))
+- Fixed the portal appearing substantially narrower than the existing portal layout inside the theme content container. ([#79](https://github.com/rspoelstra216/surfside-tools/pull/79))
+- Fixed the plugin-derived portal remaining narrow and left-aligned. ([#80](https://github.com/rspoelstra216/surfside-tools/pull/80))
+- Removed the unnecessary outer portal wrapper that WordPress treated as constrained content. ([#80](https://github.com/rspoelstra216/surfside-tools/pull/80))
+- Fixed Message Notes linking to the former Message Notes Entry workflow. ([#81](https://github.com/rspoelstra216/surfside-tools/pull/81))
+- Fixed Announcements linking to a missing page. ([#81](https://github.com/rspoelstra216/surfside-tools/pull/81))
+- Fixed Prayer Request so it targets the Contact section at `/contact/#Contact`. ([#81](https://github.com/rspoelstra216/surfside-tools/pull/81))
+- Fixed the portal bypassing required Wi‑Fi instructions by linking directly to the internal viewer. ([#83](https://github.com/rspoelstra216/surfside-tools/pull/83))
+- Corrected the roadmap's stale current-milestone label. ([#84](https://github.com/rspoelstra216/surfside-tools/pull/84))
+
 ## [2.2.0] - 2026-07-17
 
 ### Added
