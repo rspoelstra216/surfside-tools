@@ -22,6 +22,45 @@ function surfside_tools_today_service_schedule() {
     return apply_filters('surfside_tools_today_service_schedule', $schedule);
 }
 
+
+function surfside_tools_today_is_service_occurrence($event, $service, $weekday) {
+    $title = strtolower(trim((string) ($event['title'] ?? '')));
+    $start_time = trim((string) ($event['start_time'] ?? ''));
+    $service_time = trim((string) ($service['time'] ?? ''));
+
+    if ($title === '' || $start_time === '' || $service_time === '') {
+        return false;
+    }
+
+    if (strpos($title, 'service') === false && strpos($title, 'worship') === false) {
+        return false;
+    }
+
+    $weekday_names = array(6 => 'saturday', 7 => 'sunday');
+    $weekday_name = $weekday_names[$weekday] ?? '';
+    if ($weekday_name === '' || strpos($title, $weekday_name) === false) {
+        return false;
+    }
+
+    $event_timestamp = strtotime($start_time);
+    $service_timestamp = strtotime($service_time);
+    if (!$event_timestamp || !$service_timestamp) {
+        return false;
+    }
+
+    return date('H:i', $event_timestamp) === date('H:i', $service_timestamp);
+}
+
+function surfside_tools_today_remove_duplicate_service($events, $service, $weekday) {
+    if (!$service) {
+        return $events;
+    }
+
+    return array_values(array_filter((array) $events, function ($event) use ($service, $weekday) {
+        return !surfside_tools_today_is_service_occurrence($event, $service, $weekday);
+    }));
+}
+
 function surfside_tools_today_event_image($event) {
     $event_id = absint($event['id'] ?? 0);
     if (!$event_id || !has_post_thumbnail($event_id)) {
@@ -86,7 +125,7 @@ function surfside_tools_today_assets() {
     wp_add_inline_style('surfside-tools-today', '
         .surfside-today{--surfside-today-blue:#0b4f9c;--surfside-today-navy:#071b3a;display:grid;gap:18px;padding:clamp(22px,4vw,36px);border:1px solid rgba(7,27,58,.12);border-radius:22px;background:linear-gradient(145deg,#fff 0%,#f3f8ff 100%);box-shadow:0 14px 40px rgba(7,27,58,.08);color:#34425e}
         .surfside-today-header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px}.surfside-today-eyebrow{margin:0 0 5px;color:var(--surfside-today-blue);font-size:.82rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase}.surfside-today h2{margin:0;color:var(--surfside-today-navy);font-size:clamp(1.75rem,4vw,2.5rem);line-height:1.08}.surfside-today-date{margin:0;color:#5b667a;font-weight:700;white-space:nowrap}
-        .surfside-today-service{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;padding:18px;border-radius:16px;background:var(--surfside-today-navy);color:#fff}.surfside-today-service-time{display:grid;place-items:center;min-width:104px;min-height:74px;padding:10px;border-radius:13px;background:#fff;color:var(--surfside-today-blue);font-size:1.12rem;font-weight:900;text-align:center}.surfside-today-service h3{margin:0 0 4px;color:#fff;font-size:1.25rem}.surfside-today-service p{margin:0;color:rgba(255,255,255,.82)}.surfside-today-sermon{margin-top:8px!important;color:#fff!important;font-weight:800}
+        .surfside-today-service{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;padding:18px;border-radius:16px;background:var(--surfside-today-navy);color:#fff}.surfside-today-service-time{display:grid;place-items:center;min-width:104px;min-height:74px;padding:10px;border-radius:13px;background:#fff;color:var(--surfside-today-blue);font-size:1.12rem;font-weight:900;text-align:center}.surfside-today-service h3{margin:0 0 4px;color:#fff;font-size:1.25rem}.surfside-today-service p{margin:0;color:rgba(255,255,255,.82)}.surfside-today-sermon{margin-top:8px!important;color:#fff!important;font-weight:800}.surfside-today-sermon-link{color:#fff!important;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}.surfside-today-sermon-link:hover,.surfside-today-sermon-link:focus-visible{color:#fff!important;text-decoration-thickness:3px}.surfside-today-sermon-link:focus-visible{outline:3px solid rgba(255,255,255,.55);outline-offset:3px}
         .surfside-today-section-title{margin:0;color:var(--surfside-today-navy);font-size:1.05rem}.surfside-today-events{display:grid;gap:12px}.surfside-today-event{display:grid;grid-template-columns:minmax(0,1fr);overflow:hidden;border:1px solid rgba(7,27,58,.11);border-radius:15px;background:#fff}.surfside-today-event.has-image{grid-template-columns:minmax(150px,30%) minmax(0,1fr)}.surfside-today-event-media{min-height:150px;background:#eef2f7}.surfside-today-event-image{display:block;width:100%;height:100%;min-height:150px;object-fit:cover}.surfside-today-event-content{padding:17px}.surfside-today-event h3{margin:0 0 7px;color:var(--surfside-today-navy);font-size:1.14rem}.surfside-today-event-meta{display:flex;flex-wrap:wrap;gap:6px 12px;color:#46536a;font-size:.92rem;font-weight:700}.surfside-today-event-meta span+span:before{content:"•";margin-right:12px;color:#9aa5b5}.surfside-today-event p{margin:10px 0 0;line-height:1.5}
         .surfside-today-empty{margin:0;padding:16px;border-radius:14px;background:#fff;color:#5b667a}.surfside-today-link{justify-self:start;display:inline-flex;align-items:center;min-height:42px;padding:9px 14px;border-radius:9px;background:var(--surfside-today-blue);color:#fff!important;font-weight:800;text-decoration:none!important}.surfside-today-link:hover,.surfside-today-link:focus-visible{background:var(--surfside-today-navy)}.surfside-today-link:focus-visible{outline:3px solid rgba(11,79,156,.25);outline-offset:3px}
         @media(max-width:700px){.surfside-today-header{display:block}.surfside-today-date{margin-top:8px;white-space:normal}.surfside-today-service{grid-template-columns:1fr}.surfside-today-service-time{min-width:0;min-height:0;justify-self:start}.surfside-today-event.has-image{grid-template-columns:1fr}.surfside-today-event-media,.surfside-today-event-image{min-height:190px;max-height:240px}.surfside-today-event-meta{display:grid;gap:4px}.surfside-today-event-meta span+span:before{content:none;margin:0}}
@@ -104,6 +143,7 @@ function surfside_tools_today_shortcode($atts = array()) {
         'title' => 'Today at Surfside',
         'events_url' => '/events/',
         'show_link' => 'yes',
+        'message_url' => '/watch-live/',
     ), $atts, 'surfside_today');
 
     $timezone = wp_timezone();
@@ -113,6 +153,7 @@ function surfside_tools_today_shortcode($atts = array()) {
     $schedule = surfside_tools_today_service_schedule();
     $service = isset($schedule[$weekday]) && is_array($schedule[$weekday]) ? $schedule[$weekday] : null;
     $today_events = surfside_tools_calendar_get_occurrences($today, $today);
+    $today_events = surfside_tools_today_remove_duplicate_service($today_events, $service, $weekday);
     $next_events = array();
 
     if (!$service && empty($today_events)) {
@@ -126,6 +167,10 @@ function surfside_tools_today_shortcode($atts = array()) {
     $events_url = trim((string) $atts['events_url']);
     if ($events_url !== '' && strpos($events_url, 'http') !== 0) {
         $events_url = home_url('/' . ltrim($events_url, '/'));
+    }
+    $message_url = trim((string) $atts['message_url']);
+    if ($message_url !== '' && strpos($message_url, 'http') !== 0) {
+        $message_url = home_url('/' . ltrim($message_url, '/'));
     }
 
     ob_start();
@@ -145,7 +190,15 @@ function surfside_tools_today_shortcode($atts = array()) {
                 <div>
                     <h3><?php echo esc_html($service['label'] ?? 'Worship Service'); ?></h3>
                     <p>Join us for worship at Surfside Community Fellowship.</p>
-                    <?php if ($sermon_title !== '') : ?><p class="surfside-today-sermon">Today’s message: <?php echo esc_html($sermon_title); ?></p><?php endif; ?>
+                    <?php if ($sermon_title !== '') : ?>
+                        <p class="surfside-today-sermon">
+                            <?php if ($message_url !== '') : ?>
+                                <a class="surfside-today-sermon-link" href="<?php echo esc_url($message_url); ?>">Today’s message: <?php echo esc_html($sermon_title); ?></a>
+                            <?php else : ?>
+                                Today’s message: <?php echo esc_html($sermon_title); ?>
+                            <?php endif; ?>
+                        </p>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endif; ?>
