@@ -89,6 +89,9 @@ function surfside_tools_today_render_event($event, $show_date = false) {
     $image = surfside_tools_today_event_image($event);
     $location = trim((string) ($event['location_name'] ?? $event['location'] ?? ''));
 
+    $message_dialog_id = wp_unique_id('surfside-today-message-');
+    $show_message_dialog = $service && $sermon_title !== '' && $message_url === '';
+
     ob_start();
     ?>
     <article class="surfside-today-event<?php echo $image ? ' has-image' : ''; ?>">
@@ -127,8 +130,9 @@ function surfside_tools_today_assets() {
         .surfside-today-header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px}.surfside-today-eyebrow{margin:0 0 5px;color:var(--surfside-today-blue);font-size:.82rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase}.surfside-today h2{margin:0;color:var(--surfside-today-navy);font-size:clamp(1.75rem,4vw,2.5rem);line-height:1.08}.surfside-today-date{margin:0;color:#5b667a;font-weight:700;white-space:nowrap}
         .surfside-today-service{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;padding:18px;border-radius:16px;background:var(--surfside-today-navy);color:#fff}.surfside-today-service-time{display:grid;place-items:center;min-width:104px;min-height:74px;padding:10px;border-radius:13px;background:#fff;color:var(--surfside-today-blue);font-size:1.12rem;font-weight:900;text-align:center}.surfside-today-service h3{margin:0 0 4px;color:#fff;font-size:1.25rem}.surfside-today-service p{margin:0;color:rgba(255,255,255,.82)}.surfside-today-sermon{margin-top:8px!important;color:#fff!important;font-weight:800}.surfside-today-sermon-link{color:#fff!important;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}.surfside-today-sermon-link:hover,.surfside-today-sermon-link:focus-visible{color:#fff!important;text-decoration-thickness:3px}.surfside-today-sermon-link:focus-visible{outline:3px solid rgba(255,255,255,.55);outline-offset:3px}
         .surfside-today-section-title{margin:0;color:var(--surfside-today-navy);font-size:1.05rem}.surfside-today-events{display:grid;gap:12px}.surfside-today-event{display:grid;grid-template-columns:minmax(0,1fr);overflow:hidden;border:1px solid rgba(7,27,58,.11);border-radius:15px;background:#fff}.surfside-today-event.has-image{grid-template-columns:minmax(150px,30%) minmax(0,1fr)}.surfside-today-event-media{min-height:150px;background:#eef2f7}.surfside-today-event-image{display:block;width:100%;height:100%;min-height:150px;object-fit:cover}.surfside-today-event-content{padding:17px}.surfside-today-event h3{margin:0 0 7px;color:var(--surfside-today-navy);font-size:1.14rem}.surfside-today-event-meta{display:flex;flex-wrap:wrap;gap:6px 12px;color:#46536a;font-size:.92rem;font-weight:700}.surfside-today-event-meta span+span:before{content:"•";margin-right:12px;color:#9aa5b5}.surfside-today-event p{margin:10px 0 0;line-height:1.5}
+        .surfside-today-message-dialog{width:min(760px,calc(100vw - 32px));max-width:760px;max-height:min(86vh,900px);padding:0;border:0;border-radius:20px;background:#fff;color:#071b3a;box-shadow:0 24px 70px rgba(7,27,58,.28);overflow:hidden}.surfside-today-message-dialog::backdrop{background:rgba(7,27,58,.72);backdrop-filter:blur(3px)}.surfside-today-message-dialog-header{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 22px;border-bottom:1px solid rgba(7,27,58,.12);background:#fff}.surfside-today-message-dialog-header h2{margin:0;color:#071b3a;font-size:clamp(24px,4vw,32px);line-height:1.15}.surfside-today-message-dialog-close{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:8px 14px;border:0;border-radius:10px;background:#071b3a;color:#fff;font:inherit;font-weight:800;cursor:pointer}.surfside-today-message-dialog-close:hover,.surfside-today-message-dialog-close:focus-visible{background:#0b4f9c}.surfside-today-message-dialog-close:focus-visible{outline:3px solid rgba(11,79,156,.3);outline-offset:3px}.surfside-today-message-dialog-body{max-height:calc(86vh - 81px);padding:24px;overflow:auto;overscroll-behavior:contain}body.surfside-today-dialog-open{overflow:hidden}
         .surfside-today-empty{margin:0;padding:16px;border-radius:14px;background:#fff;color:#5b667a}.surfside-today-link{justify-self:start;display:inline-flex;align-items:center;min-height:42px;padding:9px 14px;border-radius:9px;background:var(--surfside-today-blue);color:#fff!important;font-weight:800;text-decoration:none!important}.surfside-today-link:hover,.surfside-today-link:focus-visible{background:var(--surfside-today-navy)}.surfside-today-link:focus-visible{outline:3px solid rgba(11,79,156,.25);outline-offset:3px}
-        @media(max-width:700px){.surfside-today-header{display:block}.surfside-today-date{margin-top:8px;white-space:normal}.surfside-today-service{grid-template-columns:1fr}.surfside-today-service-time{min-width:0;min-height:0;justify-self:start}.surfside-today-event.has-image{grid-template-columns:1fr}.surfside-today-event-media,.surfside-today-event-image{min-height:190px;max-height:240px}.surfside-today-event-meta{display:grid;gap:4px}.surfside-today-event-meta span+span:before{content:none;margin:0}}
+        @media(max-width:700px){.surfside-today-message-dialog{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border-radius:0}.surfside-today-message-dialog-header{padding:14px 16px}.surfside-today-message-dialog-body{max-height:calc(100dvh - 73px);padding:20px 16px}.surfside-today-header{display:block}.surfside-today-date{margin-top:8px;white-space:normal}.surfside-today-service{grid-template-columns:1fr}.surfside-today-service-time{min-width:0;min-height:0;justify-self:start}.surfside-today-event.has-image{grid-template-columns:1fr}.surfside-today-event-media,.surfside-today-event-image{min-height:190px;max-height:240px}.surfside-today-event-meta{display:grid;gap:4px}.surfside-today-event-meta span+span:before{content:none;margin:0}}
     ');
 }
 
@@ -143,7 +147,7 @@ function surfside_tools_today_shortcode($atts = array()) {
         'title' => 'Today at Surfside',
         'events_url' => '/events/',
         'show_link' => 'yes',
-        'message_url' => '/watch-live/',
+        'message_url' => '',
     ), $atts, 'surfside_today');
 
     $timezone = wp_timezone();
@@ -195,7 +199,7 @@ function surfside_tools_today_shortcode($atts = array()) {
                             <?php if ($message_url !== '') : ?>
                                 <a class="surfside-today-sermon-link" href="<?php echo esc_url($message_url); ?>">Today’s message: <?php echo esc_html($sermon_title); ?></a>
                             <?php else : ?>
-                                Today’s message: <?php echo esc_html($sermon_title); ?>
+                                <a class="surfside-today-sermon-link" href="#<?php echo esc_attr($message_dialog_id); ?>" data-today-message-dialog="<?php echo esc_attr($message_dialog_id); ?>" aria-haspopup="dialog">Today’s message: <?php echo esc_html($sermon_title); ?></a>
                             <?php endif; ?>
                         </p>
                     <?php endif; ?>
@@ -219,6 +223,34 @@ function surfside_tools_today_shortcode($atts = array()) {
             <a class="surfside-today-link" href="<?php echo esc_url($events_url); ?>">View the full calendar →</a>
         <?php endif; ?>
     </section>
+
+    <?php if ($show_message_dialog) : ?>
+        <dialog id="<?php echo esc_attr($message_dialog_id); ?>" class="surfside-today-message-dialog" aria-labelledby="<?php echo esc_attr($message_dialog_id . '-title'); ?>">
+            <div class="surfside-today-message-dialog-header">
+                <h2 id="<?php echo esc_attr($message_dialog_id . '-title'); ?>">Message Notes</h2>
+                <button type="button" class="surfside-today-message-dialog-close" data-today-dialog-close>Close</button>
+            </div>
+            <div class="surfside-today-message-dialog-body"><?php echo do_shortcode('[surfside_tools_message]'); ?></div>
+        </dialog>
+        <script>
+        (function(){
+            var trigger=document.querySelector('[data-today-message-dialog="<?php echo esc_js($message_dialog_id); ?>"]');
+            var dialog=document.getElementById(<?php echo wp_json_encode($message_dialog_id); ?>);
+            if(!trigger||!dialog||typeof dialog.showModal!=='function')return;
+            trigger.addEventListener('click',function(event){
+                event.preventDefault();
+                dialog.showModal();
+                document.body.classList.add('surfside-today-dialog-open');
+            });
+            dialog.addEventListener('click',function(event){if(event.target===dialog)dialog.close();});
+            dialog.addEventListener('close',function(){
+                document.body.classList.remove('surfside-today-dialog-open');
+                trigger.focus();
+            });
+            dialog.querySelector('[data-today-dialog-close]').addEventListener('click',function(){dialog.close();});
+        })();
+        </script>
+    <?php endif; ?>
     <?php
     return ob_get_clean();
 }
