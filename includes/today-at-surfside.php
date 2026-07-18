@@ -88,10 +88,7 @@ function surfside_tools_today_event_image($event) {
 function surfside_tools_today_render_event($event, $show_date = false) {
     $image = surfside_tools_today_event_image($event);
     $location = trim((string) ($event['location_name'] ?? $event['location'] ?? ''));
-
-    $message_dialog_id = wp_unique_id('surfside-today-message-');
-    $show_message_dialog = $service && $sermon_title !== '' && $message_url === '';
-
+ 
     ob_start();
     ?>
     <article class="surfside-today-event<?php echo $image ? ' has-image' : ''; ?>">
@@ -176,6 +173,9 @@ function surfside_tools_today_shortcode($atts = array()) {
     if ($message_url !== '' && strpos($message_url, 'http') !== 0) {
         $message_url = home_url('/' . ltrim($message_url, '/'));
     }
+
+    $message_dialog_id = wp_unique_id('surfside-today-message-');
+    $show_message_dialog = $service && $sermon_title !== '' && $message_url === '';
 
     ob_start();
     ?>
