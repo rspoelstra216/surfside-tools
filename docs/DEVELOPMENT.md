@@ -51,7 +51,8 @@ Public Displays
 ├── This Week
 ├── Month calendar
 ├── Event details
-└── Homepage photo carousel
+├── Homepage photo carousel
+└── Church portal
 
 Infrastructure
 ├── GitHub branches and pull requests
@@ -124,6 +125,17 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
 - Compact event cards with `+N more` overflow
 - Event-detail modal with venue, address, meeting location, and map information
 
+### Church Portal
+
+- Plugin-owned `[surfside_portal]` launcher
+- Established nine-destination card hierarchy
+- Responsive desktop and mobile presentation
+- Message Notes and Announcements dialogs using current weekly content
+- This Week events dialog using the native calendar
+- Live Slides connection-instructions route
+- Prayer Request Contact anchor
+- Keyboard, native dialog, scrolling, and reduced-motion support
+
 ### Project infrastructure
 
 - GitHub as the source of truth
@@ -136,51 +148,42 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
 
 ## Milestones
 
-### Complete — Milestones 1–7
+### Complete — Milestones 1–8
 
-Surfside Tools has completed Weekly Update Foundation, Native Calendar, Google Places, Staff Dashboard, Platform Consolidation, Dashboard Intelligence, and Calendar Experience.
+Surfside Tools has completed Weekly Update Foundation, Native Calendar, Google Places, Staff Dashboard, Platform Consolidation, Dashboard Intelligence, Calendar Experience, and Church Portal.
 
-Version 2.2.0 completed Calendar Experience with accessible crowded-day details, printable monthly calendars, personal-calendar actions, optional event images, `[surfside_today]`, and final dashboard cleanup.
+Version 2.2.0 completed Calendar Experience. Church Portal is complete through PR #83 and is planned for the next minor release.
 
-### Current — Milestone 8: Church Portal
+### Complete — Milestone 8: Church Portal
 
-Move the public church portal into Surfside Tools through a plugin-owned `[surfside_portal]` shortcode. This replaces substantial page-specific custom markup and CSS with a responsive, accessible, version-controlled experience.
+Milestone 8 moved the public church portal into Surfside Tools through the plugin-owned `[surfside_portal]` shortcode.
 
-The existing site header, welcome image, and footer remain outside the shortcode. The shortcode owns the portal launcher and its presentation.
+#### Delivered
 
-#### Portal inventory
-
-- Full-width Live Slides card
-- First Time Here
-- Message Notes
-- Announcements
-- This Week's Events
-- Prayer Request
-- Ministry Opportunities
-- Give Online
-- Explore Surfside
-
-#### Delivery sequence
-
-1. Portal foundation and current destination parity
-2. Weekly Message Notes and Announcements integration
-3. Native This Week calendar integration
-4. Service-day intelligence where useful
-5. Front-end portal destination settings
-6. Shortcode migration, live verification, and old CSS cleanup
+- Portal foundation and nine-destination hierarchy
+- Existing card markup and CSS captured inside the plugin
+- Two-column desktop and single-column mobile layouts
+- Message Notes and Announcements dialogs using current Surfside Tools content
+- This Week events dialog using the native calendar
+- Prayer Request routing to `/contact/#Contact`
+- Live Slides routing through `/live-slides/` for Wi-Fi instructions
+- Visible keyboard focus, native Escape behavior, focus restoration, scroll containment, and reduced-motion support
 
 #### Durable portal decisions
 
-- Use `[surfside_portal]` as the single page-level integration point.
-- Preserve the prominent Live Slides hierarchy and two-column desktop launcher.
+- Use `[surfside_portal]` as the single page-level launcher integration.
 - Keep the site header, welcome image, and footer outside the shortcode.
-- Reuse existing Surfside Tools content and calendar sources instead of duplicating data.
-- Keep entire cards understandable and interactive on desktop, keyboard, and touch interfaces.
-- Remove old portal CSS only after the shortcode replacement is deployed and verified.
+- Preserve the prominent Live Slides hierarchy and two-column desktop launcher.
+- Reuse existing Surfside Tools content and calendar sources instead of creating duplicate pages.
+- Use full-screen dialogs on mobile for Message Notes, Announcements, and This Week's Events.
+- Route Live Slides through the public instructions page instead of attempting unreliable IP-based network detection.
+- Keep portal markup, styling, and interaction behavior version-controlled in the plugin.
 
-### Planned — Milestone 9: Website Management
+### Current — Milestone 9: Website Management
 
-Expand front-end management to additional high-value website content after the portal migration. Candidate areas include homepage hero content, service times and locations, featured events, ministry highlights, staff directory content, livestream destinations, giving content, footer and contact information, and additional homepage blocks.
+Expand front-end management to additional high-value website content. Candidate areas include homepage hero content, service times and locations, featured events, ministry highlights, staff directory content, livestream destinations, giving content, footer and contact information, and additional homepage blocks.
+
+Feature order will continue to be defined one focused pull request at a time.
 
 ## Nice Ideas
 
