@@ -22,7 +22,7 @@ function surfside_tools_portal_cards($atts = array()) {
             'title' => 'Live Slides',
             'description' => 'Having trouble seeing the screens? View today’s slides on your phone with adjustable font sizes and light or dark mode options.',
             'icon' => '📺',
-            'url' => (string) ($atts['live_slides_url'] ?? 'http://surfside.local/'),
+            'url' => (string) ($atts['live_slides_url'] ?? surfside_tools_portal_url('live-slides/')),
             'featured' => true,
         ),
         array(
@@ -126,7 +126,7 @@ function surfside_tools_portal_assets() {
 function surfside_tools_portal_shortcode($atts = array()) {
     $atts = shortcode_atts(
         array(
-            'live_slides_url' => 'http://surfside.local/',
+            'live_slides_url' => surfside_tools_portal_url('live-slides/'),
             'first_time_url' => surfside_tools_portal_url('plan-your-visit/'),
             'message_notes_url' => surfside_tools_portal_url('portal/message-notes/'),
             'announcements_url' => surfside_tools_portal_url('portal/announcements/'),
