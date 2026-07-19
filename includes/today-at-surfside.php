@@ -5,6 +5,31 @@ if (!defined('ABSPATH')) {
 }
 
 /**
+ * Keep dynamic Today at Surfside output out of full-page caches.
+ */
+function surfside_tools_today_prevent_page_cache() {
+    if (!is_singular()) {
+        return;
+    }
+
+    $post = get_queried_object();
+    if (!($post instanceof WP_Post) || !has_shortcode((string) $post->post_content, 'surfside_today')) {
+        return;
+    }
+
+    if (function_exists('surfside_tools_prevent_cache')) {
+        surfside_tools_prevent_cache();
+        return;
+    }
+
+    if (!defined('DONOTCACHEPAGE')) {
+        define('DONOTCACHEPAGE', true);
+    }
+    nocache_headers();
+}
+add_action('template_redirect', 'surfside_tools_today_prevent_page_cache', 0);
+
+/**
  * Milestone 7: a reusable public summary of what is happening at Surfside today.
  */
 function surfside_tools_today_service_schedule() {
