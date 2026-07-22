@@ -246,6 +246,7 @@ function surfside_tools_today_shortcode($atts = array()) {
                 <?php foreach ($today_events as $event) : echo surfside_tools_today_render_event($event, false); endforeach; ?>
             </div>
         <?php elseif (!empty($next_events)) : ?>
+            <p class="surfside-today-empty">Nothing scheduled today.</p>
             <h3 class="surfside-today-section-title">Coming up next</h3>
             <div class="surfside-today-events"><?php echo surfside_tools_today_render_event($next_events[0], true); ?></div>
         <?php elseif (!$service) : ?>
