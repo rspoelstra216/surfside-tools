@@ -1,5 +1,57 @@
 # Changelog
 
+## [2.3.1] - 2026-07-22
+
+### Added
+
+- Added an optional `message_url` attribute to `[surfside_today]`. ([#85](https://github.com/rspoelstra216/surfside-tools/pull/85))
+- Added a responsive Message Notes dialog to Today at Surfside. ([#86](https://github.com/rspoelstra216/surfside-tools/pull/86))
+- Added a Sunday **We’re Live Now** action to Today at Surfside. ([#88](https://github.com/rspoelstra216/surfside-tools/pull/88))
+- Added a clear empty-day message before the next upcoming event. ([#89](https://github.com/rspoelstra216/surfside-tools/pull/89))
+
+### Improved
+
+- Made the current sermon title a visible link to the published message notes on Watch Live. ([#85](https://github.com/rspoelstra216/surfside-tools/pull/85))
+- Made the displayed sermon title open the current published notes without leaving the page. ([#86](https://github.com/rspoelstra216/surfside-tools/pull/86))
+- Marked Today at Surfside pages as dynamic content that must be rendered per request. ([#87](https://github.com/rspoelstra216/surfside-tools/pull/87))
+- Kept the homepage and Today at Surfside livestream states synchronized. ([#88](https://github.com/rspoelstra216/surfside-tools/pull/88))
+- Made it obvious that “Coming up next” does not represent an event happening today. ([#89](https://github.com/rspoelstra216/surfside-tools/pull/89))
+
+### Fixed
+
+- Removed redundant Saturday and Sunday service occurrences from “Also happening today.” ([#85](https://github.com/rspoelstra216/surfside-tools/pull/85))
+- Corrected the sermon title destination so it no longer duplicates the separate Watch Live action. ([#86](https://github.com/rspoelstra216/surfside-tools/pull/86))
+- Fixed Saturday's Today at Surfside output remaining visible on Sunday because of full-page caching. ([#87](https://github.com/rspoelstra216/surfside-tools/pull/87))
+- Fixed Today at Surfside showing only Sunday Worship during the active livestream window. ([#88](https://github.com/rspoelstra216/surfside-tools/pull/88))
+
+### Additional Changes
+
+### Add compact Today at Surfside homepage widget ([#90](https://github.com/rspoelstra216/surfside-tools/pull/90))
+
+- add a transparent `[surfside_today_compact]` shortcode sized for the homepage hero
+- show Sunday’s live state with a direct Watch Live link
+- show today’s worship service or first calendar event
+- fall back to the next upcoming event when today is empty
+- include the compact shortcode in the existing dynamic-page cache protection
+- reuse the existing service schedule, calendar queries, and duplicate-service filtering
+
+### Navigate monthly calendar without page reloads ([#91](https://github.com/rspoelstra216/surfside-tools/pull/91))
+
+- update `[surfside_month_calendar]` in place when Previous, Today, or Next is selected
+- preserve browser Back and Forward behavior for visited months
+- announce loading and the newly displayed month to assistive technology
+- retain normal navigation links as a no-JavaScript and request-failure fallback
+- add `#surfside-month-calendar` to fallback URLs so a reload returns directly to the calendar
+
+### Add clear multi-day event scheduling ([#92](https://github.com/rspoelstra216/surfside-tools/pull/92))
+
+- add a “This event lasts multiple days” checkbox to Add/Edit Event
+- reveal a required End Date only when the checkbox is selected
+- hide and disable recurrence for multi-day events
+- validate that the end date is after the start date
+- render the event on every included calendar day
+- show the complete date range in event-detail dialogs
+
 ## [2.3.0] - 2026-07-18
 
 ### Added
