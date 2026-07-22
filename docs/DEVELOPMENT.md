@@ -240,9 +240,7 @@ Nice Ideas are intentionally unscheduled. They remain here until the project com
 
 - Featured Event homepage widget
 - Upcoming-events widget
-- Announcement and sermon-note status widgets
 - Recent activity feed
-- Website-content health indicators
 - Ministry dashboards
 - Additional homepage content controls
 - Digital bulletin tools
