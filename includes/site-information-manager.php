@@ -33,16 +33,20 @@ function surfside_tools_site_information_manager_handle_post() {
 
     $service_keys = isset($_POST['service_key']) ? (array) wp_unslash($_POST['service_key']) : array();
     $service_weekdays = isset($_POST['service_weekday']) ? (array) wp_unslash($_POST['service_weekday']) : array();
-    $service_days = isset($_POST['service_day']) ? (array) wp_unslash($_POST['service_day']) : array();
     $service_labels = isset($_POST['service_label']) ? (array) wp_unslash($_POST['service_label']) : array();
     $service_times = isset($_POST['service_time']) ? (array) wp_unslash($_POST['service_time']) : array();
     $services = array();
 
+    $weekday_names = array(
+        1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday',
+        5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday',
+    );
     foreach ($service_keys as $index => $key) {
+        $weekday = absint($service_weekdays[$index] ?? 0);
         $services[] = array(
             'key' => $key,
-            'weekday' => $service_weekdays[$index] ?? 0,
-            'day' => $service_days[$index] ?? '',
+            'weekday' => $weekday,
+            'day' => $weekday_names[$weekday] ?? '',
             'label' => $service_labels[$index] ?? '',
             'time' => $service_times[$index] ?? '',
         );
@@ -179,7 +183,7 @@ function surfside_tools_staff_site_information_shortcode() {
                     <?php foreach ($information['services'] as $service) : ?>
                         <div class="surfside-information-service">
                             <input type="hidden" name="service_key[]" value="<?php echo esc_attr($service['key']); ?>">
-                            <label class="surfside-information-field"><span>Day</span><select name="service_weekday[]"><?php foreach ($weekdays as $number => $day) : ?><option value="<?php echo esc_attr($number); ?>" <?php selected((int) $service['weekday'], $number); ?>><?php echo esc_html($day); ?></option><?php endforeach; ?></select><input type="hidden" name="service_day[]" value="<?php echo esc_attr($weekdays[(int) $service['weekday']] ?? $service['day']); ?>"></label>
+                            <label class="surfside-information-field"><span>Day</span><select name="service_weekday[]"><?php foreach ($weekdays as $number => $day) : ?><option value="<?php echo esc_attr($number); ?>" <?php selected((int) $service['weekday'], $number); ?>><?php echo esc_html($day); ?></option><?php endforeach; ?></select></label>
                             <label class="surfside-information-field"><span>Public label</span><input type="text" name="service_label[]" value="<?php echo esc_attr($service['label']); ?>" required></label>
                             <label class="surfside-information-field"><span>Start time</span><input type="time" name="service_time[]" value="<?php echo esc_attr($service['time']); ?>" required></label>
                         </div>
