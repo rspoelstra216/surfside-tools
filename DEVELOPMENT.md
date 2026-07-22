@@ -69,11 +69,20 @@ Delivered through PRs #85–#92:
 
 ## Current direction
 
-### Milestone 9 — Website Management
+### Milestone 9 — Sitewide Information and V2 Foundation
 
-Expand Surfside Tools front-end management to additional high-value website content such as homepage hero content, service times and locations, featured events, ministry highlights, staff information, livestream destinations, giving content, footer information, and contact details.
+Create a single source of truth for Surfside identity, service times, meeting location, phone, navigation links, and social destinations.
 
-The exact feature order will continue to be defined one focused pull request at a time.
+Planned deliverables:
+
+- Front-end Surfside Information management screen
+- Surfside Information dashboard card
+- Shared service schedule used by Today at Surfside and countdowns
+- Blue-led coastal design tokens with white and warm sandy off-white surfaces
+- Plugin-owned `[surfside_footer]` with responsive layout, logo, service times, linked location, navigation, social icons, contact link, and automatic copyright year
+- Replacement of the current Site Editor footer with the shortcode
+
+The redesigned footer is a core Milestone 9 deliverable and the first visible V2 component. Feature order will continue one focused pull request at a time.
 
 ## Release history
 
