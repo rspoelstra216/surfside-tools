@@ -189,4 +189,4 @@ Milestone 8 was released in version 2.3.0. Version 2.3.1 adds focused Today at S
 
 The next phase creates one source of truth for Surfside identity, service times, meeting location, phone, navigation, and social destinations. It adds a front-end Surfside Information manager and dashboard card, migrates existing plugin features to shared data, establishes the blue-led coastal V2 design foundation, and delivers a redesigned plugin-owned `[surfside_footer]` that replaces the current Site Editor footer.
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for current Website Management candidates and the organized backlog.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the Milestone 9 delivery plan and organized backlog.
