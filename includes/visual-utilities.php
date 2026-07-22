@@ -84,9 +84,35 @@ function surfside_tools_visual_utilities_scripts() {
 add_action('wp_footer', 'surfside_tools_visual_utilities_scripts', 30);
 
 function surfside_tools_service_schedule() {
+    if (function_exists('surfside_tools_site_information_service_schedule')) {
+        $shared_schedule = surfside_tools_site_information_service_schedule();
+        $schedule = array();
+
+        foreach ($shared_schedule as $weekday => $service) {
+            $day = trim((string) ($service['day'] ?? ''));
+            $time = trim((string) ($service['time_24'] ?? ''));
+            $display_time = trim((string) ($service['time'] ?? ''));
+            if ($day === '' || $time === '') {
+                continue;
+            }
+
+            $schedule[] = array(
+                'weekday' => absint($weekday),
+                'day' => $day,
+                'time' => $time,
+                'label' => (string) ($service['label'] ?? 'Worship Service'),
+                'compact' => trim($day . ' at ' . $display_time),
+            );
+        }
+
+        if ($schedule) {
+            return $schedule;
+        }
+    }
+
     return array(
-        array('day'=>'Saturday','time'=>'18:00','label'=>'Saturday Service','compact'=>'Saturday at 6:00 PM'),
-        array('day'=>'Sunday','time'=>'09:45','label'=>'Sunday Service','compact'=>'Sunday at 9:45 AM'),
+        array('weekday'=>6,'day'=>'Saturday','time'=>'18:00','label'=>'Saturday Worship','compact'=>'Saturday at 6:00 PM'),
+        array('weekday'=>7,'day'=>'Sunday','time'=>'09:45','label'=>'Sunday Worship','compact'=>'Sunday at 9:45 AM'),
     );
 }
 
@@ -94,7 +120,12 @@ function surfside_tools_next_service($sunday_only = false) {
     $timezone = wp_timezone();
     $now = new DateTimeImmutable('now', $timezone);
     $schedule = surfside_tools_service_schedule();
-    $services = $sunday_only ? array($schedule[1]) : $schedule;
+    $services = $schedule;
+    if ($sunday_only) {
+        $services = array_values(array_filter($schedule, function ($service) {
+            return (int) ($service['weekday'] ?? 0) === 7;
+        }));
+    }
     $next = null;
     $live = null;
 
@@ -114,6 +145,7 @@ function surfside_tools_service_countdown_shortcode() {
     if ($state['live']) {
         return '<div class="surfside-countdown surfside-live-now surfside-is-live"><div class="surfside-countdown-label">We’re Live Now</div><div class="surfside-countdown-service">' . esc_html($state['live']['label']) . '</div><a class="wp-block-button__link wp-element-button" href="/watch-live/">Watch Live</a></div>';
     }
+    if (empty($state['next'])) return '';
     $timestamp = $state['next']['datetime']->getTimestamp() * 1000;
     return '<div class="surfside-countdown" data-surfside-countdown-time="' . esc_attr($timestamp) . '"><div class="surfside-countdown-label">Next Service</div><div class="surfside-countdown-service">' . esc_html($state['next']['service']['label']) . '</div><div class="surfside-countdown-timer"><span><strong class="days">0</strong><small>Days</small></span><span><strong class="hours">0</strong><small>Hours</small></span><span><strong class="minutes">0</strong><small>Minutes</small></span><span><strong class="seconds">0</strong><small>Seconds</small></span></div></div>';
 }
@@ -122,6 +154,7 @@ function surfside_tools_compact_countdown_shortcode() {
     $state = surfside_tools_next_service();
     $id = wp_unique_id('surfside-compact-countdown-');
     if ($state['live']) return '<div id="' . esc_attr($id) . '" class="surfside-compact-countdown surfside-is-live"><a href="/watch-live/">🔴 We’re Live Now</a></div>';
+    if (empty($state['next'])) return '';
     $timestamp = $state['next']['datetime']->getTimestamp() * 1000;
     return '<div id="' . esc_attr($id) . '" class="surfside-compact-countdown" data-surfside-countdown-time="' . esc_attr($timestamp) . '"><div class="surfside-next-service-label">Next Service</div><div class="surfside-next-service">' . esc_html($state['next']['service']['compact']) . '</div><div class="surfside-compact-time">loading...</div></div>';
 }
@@ -130,8 +163,9 @@ function surfside_tools_sunday_countdown_shortcode() {
     $state = surfside_tools_next_service(true);
     $id = wp_unique_id('surfside-sunday-countdown-');
     if ($state['live']) return '<div id="' . esc_attr($id) . '" class="surfside-sunday-countdown surfside-is-live"><a href="/watch-live/">🔴 We’re Live Now</a></div>';
+    if (empty($state['next'])) return '';
     $timestamp = $state['next']['datetime']->getTimestamp() * 1000;
-    return '<div id="' . esc_attr($id) . '" class="surfside-sunday-countdown" data-surfside-countdown-time="' . esc_attr($timestamp) . '"><div class="surfside-next-service-label">Next Livestream</div><div class="surfside-next-service">Sunday at 9:45 AM</div><div class="surfside-compact-time">loading...</div></div>';
+    return '<div id="' . esc_attr($id) . '" class="surfside-sunday-countdown" data-surfside-countdown-time="' . esc_attr($timestamp) . '"><div class="surfside-next-service-label">Next Livestream</div><div class="surfside-next-service">' . esc_html($state['next']['service']['compact']) . '</div><div class="surfside-compact-time">loading...</div></div>';
 }
 
 add_action('init', function () {

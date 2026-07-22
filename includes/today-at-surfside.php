@@ -38,18 +38,17 @@ add_action('template_redirect', 'surfside_tools_today_prevent_page_cache', 0);
  * Milestone 7: a reusable public summary of what is happening at Surfside today.
  */
 function surfside_tools_today_service_schedule() {
-    $schedule = array(
-        6 => array(
-            'label' => 'Saturday Worship',
-            'time' => '6:00 PM',
-        ),
-        7 => array(
-            'label' => 'Sunday Worship',
-            'time' => '9:45 AM',
-        ),
-    );
+    if (function_exists('surfside_tools_site_information_service_schedule')) {
+        return apply_filters(
+            'surfside_tools_today_service_schedule',
+            surfside_tools_site_information_service_schedule()
+        );
+    }
 
-    return apply_filters('surfside_tools_today_service_schedule', $schedule);
+    return apply_filters('surfside_tools_today_service_schedule', array(
+        6 => array('label' => 'Saturday Worship', 'time' => '6:00 PM'),
+        7 => array('label' => 'Sunday Worship', 'time' => '9:45 AM'),
+    ));
 }
 
 
