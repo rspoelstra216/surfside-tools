@@ -205,9 +205,22 @@ Delivered through PRs #85–#92:
 - Hide recurrence while multi-day mode is active to avoid conflicting schedules.
 - Keep the compact Today widget transparent and make its entire live state the Watch Live link.
 
-### Current — Milestone 9: Website Management
+### Current — Milestone 9: Sitewide Information and V2 Foundation
 
-Expand front-end management to additional high-value website content. Candidate areas include homepage hero content, service times and locations, featured events, ministry highlights, staff directory content, livestream destinations, giving content, footer and contact information, and additional homepage blocks.
+Create one structured source of truth for Surfside Community Fellowship's public identity, tagline, editable phone number, current meeting venue and address, Saturday and Sunday service schedule, main navigation destinations, and Facebook, YouTube, and Instagram links.
+
+#### Planned deliverables
+
+- Front-end Surfside Information management screen
+- Surfside Information dashboard card
+- Shared helpers used by Today at Surfside, countdowns, the footer, and future public components
+- Migration of existing service-aware features away from separate hardcoded schedules
+- Blue-led coastal V2 design tokens: deep ocean anchor color, Surfside blue interactions, white primary surfaces, and warm sandy off-white section backgrounds
+- Clean, contemporary, full-width presentation with cards reserved for meaningful actions
+- Plugin-owned `[surfside_footer]` with a responsive layout, current Site Logo, tagline, service times, Google Maps-linked location, main navigation, phone and Contact destinations, social icons, and automatic copyright year
+- Replacement of the current Site Editor footer with `[surfside_footer]` after deployment verification
+
+The redesigned footer is a core Milestone 9 deliverable and the first visible V2 component. Reconstructing the low-resolution logo is valuable but remains a separate, non-blocking brand asset project.
 
 Feature order will continue to be defined one focused pull request at a time.
 
