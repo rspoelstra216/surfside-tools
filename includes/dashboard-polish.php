@@ -23,7 +23,7 @@ function surfside_tools_dashboard_stat_block($number, $label) {
 
 function surfside_tools_dashboard_polish_styles() {
     wp_add_inline_style('surfside-tools-staff-dashboard', '
-        .surfside-dashboard-status-grid{align-items:stretch}.surfside-dashboard-status-card{min-height:100%;padding:26px}.surfside-dashboard-status-head{justify-content:space-between;align-items:flex-start}.surfside-dashboard-status-title{display:flex;align-items:center;gap:13px}.surfside-dashboard-health{margin:0}.surfside-dashboard-metric{display:flex;align-items:baseline;gap:10px;margin:8px 0 14px}.surfside-dashboard-metric strong{font-size:clamp(42px,6vw,58px);line-height:.9;letter-spacing:-.055em;color:#071b3a}.surfside-dashboard-metric span{max-width:170px;font-size:15px;line-height:1.25;font-weight:750;color:#556178}.surfside-dashboard-status-content{display:flex;flex-direction:column;flex:1}.surfside-dashboard-status-card .surfside-staff-actions{padding-top:20px}.surfside-dashboard-status-card .surfside-staff-button,.surfside-dashboard-status-card .surfside-staff-button-secondary{width:100%;justify-content:center}.surfside-dashboard-quick-actions{margin-top:0}.surfside-dashboard-quick-actions .surfside-staff-card{min-height:215px;padding:22px}.surfside-dashboard-quick-actions .surfside-staff-card h2{font-size:21px}.surfside-dashboard-quick-actions .surfside-staff-card p{font-size:14px}.surfside-dashboard-summary{position:relative;overflow:hidden}.surfside-dashboard-summary:before{content:"";position:absolute;inset:0 auto 0 0;width:6px;background:currentColor;opacity:.55}@media(max-width:760px){.surfside-staff-shell{padding-left:14px;padding-right:14px}.surfside-dashboard-greeting{margin-bottom:18px}.surfside-dashboard-greeting h2{font-size:30px}.surfside-dashboard-summary{padding:20px 20px 20px 22px}.surfside-dashboard-status-card{padding:20px}.surfside-dashboard-status-head{gap:12px}.surfside-dashboard-status-title{align-items:flex-start}.surfside-dashboard-status-head .surfside-staff-icon{width:42px;height:42px}.surfside-dashboard-status-card h3{font-size:21px}.surfside-dashboard-metric{align-items:flex-end}.surfside-dashboard-metric strong{font-size:48px}.surfside-dashboard-metric span{padding-bottom:3px}.surfside-dashboard-detail{font-size:15px}.surfside-dashboard-status-card .surfside-staff-actions a{min-height:48px}.surfside-dashboard-quick-actions .surfside-staff-card{min-height:auto}.surfside-dashboard-quick-actions .surfside-staff-actions a{width:100%;justify-content:center}}
+        .surfside-dashboard-status-grid{align-items:stretch}.surfside-dashboard-status-card{min-height:100%;padding:26px}.surfside-dashboard-status-head{justify-content:space-between;align-items:flex-start}.surfside-dashboard-status-title{display:flex;align-items:center;gap:13px}.surfside-dashboard-health{margin:0}.surfside-dashboard-metric{display:flex;align-items:baseline;gap:10px;margin:8px 0 14px}.surfside-dashboard-metric strong{font-size:clamp(42px,6vw,58px);line-height:.9;letter-spacing:-.055em;color:#071b3a}.surfside-dashboard-metric span{max-width:170px;font-size:15px;line-height:1.25;font-weight:750;color:#556178}.surfside-dashboard-status-content{display:flex;flex-direction:column;flex:1}.surfside-dashboard-status-card .surfside-staff-actions{padding-top:20px}.surfside-dashboard-status-card .surfside-staff-button,.surfside-dashboard-status-card .surfside-staff-button-secondary{width:100%;justify-content:center}.surfside-dashboard-quick-actions{margin-top:0}.surfside-dashboard-quick-actions .surfside-staff-card{min-height:215px;padding:22px}.surfside-dashboard-quick-actions .surfside-staff-card h2{font-size:21px}.surfside-dashboard-quick-actions .surfside-staff-card p{font-size:14px}.surfside-dashboard-summary{position:relative;overflow:hidden}.surfside-dashboard-summary:before{content:"";position:absolute;inset:0 auto 0 0;width:6px;background:currentColor;opacity:.55}.surfside-dashboard-information{display:grid;grid-template-columns:auto minmax(0,1.5fr) minmax(230px,.8fr) auto;gap:22px;align-items:center;margin:28px 0;padding:26px;border:1px solid rgba(6,27,51,.12);border-radius:18px;background:#f6f1e8}.surfside-dashboard-information .surfside-staff-icon{align-self:start}.surfside-dashboard-information-copy h2{margin:0 0 5px;color:#061b33;font-size:24px}.surfside-dashboard-information-copy>p{margin:0;color:#56616d}.surfside-dashboard-information-details{display:grid;gap:9px}.surfside-dashboard-information-details p{margin:0;color:#26323d;line-height:1.4}.surfside-dashboard-information-details strong{color:#061b33}.surfside-dashboard-information-details a{color:#0b5fa5;font-weight:750;text-underline-offset:3px}.surfside-dashboard-information .surfside-staff-actions{padding:0}.surfside-dashboard-information .surfside-staff-button-secondary{white-space:nowrap}.surfside-dashboard-information-note{display:block;max-width:190px;color:#687480;font-size:13px;line-height:1.35}@media(max-width:980px){.surfside-dashboard-information{grid-template-columns:auto minmax(0,1fr)}.surfside-dashboard-information-details,.surfside-dashboard-information .surfside-staff-actions,.surfside-dashboard-information-note{grid-column:2}}@media(max-width:760px){.surfside-dashboard-information{grid-template-columns:1fr;padding:22px}.surfside-dashboard-information .surfside-staff-icon{display:none}.surfside-dashboard-information-details,.surfside-dashboard-information .surfside-staff-actions,.surfside-dashboard-information-note{grid-column:auto}.surfside-dashboard-information .surfside-staff-button-secondary{width:100%;justify-content:center}.surfside-staff-shell{padding-left:14px;padding-right:14px}.surfside-dashboard-greeting{margin-bottom:18px}.surfside-dashboard-greeting h2{font-size:30px}.surfside-dashboard-summary{padding:20px 20px 20px 22px}.surfside-dashboard-status-card{padding:20px}.surfside-dashboard-status-head{gap:12px}.surfside-dashboard-status-title{align-items:flex-start}.surfside-dashboard-status-head .surfside-staff-icon{width:42px;height:42px}.surfside-dashboard-status-card h3{font-size:21px}.surfside-dashboard-metric{align-items:flex-end}.surfside-dashboard-metric strong{font-size:48px}.surfside-dashboard-metric span{padding-bottom:3px}.surfside-dashboard-detail{font-size:15px}.surfside-dashboard-status-card .surfside-staff-actions a{min-height:48px}.surfside-dashboard-quick-actions .surfside-staff-card{min-height:auto}.surfside-dashboard-quick-actions .surfside-staff-actions a{width:100%;justify-content:center}}
     ');
 }
 
@@ -91,6 +91,26 @@ function surfside_tools_dashboard_intelligence_shortcode_v3() {
         ),
     );
 
+    $site_information = function_exists('surfside_tools_get_site_information')
+        ? surfside_tools_get_site_information()
+        : array();
+    $site_identity = $site_information['identity'] ?? array();
+    $site_location = $site_information['location'] ?? array();
+    $site_schedule = function_exists('surfside_tools_site_information_service_schedule')
+        ? surfside_tools_site_information_service_schedule()
+        : array();
+    $site_address = function_exists('surfside_tools_site_information_address')
+        ? surfside_tools_site_information_address($site_information)
+        : '';
+    $site_maps_url = function_exists('surfside_tools_site_information_maps_url')
+        ? surfside_tools_site_information_maps_url($site_information)
+        : '';
+    $site_phone = trim((string) ($site_identity['phone'] ?? ''));
+    $site_phone_href = preg_replace('/[^0-9+]/', '', $site_phone);
+    $can_manage_information = function_exists('surfside_tools_site_information_capability')
+        ? current_user_can(surfside_tools_site_information_capability())
+        : current_user_can('manage_options');
+
     ob_start();
     ?>
     <section class="surfside-staff-dashboard-hero"><h1>Staff Dashboard</h1><p>Tools and current website information in one place.</p></section>
@@ -126,6 +146,40 @@ function surfside_tools_dashboard_intelligence_shortcode_v3() {
                 </article>
             <?php endforeach; ?>
         </div>
+
+        <section class="surfside-dashboard-information" aria-labelledby="surfside-dashboard-information-title">
+            <span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('settings'); ?></span>
+            <div class="surfside-dashboard-information-copy">
+                <h2 id="surfside-dashboard-information-title">Surfside Information</h2>
+                <p>The shared source for service times, location, contact details, navigation, and social links.</p>
+            </div>
+            <div class="surfside-dashboard-information-details">
+                <?php if (!empty($site_location['venue'])) : ?>
+                    <p><strong>Currently meeting at</strong><br>
+                        <?php if ($site_maps_url !== '') : ?><a href="<?php echo esc_url($site_maps_url); ?>" target="_blank" rel="noopener noreferrer"><?php endif; ?>
+                        <?php echo esc_html($site_location['venue']); ?><?php echo $site_address !== '' ? '<br>' . esc_html($site_address) : ''; ?>
+                        <?php if ($site_maps_url !== '') : ?></a><?php endif; ?>
+                    </p>
+                <?php endif; ?>
+                <?php if ($site_schedule) : ?>
+                    <p><strong>Services</strong><br><?php
+                        $service_lines = array();
+                        foreach ($site_schedule as $service) {
+                            $service_lines[] = esc_html(trim(($service['day'] ?? '') . ' at ' . ($service['time'] ?? '')));
+                        }
+                        echo implode('<br>', $service_lines);
+                    ?></p>
+                <?php endif; ?>
+                <?php if ($site_phone !== '') : ?>
+                    <p><strong>Phone</strong><br><a href="tel:<?php echo esc_attr($site_phone_href); ?>"><?php echo esc_html($site_phone); ?></a></p>
+                <?php endif; ?>
+            </div>
+            <?php if ($can_manage_information) : ?>
+                <div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url('surfside-information')); ?>">Manage Information <span class="surfside-staff-arrow">›</span></a></div>
+            <?php else : ?>
+                <span class="surfside-dashboard-information-note">Administrator access is required to edit sitewide information.</span>
+            <?php endif; ?>
+        </section>
 
         <section class="surfside-dashboard-quick-actions">
             <h2 class="surfside-dashboard-section-title">Quick Actions</h2>
