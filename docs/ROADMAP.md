@@ -6,7 +6,7 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 
 ## Current release
 
-**Version:** `2.2.0`  
+**Version:** `2.3.1`  
 **Current milestone:** Milestone 9 — Website Management
 
 ## Completed milestones
@@ -20,7 +20,7 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 - ✅ Milestone 7 — Calendar Experience
 - ✅ Milestone 8 — Church Portal
 
-Milestone 7 was completed in version 2.2.0 with interactive crowded-day details, printable monthly calendars, Apple and Google Calendar actions, downloadable events, optional event images, the `[surfside_today]` shortcode, and final dashboard cleanup.
+Milestone 7 was completed in version 2.2.0 with the Calendar Experience. Milestone 8 was released in version 2.3.0 with the plugin-owned Church Portal.
 
 ## Completed milestone
 
@@ -48,6 +48,15 @@ The Portal page can now use a single shortcode for its launcher. The site header
 - Visitors remain inside the mobile-focused portal for notes, announcements, and this week's events.
 - The established visual hierarchy is preserved across desktop and mobile.
 - Portal behavior is version-controlled and deployable through the normal GitHub workflow.
+
+## Version 2.3.1 refinements
+
+The patch release completes a focused set of improvements delivered through PRs #85–#92:
+
+- More accurate Today at Surfside service, sermon, live, and empty-day states
+- Transparent `[surfside_today_compact]` output for the homepage hero
+- In-page monthly navigation with browser-history and anchored reload fallbacks
+- Clear multi-day event creation using an optional End Date instead of recurrence
 
 ## Current milestone
 

@@ -4,7 +4,7 @@ Surfside Tools is a custom WordPress website-management platform built for Surfs
 
 It gives church staff clear front-end workflows for weekly publishing, calendar management, homepage photos, locations, and settings without requiring routine access to WordPress administration.
 
-**Current release:** `2.2.0`  
+**Current release:** `2.3.1`  
 **Current development phase:** Milestone 9 — Website Management
 
 ## Guiding principle
@@ -36,7 +36,8 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 
 ### Calendar Manager
 
-- One-time and recurring events
+- One-time, multi-day, and recurring events
+- Clear multi-day date ranges without recurrence workarounds
 - Daily, weekly, and monthly recurrence
 - Repeat-until dates
 - Separate venue, address, and meeting-location fields
@@ -53,6 +54,8 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - Apple Calendar, Google Calendar, and downloadable event actions
 - Event images in standard event details without cluttering compact month cells
 - Automatic Today at Surfside summary for service days, today’s events, or the next upcoming event
+- Compact transparent Today at Surfside homepage summary with live-service state
+- In-page monthly navigation with browser-history and anchored reload fallbacks
 
 ### Church Portal
 
@@ -114,9 +117,12 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - `[surfside_this_week]`
 - `[surfside_month_calendar]`
 - `[surfside_today]`
+- `[surfside_today_compact]`
 - `[surfside_portal]`
 
 `[surfside_today]` supports optional `title`, `events_url`, and `show_link="no"` attributes.
+
+`[surfside_today_compact]` provides a transparent homepage-friendly summary and supports optional `events_url` and `watch_url` attributes.
 
 ### Visual utilities
 
@@ -177,7 +183,7 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 - Milestone 7 — Calendar Experience
 - Milestone 8 — Church Portal
 
-Milestone 8 is complete through PR #83 and is planned for the next minor release.
+Milestone 8 was released in version 2.3.0. Version 2.3.1 adds focused Today at Surfside and calendar experience refinements.
 
 ### Current: Milestone 9 — Website Management
 

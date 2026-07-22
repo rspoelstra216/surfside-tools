@@ -35,7 +35,7 @@ Staff Dashboard
 │   ├── Message-note review and publishing
 │   └── Calendar Suggestions
 ├── Calendar Manager
-│   ├── Event creation and editing
+│   ├── Single- and multi-day event creation
 │   ├── Recurrence
 │   ├── Saved and Google locations
 │   └── Event search and active-event management
@@ -49,7 +49,8 @@ Staff Dashboard
 Public Displays
 ├── Upcoming events
 ├── This Week
-├── Month calendar
+├── Month calendar with in-page navigation
+├── Today at Surfside and compact homepage summary
 ├── Event details
 ├── Homepage photo carousel
 └── Church portal
@@ -98,6 +99,8 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
 ### Calendar Manager
 
 - Create and edit one-time events
+- Optional multi-day ranges with a clear End Date
+- Mutually exclusive multi-day and recurrence workflows
 - Daily, weekly, and monthly recurrence
 - Repeat-until dates
 - Venue, street address, and separate meeting-location fields
@@ -121,9 +124,13 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
 - Upcoming event list
 - This Week list
 - Monthly calendar
+- In-page Previous, Today, and Next navigation
+- Browser-history support and anchored reload fallbacks
 - Equal-height desktop weeks
 - Compact event cards with `+N more` overflow
-- Event-detail modal with venue, address, meeting location, and map information
+- Event-detail modal with venue, address, meeting location, map information, and multi-day ranges
+- Full Today at Surfside summary with service, sermon, live, empty-day, and upcoming states
+- Transparent `[surfside_today_compact]` homepage summary
 
 ### Church Portal
 
@@ -152,7 +159,7 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
 
 Surfside Tools has completed Weekly Update Foundation, Native Calendar, Google Places, Staff Dashboard, Platform Consolidation, Dashboard Intelligence, Calendar Experience, and Church Portal.
 
-Version 2.2.0 completed Calendar Experience. Church Portal is complete through PR #83 and is planned for the next minor release.
+Version 2.2.0 completed Calendar Experience. Version 2.3.0 released Church Portal. Version 2.3.1 adds focused Today at Surfside and calendar experience refinements.
 
 ### Complete — Milestone 8: Church Portal
 
@@ -179,6 +186,25 @@ Milestone 8 moved the public church portal into Surfside Tools through the plugi
 - Route Live Slides through the public instructions page instead of attempting unreliable IP-based network detection.
 - Keep portal markup, styling, and interaction behavior version-controlled in the plugin.
 
+### Complete — Version 2.3.1 experience refinements
+
+Delivered through PRs #85–#92:
+
+- Removed duplicate worship-service entries from Today at Surfside.
+- Opened Message Notes from the sermon title.
+- Protected dynamic Today output from full-page caching.
+- Added the Sunday live-service state and clearer empty-day messaging.
+- Added `[surfside_today_compact]` for transparent homepage-hero placement.
+- Added in-page monthly navigation while retaining anchored fallback links.
+- Added explicit multi-day event creation with an optional End Date.
+
+#### Durable refinement decisions
+
+- Prefer progressive enhancement for month navigation: update in place when JavaScript succeeds and retain real anchored links when it does not.
+- Treat a multi-day event as one inclusive date range, separate from recurring events.
+- Hide recurrence while multi-day mode is active to avoid conflicting schedules.
+- Keep the compact Today widget transparent and make its entire live state the Watch Live link.
+
 ### Current — Milestone 9: Website Management
 
 Expand front-end management to additional high-value website content. Candidate areas include homepage hero content, service times and locations, featured events, ministry highlights, staff directory content, livestream destinations, giving content, footer and contact information, and additional homepage blocks.
@@ -191,13 +217,9 @@ Nice Ideas are intentionally unscheduled. They remain here until the project com
 
 ### Calendar and events
 
-- Interactive `+N more` day view
 - Drag-and-drop calendar editing
 - Duplicate an existing event
 - Event categories with colors
-- Printable monthly calendar
-- Add to Apple Calendar and Google Calendar through ICS
-- Featured images for events
 - Multiple campuses and locations
 - Event RSVP or registration
 - Ministry color themes
@@ -218,9 +240,7 @@ Nice Ideas are intentionally unscheduled. They remain here until the project com
 
 - Featured Event homepage widget
 - Upcoming-events widget
-- Announcement and sermon-note status widgets
 - Recent activity feed
-- Website-content health indicators
 - Ministry dashboards
 - Additional homepage content controls
 - Digital bulletin tools

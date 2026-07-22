@@ -4,9 +4,9 @@ This is the concise entry point for current Surfside Tools development. For arch
 
 ## Current version
 
-**2.2.0** — released July 17, 2026
+**2.3.1** — patch release prepared July 22, 2026
 
-Version 2.2 completes Calendar Experience with accessible crowded-day details, printable monthly calendars, personal-calendar actions, optional event images, the `[surfside_today]` shortcode, and final dashboard cleanup.
+Version 2.3.0 released the plugin-owned Church Portal. Version 2.3.1 adds focused public-experience improvements: clearer Today at Surfside states, a compact homepage summary, in-page monthly navigation, and straightforward multi-day event scheduling.
 
 ## Project vision
 
@@ -34,7 +34,7 @@ Surfside Tools should let church staff perform routine website maintenance throu
 - Milestone 5 — Platform Consolidation, released as 2.0.0
 - Milestone 6 — Dashboard Intelligence, released as 2.1.0
 - Milestone 7 — Calendar Experience, released as 2.2.0
-- Milestone 8 — Church Portal, complete through PR #83 and awaiting the next minor release
+- Milestone 8 — Church Portal, released as 2.3.0
 
 ## Completed direction
 
@@ -54,6 +54,19 @@ Delivered through PRs #78–#83:
 
 The Portal page retains its site header, welcome image, and footer outside the shortcode. Portal launcher markup, interaction, and CSS now belong to Surfside Tools.
 
+## Patch release refinements
+
+Delivered through PRs #85–#92:
+
+- Removed duplicate worship-service entries from Today at Surfside.
+- Linked sermon titles to the Message Notes dialog.
+- Protected dynamic Today output from page caching.
+- Added the Sunday live-service state.
+- Clarified empty days before “Coming up next.”
+- Added the transparent `[surfside_today_compact]` homepage summary.
+- Added in-page monthly-calendar navigation with browser-history and anchor fallbacks.
+- Added an optional multi-day event workflow with a clear End Date and mutually exclusive recurrence.
+
 ## Current direction
 
 ### Milestone 9 — Website Management
@@ -71,6 +84,8 @@ The exact feature order will continue to be defined one focused pull request at 
 | 2.0.0 | Platform Consolidation |
 | 2.1.0 | Dashboard Intelligence |
 | 2.2.0 | Calendar Experience |
+| 2.3.0 | Church Portal |
+| 2.3.1 | Today and calendar experience refinements |
 
 ## Development workflow
 
