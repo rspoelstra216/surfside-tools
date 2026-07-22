@@ -84,6 +84,7 @@ function surfside_tools_calendar_get_event($event_id) {
         'title' => get_the_title($event_id),
         'description' => $post->post_content,
         'date' => get_post_meta($event_id, '_surfside_event_date', true),
+        'end_date' => get_post_meta($event_id, '_surfside_event_end_date', true),
         'start_time' => get_post_meta($event_id, '_surfside_event_start_time', true),
         'end_time' => get_post_meta($event_id, '_surfside_event_end_time', true),
         'location' => get_post_meta($event_id, '_surfside_event_location_name', true) ?: get_post_meta($event_id, '_surfside_event_location', true),
@@ -135,10 +136,23 @@ function surfside_tools_calendar_event_occurrences($event, $range_start, $range_
     if ($start > $until) { return $out; }
     $add = function($date) use (&$out, $event, $from, $until) {
         if ($date >= $from && $date <= $until) {
-            $occ = $event; $occ['date'] = $date->format('Y-m-d'); $occ['occurrence_date'] = $occ['date']; $out[] = $occ;
+            $occ = $event; $occ['event_start_date'] = $event['date']; $occ['date'] = $date->format('Y-m-d'); $occ['occurrence_date'] = $occ['date']; $out[] = $occ;
         }
     };
-    if ($type === 'none') { $add($start); return $out; }
+    if ($type === 'none') {
+        $multi_day_end = !empty($event['end_date']) ? new DateTimeImmutable($event['end_date']) : null;
+        if ($multi_day_end && $multi_day_end >= $start) {
+            $until = $multi_day_end > $to ? $to : $multi_day_end;
+            $cursor = $start < $from ? $from : $start;
+            while ($cursor <= $until) {
+                $add($cursor);
+                $cursor = $cursor->modify('+1 day');
+            }
+            return $out;
+        }
+        $add($start);
+        return $out;
+    }
     if ($type === 'daily') {
         $days = array_map('intval', (array)($event['recurrence_weekdays'] ?? array()));
         $cursor = $start;
@@ -288,6 +302,15 @@ function surfside_tools_calendar_format_date($date) {
     return $timestamp ? date_i18n('F j, Y', $timestamp) : $date;
 }
 
+function surfside_tools_calendar_format_event_dates($event) {
+    $start = !empty($event['event_start_date']) ? $event['event_start_date'] : ($event['date'] ?? '');
+    $end = $event['end_date'] ?? '';
+    if ($start && $end && $end > $start) {
+        return surfside_tools_calendar_format_date($start) . '–' . surfside_tools_calendar_format_date($end);
+    }
+    return surfside_tools_calendar_format_date($event['date'] ?? $start);
+}
+
 function surfside_tools_calendar_format_time_range($event) {
     if (!empty($event['all_day'])) {
         return 'All day';
@@ -346,6 +369,8 @@ function surfside_tools_calendar_handle_submission() {
     $event_id = isset($_POST['event_id']) ? absint($_POST['event_id']) : 0;
     $title = isset($_POST['event_title']) ? sanitize_text_field(wp_unslash($_POST['event_title'])) : '';
     $date = isset($_POST['event_date']) ? surfside_tools_calendar_date_for_input(wp_unslash($_POST['event_date'])) : '';
+    $spans_multiple_days = !empty($_POST['event_spans_multiple_days']);
+    $event_end_date = $spans_multiple_days && isset($_POST['event_end_date']) ? surfside_tools_calendar_date_for_input(wp_unslash($_POST['event_end_date'])) : '';
     $all_day = !empty($_POST['event_all_day']) ? 1 : 0;
     $start_time = $all_day ? '' : (isset($_POST['event_start_time']) ? surfside_tools_calendar_time_for_input(wp_unslash($_POST['event_start_time'])) : '');
     $end_time = $all_day ? '' : (isset($_POST['event_end_time']) ? surfside_tools_calendar_time_for_input(wp_unslash($_POST['event_end_time'])) : '');
@@ -361,6 +386,7 @@ function surfside_tools_calendar_handle_submission() {
     $featured = !empty($_POST['event_featured']) ? 1 : 0;
     $recurrence_type = isset($_POST['event_recurrence_type']) ? sanitize_key(wp_unslash($_POST['event_recurrence_type'])) : 'none';
     if (!in_array($recurrence_type, array('none','daily','weekly','monthly_date','monthly_weekday'), true)) { $recurrence_type = 'none'; }
+    if ($spans_multiple_days) { $recurrence_type = 'none'; }
     $recurrence_interval = max(1, isset($_POST['event_recurrence_interval']) ? absint($_POST['event_recurrence_interval']) : 1);
     $recurrence_weekdays = isset($_POST['event_recurrence_weekdays']) ? array_values(array_intersect(array_map('absint', (array) $_POST['event_recurrence_weekdays']), range(1,7))) : array();
     $recurrence_day_of_month = isset($_POST['event_recurrence_day_of_month']) ? min(31, max(1, absint($_POST['event_recurrence_day_of_month']))) : 0;
@@ -370,6 +396,9 @@ function surfside_tools_calendar_handle_submission() {
 
     if ($title === '' || $date === '') {
         return '<div class="surfside-calendar-notice surfside-calendar-error">Please enter at least an event title and date.</div>';
+    }
+    if ($spans_multiple_days && ($event_end_date === '' || $event_end_date <= $date)) {
+        return '<div class="surfside-calendar-notice surfside-calendar-error">Please choose an end date after the start date.</div>';
     }
 
     $post_data = array(
@@ -395,6 +424,7 @@ function surfside_tools_calendar_handle_submission() {
     }
 
     update_post_meta($saved_id, '_surfside_event_date', $date);
+    update_post_meta($saved_id, '_surfside_event_end_date', $event_end_date);
     update_post_meta($saved_id, '_surfside_event_start_time', $start_time);
     update_post_meta($saved_id, '_surfside_event_end_time', $end_time);
     update_post_meta($saved_id, '_surfside_event_location', $location_name); // Legacy compatibility.
@@ -453,6 +483,7 @@ function surfside_tools_calendar_manager_shortcode() {
         'title' => '',
         'description' => '',
         'date' => '',
+        'end_date' => '',
         'start_time' => '',
         'end_time' => '',
         'location' => '',
@@ -498,13 +529,25 @@ function surfside_tools_calendar_manager_shortcode() {
 
                     <div class="surfside-calendar-form-row">
                         <label>
-                            <span>Date</span>
+                            <span>Start Date</span>
                             <input type="date" name="event_date" value="<?php echo esc_attr($form_event['date']); ?>" required>
                         </label>
                         <label class="surfside-calendar-checkbox">
                             <input type="checkbox" name="event_all_day" value="1" <?php checked(!empty($form_event['all_day'])); ?>>
                             <span>All day</span>
                         </label>
+                    </div>
+
+                    <label class="surfside-calendar-checkbox">
+                        <input type="checkbox" name="event_spans_multiple_days" value="1" data-surfside-multi-day-toggle aria-controls="surfside-event-end-date" aria-expanded="<?php echo !empty($form_event['end_date']) ? 'true' : 'false'; ?>" <?php checked(!empty($form_event['end_date'])); ?>>
+                        <span>This event lasts multiple days</span>
+                    </label>
+                    <div id="surfside-event-end-date" data-surfside-multi-day-fields <?php echo empty($form_event['end_date']) ? 'hidden' : ''; ?>>
+                        <label>
+                            <span>End Date</span>
+                            <input type="date" name="event_end_date" value="<?php echo esc_attr($form_event['end_date']); ?>" min="<?php echo esc_attr($form_event['date']); ?>">
+                        </label>
+                        <p class="surfside-location-help">The event will appear on every calendar day through the end date. Multi-day events do not use recurrence.</p>
                     </div>
 
                     <div class="surfside-calendar-form-row">
@@ -542,7 +585,7 @@ function surfside_tools_calendar_manager_shortcode() {
                         <textarea name="event_description" rows="5"><?php echo esc_textarea($form_event['description']); ?></textarea>
                     </label>
 
-                    <fieldset class="surfside-calendar-recurrence">
+                    <fieldset class="surfside-calendar-recurrence" data-surfside-recurrence-fields <?php echo !empty($form_event['end_date']) ? 'hidden' : ''; ?>>
                         <legend>Repeats</legend>
                         <label><span>Recurrence</span><select name="event_recurrence_type" class="surfside-recurrence-type">
                             <option value="none" <?php selected($form_event['recurrence_type'], 'none'); ?>>Does not repeat</option>
@@ -715,7 +758,7 @@ function surfside_tools_calendar_render_event_modal($event, $detail_id) {
             <?php if (!empty($event['featured'])) : ?><span class="surfside-public-calendar-featured-label">Featured Event</span><?php endif; ?>
             <h2 id="<?php echo esc_attr($detail_id); ?>-title"><?php echo esc_html($event['title']); ?></h2>
             <div class="surfside-event-modal-meta">
-                <p><strong>Date</strong><span><?php echo esc_html(surfside_tools_calendar_format_date($event['date'])); ?></span></p>
+                <p><strong>Date</strong><span><?php echo esc_html(surfside_tools_calendar_format_event_dates($event)); ?></span></p>
                 <p><strong>Time</strong><span><?php echo esc_html(surfside_tools_calendar_format_time_range($event)); ?></span></p>
                 <?php if (!empty($event['location_name']) || !empty($event['location'])) : ?><p><strong>Location</strong><span><?php echo esc_html($event['location_name'] ?: $event['location']); ?></span></p><?php endif; ?>
                 <?php if (!empty($event['location_address'])) : ?><p><strong>Address</strong><span><?php echo esc_html($event['location_address']); ?><?php $maps_url = surfside_tools_calendar_google_maps_url($event); if ($maps_url) : ?><br><a class="surfside-event-maps-link" href="<?php echo esc_url($maps_url); ?>" target="_blank" rel="noopener noreferrer">Open in Google Maps ↗</a><?php endif; ?></span></p><?php endif; ?>
@@ -893,7 +936,7 @@ function surfside_tools_calendar_render_month_grid($events, $month_start, $show_
                                                 <?php if (!empty($event['featured'])) : ?><span class="surfside-public-calendar-featured-label">Featured Event</span><?php endif; ?>
                                                 <h2 id="<?php echo esc_attr($detail_id); ?>-title"><?php echo esc_html($event['title']); ?></h2>
                                                 <div class="surfside-event-modal-meta">
-                                                    <p><strong>Date</strong><span><?php echo esc_html(surfside_tools_calendar_format_date($event['date'])); ?></span></p>
+                                                    <p><strong>Date</strong><span><?php echo esc_html(surfside_tools_calendar_format_event_dates($event)); ?></span></p>
                                                     <p><strong>Time</strong><span><?php echo esc_html(surfside_tools_calendar_format_time_range($event)); ?></span></p>
                                                     <?php if (!empty($event['location_name']) || !empty($event['location'])) : ?><p><strong>Location</strong><span><?php echo esc_html($event['location_name'] ?: $event['location']); ?></span></p><?php endif; ?>
                 <?php if (!empty($event['location_address'])) : ?><p><strong>Address</strong><span><?php echo esc_html($event['location_address']); ?><?php $maps_url = surfside_tools_calendar_google_maps_url($event); if ($maps_url) : ?><br><a class="surfside-event-maps-link" href="<?php echo esc_url($maps_url); ?>" target="_blank" rel="noopener noreferrer">Open in Google Maps ↗</a><?php endif; ?></span></p><?php endif; ?>
@@ -1373,6 +1416,36 @@ function surfside_tools_calendar_default_duration_script() {
     ?>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.surfside-calendar-form').forEach(function (form) {
+            var toggle = form.querySelector('[data-surfside-multi-day-toggle]');
+            var fields = form.querySelector('[data-surfside-multi-day-fields]');
+            var endDate = form.querySelector('input[name="event_end_date"]');
+            var startDate = form.querySelector('input[name="event_date"]');
+            var recurrence = form.querySelector('[data-surfside-recurrence-fields]');
+            var recurrenceType = form.querySelector('.surfside-recurrence-type');
+            if (!toggle || !fields || !endDate || !recurrence || !recurrenceType) return;
+
+            function updateMultiDay() {
+                var enabled = toggle.checked;
+                fields.hidden = !enabled;
+                recurrence.hidden = enabled;
+                endDate.disabled = !enabled;
+                endDate.required = enabled;
+                recurrenceType.disabled = enabled;
+                toggle.setAttribute('aria-expanded', enabled ? 'true' : 'false');
+                if (startDate && startDate.value) {
+                    var minimum = new Date(startDate.value + 'T12:00:00');
+                    minimum.setDate(minimum.getDate() + 1);
+                    endDate.min = minimum.toISOString().slice(0, 10);
+                }
+                if (enabled) recurrenceType.value = 'none';
+            }
+
+            toggle.addEventListener('change', updateMultiDay);
+            if (startDate) startDate.addEventListener('change', updateMultiDay);
+            updateMultiDay();
+        });
+
         document.querySelectorAll('.surfside-calendar-form[data-default-duration]').forEach(function (form) {
             var id = form.querySelector('input[name="event_id"]');
             if (id && parseInt(id.value || '0', 10) > 0) return;
