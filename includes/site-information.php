@@ -145,7 +145,9 @@ function surfside_tools_site_information_sanitize($value) {
             'day' => $weekday_names[$weekday],
             'label' => sanitize_text_field($service['label'] ?? 'Worship Service'),
             'time' => $time,
-            'livestream' => !empty($service['livestream']),
+            'livestream' => array_key_exists('livestream', $service)
+                ? !empty($service['livestream'])
+                : sanitize_key($service['key'] ?? '') === 'sunday',
         );
     }
 
