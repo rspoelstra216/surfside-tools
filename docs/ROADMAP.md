@@ -7,7 +7,7 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 ## Current release
 
 **Version:** `2.3.1`  
-**Current milestone:** Milestone 9 — Website Management
+**Current milestone:** Milestone 9 — Sitewide Information and V2 Foundation
 
 ## Completed milestones
 
@@ -60,22 +60,23 @@ The patch release completes a focused set of improvements delivered through PRs 
 
 ## Current milestone
 
-### Milestone 9 — Website Management
+### Milestone 9 — Sitewide Information and V2 Foundation
 
-Expand Surfside Tools beyond calendars, weekly publishing, homepage photos, and the church portal by allowing church staff to manage additional high-value website content through intuitive front-end workflows, reducing the need to access WordPress Admin.
+Create a single source of truth for information repeated throughout Surfside's website, then use it to deliver the first site-wide V2 component.
 
-### Candidate work
+### Planned deliverables
 
-The exact feature order will be defined one focused pull request at a time. Candidate areas include:
+- Structured Surfside identity, tagline, phone, meeting location, service schedule, navigation, and social destinations
+- Front-end Surfside Information management screen
+- Surfside Information dashboard card
+- Existing Today and countdown features migrated to the shared service schedule
+- Blue-led coastal design tokens using deep ocean and Surfside blues sparingly with white and warm sandy off-white surfaces
+- Redesigned plugin-owned `[surfside_footer]`
+- Current Site Editor footer replaced with the shortcode after live verification
 
-- Homepage hero content
-- Service times and location information
-- Featured events and ministry highlights
-- Staff directory content
-- Livestream destinations
-- Giving-page content
-- Footer and contact information
-- Additional homepage content blocks
+The redesigned footer is part of Milestone 9, not a future candidate. It will provide the logo, tagline, service times, Google Maps-linked location, main navigation, Contact and phone information, social icons, and automatic copyright year.
+
+Logo reconstruction remains a separate, non-blocking branding project. The exact delivery sequence will continue one focused pull request at a time.
 
 ## Future ideas
 
