@@ -31,24 +31,28 @@ function surfside_tools_site_information_manager_handle_post() {
         return surfside_tools_site_information_manager_notice('Security check failed. Please refresh and try again.', 'error');
     }
 
-    $service_keys = isset($_POST['service_key']) ? (array) wp_unslash($_POST['service_key']) : array();
-    $service_weekdays = isset($_POST['service_weekday']) ? (array) wp_unslash($_POST['service_weekday']) : array();
-    $service_labels = isset($_POST['service_label']) ? (array) wp_unslash($_POST['service_label']) : array();
-    $service_times = isset($_POST['service_time']) ? (array) wp_unslash($_POST['service_time']) : array();
+    $posted_services = isset($_POST['services']) && is_array($_POST['services'])
+        ? wp_unslash($_POST['services'])
+        : array();
     $services = array();
 
     $weekday_names = array(
         1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday',
         5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday',
     );
-    foreach ($service_keys as $index => $key) {
-        $weekday = absint($service_weekdays[$index] ?? 0);
+    foreach ($posted_services as $service) {
+        if (!is_array($service)) {
+            continue;
+        }
+
+        $weekday = absint($service['weekday'] ?? 0);
         $services[] = array(
-            'key' => $key,
+            'key' => $service['key'] ?? '',
             'weekday' => $weekday,
             'day' => $weekday_names[$weekday] ?? '',
-            'label' => $service_labels[$index] ?? '',
-            'time' => $service_times[$index] ?? '',
+            'label' => $service['label'] ?? '',
+            'time' => $service['time'] ?? '',
+            'livestream' => !empty($service['livestream']),
         );
     }
 
@@ -96,15 +100,74 @@ function surfside_tools_site_information_manager_handle_post() {
 }
 
 function surfside_tools_site_information_manager_assets() {
+    $version = defined('SURFSIDE_TOOLS_VERSION') ? SURFSIDE_TOOLS_VERSION : '2.3.1';
+
     wp_register_style(
         'surfside-tools-information-manager',
         false,
         array('surfside-tools-staff-dashboard'),
-        defined('SURFSIDE_TOOLS_VERSION') ? SURFSIDE_TOOLS_VERSION : '2.3.1'
+        $version
     );
     wp_enqueue_style('surfside-tools-information-manager');
     wp_add_inline_style('surfside-tools-information-manager', '
-        .surfside-information-form{display:grid;gap:22px}.surfside-information-card{padding:clamp(20px,3vw,30px);border:1px solid rgba(6,27,51,.13);border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(6,27,51,.06)}.surfside-information-card h2{margin:0 0 6px;color:#061b33}.surfside-information-card>p{margin:0 0 20px;color:#56616d}.surfside-information-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.surfside-information-field{display:grid;gap:7px}.surfside-information-field-wide{grid-column:1/-1}.surfside-information-field span,.surfside-information-services legend{color:#26323d;font-weight:800}.surfside-information-field input,.surfside-information-field select{width:100%;min-height:46px;padding:10px 12px;border:1px solid #aeb9c4;border-radius:9px;background:#fff;color:#26323d;font:inherit}.surfside-information-field input:focus,.surfside-information-field select:focus{border-color:#0b5fa5;outline:3px solid rgba(11,95,165,.18);outline-offset:1px}.surfside-information-help{margin:0;color:#687480;font-size:.88rem;line-height:1.45}.surfside-information-services{display:grid;gap:16px;margin:0;padding:0;border:0}.surfside-information-service{display:grid;grid-template-columns:minmax(130px,.7fr) minmax(170px,1.2fr) minmax(130px,.7fr);gap:14px;padding:18px;border-radius:13px;background:#f6f1e8}.surfside-information-link-list{display:grid;gap:13px}.surfside-information-link{display:grid;grid-template-columns:minmax(130px,.35fr) minmax(0,1fr);align-items:center;gap:14px}.surfside-information-link strong{color:#26323d}.surfside-information-actions{position:sticky;bottom:14px;z-index:3;display:flex;justify-content:flex-end;padding:14px;border:1px solid rgba(6,27,51,.12);border-radius:14px;background:rgba(255,255,255,.94);box-shadow:0 10px 28px rgba(6,27,51,.12);backdrop-filter:blur(8px)}.surfside-information-save{min-height:48px;padding:11px 22px;border:0;border-radius:9px;background:#0b5fa5;color:#fff;font:inherit;font-weight:900;cursor:pointer}.surfside-information-save:hover,.surfside-information-save:focus-visible{background:#061b33}.surfside-information-save:focus-visible{outline:3px solid rgba(11,95,165,.28);outline-offset:3px}.surfside-information-notice{margin:0 0 20px;padding:14px 16px;border-radius:10px;font-weight:800}.surfside-information-notice-success{border:1px solid #9bd2a6;background:#edf9f0;color:#17682e}.surfside-information-notice-error{border:1px solid #e7aaaa;background:#fff0f0;color:#9b2020}@media(max-width:720px){.surfside-information-grid,.surfside-information-service,.surfside-information-link{grid-template-columns:1fr}.surfside-information-field-wide{grid-column:auto}.surfside-information-actions{bottom:8px}.surfside-information-save{width:100%}}
+        .surfside-information-form{display:grid;gap:22px}.surfside-information-card{padding:clamp(20px,3vw,30px);border:1px solid rgba(6,27,51,.13);border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(6,27,51,.06)}.surfside-information-card h2{margin:0 0 6px;color:#061b33}.surfside-information-card>p{margin:0 0 20px;color:#56616d}.surfside-information-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.surfside-information-field{display:grid;gap:7px}.surfside-information-field-wide{grid-column:1/-1}.surfside-information-field span,.surfside-information-services legend{color:#26323d;font-weight:800}.surfside-information-field input,.surfside-information-field select{width:100%;min-height:46px;padding:10px 12px;border:1px solid #aeb9c4;border-radius:9px;background:#fff;color:#26323d;font:inherit}.surfside-information-field input:focus,.surfside-information-field select:focus{border-color:#0b5fa5;outline:3px solid rgba(11,95,165,.18);outline-offset:1px}.surfside-information-help{margin:0;color:#687480;font-size:.88rem;line-height:1.45}.surfside-information-services{display:grid;gap:16px;margin:0;padding:0;border:0}.surfside-information-service{display:grid;grid-template-columns:minmax(120px,.7fr) minmax(180px,1.15fr) minmax(120px,.65fr) auto;align-items:end;gap:14px;padding:18px;border:1px solid rgba(6,27,51,.12);border-radius:13px;background:#f7f9fb}.surfside-information-service-actions{display:flex;align-items:center;gap:14px;min-height:46px}.surfside-information-checkbox{display:inline-flex;align-items:center;gap:8px;color:#26323d;font-weight:800;white-space:nowrap}.surfside-information-checkbox input{width:20px;height:20px;margin:0;accent-color:#0b5fa5}.surfside-information-remove,.surfside-information-add{min-height:42px;padding:9px 14px;border:1px solid #0b5fa5;border-radius:9px;background:#fff;color:#0b5fa5;font:inherit;font-weight:800;cursor:pointer}.surfside-information-remove:hover,.surfside-information-remove:focus-visible,.surfside-information-add:hover,.surfside-information-add:focus-visible{background:#eaf3fb;outline:0}.surfside-information-remove:disabled{cursor:not-allowed;opacity:.45}.surfside-information-service-controls{display:flex;justify-content:flex-start;margin-top:2px}.surfside-information-link-list{display:grid;gap:13px}.surfside-information-link{display:grid;grid-template-columns:minmax(130px,.35fr) minmax(0,1fr);align-items:center;gap:14px}.surfside-information-link strong{color:#26323d}.surfside-information-actions{position:sticky;bottom:14px;z-index:3;display:flex;justify-content:flex-end;padding:14px;border:1px solid rgba(6,27,51,.12);border-radius:14px;background:rgba(255,255,255,.94);box-shadow:0 10px 28px rgba(6,27,51,.12);backdrop-filter:blur(8px)}.surfside-information-save{min-height:48px;padding:11px 22px;border:0;border-radius:9px;background:#0b5fa5;color:#fff;font:inherit;font-weight:900;cursor:pointer}.surfside-information-save:hover,.surfside-information-save:focus-visible{background:#061b33}.surfside-information-save:focus-visible{outline:3px solid rgba(11,95,165,.28);outline-offset:3px}.surfside-information-notice{margin:0 0 20px;padding:14px 16px;border-radius:10px;font-weight:800}.surfside-information-notice-success{border:1px solid #9bd2a6;background:#edf9f0;color:#17682e}.surfside-information-notice-error{border:1px solid #e7aaaa;background:#fff0f0;color:#9b2020}@media(max-width:900px){.surfside-information-service{grid-template-columns:repeat(2,minmax(0,1fr))}.surfside-information-service-actions{align-self:end}}@media(max-width:720px){.surfside-information-grid,.surfside-information-service,.surfside-information-link{grid-template-columns:1fr}.surfside-information-field-wide{grid-column:auto}.surfside-information-actions{bottom:8px}.surfside-information-save{width:100%}.surfside-information-service-actions{justify-content:space-between}}
+    ');
+
+    wp_register_script('surfside-tools-information-manager', false, array(), $version, true);
+    wp_enqueue_script('surfside-tools-information-manager');
+    wp_add_inline_script('surfside-tools-information-manager', '
+        document.addEventListener("DOMContentLoaded", function () {
+            var fieldset = document.querySelector("[data-surfside-services]");
+            var template = document.querySelector("[data-surfside-service-template]");
+            var addButton = document.querySelector("[data-surfside-add-service]");
+            var status = document.querySelector("[data-surfside-service-status]");
+            if (!fieldset || !template || !addButton) {
+                return;
+            }
+
+            var nextIndex = fieldset.querySelectorAll(".surfside-information-service").length;
+
+            function rows() {
+                return fieldset.querySelectorAll(".surfside-information-service");
+            }
+
+            function updateRemoveButtons() {
+                var buttons = fieldset.querySelectorAll("[data-surfside-remove-service]");
+                buttons.forEach(function (button) {
+                    button.disabled = buttons.length === 1;
+                });
+            }
+
+            addButton.addEventListener("click", function () {
+                var index = "new-" + nextIndex++;
+                var wrapper = document.createElement("div");
+                wrapper.innerHTML = template.innerHTML.replaceAll("__INDEX__", index).trim();
+                var row = wrapper.firstElementChild;
+                fieldset.appendChild(row);
+                updateRemoveButtons();
+                var day = row.querySelector("select");
+                if (day) {
+                    day.focus();
+                }
+                if (status) {
+                    status.textContent = "Service added.";
+                }
+            });
+
+            fieldset.addEventListener("click", function (event) {
+                var button = event.target.closest("[data-surfside-remove-service]");
+                if (!button || rows().length === 1) {
+                    return;
+                }
+                button.closest(".surfside-information-service").remove();
+                updateRemoveButtons();
+                if (status) {
+                    status.textContent = "Service removed. Save to confirm the change.";
+                }
+            });
+
+            updateRemoveButtons();
+        });
     ');
 }
 
@@ -176,19 +239,39 @@ function surfside_tools_staff_site_information_shortcode() {
             </section>
 
             <section class="surfside-information-card">
-                <h2>Service Schedule</h2>
-                <p>Each service has a weekday, public label, and start time.</p>
-                <fieldset class="surfside-information-services">
+                <h2>Weekly Service Schedule</h2>
+                <p>Add every recurring weekly service here. Use Calendar Manager for one-time special services.</p>
+                <fieldset class="surfside-information-services" data-surfside-services>
                     <legend class="screen-reader-text">Weekly services</legend>
-                    <?php foreach ($information['services'] as $service) : ?>
+                    <?php foreach ($information['services'] as $index => $service) : ?>
                         <div class="surfside-information-service">
-                            <input type="hidden" name="service_key[]" value="<?php echo esc_attr($service['key']); ?>">
-                            <label class="surfside-information-field"><span>Day</span><select name="service_weekday[]"><?php foreach ($weekdays as $number => $day) : ?><option value="<?php echo esc_attr($number); ?>" <?php selected((int) $service['weekday'], $number); ?>><?php echo esc_html($day); ?></option><?php endforeach; ?></select></label>
-                            <label class="surfside-information-field"><span>Public label</span><input type="text" name="service_label[]" value="<?php echo esc_attr($service['label']); ?>" required></label>
-                            <label class="surfside-information-field"><span>Start time</span><input type="time" name="service_time[]" value="<?php echo esc_attr($service['time']); ?>" required></label>
+                            <input type="hidden" name="services[<?php echo esc_attr($index); ?>][key]" value="<?php echo esc_attr($service['key']); ?>">
+                            <label class="surfside-information-field"><span>Day</span><select name="services[<?php echo esc_attr($index); ?>][weekday]"><?php foreach ($weekdays as $number => $day) : ?><option value="<?php echo esc_attr($number); ?>" <?php selected((int) $service['weekday'], $number); ?>><?php echo esc_html($day); ?></option><?php endforeach; ?></select></label>
+                            <label class="surfside-information-field"><span>Public label</span><input type="text" name="services[<?php echo esc_attr($index); ?>][label]" value="<?php echo esc_attr($service['label']); ?>" required></label>
+                            <label class="surfside-information-field"><span>Start time</span><input type="time" name="services[<?php echo esc_attr($index); ?>][time]" value="<?php echo esc_attr($service['time']); ?>" required></label>
+                            <div class="surfside-information-service-actions">
+                                <label class="surfside-information-checkbox"><input type="checkbox" name="services[<?php echo esc_attr($index); ?>][livestream]" value="1" <?php checked(!empty($service['livestream'])); ?>> Livestream</label>
+                                <button type="button" class="surfside-information-remove" data-surfside-remove-service>Remove</button>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 </fieldset>
+                <div class="surfside-information-service-controls">
+                    <button type="button" class="surfside-information-add" data-surfside-add-service>+ Add another service</button>
+                </div>
+                <p class="screen-reader-text" aria-live="polite" data-surfside-service-status></p>
+                <template data-surfside-service-template>
+                    <div class="surfside-information-service">
+                        <input type="hidden" name="services[__INDEX__][key]" value="">
+                        <label class="surfside-information-field"><span>Day</span><select name="services[__INDEX__][weekday]"><?php foreach ($weekdays as $number => $day) : ?><option value="<?php echo esc_attr($number); ?>"><?php echo esc_html($day); ?></option><?php endforeach; ?></select></label>
+                        <label class="surfside-information-field"><span>Public label</span><input type="text" name="services[__INDEX__][label]" value="Worship Service" required></label>
+                        <label class="surfside-information-field"><span>Start time</span><input type="time" name="services[__INDEX__][time]" required></label>
+                        <div class="surfside-information-service-actions">
+                            <label class="surfside-information-checkbox"><input type="checkbox" name="services[__INDEX__][livestream]" value="1"> Livestream</label>
+                            <button type="button" class="surfside-information-remove" data-surfside-remove-service>Remove</button>
+                        </div>
+                    </div>
+                </template>
             </section>
 
             <section class="surfside-information-card">

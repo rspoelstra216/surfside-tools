@@ -31,6 +31,7 @@ function surfside_tools_site_information_defaults() {
                 'day' => 'Saturday',
                 'label' => 'Saturday Worship',
                 'time' => '18:00',
+                'livestream' => false,
             ),
             array(
                 'key' => 'sunday',
@@ -38,6 +39,7 @@ function surfside_tools_site_information_defaults() {
                 'day' => 'Sunday',
                 'label' => 'Sunday Worship',
                 'time' => '09:45',
+                'livestream' => true,
             ),
         ),
         'navigation' => array(
@@ -123,13 +125,29 @@ function surfside_tools_site_information_sanitize($value) {
             continue;
         }
 
-        $key = sanitize_key($service['key'] ?? ($service['day'] ?? 'service-' . $index));
+        $key = sanitize_key($service['key'] ?? '');
+        if ($key === '') {
+            $key = 'service-' . substr(md5(wp_json_encode(array(
+                $weekday,
+                $service['label'] ?? '',
+                $time,
+                $index,
+            ))), 0, 12);
+        }
+
+        $weekday_names = array(
+            1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday',
+            5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday',
+        );
         $clean['services'][] = array(
-            'key' => $key !== '' ? $key : 'service-' . $index,
+            'key' => $key,
             'weekday' => $weekday,
-            'day' => sanitize_text_field($service['day'] ?? ''),
+            'day' => $weekday_names[$weekday],
             'label' => sanitize_text_field($service['label'] ?? 'Worship Service'),
             'time' => $time,
+            'livestream' => array_key_exists('livestream', $service)
+                ? !empty($service['livestream'])
+                : sanitize_key($service['key'] ?? '') === 'sunday',
         );
     }
 
@@ -263,27 +281,50 @@ function surfside_tools_site_information_format_time($time) {
 }
 
 /**
- * Return the shared schedule keyed by ISO weekday for service-aware features.
+ * Return every weekly service in weekday and start-time order.
  */
-function surfside_tools_site_information_service_schedule() {
+function surfside_tools_site_information_services() {
     $information = surfside_tools_get_site_information();
-    $schedule = array();
+    $services = array();
 
     foreach ((array) ($information['services'] ?? array()) as $service) {
         $weekday = absint($service['weekday'] ?? 0);
-        if ($weekday < 1 || $weekday > 7) {
+        $time = (string) ($service['time'] ?? '');
+        if ($weekday < 1 || $weekday > 7 || $time === '') {
             continue;
         }
 
-        $schedule[$weekday] = array(
+        $services[] = array(
             'key' => sanitize_key($service['key'] ?? ''),
+            'weekday' => $weekday,
             'day' => (string) ($service['day'] ?? ''),
             'label' => (string) ($service['label'] ?? 'Worship Service'),
-            'time' => surfside_tools_site_information_format_time($service['time'] ?? ''),
-            'time_24' => (string) ($service['time'] ?? ''),
+            'time' => surfside_tools_site_information_format_time($time),
+            'time_24' => $time,
+            'livestream' => !empty($service['livestream']),
         );
     }
 
-    ksort($schedule);
+    usort($services, function ($first, $second) {
+        $day_order = $first['weekday'] <=> $second['weekday'];
+        return $day_order !== 0 ? $day_order : strcmp($first['time_24'], $second['time_24']);
+    });
+
+    return apply_filters('surfside_tools_site_information_services', $services);
+}
+
+/**
+ * Return the first service on each ISO weekday for legacy service-aware features.
+ */
+function surfside_tools_site_information_service_schedule() {
+    $schedule = array();
+
+    foreach (surfside_tools_site_information_services() as $service) {
+        $weekday = (int) $service['weekday'];
+        if (!isset($schedule[$weekday])) {
+            $schedule[$weekday] = $service;
+        }
+    }
+
     return apply_filters('surfside_tools_site_information_service_schedule', $schedule);
 }
