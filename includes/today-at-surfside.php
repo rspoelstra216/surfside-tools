@@ -184,7 +184,7 @@ function surfside_tools_today_shortcode($atts = array()) {
     $schedule = surfside_tools_today_service_schedule();
     $service = isset($schedule[$weekday]) && is_array($schedule[$weekday]) ? $schedule[$weekday] : null;
     $sunday_live = false;
-    if ($weekday === 7 && function_exists('surfside_tools_next_service')) {
+    if (function_exists('surfside_tools_next_service')) {
         $sunday_state = surfside_tools_next_service(true);
         $sunday_live = !empty($sunday_state['live']);
     }
@@ -335,7 +335,7 @@ function surfside_tools_today_compact_shortcode($atts = array()) {
     $destination = $events_url;
 
     $sunday_live = false;
-    if ($weekday === 7 && function_exists('surfside_tools_next_service')) {
+    if (function_exists('surfside_tools_next_service')) {
         $sunday_state = surfside_tools_next_service(true);
         $sunday_live = !empty($sunday_state['live']);
     }
