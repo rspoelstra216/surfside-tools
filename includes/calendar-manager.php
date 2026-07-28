@@ -1479,6 +1479,7 @@ function surfside_tools_calendar_enqueue_styles() {
             .surfside-calendar-layout { grid-template-columns:1fr; }
             .surfside-calendar-form-row,
             .surfside-calendar-event { grid-template-columns:1fr; }
+            .surfside-calendar-skip-form { align-items:stretch; flex-direction:column; }
             .surfside-calendar-checkbox { margin-top:0; }
             .surfside-calendar-status { align-items:flex-start; flex-direction:column; }
             .surfside-calendar-manage-heading { align-items:stretch; flex-direction:column; }
