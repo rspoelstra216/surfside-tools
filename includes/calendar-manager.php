@@ -104,6 +104,10 @@ function surfside_tools_calendar_get_event($event_id) {
         'recurrence_week_of_month' => absint(get_post_meta($event_id, '_surfside_event_recurrence_week_of_month', true)),
         'recurrence_weekday' => absint(get_post_meta($event_id, '_surfside_event_recurrence_weekday', true)),
         'recurrence_end_date' => get_post_meta($event_id, '_surfside_event_recurrence_end_date', true),
+        'recurrence_exceptions' => array_values(array_filter(
+            (array) get_post_meta($event_id, '_surfside_event_recurrence_exceptions', true),
+            'surfside_tools_calendar_date_for_input'
+        )),
     );
 }
 
@@ -134,9 +138,14 @@ function surfside_tools_calendar_event_occurrences($event, $range_start, $range_
     $until = !empty($event['recurrence_end_date']) ? new DateTimeImmutable($event['recurrence_end_date']) : $to;
     if ($until > $to) { $until = $to; }
     if ($start > $until) { return $out; }
-    $add = function($date) use (&$out, $event, $from, $until) {
+    $exceptions = array_fill_keys((array) ($event['recurrence_exceptions'] ?? array()), true);
+    $add = function($date) use (&$out, $event, $from, $until, $exceptions) {
+        $occurrence_date = $date->format('Y-m-d');
+        if (isset($exceptions[$occurrence_date])) {
+            return;
+        }
         if ($date >= $from && $date <= $until) {
-            $occ = $event; $occ['event_start_date'] = $event['date']; $occ['date'] = $date->format('Y-m-d'); $occ['occurrence_date'] = $occ['date']; $out[] = $occ;
+            $occ = $event; $occ['event_start_date'] = $event['date']; $occ['date'] = $occurrence_date; $occ['occurrence_date'] = $occ['date']; $out[] = $occ;
         }
     };
     if ($type === 'none') {
@@ -362,6 +371,41 @@ function surfside_tools_calendar_handle_submission() {
         return '<div class="surfside-calendar-notice surfside-calendar-success">Event moved to trash.</div>';
     }
 
+    if ($action === 'delete_occurrence' || $action === 'restore_occurrence') {
+        $event_id = isset($_POST['event_id']) ? absint($_POST['event_id']) : 0;
+        $occurrence_date = isset($_POST['occurrence_date'])
+            ? surfside_tools_calendar_date_for_input(wp_unslash($_POST['occurrence_date']))
+            : '';
+        $event = surfside_tools_calendar_get_event($event_id);
+
+        if (!$event || $occurrence_date === '') {
+            return '<div class="surfside-calendar-notice surfside-calendar-error">That occurrence could not be found.</div>';
+        }
+        if (($event['recurrence_type'] ?? 'none') === 'none') {
+            return '<div class="surfside-calendar-notice surfside-calendar-error">Only recurring events can skip an individual occurrence.</div>';
+        }
+
+        $exceptions = array_values(array_unique((array) ($event['recurrence_exceptions'] ?? array())));
+
+        if ($action === 'restore_occurrence') {
+            $exceptions = array_values(array_diff($exceptions, array($occurrence_date)));
+            sort($exceptions);
+            update_post_meta($event_id, '_surfside_event_recurrence_exceptions', $exceptions);
+            return '<div class="surfside-calendar-notice surfside-calendar-success">Occurrence restored.</div>';
+        }
+
+        $matches = surfside_tools_calendar_event_occurrences($event, $occurrence_date, $occurrence_date);
+        if (empty($matches)) {
+            return '<div class="surfside-calendar-notice surfside-calendar-error">That date is not an active occurrence of this event.</div>';
+        }
+
+        $exceptions[] = $occurrence_date;
+        $exceptions = array_values(array_unique($exceptions));
+        sort($exceptions);
+        update_post_meta($event_id, '_surfside_event_recurrence_exceptions', $exceptions);
+        return '<div class="surfside-calendar-notice surfside-calendar-success">Only the selected occurrence was removed. The recurring series is unchanged.</div>';
+    }
+
     if ($action !== 'save') {
         return '';
     }
@@ -498,6 +542,7 @@ function surfside_tools_calendar_manager_shortcode() {
         'featured' => false,
         'recurrence_type' => 'none', 'recurrence_interval' => 1, 'recurrence_weekdays' => array(),
         'recurrence_day_of_month' => 0, 'recurrence_week_of_month' => 1, 'recurrence_weekday' => 1, 'recurrence_end_date' => '',
+        'recurrence_exceptions' => array(),
     );
     $form_event = $editing ? $editing : $blank;
 
@@ -623,6 +668,24 @@ function surfside_tools_calendar_manager_shortcode() {
                         <?php endif; ?>
                     </div>
                 </form>
+                <?php if ($editing && !empty($editing['recurrence_exceptions'])) : ?>
+                    <div class="surfside-calendar-skipped">
+                        <strong>Skipped occurrences</strong>
+                        <p>These dates are hidden without changing the rest of the recurring series.</p>
+                        <div class="surfside-calendar-skipped-list">
+                            <?php foreach ($editing['recurrence_exceptions'] as $exception_date) : ?>
+                                <form method="post">
+                                    <?php wp_nonce_field('surfside_calendar_manager', 'surfside_calendar_nonce'); ?>
+                                    <input type="hidden" name="surfside_calendar_action" value="restore_occurrence">
+                                    <input type="hidden" name="event_id" value="<?php echo esc_attr($editing['id']); ?>">
+                                    <input type="hidden" name="occurrence_date" value="<?php echo esc_attr($exception_date); ?>">
+                                    <span><?php echo esc_html(surfside_tools_calendar_format_date($exception_date)); ?></span>
+                                    <button type="submit">Restore</button>
+                                </form>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </section>
 
             <section class="surfside-calendar-panel">
@@ -654,6 +717,15 @@ function surfside_tools_calendar_manager_shortcode() {
                                 </div>
                                 <div class="surfside-calendar-event-actions">
                                     <a href="<?php echo esc_url(add_query_arg('edit_event', $event['id'])); ?>">Edit</a>
+                                    <?php if (($event['recurrence_type'] ?? 'none') !== 'none' && !empty($event['next_occurrence_date'])) : ?>
+                                        <form method="post" onsubmit="return confirm('<?php echo esc_js('Remove only the ' . surfside_tools_calendar_format_date($event['next_occurrence_date']) . ' occurrence?'); ?>');">
+                                            <?php wp_nonce_field('surfside_calendar_manager', 'surfside_calendar_nonce'); ?>
+                                            <input type="hidden" name="surfside_calendar_action" value="delete_occurrence">
+                                            <input type="hidden" name="event_id" value="<?php echo esc_attr($event['id']); ?>">
+                                            <input type="hidden" name="occurrence_date" value="<?php echo esc_attr($event['next_occurrence_date']); ?>">
+                                            <button type="submit">Skip next</button>
+                                        </form>
+                                    <?php endif; ?>
                                     <form method="post" onsubmit="return confirm('Move this event to trash?');">
                                         <?php wp_nonce_field('surfside_calendar_manager', 'surfside_calendar_nonce'); ?>
                                         <input type="hidden" name="surfside_calendar_action" value="delete">
@@ -1222,7 +1294,13 @@ function surfside_tools_calendar_enqueue_styles() {
         }
         .surfside-calendar-event h3 { margin:0 0 6px; color:#071b3a; }
         .surfside-calendar-event p { margin:4px 0; color:#34425e; }
-        .surfside-calendar-event-actions { display:flex; gap:12px; align-items:start; }
+        .surfside-calendar-event-actions { display:flex; flex-wrap:wrap; gap:12px; align-items:start; }
+        .surfside-calendar-skipped { margin-top:18px; padding:16px; border:1px solid rgba(7,27,58,.12); border-radius:14px; background:#f8fafc; }
+        .surfside-calendar-skipped>strong { color:#071b3a; }
+        .surfside-calendar-skipped>p { margin:4px 0 12px; color:#60708a; font-size:.9rem; }
+        .surfside-calendar-skipped-list { display:grid; gap:8px; }
+        .surfside-calendar-skipped-list form { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 10px; border-radius:9px; background:#fff; }
+        .surfside-calendar-skipped-list button { border:0; background:none; color:#0b4f9c; font:inherit; font-weight:800; cursor:pointer; }
         .surfside-calendar-event-actions a,
         .surfside-calendar-event-actions button {
             background:none;
