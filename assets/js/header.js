@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
             window.addEventListener('resize', function () {
-                if (window.innerWidth > 960) setOpen(false);
+                if (window.innerWidth > 1080) setOpen(false);
             });
         }
 
