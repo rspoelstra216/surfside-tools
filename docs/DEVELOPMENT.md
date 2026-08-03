@@ -225,7 +225,47 @@ Delivered through PRs #95–#109:
 
 Live desktop and mobile verification confirmed the footer layout, links, logo, and responsive behavior. Updating a service time or selecting a different logo in the Surfside Information dashboard immediately updates the public footer, validating the single-source-of-truth architecture. Custom logos are stored as WordPress attachment IDs; missing, deleted, or cleared selections safely fall back to the restored plugin logo.
 
-The next milestone remains to be selected.
+### Current — Milestone 10: V2 Website Experience
+
+Milestone 10 applies the established information and visual foundations to the visible website.
+
+#### Architecture boundary
+
+- Surfside Tools owns sitewide settings, the shared navigation source, header and footer components, dynamic widgets, and reusable design standards.
+- WordPress pages retain unique editorial content and page-specific layouts.
+- Page modernization will favor shared classes, patterns, and widgets only where they improve consistency or maintainability.
+- Surfside Tools will not become a general-purpose page builder.
+
+#### Header direction
+
+- Opaque full-width white header with a centered content container
+- Shared replaceable logo aligned left and navigation aligned right
+- Compact sticky state with a smaller logo, thin coastal-blue accent, and subtle stuck-state shadow
+- Always-compact mobile row with an accessible hamburger menu
+- Flat navigation for the initial release; data structures should allow future nesting without requiring a rebuild
+- Plan Your Visit as the normal primary action
+- Watch Live promoted automatically to a Live Now action during configured livestream windows
+- Reduced-motion support and WordPress admin-bar offset handling
+
+#### Navigation management
+
+The front-end Surfside Information manager will replace fixed navigation destinations with an ordered list. Each item will support:
+
+- Editable menu text
+- Published WordPress page selection stored by page ID
+- Custom URL selection for external links, anchors, or unusual destinations
+- Optional new-tab behavior for custom links
+- Add, remove, drag-and-drop, Move Up, and Move Down controls
+- A safe default menu for existing installations
+
+#### Planned delivery order
+
+1. Ordered front-end navigation source and manager
+2. Plugin-owned `[surfside_header]` desktop, sticky, and mobile behavior
+3. Isolated header testing followed by Site Editor replacement
+4. Page-by-page style audit and focused reusable improvements
+
+One focused feature will continue to ship per pull request.
 
 ## Nice Ideas
 
