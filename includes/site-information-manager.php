@@ -187,7 +187,9 @@ function surfside_tools_site_information_manager_assets() {
 
             updateRemoveButtons();
         });
-    ');    wp_add_inline_script('surfside-tools-information-manager', '
+    ');
+
+    wp_add_inline_script('surfside-tools-information-manager', '
         document.addEventListener("DOMContentLoaded", function () {
             var control = document.querySelector("[data-surfside-logo]");
             if (!control || !window.wp || !wp.media) {
