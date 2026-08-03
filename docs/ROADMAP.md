@@ -65,7 +65,7 @@ The patch release completes a focused set of improvements delivered through PRs 
 
 Milestone 9 established one shared source for repeated Surfside information and delivered the first complete public component built on the V2 design foundation.
 
-Delivered through PRs #95–#107:
+Delivered through PRs #95–#109:
 
 - Structured Surfside identity, tagline, phone, meeting location, navigation, and social destinations
 - Front-end Surfside Information management screen and dashboard card
@@ -74,11 +74,12 @@ Delivered through PRs #95–#107:
 - Configured sixty-minute livestream states
 - Blue-led coastal design tokens and reusable opt-in component primitives
 - Restored high-resolution Surfside logo
+- Front-end Media Library site-logo selection with attachment-ID storage and restored-logo fallback
 - Responsive full-width `[surfside_footer]` with shared service, location, navigation, contact, and social data
 - Site Editor replacement verified on desktop and mobile
 - Plugin asset deployment corrected for cPanel
 
-Live verification confirmed that changing a service time through Surfside Information immediately updates the public footer. Milestone 9 is complete; the next milestone will be chosen through project planning.
+Live verification confirmed that changing a service time or site logo through Surfside Information immediately updates the public footer. Milestone 9 and its first post-milestone enhancement are complete; the next milestone will be chosen through project planning.
 
 ## Future ideas
 
