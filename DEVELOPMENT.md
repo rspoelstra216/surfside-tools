@@ -88,7 +88,21 @@ Delivered through PRs #95–#109:
 - Full-width Site Editor integration with verified desktop and mobile layouts
 - cPanel deployment of version-controlled CSS and image assets
 
-Live verification confirmed that service-time and logo changes made in Surfside Information immediately update the public footer. Custom logos are stored as WordPress attachment IDs, while the restored plugin logo remains the automatic fallback. The next milestone will be selected through project planning.
+Live verification confirmed that service-time and logo changes made in Surfside Information immediately update the public footer. Custom logos are stored as WordPress attachment IDs, while the restored plugin logo remains the automatic fallback.
+
+### Milestone 10 — V2 Website Experience
+
+Milestone 10 applies the shared information and blue-led coastal foundation to the visible website while preserving WordPress as the editor for unique page content.
+
+The plugin will own sitewide settings, navigation, header and footer components, dynamic widgets, and reusable design standards. Individual WordPress pages will continue to own their editorial content and page-specific layout.
+
+Planned delivery order:
+
+1. Replace the fixed navigation fields with an ordered front-end menu manager supporting add, rename, remove, drag-and-drop, accessible move controls, internal-page selection, and custom URLs.
+2. Build a plugin-owned `[surfside_header]` with the shared replaceable logo, opaque full-width white surface, compact sticky state, responsive mobile menu, and accessible keyboard behavior.
+3. Use Plan Your Visit as the normal primary action and automatically promote Watch Live to a Live Now action during configured livestream windows.
+4. Replace the Site Editor header only after isolated desktop and mobile testing.
+5. Audit page styling together and add reusable plugin styles or widgets where consistency provides value, without turning Surfside Tools into a page builder.
 
 ## Release history
 
