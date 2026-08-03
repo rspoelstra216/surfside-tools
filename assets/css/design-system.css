@@ -1,0 +1,240 @@
+/**
+ * Surfside Tools V2 design foundation.
+ *
+ * Tokens are globally available. Component primitives are opt-in and use the
+ * surfside- prefix so loading this stylesheet does not restyle theme content.
+ */
+
+:root {
+    /* Brand and interface colors. */
+    --surfside-color-ocean-950: #061b33;
+    --surfside-color-ocean-900: #082a4a;
+    --surfside-color-ocean-800: #0b3f6b;
+    --surfside-color-blue-700: #075c9c;
+    --surfside-color-blue-600: #0878c9;
+    --surfside-color-blue-500: #0b8fe8;
+    --surfside-color-blue-100: #dceffd;
+    --surfside-color-blue-50: #f1f8fe;
+
+    /* Neutral surfaces keep blue purposeful rather than dominant. */
+    --surfside-color-white: #ffffff;
+    --surfside-color-sand-50: #fbfaf7;
+    --surfside-color-sand-100: #f5f1e9;
+    --surfside-color-ink: #10243a;
+    --surfside-color-muted: #536579;
+    --surfside-color-border: #d8e1e9;
+    --surfside-color-border-strong: #b8c7d4;
+
+    /* Semantic colors. */
+    --surfside-color-success: #18794e;
+    --surfside-color-warning: #9a6700;
+    --surfside-color-danger: #b42318;
+
+    /* Typography. */
+    --surfside-font-sans: inherit;
+    --surfside-font-size-xs: 0.75rem;
+    --surfside-font-size-sm: 0.875rem;
+    --surfside-font-size-base: 1rem;
+    --surfside-font-size-lg: 1.125rem;
+    --surfside-font-size-xl: 1.375rem;
+    --surfside-font-size-2xl: clamp(1.75rem, 3vw, 2.5rem);
+    --surfside-line-height-tight: 1.2;
+    --surfside-line-height-base: 1.6;
+    --surfside-weight-medium: 500;
+    --surfside-weight-semibold: 600;
+    --surfside-weight-bold: 700;
+
+    /* Spacing. */
+    --surfside-space-1: 0.25rem;
+    --surfside-space-2: 0.5rem;
+    --surfside-space-3: 0.75rem;
+    --surfside-space-4: 1rem;
+    --surfside-space-5: 1.25rem;
+    --surfside-space-6: 1.5rem;
+    --surfside-space-8: 2rem;
+    --surfside-space-10: 2.5rem;
+    --surfside-space-12: 3rem;
+    --surfside-space-16: 4rem;
+
+    /* Shape, depth, and motion. */
+    --surfside-radius-sm: 0.5rem;
+    --surfside-radius-md: 0.875rem;
+    --surfside-radius-lg: 1.125rem;
+    --surfside-radius-pill: 999px;
+    --surfside-shadow-sm: 0 2px 8px rgba(6, 27, 51, 0.08);
+    --surfside-shadow-md: 0 8px 24px rgba(6, 27, 51, 0.12);
+    --surfside-transition-fast: 160ms ease;
+    --surfside-content-width: 72rem;
+    --surfside-focus-ring: 0 0 0 3px rgba(11, 143, 232, 0.32);
+}
+
+.surfside-section {
+    color: var(--surfside-color-ink);
+    font-family: var(--surfside-font-sans);
+    line-height: var(--surfside-line-height-base);
+}
+
+.surfside-section--white {
+    background: var(--surfside-color-white);
+}
+
+.surfside-section--soft {
+    background: var(--surfside-color-sand-50);
+}
+
+.surfside-container {
+    box-sizing: border-box;
+    width: min(100% - 2rem, var(--surfside-content-width));
+    margin-inline: auto;
+}
+
+.surfside-card {
+    box-sizing: border-box;
+    color: var(--surfside-color-ink);
+    background: var(--surfside-color-white);
+    border: 1px solid var(--surfside-color-border);
+    border-radius: var(--surfside-radius-lg);
+    box-shadow: var(--surfside-shadow-sm);
+    padding: var(--surfside-space-6);
+}
+
+.surfside-card--quiet {
+    background: var(--surfside-color-sand-50);
+    box-shadow: none;
+}
+
+.surfside-eyebrow {
+    margin: 0 0 var(--surfside-space-2);
+    color: var(--surfside-color-blue-700);
+    font-size: var(--surfside-font-size-xs);
+    font-weight: var(--surfside-weight-bold);
+    letter-spacing: 0.09em;
+    line-height: var(--surfside-line-height-tight);
+    text-transform: uppercase;
+}
+
+.surfside-heading {
+    margin: 0;
+    color: var(--surfside-color-ocean-950);
+    font-size: var(--surfside-font-size-2xl);
+    font-weight: var(--surfside-weight-bold);
+    line-height: var(--surfside-line-height-tight);
+}
+
+.surfside-muted {
+    color: var(--surfside-color-muted);
+}
+
+.surfside-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--surfside-space-4);
+}
+
+.surfside-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--surfside-space-3);
+}
+
+.surfside-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--surfside-space-5);
+}
+
+.surfside-button {
+    box-sizing: border-box;
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: var(--surfside-space-2);
+    padding: 0.7rem 1.15rem;
+    color: var(--surfside-color-white);
+    background: var(--surfside-color-blue-700);
+    border: 1px solid var(--surfside-color-blue-700);
+    border-radius: var(--surfside-radius-pill);
+    font: inherit;
+    font-weight: var(--surfside-weight-semibold);
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        background-color var(--surfside-transition-fast),
+        border-color var(--surfside-transition-fast),
+        box-shadow var(--surfside-transition-fast),
+        transform var(--surfside-transition-fast);
+}
+
+.surfside-button:hover {
+    color: var(--surfside-color-white);
+    background: var(--surfside-color-ocean-800);
+    border-color: var(--surfside-color-ocean-800);
+    transform: translateY(-1px);
+}
+
+.surfside-button--secondary {
+    color: var(--surfside-color-ocean-900);
+    background: var(--surfside-color-white);
+    border-color: var(--surfside-color-border-strong);
+}
+
+.surfside-button--secondary:hover {
+    color: var(--surfside-color-ocean-900);
+    background: var(--surfside-color-blue-50);
+    border-color: var(--surfside-color-blue-600);
+}
+
+.surfside-button--text {
+    min-height: auto;
+    padding: var(--surfside-space-2);
+    color: var(--surfside-color-blue-700);
+    background: transparent;
+    border-color: transparent;
+    border-radius: var(--surfside-radius-sm);
+}
+
+.surfside-button--text:hover {
+    color: var(--surfside-color-ocean-900);
+    background: var(--surfside-color-blue-50);
+    border-color: transparent;
+    transform: none;
+}
+
+.surfside-button:focus-visible,
+.surfside-card a:focus-visible,
+.surfside-section a:focus-visible {
+    outline: 2px solid transparent;
+    box-shadow: var(--surfside-focus-ring);
+}
+
+@media (max-width: 37.5rem) {
+    .surfside-container {
+        width: min(100% - 1.25rem, var(--surfside-content-width));
+    }
+
+    .surfside-card {
+        padding: var(--surfside-space-5);
+    }
+
+    .surfside-button {
+        width: 100%;
+    }
+
+    .surfside-cluster .surfside-button--text {
+        width: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .surfside-button {
+        transition: none;
+    }
+
+    .surfside-button:hover {
+        transform: none;
+    }
+}
