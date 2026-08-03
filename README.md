@@ -79,6 +79,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 ### Settings and visual utilities
 
 - Front-end Google Maps and calendar settings
+- Front-end Surfside Information management, including a Media Library site-logo selector
 - Saved Places management
 - Reveal-on-scroll utilities
 - Service, compact, and Sunday countdowns
