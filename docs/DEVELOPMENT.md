@@ -209,20 +209,25 @@ Delivered through PRs #85–#92:
 
 Create one structured source of truth for Surfside Community Fellowship's public identity, tagline, editable phone number, current meeting venue and address, Saturday and Sunday service schedule, main navigation destinations, and Facebook, YouTube, and Instagram links.
 
-#### Planned deliverables
+#### Delivered foundation
 
-- Front-end Surfside Information management screen
-- Surfside Information dashboard card
-- Shared helpers used by Today at Surfside, countdowns, the footer, and future public components
-- Migration of existing service-aware features away from separate hardcoded schedules
-- Blue-led coastal V2 design tokens: deep ocean anchor color, Surfside blue interactions, white primary surfaces, and warm sandy off-white section backgrounds
-- Clean, contemporary, full-width presentation with cards reserved for meaningful actions
-- Plugin-owned `[surfside_footer]` with a responsive layout, current Site Logo, tagline, service times, Google Maps-linked location, main navigation, phone and Contact destinations, social icons, and automatic copyright year
+Delivered through PRs #95–#103:
+
+- One persisted and sanitized Surfside Information source for identity, tagline, phone, Contact destination, meeting location, navigation, and social links
+- Front-end Surfside Information management screen and dashboard card
+- Expandable weekly service schedule with per-service livestream settings
+- Shared schedule helpers consumed by Today at Surfside and all service countdown variants
+- Sixty-minute live states driven by configured livestream services instead of hardcoded Sundays
+- Blue-led coastal V2 tokens: deep ocean anchors, Surfside blue interactions, white primary surfaces, and subtle warm off-white section backgrounds
+- Opt-in, prefixed V2 primitives for full-width sections, containers, cards, layouts, headings, buttons, focus states, mobile behavior, and reduced motion
+- A restored high-resolution Surfside logo asset suitable for the redesigned footer
+
+#### Remaining deliverables
+
+- Plugin-owned `[surfside_footer]` with a responsive layout, restored logo, tagline, service times, Google Maps-linked location, main navigation, phone and Contact destinations, social icons, and automatic copyright year
 - Replacement of the current Site Editor footer with `[surfside_footer]` after deployment verification
 
-The redesigned footer is a core Milestone 9 deliverable and the first visible V2 component. Reconstructing the low-resolution logo is valuable but remains a separate, non-blocking brand asset project.
-
-Feature order will continue to be defined one focused pull request at a time.
+The redesigned footer is the next focused feature and the first complete public component built on the V2 design foundation.
 
 ## Nice Ideas
 
