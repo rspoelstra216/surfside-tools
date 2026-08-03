@@ -80,6 +80,7 @@ function surfside_tools_site_information_manager_handle_post() {
     surfside_tools_update_site_information(array(
         'identity' => array(
             'name' => isset($_POST['church_name']) ? wp_unslash($_POST['church_name']) : '',
+            'logo_id' => isset($_POST['logo_id']) ? absint($_POST['logo_id']) : 0,
             'tagline' => isset($_POST['tagline']) ? wp_unslash($_POST['tagline']) : '',
             'phone' => isset($_POST['phone']) ? wp_unslash($_POST['phone']) : '',
             'contact_url' => isset($_POST['contact_url']) ? wp_unslash($_POST['contact_url']) : '',
@@ -99,6 +100,20 @@ function surfside_tools_site_information_manager_handle_post() {
     return surfside_tools_site_information_manager_notice('Surfside Information saved.');
 }
 
+function surfside_tools_site_information_manager_media_assets() {
+    if (!is_user_logged_in() || !current_user_can(surfside_tools_site_information_capability())) {
+        return;
+    }
+
+    $post = get_queried_object();
+    if (!($post instanceof WP_Post) || !has_shortcode($post->post_content, 'surfside_staff_site_information')) {
+        return;
+    }
+
+    wp_enqueue_media();
+}
+add_action('wp_enqueue_scripts', 'surfside_tools_site_information_manager_media_assets', 20);
+
 function surfside_tools_site_information_manager_assets() {
     $version = defined('SURFSIDE_TOOLS_VERSION') ? SURFSIDE_TOOLS_VERSION : '2.3.1';
 
@@ -111,6 +126,10 @@ function surfside_tools_site_information_manager_assets() {
     wp_enqueue_style('surfside-tools-information-manager');
     wp_add_inline_style('surfside-tools-information-manager', '
         .surfside-information-form{display:grid;gap:22px}.surfside-information-card{padding:clamp(20px,3vw,30px);border:1px solid rgba(6,27,51,.13);border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(6,27,51,.06)}.surfside-information-card h2{margin:0 0 6px;color:#061b33}.surfside-information-card>p{margin:0 0 20px;color:#56616d}.surfside-information-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.surfside-information-field{display:grid;gap:7px}.surfside-information-field-wide{grid-column:1/-1}.surfside-information-field span,.surfside-information-services legend{color:#26323d;font-weight:800}.surfside-information-field input,.surfside-information-field select{width:100%;min-height:46px;padding:10px 12px;border:1px solid #aeb9c4;border-radius:9px;background:#fff;color:#26323d;font:inherit}.surfside-information-field input:focus,.surfside-information-field select:focus{border-color:#0b5fa5;outline:3px solid rgba(11,95,165,.18);outline-offset:1px}.surfside-information-help{margin:0;color:#687480;font-size:.88rem;line-height:1.45}.surfside-information-services{display:grid;gap:16px;margin:0;padding:0;border:0}.surfside-information-service{display:grid;grid-template-columns:minmax(120px,.7fr) minmax(180px,1.15fr) minmax(120px,.65fr) auto;align-items:end;gap:14px;padding:18px;border:1px solid rgba(6,27,51,.12);border-radius:13px;background:#f7f9fb}.surfside-information-service-actions{display:flex;align-items:center;gap:14px;min-height:46px}.surfside-information-checkbox{display:inline-flex;align-items:center;gap:8px;color:#26323d;font-weight:800;white-space:nowrap}.surfside-information-checkbox input{width:20px;height:20px;margin:0;accent-color:#0b5fa5}.surfside-information-remove,.surfside-information-add{min-height:42px;padding:9px 14px;border:1px solid #0b5fa5;border-radius:9px;background:#fff;color:#0b5fa5;font:inherit;font-weight:800;cursor:pointer}.surfside-information-remove:hover,.surfside-information-remove:focus-visible,.surfside-information-add:hover,.surfside-information-add:focus-visible{background:#eaf3fb;outline:0}.surfside-information-remove:disabled{cursor:not-allowed;opacity:.45}.surfside-information-service-controls{display:flex;justify-content:flex-start;margin-top:2px}.surfside-information-link-list{display:grid;gap:13px}.surfside-information-link{display:grid;grid-template-columns:minmax(130px,.35fr) minmax(0,1fr);align-items:center;gap:14px}.surfside-information-link strong{color:#26323d}.surfside-information-actions{position:sticky;bottom:14px;z-index:3;display:flex;justify-content:flex-end;padding:14px;border:1px solid rgba(6,27,51,.12);border-radius:14px;background:rgba(255,255,255,.94);box-shadow:0 10px 28px rgba(6,27,51,.12);backdrop-filter:blur(8px)}.surfside-information-save{min-height:48px;padding:11px 22px;border:0;border-radius:9px;background:#0b5fa5;color:#fff;font:inherit;font-weight:900;cursor:pointer}.surfside-information-save:hover,.surfside-information-save:focus-visible{background:#061b33}.surfside-information-save:focus-visible{outline:3px solid rgba(11,95,165,.28);outline-offset:3px}.surfside-information-notice{margin:0 0 20px;padding:14px 16px;border-radius:10px;font-weight:800}.surfside-information-notice-success{border:1px solid #9bd2a6;background:#edf9f0;color:#17682e}.surfside-information-notice-error{border:1px solid #e7aaaa;background:#fff0f0;color:#9b2020}@media(max-width:900px){.surfside-information-service{grid-template-columns:repeat(2,minmax(0,1fr))}.surfside-information-service-actions{align-self:end}}@media(max-width:720px){.surfside-information-grid,.surfside-information-service,.surfside-information-link{grid-template-columns:1fr}.surfside-information-field-wide{grid-column:auto}.surfside-information-actions{bottom:8px}.surfside-information-save{width:100%}.surfside-information-service-actions{justify-content:space-between}}
+    ');
+
+    wp_add_inline_style('surfside-tools-information-manager', '
+        .surfside-information-logo{grid-column:1/-1;display:grid;grid-template-columns:minmax(180px,280px) minmax(0,1fr);align-items:center;gap:22px;padding:18px;border:1px solid rgba(6,27,51,.12);border-radius:13px;background:#f7f9fb}.surfside-information-logo-preview{display:grid;min-height:130px;place-items:center;padding:16px;border:1px solid #d8e1e9;border-radius:10px;background:#fff}.surfside-information-logo-preview img{display:block;width:auto;max-width:100%;max-height:120px}.surfside-information-logo-copy{display:grid;gap:8px}.surfside-information-logo-copy>strong{color:#26323d;font-weight:800}.surfside-information-logo-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}.surfside-information-logo-status{margin:0;color:#687480;font-size:.88rem;line-height:1.45}@media(max-width:720px){.surfside-information-logo{grid-template-columns:1fr}.surfside-information-logo-actions>*{width:100%}}
     ');
 
     wp_register_script('surfside-tools-information-manager', false, array(), $version, true);
@@ -169,6 +188,67 @@ function surfside_tools_site_information_manager_assets() {
             updateRemoveButtons();
         });
     ');
+
+    wp_add_inline_script('surfside-tools-information-manager', '
+        document.addEventListener("DOMContentLoaded", function () {
+            var control = document.querySelector("[data-surfside-logo]");
+            if (!control || !window.wp || !wp.media) {
+                return;
+            }
+
+            var input = control.querySelector("[data-surfside-logo-id]");
+            var preview = control.querySelector("[data-surfside-logo-preview]");
+            var selectButton = control.querySelector("[data-surfside-logo-select]");
+            var defaultButton = control.querySelector("[data-surfside-logo-default]");
+            var status = control.querySelector("[data-surfside-logo-status]");
+            var defaultUrl = control.getAttribute("data-default-logo");
+            var frame;
+
+            if (!input || !preview || !selectButton || !defaultButton) {
+                return;
+            }
+
+            selectButton.addEventListener("click", function () {
+                if (!frame) {
+                    frame = wp.media({
+                        title: "Select the Surfside site logo",
+                        button: { text: "Use this logo" },
+                        library: { type: "image" },
+                        multiple: false
+                    });
+
+                    frame.on("select", function () {
+                        var attachment = frame.state().get("selection").first().toJSON();
+                        var displayUrl = attachment.url;
+                        if (attachment.sizes && attachment.sizes.medium) {
+                            displayUrl = attachment.sizes.medium.url;
+                        }
+
+                        input.value = attachment.id;
+                        preview.src = displayUrl;
+                        defaultButton.disabled = false;
+                        selectButton.textContent = "Replace logo";
+                        if (status) {
+                            status.textContent = "Custom Media Library logo selected. Save to publish the change.";
+                        }
+                    });
+                }
+
+                frame.open();
+            });
+
+            defaultButton.addEventListener("click", function () {
+                input.value = "0";
+                preview.src = defaultUrl;
+                defaultButton.disabled = true;
+                selectButton.textContent = "Select logo";
+                if (status) {
+                    status.textContent = "Restored plugin logo selected. Save to publish the change.";
+                }
+            });
+        });
+    ');
+
 }
 
 function surfside_tools_staff_site_information_shortcode() {
@@ -194,6 +274,9 @@ function surfside_tools_staff_site_information_shortcode() {
     $information = surfside_tools_get_site_information();
     $identity = $information['identity'];
     $location = $information['location'];
+    $logo_id = absint($identity['logo_id'] ?? 0);
+    $logo_url = surfside_tools_site_information_logo_url($information, 'medium_large');
+    $default_logo_url = SURFSIDE_TOOLS_URL . 'assets/images/surfside-logo-restored.png';
     $weekdays = array(
         1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday',
         5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday',
@@ -219,6 +302,21 @@ function surfside_tools_staff_site_information_shortcode() {
                 <h2>Church Identity</h2>
                 <p>The public name, tagline, phone number, and Contact destination.</p>
                 <div class="surfside-information-grid">
+                    <div class="surfside-information-logo" data-surfside-logo data-default-logo="<?php echo esc_url($default_logo_url); ?>">
+                        <input type="hidden" name="logo_id" value="<?php echo esc_attr($logo_id); ?>" data-surfside-logo-id>
+                        <div class="surfside-information-logo-preview">
+                            <img src="<?php echo esc_url($logo_url); ?>" alt="" data-surfside-logo-preview>
+                        </div>
+                        <div class="surfside-information-logo-copy">
+                            <strong>Site logo</strong>
+                            <p class="surfside-information-help">Select an image from the Media Library. The restored plugin logo remains the safe default.</p>
+                            <div class="surfside-information-logo-actions">
+                                <button type="button" class="surfside-information-add" data-surfside-logo-select><?php echo $logo_id > 0 ? 'Replace logo' : 'Select logo'; ?></button>
+                                <button type="button" class="surfside-information-remove" data-surfside-logo-default <?php disabled($logo_id, 0); ?>>Use default logo</button>
+                            </div>
+                            <p class="surfside-information-logo-status" data-surfside-logo-status><?php echo $logo_id > 0 ? 'Using a custom Media Library logo.' : 'Using the restored plugin logo.'; ?></p>
+                        </div>
+                    </div>
                     <label class="surfside-information-field"><span>Church name</span><input type="text" name="church_name" value="<?php echo esc_attr($identity['name']); ?>" required></label>
                     <label class="surfside-information-field"><span>Phone</span><input type="tel" name="phone" value="<?php echo esc_attr($identity['phone']); ?>" required></label>
                     <label class="surfside-information-field surfside-information-field-wide"><span>Tagline</span><input type="text" name="tagline" value="<?php echo esc_attr($identity['tagline']); ?>" required></label>
