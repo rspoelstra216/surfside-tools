@@ -209,7 +209,7 @@ Delivered through PRs #85–#92:
 
 Milestone 9 created one structured source of truth for Surfside Community Fellowship's public identity, tagline, editable phone number, meeting venue and address, expandable weekly service schedule, main navigation destinations, and Facebook, YouTube, and Instagram links.
 
-Delivered through PRs #95–#107:
+Delivered through PRs #95–#109:
 
 - Persisted and sanitized Surfside Information source for identity, tagline, phone, Contact destination, meeting location, navigation, and social links
 - Front-end Surfside Information management screen and dashboard card
@@ -218,13 +218,14 @@ Delivered through PRs #95–#107:
 - Sixty-minute live states driven by configured livestream services
 - Blue-led coastal V2 tokens and opt-in, prefixed component primitives
 - Restored high-resolution Surfside logo asset
+- Front-end Media Library site-logo selector with responsive preview, attachment-ID storage, and one-click default restoration
 - Responsive plugin-owned `[surfside_footer]` with tagline, service times, Google Maps-linked location, navigation, phone, Contact action, accessible social icons, and automatic copyright year
 - Full-width Site Editor integration across constrained theme layouts
 - cPanel deployment of plugin CSS and image assets
 
-Live desktop and mobile verification confirmed the footer layout, links, logo, and responsive behavior. Updating a service time in the Surfside Information dashboard immediately updated the public footer, validating the single-source-of-truth architecture.
+Live desktop and mobile verification confirmed the footer layout, links, logo, and responsive behavior. Updating a service time or selecting a different logo in the Surfside Information dashboard immediately updates the public footer, validating the single-source-of-truth architecture. Custom logos are stored as WordPress attachment IDs; missing, deleted, or cleared selections safely fall back to the restored plugin logo.
 
-The next milestone remains to be selected. A front-end Media Library selector for the shared site logo is the next focused enhancement candidate.
+The next milestone remains to be selected.
 
 ## Nice Ideas
 
