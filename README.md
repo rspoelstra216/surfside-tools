@@ -5,7 +5,7 @@ Surfside Tools is a custom WordPress website-management platform built for Surfs
 It gives church staff clear front-end workflows for weekly publishing, calendar management, homepage photos, locations, and settings without requiring routine access to WordPress administration.
 
 **Current release:** `2.3.1`  
-**Current development phase:** Milestone 9 — Sitewide Information and V2 Foundation
+**Current development phase:** Milestone 9 complete — next milestone planning
 
 ## Guiding principle
 
@@ -119,6 +119,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - `[surfside_today]`
 - `[surfside_today_compact]`
 - `[surfside_portal]`
+- `[surfside_footer]`
 
 `[surfside_today]` supports optional `title`, `events_url`, and `show_link="no"` attributes.
 
@@ -185,10 +186,10 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 
 Milestone 8 was released in version 2.3.0. Version 2.3.1 adds focused Today at Surfside and calendar experience refinements.
 
-### Current: Milestone 9 — Sitewide Information and V2 Foundation
+### Completed: Milestone 9 — Sitewide Information and V2 Foundation
 
-The centralized Surfside Information source, front-end manager, dashboard card, expandable service schedule, schedule-aware public features, livestream settings, and blue-led coastal V2 design foundation are now complete through PR #103.
+Milestone 9 is complete through PR #107. Surfside now has one managed source for identity, contact, location, navigation, social links, and an expandable livestream-aware service schedule.
 
-The remaining milestone work is the redesigned plugin-owned `[surfside_footer]`, followed by replacement of the current Site Editor footer after live verification.
+The responsive plugin-owned `[surfside_footer]` is deployed in the Site Editor and uses that shared information, the restored high-resolution logo, and the blue-led coastal design foundation. Desktop and mobile layouts are verified, and live testing confirmed that dashboard service-time changes update the footer immediately.
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the Milestone 9 delivery plan and organized backlog.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for completed milestones and the organized backlog.
