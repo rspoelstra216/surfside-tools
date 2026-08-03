@@ -71,9 +71,9 @@ Delivered through PRs #85–#92:
 
 ### Milestone 9 — Sitewide Information and V2 Foundation
 
-Milestone 9 is complete through PR #107.
+Milestone 9 and its first post-milestone enhancement are complete through PR #109.
 
-Delivered through PRs #95–#107:
+Delivered through PRs #95–#109:
 
 - Centralized Surfside identity, contact, location, navigation, social, and weekly service data
 - Front-end Surfside Information manager and dashboard card
@@ -82,12 +82,13 @@ Delivered through PRs #95–#107:
 - Sixty-minute livestream windows driven by configured services
 - Blue-led coastal design tokens and opt-in component primitives
 - Restored high-resolution Surfside logo
+- Front-end Media Library site-logo selector with live preview and one-click default restoration
 - Responsive plugin-owned `[surfside_footer]` driven by shared information
 - Google Maps-linked location, navigation, social icons, contact action, and automatic copyright year
 - Full-width Site Editor integration with verified desktop and mobile layouts
 - cPanel deployment of version-controlled CSS and image assets
 
-Live verification confirmed that service-time changes made in Surfside Information immediately update the public footer. The next milestone will be selected through project planning; a front-end Media Library selector for the site logo is the next focused enhancement candidate.
+Live verification confirmed that service-time and logo changes made in Surfside Information immediately update the public footer. Custom logos are stored as WordPress attachment IDs, while the restored plugin logo remains the automatic fallback. The next milestone will be selected through project planning.
 
 ## Release history
 
