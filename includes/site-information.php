@@ -13,6 +13,7 @@ function surfside_tools_site_information_defaults() {
     $defaults = array(
         'identity' => array(
             'name' => 'Surfside Community Fellowship',
+            'logo_id' => 0,
             'tagline' => 'The Perfect Church for Imperfect People.',
             'phone' => '(321) 617-2111',
             'contact_url' => '/contact/#Contact',
@@ -93,6 +94,7 @@ function surfside_tools_site_information_sanitize($value) {
     $clean = array(
         'identity' => array(
             'name' => sanitize_text_field($identity['name'] ?? $defaults['identity']['name']),
+            'logo_id' => absint($identity['logo_id'] ?? 0),
             'tagline' => sanitize_text_field($identity['tagline'] ?? $defaults['identity']['tagline']),
             'phone' => sanitize_text_field($identity['phone'] ?? $defaults['identity']['phone']),
             'contact_url' => surfside_tools_site_information_sanitize_url($identity['contact_url'] ?? $defaults['identity']['contact_url']),
@@ -244,6 +246,20 @@ function surfside_tools_site_information_url($value) {
         return $value;
     }
     return $value;
+}
+
+function surfside_tools_site_information_logo_url($information = null, $size = 'full') {
+    $information = is_array($information) ? $information : surfside_tools_get_site_information();
+    $logo_id = absint($information['identity']['logo_id'] ?? 0);
+
+    if ($logo_id > 0) {
+        $logo_url = wp_get_attachment_image_url($logo_id, $size);
+        if ($logo_url) {
+            return $logo_url;
+        }
+    }
+
+    return SURFSIDE_TOOLS_URL . 'assets/images/surfside-logo-restored.png';
 }
 
 function surfside_tools_site_information_address($information = null) {
