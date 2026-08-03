@@ -7,7 +7,7 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 ## Current release
 
 **Version:** `2.3.1`  
-**Current milestone:** Milestone 9 — Sitewide Information and V2 Foundation
+**Current milestone:** Milestone 9 complete — next milestone planning
 
 ## Completed milestones
 
@@ -19,6 +19,7 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 - ✅ Milestone 6 — Dashboard Intelligence
 - ✅ Milestone 7 — Calendar Experience
 - ✅ Milestone 8 — Church Portal
+- ✅ Milestone 9 — Sitewide Information and V2 Foundation
 
 Milestone 7 was completed in version 2.2.0 with the Calendar Experience. Milestone 8 was released in version 2.3.0 with the plugin-owned Church Portal.
 
@@ -62,27 +63,22 @@ The patch release completes a focused set of improvements delivered through PRs 
 
 ### Milestone 9 — Sitewide Information and V2 Foundation
 
-Create a single source of truth for information repeated throughout Surfside's website, then use it to deliver the first site-wide V2 component.
+Milestone 9 established one shared source for repeated Surfside information and delivered the first complete public component built on the V2 design foundation.
 
-### Delivered foundation
-
-Delivered through PRs #95–#103:
+Delivered through PRs #95–#107:
 
 - Structured Surfside identity, tagline, phone, meeting location, navigation, and social destinations
 - Front-end Surfside Information management screen and dashboard card
 - Expandable weekly service schedule with explicit livestream settings
 - Today at Surfside and service countdowns migrated to the shared schedule
 - Configured sixty-minute livestream states
-- Blue-led coastal tokens using deep ocean and Surfside blues sparingly with white and subtle warm off-white surfaces
-- Reusable, opt-in V2 sections, containers, cards, layouts, headings, buttons, focus states, and responsive behavior
-- Restored high-resolution Surfside logo asset prepared for the public footer
+- Blue-led coastal design tokens and reusable opt-in component primitives
+- Restored high-resolution Surfside logo
+- Responsive full-width `[surfside_footer]` with shared service, location, navigation, contact, and social data
+- Site Editor replacement verified on desktop and mobile
+- Plugin asset deployment corrected for cPanel
 
-### Remaining deliverables
-
-- Redesigned plugin-owned `[surfside_footer]`
-- Current Site Editor footer replaced with the shortcode after deployment verification
-
-The footer is the next focused feature. It will provide the restored logo, tagline, service times, Google Maps-linked location, main navigation, Contact and phone information, social icons, and automatic copyright year.
+Live verification confirmed that changing a service time through Surfside Information immediately updates the public footer. Milestone 9 is complete; the next milestone will be chosen through project planning.
 
 ## Future ideas
 

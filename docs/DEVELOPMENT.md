@@ -205,29 +205,26 @@ Delivered through PRs #85–#92:
 - Hide recurrence while multi-day mode is active to avoid conflicting schedules.
 - Keep the compact Today widget transparent and make its entire live state the Watch Live link.
 
-### Current — Milestone 9: Sitewide Information and V2 Foundation
+### Completed — Milestone 9: Sitewide Information and V2 Foundation
 
-Create one structured source of truth for Surfside Community Fellowship's public identity, tagline, editable phone number, current meeting venue and address, Saturday and Sunday service schedule, main navigation destinations, and Facebook, YouTube, and Instagram links.
+Milestone 9 created one structured source of truth for Surfside Community Fellowship's public identity, tagline, editable phone number, meeting venue and address, expandable weekly service schedule, main navigation destinations, and Facebook, YouTube, and Instagram links.
 
-#### Delivered foundation
+Delivered through PRs #95–#107:
 
-Delivered through PRs #95–#103:
-
-- One persisted and sanitized Surfside Information source for identity, tagline, phone, Contact destination, meeting location, navigation, and social links
+- Persisted and sanitized Surfside Information source for identity, tagline, phone, Contact destination, meeting location, navigation, and social links
 - Front-end Surfside Information management screen and dashboard card
 - Expandable weekly service schedule with per-service livestream settings
 - Shared schedule helpers consumed by Today at Surfside and all service countdown variants
-- Sixty-minute live states driven by configured livestream services instead of hardcoded Sundays
-- Blue-led coastal V2 tokens: deep ocean anchors, Surfside blue interactions, white primary surfaces, and subtle warm off-white section backgrounds
-- Opt-in, prefixed V2 primitives for full-width sections, containers, cards, layouts, headings, buttons, focus states, mobile behavior, and reduced motion
-- A restored high-resolution Surfside logo asset suitable for the redesigned footer
+- Sixty-minute live states driven by configured livestream services
+- Blue-led coastal V2 tokens and opt-in, prefixed component primitives
+- Restored high-resolution Surfside logo asset
+- Responsive plugin-owned `[surfside_footer]` with tagline, service times, Google Maps-linked location, navigation, phone, Contact action, accessible social icons, and automatic copyright year
+- Full-width Site Editor integration across constrained theme layouts
+- cPanel deployment of plugin CSS and image assets
 
-#### Remaining deliverables
+Live desktop and mobile verification confirmed the footer layout, links, logo, and responsive behavior. Updating a service time in the Surfside Information dashboard immediately updated the public footer, validating the single-source-of-truth architecture.
 
-- Plugin-owned `[surfside_footer]` with a responsive layout, restored logo, tagline, service times, Google Maps-linked location, main navigation, phone and Contact destinations, social icons, and automatic copyright year
-- Replacement of the current Site Editor footer with `[surfside_footer]` after deployment verification
-
-The redesigned footer is the next focused feature and the first complete public component built on the V2 design foundation.
+The next milestone remains to be selected. A front-end Media Library selector for the shared site logo is the next focused enhancement candidate.
 
 ## Nice Ideas
 
