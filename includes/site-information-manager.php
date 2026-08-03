@@ -56,14 +56,23 @@ function surfside_tools_site_information_manager_handle_post() {
         );
     }
 
-    $defaults = surfside_tools_site_information_defaults();
+    $posted_navigation = isset($_POST['navigation']) && is_array($_POST['navigation'])
+        ? wp_unslash($_POST['navigation'])
+        : array();
     $navigation = array();
-    foreach ($defaults['navigation'] as $key => $link) {
-        $navigation[$key] = array(
-            'label' => $link['label'],
-            'url' => isset($_POST['navigation'][$key])
-                ? wp_unslash($_POST['navigation'][$key])
-                : $link['url'],
+    foreach ($posted_navigation as $index => $link) {
+        if (!is_array($link)) {
+            continue;
+        }
+        $destination = sanitize_text_field($link['destination'] ?? 'custom');
+        $type = strpos($destination, 'page:') === 0 ? 'page' : 'custom';
+        $navigation[] = array(
+            'key' => $link['key'] ?? '',
+            'label' => $link['label'] ?? '',
+            'type' => $type,
+            'page_id' => $type === 'page' ? absint(substr($destination, 5)) : 0,
+            'url' => $type === 'custom' ? ($link['url'] ?? '') : '',
+            'new_tab' => $type === 'custom' && !empty($link['new_tab']),
         );
     }
 
@@ -132,6 +141,10 @@ function surfside_tools_site_information_manager_assets() {
         .surfside-information-logo{grid-column:1/-1;display:grid;grid-template-columns:minmax(180px,280px) minmax(0,1fr);align-items:center;gap:22px;padding:18px;border:1px solid rgba(6,27,51,.12);border-radius:13px;background:#f7f9fb}.surfside-information-logo-preview{display:grid;min-height:130px;place-items:center;padding:16px;border:1px solid #d8e1e9;border-radius:10px;background:#fff}.surfside-information-logo-preview img{display:block;width:auto;max-width:100%;max-height:120px}.surfside-information-logo-copy{display:grid;gap:8px}.surfside-information-logo-copy>strong{color:#26323d;font-weight:800}.surfside-information-logo-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}.surfside-information-logo-status{margin:0;color:#687480;font-size:.88rem;line-height:1.45}@media(max-width:720px){.surfside-information-logo{grid-template-columns:1fr}.surfside-information-logo-actions>*{width:100%}}
     ');
 
+    wp_add_inline_style('surfside-tools-information-manager', '
+        .surfside-information-navigation{display:grid;gap:14px;margin-bottom:14px}.surfside-information-nav-item{display:grid;grid-template-columns:34px minmax(150px,.8fr) minmax(180px,1fr) minmax(220px,1.2fr) auto;align-items:end;gap:12px;padding:16px;border:1px solid rgba(6,27,51,.12);border-radius:13px;background:#f7f9fb}.surfside-information-nav-item.is-dragging{opacity:.45}.surfside-information-drag{align-self:center;color:#687480;font-size:1.3rem;cursor:grab}.surfside-information-nav-custom{display:grid;grid-template-columns:minmax(150px,1fr) auto;align-items:end;gap:12px}.surfside-information-nav-custom[hidden]{display:none}.surfside-information-nav-actions{display:flex;gap:6px}.surfside-information-nav-actions .surfside-information-remove{min-width:42px;padding-inline:10px}@media(max-width:1050px){.surfside-information-nav-item{grid-template-columns:28px repeat(2,minmax(0,1fr))}.surfside-information-nav-custom{grid-column:2/-1}.surfside-information-nav-actions{grid-column:2/-1}}@media(max-width:720px){.surfside-information-nav-item{grid-template-columns:24px minmax(0,1fr)}.surfside-information-nav-item>.surfside-information-field,.surfside-information-nav-custom,.surfside-information-nav-actions{grid-column:2}.surfside-information-nav-custom{grid-template-columns:1fr}.surfside-information-nav-actions{flex-wrap:wrap}}
+    ');
+
     wp_register_script('surfside-tools-information-manager', false, array(), $version, true);
     wp_enqueue_script('surfside-tools-information-manager');
     wp_add_inline_script('surfside-tools-information-manager', '
@@ -188,6 +201,85 @@ function surfside_tools_site_information_manager_assets() {
             updateRemoveButtons();
         });
     ');
+
+    wp_add_inline_script('surfside-tools-information-manager', '
+        document.addEventListener("DOMContentLoaded", function () {
+            var list = document.querySelector("[data-surfside-navigation]");
+            var template = document.querySelector("[data-surfside-nav-template]");
+            var add = document.querySelector("[data-surfside-nav-add]");
+            var status = document.querySelector("[data-surfside-nav-status]");
+            if (!list || !template || !add) return;
+            var nextIndex = list.children.length;
+            var dragged = null;
+
+            function items() { return Array.from(list.querySelectorAll(".surfside-information-nav-item")); }
+            function announce(message) { if (status) status.textContent = message; }
+            function sync() {
+                items().forEach(function (item, index, all) {
+                    var up = item.querySelector("[data-surfside-nav-up]");
+                    var down = item.querySelector("[data-surfside-nav-down]");
+                    if (up) up.disabled = index === 0;
+                    if (down) down.disabled = index === all.length - 1;
+                    var select = item.querySelector("[data-surfside-nav-destination]");
+                    var custom = item.querySelector("[data-surfside-nav-custom]");
+                    var url = item.querySelector("[data-surfside-nav-url]");
+                    var isCustom = select && select.value === "custom";
+                    if (custom) custom.hidden = !isCustom;
+                    if (url) url.required = isCustom;
+                });
+            }
+            function move(item, direction) {
+                var sibling = direction < 0 ? item.previousElementSibling : item.nextElementSibling;
+                if (!sibling) return;
+                if (direction < 0) list.insertBefore(item, sibling);
+                else list.insertBefore(sibling, item);
+                sync();
+                announce("Navigation order changed. Save to publish.");
+            }
+
+            add.addEventListener("click", function () {
+                var index = "new-" + nextIndex++;
+                var wrapper = document.createElement("div");
+                wrapper.innerHTML = template.innerHTML.replaceAll("__INDEX__", index).trim();
+                var item = wrapper.firstElementChild;
+                list.appendChild(item);
+                sync();
+                var label = item.querySelector("input[type=text]");
+                if (label) label.focus();
+                announce("Navigation link added.");
+            });
+            list.addEventListener("change", function (event) {
+                if (event.target.matches("[data-surfside-nav-destination]")) sync();
+            });
+            list.addEventListener("click", function (event) {
+                var item = event.target.closest(".surfside-information-nav-item");
+                if (!item) return;
+                if (event.target.closest("[data-surfside-nav-remove]")) {
+                    item.remove(); sync(); announce("Navigation link removed. Save to publish.");
+                } else if (event.target.closest("[data-surfside-nav-up]")) move(item, -1);
+                else if (event.target.closest("[data-surfside-nav-down]")) move(item, 1);
+            });
+            list.addEventListener("dragstart", function (event) {
+                dragged = event.target.closest(".surfside-information-nav-item");
+                if (!dragged) return;
+                dragged.classList.add("is-dragging");
+                event.dataTransfer.effectAllowed = "move";
+            });
+            list.addEventListener("dragover", function (event) {
+                if (!dragged) return;
+                event.preventDefault();
+                var target = event.target.closest(".surfside-information-nav-item");
+                if (!target || target === dragged) return;
+                var box = target.getBoundingClientRect();
+                list.insertBefore(dragged, event.clientY < box.top + box.height / 2 ? target : target.nextSibling);
+            });
+            list.addEventListener("dragend", function () {
+                if (dragged) dragged.classList.remove("is-dragging");
+                dragged = null; sync(); announce("Navigation order changed. Save to publish.");
+            });
+            sync();
+        });
+    );
 
     wp_add_inline_script('surfside-tools-information-manager', '
         document.addEventListener("DOMContentLoaded", function () {
@@ -281,6 +373,11 @@ function surfside_tools_staff_site_information_shortcode() {
         1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday',
         5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday',
     );
+    $published_pages = get_pages(array(
+        'post_status' => 'publish',
+        'sort_column' => 'post_title',
+        'sort_order' => 'ASC',
+    ));
 
     ob_start();
     ?>
@@ -374,12 +471,55 @@ function surfside_tools_staff_site_information_shortcode() {
 
             <section class="surfside-information-card">
                 <h2>Main Navigation</h2>
-                <p>These stable destinations will be reused by the redesigned footer.</p>
-                <div class="surfside-information-link-list">
-                    <?php foreach ($information['navigation'] as $key => $link) : ?>
-                        <label class="surfside-information-link"><strong><?php echo esc_html($link['label']); ?></strong><input type="text" name="navigation[<?php echo esc_attr($key); ?>]" value="<?php echo esc_attr($link['url']); ?>" required></label>
+                <p>Build the ordered menu shared by the footer and upcoming site header. Choose a published page to keep the link working if its title or slug changes.</p>
+                <div class="surfside-information-navigation" data-surfside-navigation>
+                    <?php foreach ($information['navigation'] as $index => $link) :
+                        $destination = ($link['type'] ?? '') === 'page' && !empty($link['page_id'])
+                            ? 'page:' . absint($link['page_id'])
+                            : 'custom';
+                        ?>
+                        <div class="surfside-information-nav-item" draggable="true">
+                            <span class="surfside-information-drag" aria-hidden="true" title="Drag to reorder">⋮⋮</span>
+                            <input type="hidden" name="navigation[<?php echo esc_attr($index); ?>][key]" value="<?php echo esc_attr($link['key'] ?? ''); ?>">
+                            <label class="surfside-information-field"><span>Menu text</span><input type="text" name="navigation[<?php echo esc_attr($index); ?>][label]" value="<?php echo esc_attr($link['label'] ?? ''); ?>" required></label>
+                            <label class="surfside-information-field"><span>Destination</span><select name="navigation[<?php echo esc_attr($index); ?>][destination]" data-surfside-nav-destination>
+                                <?php foreach ($published_pages as $page) : ?><option value="page:<?php echo esc_attr($page->ID); ?>" <?php selected($destination, 'page:' . $page->ID); ?>><?php echo esc_html($page->post_title); ?></option><?php endforeach; ?>
+                                <option value="custom" <?php selected($destination, 'custom'); ?>>Custom URL</option>
+                            </select></label>
+                            <div class="surfside-information-nav-custom" data-surfside-nav-custom>
+                                <label class="surfside-information-field"><span>Custom URL</span><input type="text" name="navigation[<?php echo esc_attr($index); ?>][url]" value="<?php echo esc_attr($link['url'] ?? ''); ?>" data-surfside-nav-url></label>
+                                <label class="surfside-information-checkbox"><input type="checkbox" name="navigation[<?php echo esc_attr($index); ?>][new_tab]" value="1" <?php checked(!empty($link['new_tab'])); ?>> Open in new tab</label>
+                            </div>
+                            <div class="surfside-information-nav-actions">
+                                <button type="button" class="surfside-information-remove" data-surfside-nav-up aria-label="Move <?php echo esc_attr($link['label'] ?? 'link'); ?> up">↑</button>
+                                <button type="button" class="surfside-information-remove" data-surfside-nav-down aria-label="Move <?php echo esc_attr($link['label'] ?? 'link'); ?> down">↓</button>
+                                <button type="button" class="surfside-information-remove" data-surfside-nav-remove>Remove</button>
+                            </div>
+                        </div>
                     <?php endforeach; ?>
                 </div>
+                <button type="button" class="surfside-information-add" data-surfside-nav-add>+ Add navigation link</button>
+                <p class="screen-reader-text" aria-live="polite" data-surfside-nav-status></p>
+                <template data-surfside-nav-template>
+                    <div class="surfside-information-nav-item" draggable="true">
+                        <span class="surfside-information-drag" aria-hidden="true" title="Drag to reorder">⋮⋮</span>
+                        <input type="hidden" name="navigation[__INDEX__][key]" value="">
+                        <label class="surfside-information-field"><span>Menu text</span><input type="text" name="navigation[__INDEX__][label]" required></label>
+                        <label class="surfside-information-field"><span>Destination</span><select name="navigation[__INDEX__][destination]" data-surfside-nav-destination>
+                            <?php foreach ($published_pages as $page) : ?><option value="page:<?php echo esc_attr($page->ID); ?>"><?php echo esc_html($page->post_title); ?></option><?php endforeach; ?>
+                            <option value="custom">Custom URL</option>
+                        </select></label>
+                        <div class="surfside-information-nav-custom" data-surfside-nav-custom hidden>
+                            <label class="surfside-information-field"><span>Custom URL</span><input type="text" name="navigation[__INDEX__][url]" data-surfside-nav-url></label>
+                            <label class="surfside-information-checkbox"><input type="checkbox" name="navigation[__INDEX__][new_tab]" value="1"> Open in new tab</label>
+                        </div>
+                        <div class="surfside-information-nav-actions">
+                            <button type="button" class="surfside-information-remove" data-surfside-nav-up aria-label="Move link up">↑</button>
+                            <button type="button" class="surfside-information-remove" data-surfside-nav-down aria-label="Move link down">↓</button>
+                            <button type="button" class="surfside-information-remove" data-surfside-nav-remove>Remove</button>
+                        </div>
+                    </div>
+                </template>
             </section>
 
             <section class="surfside-information-card">
