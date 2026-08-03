@@ -77,12 +77,13 @@ function surfside_tools_footer_shortcode() {
                 <h2>Explore</h2>
                 <ul class="surfside-site-footer__links">
                     <?php foreach ($navigation as $link) :
-                        $url = surfside_tools_site_information_url($link['url'] ?? '');
+                        $url = surfside_tools_site_information_navigation_url($link);
                         if ($url === '') {
                             continue;
                         }
+                        $new_tab = ($link['type'] ?? '') === 'custom' && !empty($link['new_tab']);
                         ?>
-                        <li><a href="<?php echo esc_url($url); ?>"><?php echo esc_html($link['label'] ?? ''); ?></a></li>
+                        <li><a href="<?php echo esc_url($url); ?>"<?php echo $new_tab ? ' target="_blank" rel="noopener noreferrer"' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php echo esc_html($link['label'] ?? ''); ?></a></li>
                     <?php endforeach; ?>
                 </ul>
             </nav>

@@ -44,13 +44,13 @@ function surfside_tools_site_information_defaults() {
             ),
         ),
         'navigation' => array(
-            'plan_visit' => array('label' => 'Plan Your Visit', 'url' => '/plan-your-visit/'),
-            'ministries' => array('label' => 'Ministries', 'url' => '/ministries/'),
-            'events' => array('label' => 'Events', 'url' => '/events/'),
-            'watch_live' => array('label' => 'Watch Live', 'url' => '/watch-live/'),
-            'staff' => array('label' => 'Staff', 'url' => '/staff/'),
-            'give' => array('label' => 'Give', 'url' => '/give/'),
-            'contact' => array('label' => 'Contact', 'url' => '/contact/#Contact'),
+            array('key' => 'plan-visit', 'label' => 'Plan Your Visit', 'type' => 'custom', 'page_id' => 0, 'url' => '/plan-your-visit/', 'new_tab' => false),
+            array('key' => 'ministries', 'label' => 'Ministries', 'type' => 'custom', 'page_id' => 0, 'url' => '/ministries/', 'new_tab' => false),
+            array('key' => 'events', 'label' => 'Events', 'type' => 'custom', 'page_id' => 0, 'url' => '/events/', 'new_tab' => false),
+            array('key' => 'watch-live', 'label' => 'Watch Live', 'type' => 'custom', 'page_id' => 0, 'url' => '/watch-live/', 'new_tab' => false),
+            array('key' => 'staff', 'label' => 'Staff', 'type' => 'custom', 'page_id' => 0, 'url' => '/staff/', 'new_tab' => false),
+            array('key' => 'give', 'label' => 'Give', 'type' => 'custom', 'page_id' => 0, 'url' => '/give/', 'new_tab' => false),
+            array('key' => 'contact', 'label' => 'Contact', 'type' => 'custom', 'page_id' => 0, 'url' => '/contact/#Contact', 'new_tab' => false),
         ),
         'social' => array(
             'facebook' => array(
@@ -157,14 +157,45 @@ function surfside_tools_site_information_sanitize($value) {
         $clean['services'] = $defaults['services'];
     }
 
-    foreach ($defaults['navigation'] as $key => $default_link) {
-        $link = isset($value['navigation'][$key]) && is_array($value['navigation'][$key])
-            ? $value['navigation'][$key]
-            : $default_link;
-        $clean['navigation'][$key] = array(
-            'label' => sanitize_text_field($link['label'] ?? $default_link['label']),
-            'url' => surfside_tools_site_information_sanitize_url($link['url'] ?? $default_link['url']),
+    $navigation = isset($value['navigation']) && is_array($value['navigation']) ? $value['navigation'] : $defaults['navigation'];
+    foreach ($navigation as $index => $link) {
+        if (!is_array($link)) {
+            continue;
+        }
+        $label = sanitize_text_field($link['label'] ?? '');
+        if ($label === '') {
+            continue;
+        }
+        $key = sanitize_key($link['key'] ?? (is_string($index) ? $index : ''));
+        if ($key === '') {
+            $key = 'nav-' . substr(md5(wp_json_encode(array($label, $index))), 0, 12);
+        }
+        $type = sanitize_key($link['type'] ?? '');
+        $page_id = absint($link['page_id'] ?? 0);
+        $url = surfside_tools_site_information_sanitize_url($link['url'] ?? '');
+        if ($type !== 'page' && $type !== 'custom') {
+            $type = 'custom';
+        }
+        if ($type === 'page') {
+            $page = $page_id ? get_post($page_id) : null;
+            if (!($page instanceof WP_Post) || $page->post_type !== 'page' || $page->post_status !== 'publish') {
+                $type = 'custom';
+                $page_id = 0;
+            } else {
+                $url = '';
+            }
+        }
+        $clean['navigation'][] = array(
+            'key' => $key,
+            'label' => $label,
+            'type' => $type,
+            'page_id' => $page_id,
+            'url' => $url,
+            'new_tab' => $type === 'custom' && !empty($link['new_tab']),
         );
+    }
+    if (empty($clean['navigation'])) {
+        $clean['navigation'] = $defaults['navigation'];
     }
 
     foreach ($defaults['social'] as $key => $default_link) {
@@ -193,6 +224,9 @@ function surfside_tools_get_site_information() {
     $merged = array_replace_recursive($defaults, $stored);
     if (isset($stored['services']) && is_array($stored['services'])) {
         $merged['services'] = $stored['services'];
+    }
+    if (isset($stored['navigation']) && is_array($stored['navigation'])) {
+        $merged['navigation'] = $stored['navigation'];
     }
 
     return apply_filters(
@@ -246,6 +280,18 @@ function surfside_tools_site_information_url($value) {
         return $value;
     }
     return $value;
+}
+
+function surfside_tools_site_information_navigation_url($link) {
+    if (!is_array($link)) {
+        return '';
+    }
+    if (($link['type'] ?? '') === 'page') {
+        $page_id = absint($link['page_id'] ?? 0);
+        $permalink = $page_id ? get_permalink($page_id) : '';
+        return $permalink ? $permalink : '';
+    }
+    return surfside_tools_site_information_url($link['url'] ?? '');
 }
 
 function surfside_tools_site_information_logo_url($information = null, $size = 'full') {
