@@ -56,15 +56,15 @@
 .surfside-site-header__logo {
     display: block;
     width: auto;
-    width: clamp(260px, 23vw, 320px);
-    max-width: 32vw;
+    width: clamp(220px, 19vw, 260px);
+    max-width: 27vw;
     height: auto;
     max-height: 64px;
     transition: max-height var(--surfside-transition-fast);
 }
 
 .surfside-site-header.is-scrolled .surfside-site-header__logo {
-    width: clamp(230px, 21vw, 280px);
+    width: clamp(205px, 18vw, 235px);
     max-height: 46px;
 }
 
