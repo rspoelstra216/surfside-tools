@@ -56,14 +56,16 @@
 .surfside-site-header__logo {
     display: block;
     width: auto;
-    max-width: min(300px, 26vw);
+    width: clamp(260px, 23vw, 320px);
+    max-width: 32vw;
     height: auto;
-    max-height: 56px;
+    max-height: 64px;
     transition: max-height var(--surfside-transition-fast);
 }
 
 .surfside-site-header.is-scrolled .surfside-site-header__logo {
-    max-height: 40px;
+    width: clamp(230px, 21vw, 280px);
+    max-height: 46px;
 }
 
 .surfside-site-header__nav {
@@ -75,21 +77,21 @@
     margin: 0;
     padding: 0;
     align-items: center;
-    gap: clamp(4px, 0.7vw, 12px);
+    gap: clamp(2px, 0.45vw, 8px);
     list-style: none;
 }
 
 .surfside-site-header__link {
     display: inline-flex;
-    min-height: 44px;
+    min-height: 40px;
     align-items: center;
     justify-content: center;
     gap: 7px;
-    padding: 9px 11px;
+    padding: 8px 9px;
     border: 1px solid transparent;
     border-radius: var(--surfside-radius-pill);
     color: var(--surfside-color-ocean-950);
-    font-size: clamp(0.88rem, 1.1vw, 1rem);
+    font-size: clamp(0.82rem, 0.95vw, 0.92rem);
     font-weight: var(--surfside-weight-semibold);
     line-height: 1.15;
     text-decoration: none;
@@ -103,7 +105,7 @@
 }
 
 .surfside-site-header__link--primary {
-    padding-inline: 17px;
+    padding-inline: 14px;
     color: var(--surfside-color-white);
     background: var(--surfside-color-blue-700);
     border-color: var(--surfside-color-blue-700);
@@ -170,7 +172,7 @@
     transform: translateY(-7px) rotate(-45deg);
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1080px) {
     .surfside-site-header__inner,
     .surfside-site-header.is-scrolled .surfside-site-header__inner {
         min-height: 64px;
@@ -179,6 +181,7 @@
 
     .surfside-site-header__logo,
     .surfside-site-header.is-scrolled .surfside-site-header__logo {
+        width: auto;
         max-width: min(260px, calc(100vw - 100px));
         max-height: 42px;
     }
