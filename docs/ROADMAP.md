@@ -7,7 +7,7 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 ## Current release
 
 **Version:** `2.3.1`  
-**Current milestone:** Milestone 9 complete — next milestone planning
+**Current milestone:** Milestone 10 — V2 Website Experience
 
 ## Completed milestones
 
@@ -79,7 +79,22 @@ Delivered through PRs #95–#109:
 - Site Editor replacement verified on desktop and mobile
 - Plugin asset deployment corrected for cPanel
 
-Live verification confirmed that changing a service time or site logo through Surfside Information immediately updates the public footer. Milestone 9 and its first post-milestone enhancement are complete; the next milestone will be chosen through project planning.
+Live verification confirmed that changing a service time or site logo through Surfside Information immediately updates the public footer. Milestone 9 and its first post-milestone enhancement are complete.
+
+### Milestone 10 — V2 Website Experience
+
+Apply the V2 foundation to the public website while keeping individual WordPress pages independently editable.
+
+Planned delivery order:
+
+1. Ordered front-end navigation manager with internal-page and custom-URL destinations
+2. Plugin-owned `[surfside_header]` using the shared logo and navigation
+3. Opaque full-width white presentation with a compact sticky state and accessible mobile menu
+4. Plan Your Visit primary action that yields to Live Now during configured livestream windows
+5. Site Editor header replacement after desktop and mobile verification
+6. Page-by-page style audit followed by focused reusable styles and widgets
+
+The initial navigation remains flat. Add, remove, rename, drag-and-drop, Move Up, and Move Down controls will support routine management without opening the Site Editor.
 
 ## Future ideas
 
