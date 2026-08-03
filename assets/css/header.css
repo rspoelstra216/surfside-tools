@@ -241,6 +241,17 @@
     }
 }
 
+/*
+ * WordPress changes the mobile admin toolbar from fixed to absolute below
+ * 600px. Once it scrolls away, the sticky site header should use the top of
+ * the viewport instead of retaining an empty toolbar-sized gap.
+ */
+@media screen and (max-width: 600px) {
+    .admin-bar .surfside-site-header {
+        top: 0;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .surfside-site-header,
     .surfside-site-header__inner,
