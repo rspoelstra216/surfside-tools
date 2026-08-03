@@ -5,8 +5,8 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Register the public footer stylesheet. It is only enqueued when the
- * shortcode renders so unrelated pages do not pay for the component.
+ * Enqueue footer styles before WordPress prints the document head.
+ * Site Editor template shortcodes render too late for conditional enqueueing.
  */
 function surfside_tools_footer_assets() {
     wp_enqueue_style(
