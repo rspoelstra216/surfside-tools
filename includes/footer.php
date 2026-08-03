@@ -44,7 +44,7 @@ function surfside_tools_footer_shortcode() {
     $contact_url = surfside_tools_site_information_url($identity['contact_url'] ?? '');
     $phone = trim((string) ($identity['phone'] ?? ''));
     $phone_href = preg_replace('/[^0-9+]/', '', $phone);
-    $logo_url = SURFSIDE_TOOLS_URL . 'assets/images/surfside-logo-restored.png';
+    $logo_url = surfside_tools_site_information_logo_url($information);
 
     ob_start();
     ?>
