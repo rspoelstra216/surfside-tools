@@ -71,18 +71,24 @@ Delivered through PRs #85–#92:
 
 ### Milestone 9 — Sitewide Information and V2 Foundation
 
-Create a single source of truth for Surfside identity, service times, meeting location, phone, navigation links, and social destinations.
+Milestone 9 now has its shared information, schedule, and visual foundations in place.
 
-Planned deliverables:
+Delivered through PRs #95–#103:
 
-- Front-end Surfside Information management screen
-- Surfside Information dashboard card
-- Shared service schedule used by Today at Surfside and countdowns
-- Blue-led coastal design tokens with white and warm sandy off-white surfaces
-- Plugin-owned `[surfside_footer]` with responsive layout, logo, service times, linked location, navigation, social icons, contact link, and automatic copyright year
-- Replacement of the current Site Editor footer with the shortcode
+- Centralized Surfside identity, contact, location, navigation, social, and weekly service data
+- Front-end Surfside Information manager and dashboard card
+- Expandable weekly services with per-service livestream settings
+- Today at Surfside and countdown features migrated to the shared schedule
+- Sixty-minute livestream windows driven by configured services
+- Blue-led coastal design tokens and opt-in component primitives
+- White and restrained warm off-white surfaces with purposeful Surfside-blue interaction states
 
-The redesigned footer is a core Milestone 9 deliverable and the first visible V2 component. Feature order will continue one focused pull request at a time.
+Remaining milestone deliverables:
+
+- Plugin-owned `[surfside_footer]` with responsive layout, restored logo, service times, linked location, navigation, social icons, contact link, and automatic copyright year
+- Replacement of the current Site Editor footer with the shortcode after live verification
+
+The redesigned footer is the next focused feature and the first complete public component built on the V2 design foundation.
 
 ## Release history
 

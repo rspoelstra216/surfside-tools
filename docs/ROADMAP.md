@@ -64,19 +64,25 @@ The patch release completes a focused set of improvements delivered through PRs 
 
 Create a single source of truth for information repeated throughout Surfside's website, then use it to deliver the first site-wide V2 component.
 
-### Planned deliverables
+### Delivered foundation
 
-- Structured Surfside identity, tagline, phone, meeting location, service schedule, navigation, and social destinations
-- Front-end Surfside Information management screen
-- Surfside Information dashboard card
-- Existing Today and countdown features migrated to the shared service schedule
-- Blue-led coastal design tokens using deep ocean and Surfside blues sparingly with white and warm sandy off-white surfaces
+Delivered through PRs #95–#103:
+
+- Structured Surfside identity, tagline, phone, meeting location, navigation, and social destinations
+- Front-end Surfside Information management screen and dashboard card
+- Expandable weekly service schedule with explicit livestream settings
+- Today at Surfside and service countdowns migrated to the shared schedule
+- Configured sixty-minute livestream states
+- Blue-led coastal tokens using deep ocean and Surfside blues sparingly with white and subtle warm off-white surfaces
+- Reusable, opt-in V2 sections, containers, cards, layouts, headings, buttons, focus states, and responsive behavior
+- Restored high-resolution Surfside logo asset prepared for the public footer
+
+### Remaining deliverables
+
 - Redesigned plugin-owned `[surfside_footer]`
-- Current Site Editor footer replaced with the shortcode after live verification
+- Current Site Editor footer replaced with the shortcode after deployment verification
 
-The redesigned footer is part of Milestone 9, not a future candidate. It will provide the logo, tagline, service times, Google Maps-linked location, main navigation, Contact and phone information, social icons, and automatic copyright year.
-
-Logo reconstruction remains a separate, non-blocking branding project. The exact delivery sequence will continue one focused pull request at a time.
+The footer is the next focused feature. It will provide the restored logo, tagline, service times, Google Maps-linked location, main navigation, Contact and phone information, social icons, and automatic copyright year.
 
 ## Future ideas
 
