@@ -5,7 +5,7 @@ Surfside Tools is a custom WordPress website-management platform built for Surfs
 It gives church staff clear front-end workflows for weekly publishing, calendar management, homepage photos, locations, and settings without requiring routine access to WordPress administration.
 
 **Current release:** `2.3.1`  
-**Current development phase:** Milestone 9 complete — next milestone planning
+**Current development phase:** Milestone 10 — V2 Website Experience
 
 ## Guiding principle
 
@@ -189,8 +189,14 @@ Milestone 8 was released in version 2.3.0. Version 2.3.1 adds focused Today at S
 
 ### Completed: Milestone 9 — Sitewide Information and V2 Foundation
 
-Milestone 9 is complete through PR #107. Surfside now has one managed source for identity, contact, location, navigation, social links, and an expandable livestream-aware service schedule.
+Milestone 9 and its first post-milestone enhancement are complete through PR #109. Surfside now has one managed source for identity, contact, location, navigation, social links, an expandable livestream-aware service schedule, and a replaceable Media Library logo.
 
-The responsive plugin-owned `[surfside_footer]` is deployed in the Site Editor and uses that shared information, the restored high-resolution logo, and the blue-led coastal design foundation. Desktop and mobile layouts are verified, and live testing confirmed that dashboard service-time changes update the footer immediately.
+The responsive plugin-owned `[surfside_footer]` is deployed in the Site Editor and uses that shared information and the blue-led coastal design foundation. Desktop and mobile layouts are verified.
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for completed milestones and the organized backlog.
+### Current: Milestone 10 — V2 Website Experience
+
+Milestone 10 begins with an ordered front-end navigation manager and a plugin-owned `[surfside_header]`. The header will use the shared logo, an opaque full-width white surface, a compact sticky state, an accessible mobile menu, and a time-aware primary action.
+
+Surfside Tools will own sitewide information, navigation, headers, footers, dynamic widgets, and reusable design standards. WordPress pages will remain independently editable for unique content and layouts.
+
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the delivery plan and organized backlog.
