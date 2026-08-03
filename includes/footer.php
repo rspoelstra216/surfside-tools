@@ -5,8 +5,8 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Register the public footer stylesheet. It is only enqueued when the
- * shortcode renders so unrelated pages do not pay for the component.
+ * Enqueue footer styles before WordPress prints the document head.
+ * Site Editor template shortcodes render too late for conditional enqueueing.
  */
 function surfside_tools_footer_assets() {
     wp_enqueue_style(
@@ -16,6 +16,7 @@ function surfside_tools_footer_assets() {
         defined('SURFSIDE_TOOLS_VERSION') ? SURFSIDE_TOOLS_VERSION : '2.3.1'
     );
 }
+add_action('wp_enqueue_scripts', 'surfside_tools_footer_assets', 6);
 
 function surfside_tools_footer_social_icon($network) {
     $icons = array(
@@ -32,8 +33,6 @@ function surfside_tools_footer_social_icon($network) {
 }
 
 function surfside_tools_footer_shortcode() {
-    surfside_tools_footer_assets();
-
     $information = surfside_tools_get_site_information();
     $identity = $information['identity'] ?? array();
     $location = $information['location'] ?? array();
