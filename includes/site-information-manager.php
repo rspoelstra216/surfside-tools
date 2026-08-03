@@ -279,7 +279,7 @@ function surfside_tools_site_information_manager_assets() {
             });
             sync();
         });
-    );
+    ');
 
     wp_add_inline_script('surfside-tools-information-manager', '
         document.addEventListener("DOMContentLoaded", function () {
