@@ -129,6 +129,7 @@
     color: var(--surfside-color-white);
     background: var(--surfside-color-danger);
     border-color: var(--surfside-color-danger);
+    box-shadow: none;
 }
 
 .surfside-site-header__live-dot {
