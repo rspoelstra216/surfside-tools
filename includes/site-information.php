@@ -242,7 +242,7 @@ function surfside_tools_update_site_information($value) {
         false
     );
 
-    if ($updated && function_exists('surfside_tools_purge_cache')) {
+    if (function_exists('surfside_tools_purge_cache')) {
         surfside_tools_purge_cache();
     }
 
