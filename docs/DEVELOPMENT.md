@@ -254,7 +254,7 @@ Delivered through PRs #111–#118:
 - Added an opaque full-width white surface, thin coastal-blue accent, compact sticky state, and subtle shadow.
 - Added an accessible mobile menu that closes after selection, outside interaction, or Escape.
 - Made Plan Your Visit the normal primary action.
-- Promote Watch Live to a red Live Now action during configured sixty-minute livestream windows.
+- Promoted Watch Live to a red Live Now action during configured sixty-minute livestream windows.
 - Corrected the shared high-resolution logo aspect ratio and header/footer presentation.
 - Added WordPress admin-toolbar offsets appropriate to desktop, tablet, and narrow mobile behavior.
 - Replaced the production Site Editor header with `[surfside_header]`.
