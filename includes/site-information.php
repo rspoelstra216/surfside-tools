@@ -236,11 +236,17 @@ function surfside_tools_get_site_information() {
 }
 
 function surfside_tools_update_site_information($value) {
-    return update_option(
+    $updated = update_option(
         SURFSIDE_TOOLS_SITE_INFORMATION_OPTION,
         surfside_tools_site_information_sanitize($value),
         false
     );
+
+    if ($updated && function_exists('surfside_tools_purge_cache')) {
+        surfside_tools_purge_cache();
+    }
+
+    return $updated;
 }
 
 /**
