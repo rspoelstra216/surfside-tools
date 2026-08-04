@@ -184,33 +184,10 @@ Official releases are created through the **Release Surfside Tools** GitHub Acti
 
 The live site continues to deploy from `main` through cPanel Git Version Control.
 
-## Roadmap
+## Current direction
 
-### Completed through Milestone 8
+Milestones 1–9 are complete. Milestone 10 — V2 Website Experience — is in progress.
 
-- Milestone 1 — Weekly Update Foundation
-- Milestone 2 — Native Calendar
-- Milestone 3 — Google Places
-- Milestone 4 — Staff Dashboard
-- Milestone 5 — Platform Consolidation
-- Milestone 6 — Dashboard Intelligence
-- Milestone 7 — Calendar Experience
-- Milestone 8 — Church Portal
+The shared information, service schedule, design foundation, footer, ordered navigation, and site header were released in version 2.4.0. The next phase is a page-by-page public design audit. Surfside Tools will continue to own sitewide settings and reusable components while WordPress pages retain their unique editorial content and layouts.
 
-Milestone 8 was released in version 2.3.0. Version 2.3.1 added focused Today at Surfside and calendar experience refinements. Version 2.4.0 releases the centralized sitewide information, shared service schedule, V2 design foundation, plugin-owned footer and header, ordered navigation management, and restored logo.
-
-### Completed: Milestone 9 — Sitewide Information and V2 Foundation
-
-Milestone 9 and its first post-milestone enhancement are complete through PR #109. Surfside now has one managed source for identity, contact, location, navigation, social links, an expandable livestream-aware service schedule, and a replaceable Media Library logo.
-
-The responsive plugin-owned `[surfside_footer]` is deployed in the Site Editor and uses that shared information and the blue-led coastal design foundation. Desktop and mobile layouts are verified.
-
-### Current: Milestone 10 — V2 Website Experience
-
-The first Milestone 10 phase is complete through PR #118. Surfside Information now provides an ordered navigation manager, and the production Site Editor header uses the plugin-owned `[surfside_header]`.
-
-The header uses the shared replaceable logo and managed navigation on an opaque full-width white surface. It includes a compact sticky state, an accessible mobile menu, WordPress toolbar handling, and a primary action that promotes Watch Live to Live Now during configured livestream windows. Desktop, mobile, logged-in, and public behavior have been verified.
-
-The next Milestone 10 phase is a page-by-page style audit. Surfside Tools will continue to own sitewide information, navigation, headers, footers, dynamic widgets, and reusable design standards, while WordPress pages remain independently editable for unique content and layouts.
-
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the delivery plan and organized backlog.
+See the [roadmap](docs/ROADMAP.md) for milestone status, the [development handbook](docs/DEVELOPMENT.md) for durable decisions, and the [changelog](CHANGELOG.md) for complete release history.

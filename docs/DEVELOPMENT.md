@@ -158,136 +158,48 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
 
 ## Milestones
 
-### Complete — Milestones 1–8
+| Milestone | Outcome | Release |
+| --- | --- | --- |
+| 1 | Weekly Update Foundation | 1.x |
+| 2 | Native Calendar | 1.x |
+| 3 | Google Places | 1.x |
+| 4 | Staff Dashboard | 1.x |
+| 5 | Platform Consolidation | 2.0.0 |
+| 6 | Dashboard Intelligence | 2.1.0 |
+| 7 | Calendar Experience | 2.2.0 |
+| 8 | Church Portal | 2.3.0 |
+| 9 | Sitewide Information and V2 Foundation | 2.4.0 |
+| 10 | V2 Website Experience | In progress |
 
-Surfside Tools has completed Weekly Update Foundation, Native Calendar, Google Places, Staff Dashboard, Platform Consolidation, Dashboard Intelligence, Calendar Experience, and Church Portal.
+The [changelog](../CHANGELOG.md), GitHub Releases, and merged pull requests are the authoritative implementation history for completed milestones.
 
-Version 2.2.0 completed Calendar Experience. Version 2.3.0 released Church Portal. Version 2.3.1 added focused Today at Surfside and calendar experience refinements. Version 2.4.0 releases the centralized sitewide information, shared service schedule, V2 design foundation, restored logo, ordered navigation, and plugin-owned footer and header.
+### Current focus — Milestone 10
 
-### Complete — Milestone 8: Church Portal
+Milestone 10 applies the established information and visual foundations to the public website.
 
-Milestone 8 moved the public church portal into Surfside Tools through the plugin-owned `[surfside_portal]` shortcode.
+The shared Surfside Information source, service schedule, blue-led coastal tokens, restored logo, footer, ordered navigation, and responsive sticky header are complete. The next phase is a page-by-page design audit that prioritizes the most visible inconsistencies.
 
-#### Delivered
+Architecture boundary:
 
-- Portal foundation and nine-destination hierarchy
-- Existing card markup and CSS captured inside the plugin
-- Two-column desktop and single-column mobile layouts
-- Message Notes and Announcements dialogs using current Surfside Tools content
-- This Week events dialog using the native calendar
-- Prayer Request routing to `/contact/#Contact`
-- Live Slides routing through `/live-slides/` for Wi-Fi instructions
-- Visible keyboard focus, native Escape behavior, focus restoration, scroll containment, and reduced-motion support
-
-#### Durable portal decisions
-
-- Use `[surfside_portal]` as the single page-level launcher integration.
-- Keep the site header, welcome image, and footer outside the shortcode.
-- Preserve the prominent Live Slides hierarchy and two-column desktop launcher.
-- Reuse existing Surfside Tools content and calendar sources instead of creating duplicate pages.
-- Use full-screen dialogs on mobile for Message Notes, Announcements, and This Week's Events.
-- Route Live Slides through the public instructions page instead of attempting unreliable IP-based network detection.
-- Keep portal markup, styling, and interaction behavior version-controlled in the plugin.
-
-### Complete — Version 2.3.1 experience refinements
-
-Delivered through PRs #85–#92:
-
-- Removed duplicate worship-service entries from Today at Surfside.
-- Opened Message Notes from the sermon title.
-- Protected dynamic Today output from full-page caching.
-- Added the Sunday live-service state and clearer empty-day messaging.
-- Added `[surfside_today_compact]` for transparent homepage-hero placement.
-- Added in-page monthly navigation while retaining anchored fallback links.
-- Added explicit multi-day event creation with an optional End Date.
-
-#### Durable refinement decisions
-
-- Prefer progressive enhancement for month navigation: update in place when JavaScript succeeds and retain real anchored links when it does not.
-- Treat a multi-day event as one inclusive date range, separate from recurring events.
-- Hide recurrence while multi-day mode is active to avoid conflicting schedules.
-- Keep the compact Today widget transparent and make its entire live state the Watch Live link.
-
-### Completed — Milestone 9: Sitewide Information and V2 Foundation
-
-Milestone 9 created one structured source of truth for Surfside Community Fellowship's public identity, tagline, editable phone number, meeting venue and address, expandable weekly service schedule, main navigation destinations, and Facebook, YouTube, and Instagram links.
-
-Delivered through PRs #95–#109:
-
-- Persisted and sanitized Surfside Information source for identity, tagline, phone, Contact destination, meeting location, navigation, and social links
-- Front-end Surfside Information management screen and dashboard card
-- Expandable weekly service schedule with per-service livestream settings
-- Shared schedule helpers consumed by Today at Surfside and all service countdown variants
-- Sixty-minute live states driven by configured livestream services
-- Blue-led coastal V2 tokens and opt-in, prefixed component primitives
-- Restored high-resolution Surfside logo asset
-- Front-end Media Library site-logo selector with responsive preview, attachment-ID storage, and one-click default restoration
-- Responsive plugin-owned `[surfside_footer]` with tagline, service times, Google Maps-linked location, navigation, phone, Contact action, accessible social icons, and automatic copyright year
-- Full-width Site Editor integration across constrained theme layouts
-- cPanel deployment of plugin CSS and image assets
-
-Live desktop and mobile verification confirmed the footer layout, links, logo, and responsive behavior. Updating a service time or selecting a different logo in the Surfside Information dashboard immediately updates the public footer, validating the single-source-of-truth architecture. Custom logos are stored as WordPress attachment IDs; missing, deleted, or cleared selections safely fall back to the restored plugin logo.
-
-### Current — Milestone 10: V2 Website Experience
-
-Milestone 10 applies the established information and visual foundations to the visible website.
-
-#### Architecture boundary
-
-- Surfside Tools owns sitewide settings, the shared navigation source, header and footer components, dynamic widgets, and reusable design standards.
+- Surfside Tools owns sitewide settings, shared navigation, headers, footers, dynamic widgets, and reusable design standards.
 - WordPress pages retain unique editorial content and page-specific layouts.
-- Page modernization will favor shared classes, patterns, and widgets only where they improve consistency or maintainability.
+- Reusable plugin classes or widgets should be added only when they improve consistency or maintainability.
 - Surfside Tools will not become a general-purpose page builder.
 
-#### Completed navigation and header phase
+### Durable public-experience decisions
 
-Delivered through PRs #111–#124:
-
-- Documented the Milestone 10 architecture boundary and delivery sequence.
-- Replaced the fixed navigation destinations with an ordered front-end manager.
-- Added published-page selection stored by WordPress page ID.
-- Added custom URL destinations and optional new-tab behavior.
-- Added link creation, renaming, removal, drag-and-drop ordering, and accessible Move Up and Move Down controls.
-- Preserved existing navigation automatically during migration.
-- Updated the footer to consume the same ordered navigation source.
-- Added the plugin-owned `[surfside_header]` using the shared replaceable logo.
-- Added an opaque full-width white surface, thin coastal-blue accent, compact sticky state, and subtle shadow.
-- Added an accessible mobile menu that closes after selection, outside interaction, or Escape.
-- Added current-page navigation using bold blue text, a restrained underline, and `aria-current="page"`.
-- Promoted Watch Live to a red Live Now action during configured sixty-minute livestream windows.
-- Corrected the shared high-resolution logo aspect ratio and proportional full, compact, and mobile presentation.
-- Synchronized desktop menu sizing and spacing with the compact sticky logo.
-- Added browser-side active-link normalization so cached pages cannot retain conflicting header states.
-- Versioned header CSS and JavaScript from their file modification times to prevent stale asset combinations.
-- Added WordPress admin-toolbar offsets appropriate to desktop, tablet, and narrow mobile behavior.
-- Replaced the production Site Editor header with `[surfside_header]`.
-
-#### Live validation
-
-- Desktop navigation, logo balance, sticky compression, and responsive breakpoint
-- Mobile logo, hamburger presentation, menu interaction, and page scrolling
-- Ordered navigation changes flowing into the footer
-- Logged-in mobile toolbar behavior
-- Logged-out public behavior in an incognito session
-- Shared logo presentation in both header and footer
-
-#### Durable header decisions
-
-- Keep the header opaque white so navigation remains readable over every page.
-- Keep the initial navigation flat; nesting can be reconsidered only when the site structure requires it.
-- Store internal destinations by page ID so title or slug changes do not break menu links.
-- Keep custom URLs available for seasonal, anchored, or external destinations.
+- Keep substantial reusable markup, behavior, and CSS in version-controlled plugin shortcodes rather than page-specific Custom HTML or CSS.
+- Keep the Church Portal mobile-focused and render Message Notes, Announcements, and This Week in accessible dialogs.
+- Treat Today at Surfside as dynamic, non-cacheable output; keep its compact homepage variant transparent.
+- Use progressive enhancement for monthly navigation while retaining real anchored links as fallbacks.
+- Treat multi-day events as inclusive date ranges distinct from recurring events.
+- Use Surfside Information as the single source for identity, logo, contact, location, services, navigation, and social destinations.
+- Store internal navigation destinations by page ID; retain custom URLs for anchored, seasonal, or external links.
+- Keep the public header opaque white, navigation flat, and the mobile breakpoint early enough to avoid crowding.
+- Use a quiet active-page indicator and reserve the prominent red pill for Live Now.
 - Use the shared Media Library logo selection with the restored plugin asset as fallback.
-- Switch to the mobile menu before the desktop logo and navigation become crowded.
-- Use a quiet active-page indicator instead of treating ordinary navigation as a call-to-action.
-- Reserve the prominent pill treatment for the red Live Now state.
-- Normalize the active link in the browser because the Site Editor shortcode can be captured by page caches.
-- Version header assets from their files so header refinements do not depend on a plugin version bump.
-- Manage the production header through a single Site Editor shortcode rather than duplicating navigation blocks.
-
-#### Next phase
-
-Audit the public pages together, starting with the most visible or inconsistent pages. Add focused reusable styles or widgets only where they provide clear sitewide value. Unique page content and layouts remain editable in WordPress.
+- Normalize active header links in the browser because Site Editor shortcode markup may be captured by page caches.
+- Version header assets from their files so refinements do not depend on a plugin version bump.
 
 ## Nice Ideas
 

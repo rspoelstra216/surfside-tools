@@ -9,105 +9,39 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 **Version:** `2.4.0`  
 **Current milestone:** Milestone 10 — V2 Website Experience
 
-## Completed milestones
+## Milestone status
 
-- ✅ Milestone 1 — Weekly Update Foundation
-- ✅ Milestone 2 — Native Calendar
-- ✅ Milestone 3 — Google Places
-- ✅ Milestone 4 — Staff Dashboard
-- ✅ Milestone 5 — Platform Consolidation
-- ✅ Milestone 6 — Dashboard Intelligence
-- ✅ Milestone 7 — Calendar Experience
-- ✅ Milestone 8 — Church Portal
-- ✅ Milestone 9 — Sitewide Information and V2 Foundation
+| Milestone | Outcome | Release |
+| --- | --- | --- |
+| 1 | Weekly Update Foundation | 1.x |
+| 2 | Native Calendar | 1.x |
+| 3 | Google Places | 1.x |
+| 4 | Staff Dashboard | 1.x |
+| 5 | Platform Consolidation | 2.0.0 |
+| 6 | Dashboard Intelligence | 2.1.0 |
+| 7 | Calendar Experience | 2.2.0 |
+| 8 | Church Portal | 2.3.0 |
+| 9 | Sitewide Information and V2 Foundation | 2.4.0 |
+| 10 | V2 Website Experience | In progress |
 
-Milestone 7 was completed in version 2.2.0 with the Calendar Experience. Milestone 8 was released in version 2.3.0 with the plugin-owned Church Portal. Version 2.4.0 releases the Milestone 9 sitewide foundation and the completed Milestone 10 navigation and header phase.
-
-## Completed milestone
-
-### Milestone 8 — Church Portal
-
-Milestone 8 moved the public church portal into Surfside Tools through a plugin-owned `[surfside_portal]` shortcode.
-
-Delivered through PRs #78–#83:
-
-- Portal foundation with the existing nine-destination hierarchy
-- Plugin-owned portal markup and established card styling
-- Responsive two-column desktop and single-column mobile layouts
-- Message Notes and Announcements rendered in accessible dialogs
-- Native This Week events rendered in a portal dialog
-- Prayer Request routing to the Contact section
-- Live Slides routing through the public Wi-Fi instructions page
-- Keyboard focus, native dialog behavior, scroll containment, and reduced-motion support
-
-The Portal page can now use a single shortcode for its launcher. The site header, welcome image, and footer remain page or theme content outside the shortcode.
-
-### Milestone 8 outcome
-
-- Routine portal layout changes no longer require page-specific HTML or CSS.
-- Weekly content and events reuse existing Surfside Tools sources.
-- Visitors remain inside the mobile-focused portal for notes, announcements, and this week's events.
-- The established visual hierarchy is preserved across desktop and mobile.
-- Portal behavior is version-controlled and deployable through the normal GitHub workflow.
-
-## Version 2.3.1 refinements
-
-The patch release completes a focused set of improvements delivered through PRs #85–#92:
-
-- More accurate Today at Surfside service, sermon, live, and empty-day states
-- Transparent `[surfside_today_compact]` output for the homepage hero
-- In-page monthly navigation with browser-history and anchored reload fallbacks
-- Clear multi-day event creation using an optional End Date instead of recurrence
+Completed implementation details are preserved in the [changelog](../CHANGELOG.md), GitHub Releases, and merged pull requests.
 
 ## Current milestone
-
-### Milestone 9 — Sitewide Information and V2 Foundation
-
-Milestone 9 established one shared source for repeated Surfside information and delivered the first complete public component built on the V2 design foundation.
-
-Delivered through PRs #95–#109:
-
-- Structured Surfside identity, tagline, phone, meeting location, navigation, and social destinations
-- Front-end Surfside Information management screen and dashboard card
-- Expandable weekly service schedule with explicit livestream settings
-- Today at Surfside and service countdowns migrated to the shared schedule
-- Configured sixty-minute livestream states
-- Blue-led coastal design tokens and reusable opt-in component primitives
-- Restored high-resolution Surfside logo
-- Front-end Media Library site-logo selection with attachment-ID storage and restored-logo fallback
-- Responsive full-width `[surfside_footer]` with shared service, location, navigation, contact, and social data
-- Site Editor replacement verified on desktop and mobile
-- Plugin asset deployment corrected for cPanel
-
-Live verification confirmed that changing a service time or site logo through Surfside Information immediately updates the public footer. Milestone 9 and its first post-milestone enhancement are complete.
 
 ### Milestone 10 — V2 Website Experience
 
 Apply the V2 foundation to the public website while keeping individual WordPress pages independently editable.
 
-#### Completed: navigation and site header
+Completed foundation:
 
-Delivered through PRs #111–#124:
+- Central Surfside Information and weekly service schedule
+- Blue-led coastal design tokens and restored replaceable logo
+- Plugin-owned footer and sticky responsive header
+- Ordered navigation shared by the header and footer
+- Accessible current-page and livestream navigation states
+- Cache-resilient header and countdown behavior
 
-- Ordered navigation manager with internal-page and custom-URL destinations
-- Add, rename, remove, drag-and-drop, Move Up, and Move Down controls
-- Shared menu data consumed by both header and footer
-- Plugin-owned `[surfside_header]` using the shared replaceable logo
-- Opaque full-width white presentation with a compact sticky state
-- Synchronized desktop logo, menu sizing, spacing, and proportional scaling
-- Accessible mobile hamburger menu
-- Understated and accessible current-page navigation state
-- Red Live Now override during configured livestream windows
-- Corrected restored-logo proportions and responsive sizing
-- Browser-side active-link normalization across cached pages
-- Automatic cache busting for changed header CSS and JavaScript
-- WordPress admin-toolbar compatibility
-- Production Site Editor header replacement
-- Desktop, mobile, logged-in, incognito, and cross-page cache verification
-
-#### Next: public page audit
-
-Review the public pages together and prioritize the most visible inconsistencies. Add focused reusable plugin styles or widgets when they improve sitewide consistency or maintenance. Keep unique editorial content and page-specific layouts editable in WordPress.
+Next phase: audit public pages together, prioritize the most visible inconsistencies, and add reusable plugin styles or widgets only where they provide clear sitewide value.
 
 ## Future ideas
 

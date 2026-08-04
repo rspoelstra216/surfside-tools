@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+_No unreleased changes._
+
 ## [2.4.0] - 2026-08-04
 
 ### Added
@@ -228,25 +232,6 @@
 - document proportional logo scaling, synchronized desktop compaction, and the red Live Now override
 - record browser-side active-link normalization and file-based asset versioning as durable cache decisions
 - add the completed header work to the unreleased changelog
-
-## [Unreleased]
-
-### Added
-
-- Added front-end ordered navigation management shared by the public header and footer. ([#112](https://github.com/rspoelstra216/surfside-tools/pull/112))
-- Added the responsive, sticky, plugin-owned `[surfside_header]`. ([#114](https://github.com/rspoelstra216/surfside-tools/pull/114))
-- Added accessible current-page navigation with a restrained blue underline. ([#122](https://github.com/rspoelstra216/surfside-tools/pull/122), [#123](https://github.com/rspoelstra216/surfside-tools/pull/123))
-
-### Improved
-
-- Balanced header logo and menu proportions across desktop, compact, and mobile states. ([#115](https://github.com/rspoelstra216/surfside-tools/pull/115), [#116](https://github.com/rspoelstra216/surfside-tools/pull/116), [#117](https://github.com/rspoelstra216/surfside-tools/pull/117), [#123](https://github.com/rspoelstra216/surfside-tools/pull/123))
-- Added WordPress admin-toolbar handling and cache-resilient header rendering. ([#118](https://github.com/rspoelstra216/surfside-tools/pull/118), [#124](https://github.com/rspoelstra216/surfside-tools/pull/124))
-- Kept the configured livestream service as the only prominent red Live Now navigation state. ([#114](https://github.com/rspoelstra216/surfside-tools/pull/114), [#123](https://github.com/rspoelstra216/surfside-tools/pull/123))
-
-### Fixed
-
-- Corrected an activation parse error introduced during the initial navigation-manager deployment. ([#113](https://github.com/rspoelstra216/surfside-tools/pull/113))
-- Prevented stale page and browser caches from producing conflicting active-navigation formatting. ([#124](https://github.com/rspoelstra216/surfside-tools/pull/124))
 
 ## [2.3.1] - 2026-07-22
 
