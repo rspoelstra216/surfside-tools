@@ -96,7 +96,7 @@
     line-height: 1.15;
     text-decoration: none;
     white-space: nowrap;
-    transition: color var(--surfside-transition-fast), background var(--surfside-transition-fast), border-color var(--surfside-transition-fast);
+    transition: min-height var(--surfside-transition-fast), padding var(--surfside-transition-fast), color var(--surfside-transition-fast), background var(--surfside-transition-fast), border-color var(--surfside-transition-fast), font-size var(--surfside-transition-fast);
 }
 
 .surfside-site-header__link:hover {
@@ -170,6 +170,22 @@
 
 .surfside-site-header.menu-open .surfside-site-header__toggle-icon span:nth-child(3) {
     transform: translateY(-7px) rotate(-45deg);
+}
+
+@media (min-width: 1081px) {
+    .surfside-site-header.is-scrolled .surfside-site-header__nav ul {
+        gap: clamp(1px, 0.3vw, 5px);
+    }
+
+    .surfside-site-header.is-scrolled .surfside-site-header__link {
+        min-height: 34px;
+        padding: 6px 7px;
+        font-size: clamp(0.76rem, 0.82vw, 0.84rem);
+    }
+
+    .surfside-site-header.is-scrolled .surfside-site-header__link--primary {
+        padding-inline: 11px;
+    }
 }
 
 @media (max-width: 1080px) {
