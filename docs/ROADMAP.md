@@ -85,16 +85,25 @@ Live verification confirmed that changing a service time or site logo through Su
 
 Apply the V2 foundation to the public website while keeping individual WordPress pages independently editable.
 
-Planned delivery order:
+#### Completed: navigation and site header
 
-1. Ordered front-end navigation manager with internal-page and custom-URL destinations
-2. Plugin-owned `[surfside_header]` using the shared logo and navigation
-3. Opaque full-width white presentation with a compact sticky state and accessible mobile menu
-4. Plan Your Visit primary action that yields to Live Now during configured livestream windows
-5. Site Editor header replacement after desktop and mobile verification
-6. Page-by-page style audit followed by focused reusable styles and widgets
+Delivered through PRs #111–#118:
 
-The initial navigation remains flat. Add, remove, rename, drag-and-drop, Move Up, and Move Down controls will support routine management without opening the Site Editor.
+- Ordered navigation manager with internal-page and custom-URL destinations
+- Add, rename, remove, drag-and-drop, Move Up, and Move Down controls
+- Shared menu data consumed by both header and footer
+- Plugin-owned `[surfside_header]` using the shared replaceable logo
+- Opaque full-width white presentation with a compact sticky state
+- Accessible mobile hamburger menu
+- Plan Your Visit primary action that yields to Live Now during configured livestream windows
+- Corrected restored-logo proportions and responsive sizing
+- WordPress admin-toolbar compatibility
+- Production Site Editor header replacement
+- Desktop, mobile, logged-in, and public verification
+
+#### Next: public page audit
+
+Review the public pages together and prioritize the most visible inconsistencies. Add focused reusable plugin styles or widgets when they improve sitewide consistency or maintenance. Keep unique editorial content and page-specific layouts editable in WordPress.
 
 ## Future ideas
 

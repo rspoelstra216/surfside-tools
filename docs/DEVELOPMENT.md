@@ -42,6 +42,7 @@ Staff Dashboard
 ├── Manage Homepage
 │   └── Homepage carousel photos
 └── Settings
+    ├── Surfside Information and ordered navigation
     ├── Google Maps integration
     ├── Calendar defaults
     └── Saved Places management
@@ -53,7 +54,9 @@ Public Displays
 ├── Today at Surfside and compact homepage summary
 ├── Event details
 ├── Homepage photo carousel
-└── Church portal
+├── Church portal
+├── Site header
+└── Site footer
 
 Infrastructure
 ├── GitHub branches and pull requests
@@ -236,36 +239,49 @@ Milestone 10 applies the established information and visual foundations to the v
 - Page modernization will favor shared classes, patterns, and widgets only where they improve consistency or maintainability.
 - Surfside Tools will not become a general-purpose page builder.
 
-#### Header direction
+#### Completed navigation and header phase
 
-- Opaque full-width white header with a centered content container
-- Shared replaceable logo aligned left and navigation aligned right
-- Compact sticky state with a smaller logo, thin coastal-blue accent, and subtle stuck-state shadow
-- Always-compact mobile row with an accessible hamburger menu
-- Flat navigation for the initial release; data structures should allow future nesting without requiring a rebuild
-- Plan Your Visit as the normal primary action
-- Watch Live promoted automatically to a Live Now action during configured livestream windows
-- Reduced-motion support and WordPress admin-bar offset handling
+Delivered through PRs #111–#118:
 
-#### Navigation management
+- Documented the Milestone 10 architecture boundary and delivery sequence.
+- Replaced the fixed navigation destinations with an ordered front-end manager.
+- Added published-page selection stored by WordPress page ID.
+- Added custom URL destinations and optional new-tab behavior.
+- Added link creation, renaming, removal, drag-and-drop ordering, and accessible Move Up and Move Down controls.
+- Preserved existing navigation automatically during migration.
+- Updated the footer to consume the same ordered navigation source.
+- Added the plugin-owned `[surfside_header]` using the shared replaceable logo.
+- Added an opaque full-width white surface, thin coastal-blue accent, compact sticky state, and subtle shadow.
+- Added an accessible mobile menu that closes after selection, outside interaction, or Escape.
+- Made Plan Your Visit the normal primary action.
+- Promoted Watch Live to a red Live Now action during configured sixty-minute livestream windows.
+- Corrected the shared high-resolution logo aspect ratio and header/footer presentation.
+- Added WordPress admin-toolbar offsets appropriate to desktop, tablet, and narrow mobile behavior.
+- Replaced the production Site Editor header with `[surfside_header]`.
 
-The front-end Surfside Information manager will replace fixed navigation destinations with an ordered list. Each item will support:
+#### Live validation
 
-- Editable menu text
-- Published WordPress page selection stored by page ID
-- Custom URL selection for external links, anchors, or unusual destinations
-- Optional new-tab behavior for custom links
-- Add, remove, drag-and-drop, Move Up, and Move Down controls
-- A safe default menu for existing installations
+- Desktop navigation, logo balance, sticky compression, and responsive breakpoint
+- Mobile logo, hamburger presentation, menu interaction, and page scrolling
+- Ordered navigation changes flowing into the footer
+- Logged-in mobile toolbar behavior
+- Logged-out public behavior in an incognito session
+- Shared logo presentation in both header and footer
 
-#### Planned delivery order
+#### Durable header decisions
 
-1. Ordered front-end navigation source and manager
-2. Plugin-owned `[surfside_header]` desktop, sticky, and mobile behavior
-3. Isolated header testing followed by Site Editor replacement
-4. Page-by-page style audit and focused reusable improvements
+- Keep the header opaque white so navigation remains readable over every page.
+- Keep the initial navigation flat; nesting can be reconsidered only when the site structure requires it.
+- Store internal destinations by page ID so title or slug changes do not break menu links.
+- Keep custom URLs available for seasonal, anchored, or external destinations.
+- Use the shared Media Library logo selection with the restored plugin asset as fallback.
+- Switch to the mobile menu before the desktop logo and navigation become crowded.
+- Keep Plan Your Visit prominent except while a configured livestream is active.
+- Manage the production header through a single Site Editor shortcode rather than duplicating navigation blocks.
 
-One focused feature will continue to ship per pull request.
+#### Next phase
+
+Audit the public pages together, starting with the most visible or inconsistent pages. Add focused reusable styles or widgets only where they provide clear sitewide value. Unique page content and layouts remain editable in WordPress.
 
 ## Nice Ideas
 
