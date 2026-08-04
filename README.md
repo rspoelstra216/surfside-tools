@@ -76,10 +76,18 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - Automatic cache invalidation
 - Full-width responsive public carousel
 
+### Sitewide information and navigation
+
+- Front-end Surfside Information management, including a Media Library site-logo selector
+- Ordered navigation manager with published-page and custom-URL destinations
+- Add, rename, remove, drag-and-drop, Move Up, and Move Down controls
+- Shared navigation consumed by the public header and footer
+- Responsive plugin-owned header and footer installed through the Site Editor
+- Configured livestream services automatically promote Watch Live to Live Now
+
 ### Settings and visual utilities
 
 - Front-end Google Maps and calendar settings
-- Front-end Surfside Information management, including a Media Library site-logo selector
 - Saved Places management
 - Reveal-on-scroll utilities
 - Service, compact, and Sunday countdowns
@@ -120,6 +128,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - `[surfside_today]`
 - `[surfside_today_compact]`
 - `[surfside_portal]`
+- `[surfside_header]`
 - `[surfside_footer]`
 
 `[surfside_today]` supports optional `title`, `events_url`, and `show_link="no"` attributes.
@@ -195,8 +204,10 @@ The responsive plugin-owned `[surfside_footer]` is deployed in the Site Editor a
 
 ### Current: Milestone 10 — V2 Website Experience
 
-Milestone 10 begins with an ordered front-end navigation manager and a plugin-owned `[surfside_header]`. The header will use the shared logo, an opaque full-width white surface, a compact sticky state, an accessible mobile menu, and a time-aware primary action.
+The first Milestone 10 phase is complete through PR #118. Surfside Information now provides an ordered navigation manager, and the production Site Editor header uses the plugin-owned `[surfside_header]`.
 
-Surfside Tools will own sitewide information, navigation, headers, footers, dynamic widgets, and reusable design standards. WordPress pages will remain independently editable for unique content and layouts.
+The header uses the shared replaceable logo and managed navigation on an opaque full-width white surface. It includes a compact sticky state, an accessible mobile menu, WordPress toolbar handling, and a primary action that promotes Watch Live to Live Now during configured livestream windows. Desktop, mobile, logged-in, and public behavior have been verified.
+
+The next Milestone 10 phase is a page-by-page style audit. Surfside Tools will continue to own sitewide information, navigation, headers, footers, dynamic widgets, and reusable design standards, while WordPress pages remain independently editable for unique content and layouts.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the delivery plan and organized backlog.
