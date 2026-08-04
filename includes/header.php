@@ -13,18 +13,23 @@ if (!defined('ABSPATH')) {
  * Load header assets before WordPress prints the document head.
  */
 function surfside_tools_header_assets() {
+    $style_path = SURFSIDE_TOOLS_PATH . 'assets/css/header.css';
+    $script_path = SURFSIDE_TOOLS_PATH . 'assets/js/header.js';
+    $style_version = file_exists($style_path) ? (string) filemtime($style_path) : SURFSIDE_TOOLS_VERSION;
+    $script_version = file_exists($script_path) ? (string) filemtime($script_path) : SURFSIDE_TOOLS_VERSION;
+
     wp_enqueue_style(
         'surfside-tools-header',
         SURFSIDE_TOOLS_URL . 'assets/css/header.css',
         array('surfside-tools-design-system'),
-        SURFSIDE_TOOLS_VERSION
+        $style_version
     );
 
     wp_enqueue_script(
         'surfside-tools-header',
         SURFSIDE_TOOLS_URL . 'assets/js/header.js',
         array(),
-        SURFSIDE_TOOLS_VERSION,
+        $script_version,
         true
     );
 }
