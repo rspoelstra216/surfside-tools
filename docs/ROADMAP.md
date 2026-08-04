@@ -6,7 +6,7 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 
 ## Current release
 
-**Version:** `2.3.1`  
+**Version:** `2.4.0`  
 **Current milestone:** Milestone 10 — V2 Website Experience
 
 ## Completed milestones
@@ -21,7 +21,7 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 - ✅ Milestone 8 — Church Portal
 - ✅ Milestone 9 — Sitewide Information and V2 Foundation
 
-Milestone 7 was completed in version 2.2.0 with the Calendar Experience. Milestone 8 was released in version 2.3.0 with the plugin-owned Church Portal.
+Milestone 7 was completed in version 2.2.0 with the Calendar Experience. Milestone 8 was released in version 2.3.0 with the plugin-owned Church Portal. Version 2.4.0 releases the Milestone 9 sitewide foundation and the completed Milestone 10 navigation and header phase.
 
 ## Completed milestone
 
