@@ -83,6 +83,9 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - Add, rename, remove, drag-and-drop, Move Up, and Move Down controls
 - Shared navigation consumed by the public header and footer
 - Responsive plugin-owned header and footer installed through the Site Editor
+- Sticky header with proportional logo scaling and synchronized desktop compaction
+- Current-page navigation indicated with an understated accessible active state
+- Cache-resilient header assets and browser-side active-link normalization
 - Configured livestream services automatically promote Watch Live to Live Now
 
 ### Settings and visual utilities
