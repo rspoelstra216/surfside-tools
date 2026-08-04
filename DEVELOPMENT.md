@@ -94,15 +94,30 @@ Live verification confirmed that service-time and logo changes made in Surfside 
 
 Milestone 10 applies the shared information and blue-led coastal foundation to the visible website while preserving WordPress as the editor for unique page content.
 
-The plugin will own sitewide settings, navigation, header and footer components, dynamic widgets, and reusable design standards. Individual WordPress pages will continue to own their editorial content and page-specific layout.
+The navigation and header phase is complete through PR #118.
 
-Planned delivery order:
+Delivered through PRs #111–#118:
 
-1. Replace the fixed navigation fields with an ordered front-end menu manager supporting add, rename, remove, drag-and-drop, accessible move controls, internal-page selection, and custom URLs.
-2. Build a plugin-owned `[surfside_header]` with the shared replaceable logo, opaque full-width white surface, compact sticky state, responsive mobile menu, and accessible keyboard behavior.
-3. Use Plan Your Visit as the normal primary action and automatically promote Watch Live to a Live Now action during configured livestream windows.
-4. Replace the Site Editor header only after isolated desktop and mobile testing.
-5. Audit page styling together and add reusable plugin styles or widgets where consistency provides value, without turning Surfside Tools into a page builder.
+- Milestone 10 architecture boundary and delivery plan
+- Ordered front-end navigation manager in Surfside Information
+- Published WordPress page destinations stored by page ID
+- Custom URL destinations with optional new-tab behavior
+- Add, rename, remove, drag-and-drop, Move Up, and Move Down controls
+- Automatic preservation of the previous fixed navigation links
+- Shared ordered navigation consumed by both header and footer
+- Plugin-owned `[surfside_header]` using the shared replaceable logo
+- Opaque full-width white presentation with a coastal-blue accent
+- Compact sticky state and subtle stuck-state shadow
+- Accessible mobile hamburger menu with Escape, outside-click, and link-close behavior
+- Plan Your Visit as the normal primary action
+- Watch Live promoted to a red Live Now action during configured sixty-minute livestream windows
+- Corrected high-resolution logo proportions and consistent header/footer sizing
+- WordPress desktop, tablet, and narrow-mobile admin-toolbar handling
+- Production Site Editor header replacement
+
+Live verification covered desktop, mobile, logged-in, and incognito views. Navigation updates made in Surfside Information now flow to both sitewide components without editing the Site Editor.
+
+The next phase is a page-by-page style audit. Reusable plugin classes or widgets should be added only where they improve consistency or maintenance; individual pages will continue to own their unique editorial content and layouts.
 
 ## Release history
 
