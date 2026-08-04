@@ -3,6 +3,34 @@ document.addEventListener('DOMContentLoaded', function () {
         var toggle = header.querySelector('[data-surfside-menu-toggle]');
         var menu = header.querySelector('[data-surfside-menu]');
 
+        function normalizedInternalPath(url) {
+            try {
+                var parsed = new URL(url, window.location.href);
+                if (parsed.origin !== window.location.origin) return null;
+                var path = decodeURIComponent(parsed.pathname || '/').replace(/\/+$/, '');
+                return path || '/';
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function updateCurrentLink() {
+            var currentPath = normalizedInternalPath(window.location.href);
+
+            header.querySelectorAll('.surfside-site-header__link').forEach(function (link) {
+                var isLive = link.classList.contains('surfside-site-header__link--live');
+                link.classList.remove('surfside-site-header__link--current');
+                link.removeAttribute('aria-current');
+                if (!isLive) link.classList.remove('surfside-site-header__link--primary');
+
+                var linkPath = normalizedInternalPath(link.href);
+                if (currentPath !== null && linkPath === currentPath) {
+                    link.classList.add('surfside-site-header__link--current');
+                    link.setAttribute('aria-current', 'page');
+                }
+            });
+        }
+
         function setOpen(open) {
             header.classList.toggle('menu-open', open);
             if (toggle) {
@@ -42,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
             header.classList.remove('surfside-site-header--live');
             var visitItem = header.querySelector('[data-surfside-nav-role="visit"] a');
             var watchItem = header.querySelector('[data-surfside-nav-role="watch"] a');
-            if (visitItem) visitItem.classList.add('surfside-site-header__link--primary');
+            if (visitItem) visitItem.classList.remove('surfside-site-header__link--primary');
             if (watchItem) {
                 watchItem.classList.remove('surfside-site-header__link--primary', 'surfside-site-header__link--live');
                 var dot = watchItem.querySelector('.surfside-site-header__live-dot');
@@ -52,6 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+        updateCurrentLink();
         updateScrolled();
         window.addEventListener('scroll', updateScrolled, { passive: true });
     });
