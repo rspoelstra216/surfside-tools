@@ -44,6 +44,23 @@ function surfside_tools_header_link_role($link) {
     return '';
 }
 
+function surfside_tools_header_link_is_current($url) {
+    $link_host = strtolower((string) wp_parse_url($url, PHP_URL_HOST));
+    $site_host = strtolower((string) wp_parse_url(home_url('/'), PHP_URL_HOST));
+    if ($link_host !== '' && $site_host !== '' && $link_host !== $site_host) {
+        return false;
+    }
+
+    $current_path = (string) wp_parse_url(wp_unslash($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+    $link_path = (string) wp_parse_url($url, PHP_URL_PATH);
+    $normalize = static function ($path) {
+        $path = '/' . ltrim(rawurldecode((string) $path), '/');
+        return $path === '/' ? '/' : untrailingslashit($path);
+    };
+
+    return $normalize($current_path) === $normalize($link_path);
+}
+
 function surfside_tools_header_shortcode() {
     $information = surfside_tools_get_site_information();
     $identity = $information['identity'] ?? array();
@@ -84,9 +101,10 @@ function surfside_tools_header_shortcode() {
                         }
 
                         $role = surfside_tools_header_link_role($link);
+                        $is_current = surfside_tools_header_link_is_current($url);
                         $new_tab = ($link['type'] ?? '') === 'custom' && !empty($link['new_tab']);
                         $classes = array('surfside-site-header__link');
-                        if ((!$is_live && $role === 'visit') || ($is_live && $role === 'watch')) {
+                        if ($is_current || ($is_live && $role === 'watch')) {
                             $classes[] = 'surfside-site-header__link--primary';
                         }
                         if ($is_live && $role === 'watch') {
@@ -95,7 +113,7 @@ function surfside_tools_header_shortcode() {
                         }
                         ?>
                         <li data-surfside-nav-role="<?php echo esc_attr($role); ?>">
-                            <a class="<?php echo esc_attr(implode(' ', $classes)); ?>" href="<?php echo esc_url($url); ?>"<?php echo $new_tab ? ' target="_blank" rel="noopener noreferrer"' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php if ($is_live && $role === 'watch') : ?><span class="surfside-site-header__live-dot" aria-hidden="true"></span><?php endif; ?><span data-surfside-link-label data-default-label="<?php echo esc_attr($link['label'] ?? ''); ?>"><?php echo esc_html($label); ?></span></a>
+                            <a class="<?php echo esc_attr(implode(' ', $classes)); ?>" href="<?php echo esc_url($url); ?>"<?php echo $is_current ? ' aria-current="page"' : ''; ?><?php echo $new_tab ? ' target="_blank" rel="noopener noreferrer"' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php if ($is_live && $role === 'watch') : ?><span class="surfside-site-header__live-dot" aria-hidden="true"></span><?php endif; ?><span data-surfside-link-label data-default-label="<?php echo esc_attr($link['label'] ?? ''); ?>"><?php echo esc_html($label); ?></span></a>
                         </li>
                     <?php endforeach; ?>
                 </ul>
