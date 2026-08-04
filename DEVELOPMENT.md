@@ -94,9 +94,9 @@ Live verification confirmed that service-time and logo changes made in Surfside 
 
 Milestone 10 applies the shared information and blue-led coastal foundation to the visible website while preserving WordPress as the editor for unique page content.
 
-The navigation and header phase is complete through PR #118.
+The navigation and header phase is complete through PR #124.
 
-Delivered through PRs #111–#118:
+Delivered through PRs #111–#124:
 
 - Milestone 10 architecture boundary and delivery plan
 - Ordered front-end navigation manager in Surfside Information
@@ -109,9 +109,12 @@ Delivered through PRs #111–#118:
 - Opaque full-width white presentation with a coastal-blue accent
 - Compact sticky state and subtle stuck-state shadow
 - Accessible mobile hamburger menu with Escape, outside-click, and link-close behavior
-- Plan Your Visit as the normal primary action
+- Current-page navigation shown with bold blue text and a restrained underline
 - Watch Live promoted to a red Live Now action during configured sixty-minute livestream windows
-- Corrected high-resolution logo proportions and consistent header/footer sizing
+- Corrected high-resolution logo proportions and proportional full, compact, and mobile scaling
+- Synchronized desktop menu and logo compaction in the sticky state
+- Browser-side active-link normalization for consistency across cached pages
+- Header CSS and JavaScript versioned from their files to prevent stale asset combinations
 - WordPress desktop, tablet, and narrow-mobile admin-toolbar handling
 - Production Site Editor header replacement
 

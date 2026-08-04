@@ -87,19 +87,23 @@ Apply the V2 foundation to the public website while keeping individual WordPress
 
 #### Completed: navigation and site header
 
-Delivered through PRs #111–#118:
+Delivered through PRs #111–#124:
 
 - Ordered navigation manager with internal-page and custom-URL destinations
 - Add, rename, remove, drag-and-drop, Move Up, and Move Down controls
 - Shared menu data consumed by both header and footer
 - Plugin-owned `[surfside_header]` using the shared replaceable logo
 - Opaque full-width white presentation with a compact sticky state
+- Synchronized desktop logo, menu sizing, spacing, and proportional scaling
 - Accessible mobile hamburger menu
-- Plan Your Visit primary action that yields to Live Now during configured livestream windows
+- Understated and accessible current-page navigation state
+- Red Live Now override during configured livestream windows
 - Corrected restored-logo proportions and responsive sizing
+- Browser-side active-link normalization across cached pages
+- Automatic cache busting for changed header CSS and JavaScript
 - WordPress admin-toolbar compatibility
 - Production Site Editor header replacement
-- Desktop, mobile, logged-in, and public verification
+- Desktop, mobile, logged-in, incognito, and cross-page cache verification
 
 #### Next: public page audit
 
