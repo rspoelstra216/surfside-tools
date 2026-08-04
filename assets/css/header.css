@@ -55,17 +55,16 @@
 
 .surfside-site-header__logo {
     display: block;
-    width: auto;
-    width: clamp(220px, 19vw, 260px);
-    max-width: 27vw;
-    height: auto;
-    max-height: 64px;
-    transition: max-height var(--surfside-transition-fast);
+    width: clamp(150px, 14vw, 180px);
+    max-width: 23vw;
+    height: auto !important;
+    max-height: none;
+    object-fit: contain;
+    transition: width var(--surfside-transition-fast);
 }
 
 .surfside-site-header.is-scrolled .surfside-site-header__logo {
-    width: clamp(205px, 18vw, 235px);
-    max-height: 46px;
+    width: clamp(135px, 12vw, 155px);
 }
 
 .surfside-site-header__nav {
@@ -104,6 +103,14 @@
     background: var(--surfside-color-blue-50);
 }
 
+.surfside-site-header__link--current,
+.surfside-site-header__link--current:hover {
+    color: var(--surfside-color-blue-700);
+    background: transparent;
+    box-shadow: inset 0 -2px 0 var(--surfside-color-blue-600);
+    font-weight: var(--surfside-weight-bold);
+}
+
 .surfside-site-header__link--primary {
     padding-inline: 14px;
     color: var(--surfside-color-white);
@@ -122,6 +129,7 @@
     color: var(--surfside-color-white);
     background: var(--surfside-color-danger);
     border-color: var(--surfside-color-danger);
+    box-shadow: none;
 }
 
 .surfside-site-header__live-dot {
@@ -197,9 +205,10 @@
 
     .surfside-site-header__logo,
     .surfside-site-header.is-scrolled .surfside-site-header__logo {
-        width: auto;
-        max-width: min(260px, calc(100vw - 100px));
-        max-height: 42px;
+        width: clamp(135px, 38vw, 165px);
+        max-width: calc(100vw - 100px);
+        height: auto !important;
+        max-height: none;
     }
 
     .surfside-site-header__toggle {

@@ -104,10 +104,11 @@ function surfside_tools_header_shortcode() {
                         $is_current = surfside_tools_header_link_is_current($url);
                         $new_tab = ($link['type'] ?? '') === 'custom' && !empty($link['new_tab']);
                         $classes = array('surfside-site-header__link');
-                        if ($is_current || ($is_live && $role === 'watch')) {
-                            $classes[] = 'surfside-site-header__link--primary';
+                        if ($is_current) {
+                            $classes[] = 'surfside-site-header__link--current';
                         }
                         if ($is_live && $role === 'watch') {
+                            $classes[] = 'surfside-site-header__link--primary';
                             $classes[] = 'surfside-site-header__link--live';
                             $label = 'Live Now';
                         }
