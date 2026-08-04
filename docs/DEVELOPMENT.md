@@ -241,7 +241,7 @@ Milestone 10 applies the established information and visual foundations to the v
 
 #### Completed navigation and header phase
 
-Delivered through PRs #111–#118:
+Delivered through PRs #111–#124:
 
 - Documented the Milestone 10 architecture boundary and delivery sequence.
 - Replaced the fixed navigation destinations with an ordered front-end manager.
@@ -253,9 +253,12 @@ Delivered through PRs #111–#118:
 - Added the plugin-owned `[surfside_header]` using the shared replaceable logo.
 - Added an opaque full-width white surface, thin coastal-blue accent, compact sticky state, and subtle shadow.
 - Added an accessible mobile menu that closes after selection, outside interaction, or Escape.
-- Made Plan Your Visit the normal primary action.
+- Added current-page navigation using bold blue text, a restrained underline, and `aria-current="page"`.
 - Promoted Watch Live to a red Live Now action during configured sixty-minute livestream windows.
-- Corrected the shared high-resolution logo aspect ratio and header/footer presentation.
+- Corrected the shared high-resolution logo aspect ratio and proportional full, compact, and mobile presentation.
+- Synchronized desktop menu sizing and spacing with the compact sticky logo.
+- Added browser-side active-link normalization so cached pages cannot retain conflicting header states.
+- Versioned header CSS and JavaScript from their file modification times to prevent stale asset combinations.
 - Added WordPress admin-toolbar offsets appropriate to desktop, tablet, and narrow mobile behavior.
 - Replaced the production Site Editor header with `[surfside_header]`.
 
@@ -276,7 +279,10 @@ Delivered through PRs #111–#118:
 - Keep custom URLs available for seasonal, anchored, or external destinations.
 - Use the shared Media Library logo selection with the restored plugin asset as fallback.
 - Switch to the mobile menu before the desktop logo and navigation become crowded.
-- Keep Plan Your Visit prominent except while a configured livestream is active.
+- Use a quiet active-page indicator instead of treating ordinary navigation as a call-to-action.
+- Reserve the prominent pill treatment for the red Live Now state.
+- Normalize the active link in the browser because the Site Editor shortcode can be captured by page caches.
+- Version header assets from their files so header refinements do not depend on a plugin version bump.
 - Manage the production header through a single Site Editor shortcode rather than duplicating navigation blocks.
 
 #### Next phase
