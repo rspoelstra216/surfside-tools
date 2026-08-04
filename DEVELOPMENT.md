@@ -4,9 +4,9 @@ This is the concise entry point for current Surfside Tools development. For arch
 
 ## Current version
 
-**2.3.1** — patch release prepared July 22, 2026
+**2.4.0** — Sitewide Experience released August 4, 2026
 
-Version 2.3.0 released the plugin-owned Church Portal. Version 2.3.1 adds focused public-experience improvements: clearer Today at Surfside states, a compact homepage summary, in-page monthly navigation, and straightforward multi-day event scheduling.
+Version 2.3.0 released the plugin-owned Church Portal. Version 2.3.1 added focused Today at Surfside and calendar refinements. Version 2.4.0 releases centralized Surfside Information, the shared weekly service schedule, the V2 design foundation, ordered navigation management, and the plugin-owned site footer and header.
 
 ## Project vision
 
@@ -133,6 +133,7 @@ The next phase is a page-by-page style audit. Reusable plugin classes or widgets
 | 2.2.0 | Calendar Experience |
 | 2.3.0 | Church Portal |
 | 2.3.1 | Today and calendar experience refinements |
+| 2.4.0 | Sitewide information, V2 foundation, shared footer, and site header |
 
 ## Development workflow
 

@@ -162,7 +162,7 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
 
 Surfside Tools has completed Weekly Update Foundation, Native Calendar, Google Places, Staff Dashboard, Platform Consolidation, Dashboard Intelligence, Calendar Experience, and Church Portal.
 
-Version 2.2.0 completed Calendar Experience. Version 2.3.0 released Church Portal. Version 2.3.1 adds focused Today at Surfside and calendar experience refinements.
+Version 2.2.0 completed Calendar Experience. Version 2.3.0 released Church Portal. Version 2.3.1 added focused Today at Surfside and calendar experience refinements. Version 2.4.0 releases the centralized sitewide information, shared service schedule, V2 design foundation, restored logo, ordered navigation, and plugin-owned footer and header.
 
 ### Complete — Milestone 8: Church Portal
 
