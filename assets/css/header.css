@@ -111,21 +111,21 @@
     font-weight: var(--surfside-weight-bold);
 }
 
-.surfside-site-header__link--primary {
-    padding-inline: 14px;
-    color: var(--surfside-color-white);
-    background: var(--surfside-color-blue-700);
-    border-color: var(--surfside-color-blue-700);
-}
-
-.surfside-site-header__link--primary:hover {
-    color: var(--surfside-color-white);
-    background: var(--surfside-color-ocean-800);
-    border-color: var(--surfside-color-ocean-800);
+/*
+ * Compatibility for page caches containing the former primary-link class.
+ * The browser script removes this class from non-live links after load.
+ */
+.surfside-site-header__link--primary:not(.surfside-site-header__link--live),
+.surfside-site-header__link--primary:not(.surfside-site-header__link--live):hover {
+    color: var(--surfside-color-blue-700);
+    background: transparent;
+    box-shadow: inset 0 -2px 0 var(--surfside-color-blue-600);
+    font-weight: var(--surfside-weight-bold);
 }
 
 .surfside-site-header__link--live,
 .surfside-site-header__link--live:hover {
+    padding-inline: 14px;
     color: var(--surfside-color-white);
     background: var(--surfside-color-danger);
     border-color: var(--surfside-color-danger);
@@ -191,7 +191,7 @@
         font-size: clamp(0.76rem, 0.82vw, 0.84rem);
     }
 
-    .surfside-site-header.is-scrolled .surfside-site-header__link--primary {
+    .surfside-site-header.is-scrolled .surfside-site-header__link--live {
         padding-inline: 11px;
     }
 }
@@ -254,7 +254,7 @@
         font-size: 1rem;
     }
 
-    .surfside-site-header__link--primary {
+    .surfside-site-header__link--live {
         justify-content: center;
         margin-top: 5px;
     }
