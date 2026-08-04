@@ -8,6 +8,33 @@ if (!defined('ABSPATH')) {
  * Front-end visual utilities migrated from Code Snippets.
  * Existing shortcode names and CSS classes are preserved.
  */
+function surfside_tools_visual_utilities_prevent_countdown_cache() {
+    if (is_admin() || !is_singular()) {
+        return;
+    }
+
+    $post = get_queried_object();
+    if (!($post instanceof WP_Post)) {
+        return;
+    }
+
+    $countdown_shortcodes = array(
+        'surfside_service_countdown',
+        'surfside_service_countdown_compact',
+        'surfside_sunday_countdown',
+    );
+
+    foreach ($countdown_shortcodes as $shortcode) {
+        if (has_shortcode($post->post_content, $shortcode)) {
+            if (function_exists('surfside_tools_prevent_cache')) {
+                surfside_tools_prevent_cache();
+            }
+            return;
+        }
+    }
+}
+add_action('template_redirect', 'surfside_tools_visual_utilities_prevent_countdown_cache', 1);
+
 function surfside_tools_visual_utilities_styles() {
     wp_register_style('surfside-tools-visual-utilities', false, array(), SURFSIDE_TOOLS_VERSION);
     wp_enqueue_style('surfside-tools-visual-utilities');
