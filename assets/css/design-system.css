@@ -907,8 +907,6 @@
  */
 body .wp-block-cover.surfside-prayer-cta {
     box-sizing: border-box;
-    width: 100% !important;
-    max-width: none !important;
     margin-block: 0 !important;
     padding: clamp(3rem, 7vw, 5rem) 1rem;
 }
