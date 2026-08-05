@@ -2,7 +2,14 @@
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Added
+
+- Opt-in Gutenberg public-page standards for shared headings, buttons, sections, cards, media, content widths, responsive behavior, focus states, and reduced motion. ([#128](https://github.com/rspoelstra216/surfside-tools/pull/128))
+
+### Improved
+
+- Shared design-system styles now use file-based versioning so deployed refinements are not hidden by stale browser or page caches. ([#128](https://github.com/rspoelstra216/surfside-tools/pull/128))
+- Milestone 10 now has a documented homepage-first page audit and a durable Gutenberg class reference.
 
 ## [2.4.0] - 2026-08-04
 
