@@ -312,13 +312,10 @@
 }
 
 /**
- * Homepage weekend-service pattern.
+ * Plugin-rendered homepage weekend-service section.
  *
- * Apply surfside-weekend to the section Group, surfside-weekend__intro to its
- * heading/copy Group, surfside-weekend__services to the Group containing the
- * service Groups, and surfside-weekend__service to each service Group.
- * Day, time, detail, and location classes provide the content hierarchy while
- * keeping all words editable in Gutenberg.
+ * The [surfside_weekend_services] shortcode owns this markup and reads the
+ * centralized service schedule and location.
  */
 
 .surfside-weekend {
@@ -334,17 +331,24 @@
     text-align: center;
 }
 
-.surfside-weekend__intro > :first-child {
-    margin-top: 0;
+.surfside-weekend__heading {
+    margin: 0;
+    color: var(--surfside-color-ocean-950);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: var(--surfside-weight-bold);
+    letter-spacing: -0.025em;
+    line-height: var(--surfside-line-height-tight);
 }
 
-.surfside-weekend__intro > :last-child {
-    margin-bottom: 0;
+.surfside-weekend__intro p {
+    margin: var(--surfside-space-3) 0 0;
+    color: var(--surfside-color-muted);
+    font-size: clamp(1.05rem, 1.8vw, 1.2rem);
 }
 
 .surfside-weekend__services {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
     gap: clamp(1rem, 2.5vw, 1.5rem);
     width: min(100%, 56rem);
     margin-inline: auto;
@@ -397,6 +401,10 @@
 }
 
 .surfside-weekend__location {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--surfside-space-2) var(--surfside-space-3);
     width: min(100%, 56rem);
     margin: var(--surfside-space-5) auto 0;
     color: var(--surfside-color-muted);
@@ -404,12 +412,13 @@
     text-align: center;
 }
 
-.surfside-weekend__location > :first-child {
-    margin-top: 0;
+.surfside-weekend__location strong {
+    color: var(--surfside-color-ink);
 }
 
-.surfside-weekend__location > :last-child {
-    margin-bottom: 0;
+.surfside-weekend__location a {
+    color: var(--surfside-color-blue-700);
+    text-underline-offset: 0.16em;
 }
 
 .surfside-page-narrow {
