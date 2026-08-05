@@ -138,7 +138,9 @@
     gap: var(--surfside-space-3);
 }
 
-.surfside-grid {
+.surfside-grid,
+.wp-block-columns.surfside-staggered-cards,
+.surfside-staggered-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
     gap: var(--surfside-space-5);
@@ -545,8 +547,11 @@
     margin-inline: auto;
 }
 
-.surfside-page-card {
+.surfside-page-card,
+.surfside-staggered-cards > * {
     box-sizing: border-box;
+    min-width: 0;
+    margin: 0;
     padding: clamp(1.5rem, 3vw, 2.25rem);
     color: var(--surfside-color-ink);
     background: var(--surfside-color-white);
