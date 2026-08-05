@@ -438,6 +438,78 @@
     text-underline-offset: 0.16em;
 }
 
+/**
+ * Plugin-rendered Life at Surfside photo section.
+ */
+
+.surfside-life {
+    position: relative;
+    z-index: 0;
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding-block: clamp(3rem, 5vw, 4.5rem);
+    color: var(--surfside-color-ink);
+    background: transparent;
+}
+
+.surfside-life::before {
+    position: absolute;
+    z-index: -1;
+    inset-block: 0;
+    left: 50%;
+    width: 100vw;
+    width: 100dvw;
+    background: var(--surfside-color-sand-50);
+    content: "";
+    transform: translateX(-50%);
+}
+
+.surfside-life__inner {
+    box-sizing: border-box;
+    width: min(100% - 2rem, var(--surfside-content-width));
+    margin-inline: auto;
+}
+
+.surfside-life__intro {
+    width: min(100%, 48rem);
+    margin: 0 auto clamp(1.75rem, 3vw, 2.5rem);
+    text-align: center;
+}
+
+.surfside-life__heading {
+    margin: 0;
+    color: var(--surfside-color-ocean-950);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: var(--surfside-weight-bold);
+    letter-spacing: -0.025em;
+    line-height: var(--surfside-line-height-tight);
+}
+
+.surfside-life__intro p {
+    margin: var(--surfside-space-3) 0 0;
+    color: var(--surfside-color-muted);
+    font-size: clamp(1.05rem, 1.8vw, 1.2rem);
+}
+
+.surfside-life .surfside-scroll-carousel {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    transform: none;
+}
+
+@media (max-width: 37.5rem) {
+    .surfside-life {
+        padding-block: 2.75rem;
+    }
+
+    .surfside-life__inner {
+        width: min(100% - 1.25rem, var(--surfside-content-width));
+    }
+}
+
 .surfside-page-narrow {
     box-sizing: border-box;
     width: min(100% - 2rem, 48rem);
