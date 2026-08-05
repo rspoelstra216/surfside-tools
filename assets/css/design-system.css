@@ -588,7 +588,7 @@
 ) .wp-block-button__link {
     color: var(--surfside-color-ocean-900);
     background: var(--surfside-color-white);
-    border-color: var(--surfside-color-border-strong);
+    border: 1px solid var(--surfside-color-border-strong);
 }
 
 .surfside-page :where(
