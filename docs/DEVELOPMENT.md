@@ -157,7 +157,7 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
   - `surfside-page-media` for consistently framed images and embeds
   - `surfside-page-lede` for introductory copy
   - `surfside-page-actions` for responsive Gutenberg Button groups
-  - `surfside-weekend` and its child classes for the homepage weekend-service section
+  - `[surfside_weekend_services]` for the full-width homepage service schedule sourced from shared information
   - `surfside-button--secondary` on a Gutenberg Button block for a quieter action
 - File-based stylesheet versioning so deployed refinements are not hidden by stale caches
 - No automatic restyling of pages that have not opted in
@@ -218,6 +218,7 @@ Architecture boundary:
 - Normalize active header links in the browser because Site Editor shortcode markup may be captured by page caches.
 - Version header assets from their files so refinements do not depend on a plugin version bump.
 - Keep public page styling opt-in and Gutenberg-compatible so editors retain control of unique page content and layouts.
+- Render the homepage weekend-service section from centralized schedule and location data instead of maintaining nested Gutenberg columns.
 - Version the shared design-system stylesheet from its file modification time so deployed refinements bypass stale asset caches.
 
 ## Nice Ideas
