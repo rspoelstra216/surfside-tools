@@ -157,6 +157,7 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
   - `surfside-page-media` for consistently framed images and embeds
   - `surfside-page-lede` for introductory copy
   - `surfside-page-actions` for responsive Gutenberg Button groups
+  - `surfside-weekend` and its child classes for the homepage weekend-service section
   - `surfside-button--secondary` on a Gutenberg Button block for a quieter action
 - File-based stylesheet versioning so deployed refinements are not hidden by stale caches
 - No automatic restyling of pages that have not opted in
