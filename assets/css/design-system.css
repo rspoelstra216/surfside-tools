@@ -703,7 +703,7 @@
     width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
-    padding-block: clamp(3.5rem, 7vw, 5.5rem);
+    padding-block: clamp(2.5rem, 4vw, 3rem);
     color: var(--surfside-color-white);
     background: transparent;
 }
@@ -879,7 +879,7 @@
 
 @media (max-width: 37.5rem) {
     .surfside-ready-visit {
-        padding-block: 3rem;
+        padding-block: 2.5rem;
     }
 
     .surfside-ready-visit__inner {
