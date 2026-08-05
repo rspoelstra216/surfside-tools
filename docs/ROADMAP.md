@@ -40,8 +40,9 @@ Completed foundation:
 - Ordered navigation shared by the header and footer
 - Accessible current-page and livestream navigation states
 - Cache-resilient header and countdown behavior
+- Opt-in Gutenberg page standards for shared typography, buttons, sections, cards, media, and content widths
 
-Next phase: audit public pages together, prioritize the most visible inconsistencies, and add reusable plugin styles or widgets only where they provide clear sitewide value.
+Next phase: apply the shared standards to the homepage together, then continue the public-page audit in priority order. Add new plugin styles or widgets only where they provide clear sitewide value.
 
 ## Future ideas
 
