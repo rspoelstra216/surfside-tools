@@ -715,7 +715,7 @@
     left: 50%;
     width: 100vw;
     width: 100dvw;
-    background: var(--surfside-color-ocean-900);
+    background: var(--surfside-color-ocean-800);
     content: "";
     transform: translateX(-50%);
 }
