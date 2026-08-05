@@ -501,6 +501,18 @@
 }
 
 @media (max-width: 37.5rem) {
+    .surfside-weekend {
+        padding-inline: 0.75rem;
+    }
+
+    .surfside-weekend__services {
+        grid-template-columns: 1fr;
+    }
+
+    .surfside-weekend__service {
+        padding: 1.75rem 1.25rem;
+    }
+
     .surfside-page-narrow {
         width: min(100% - 1.25rem, 48rem);
     }
