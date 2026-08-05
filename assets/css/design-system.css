@@ -493,6 +493,14 @@
     font-size: clamp(1.05rem, 1.8vw, 1.2rem);
 }
 
+.surfside-life__carousel {
+    width: calc(100vw - 32px);
+    max-width: none;
+    margin-left: 50%;
+    overflow: hidden;
+    transform: translateX(-50%);
+}
+
 .surfside-life .surfside-scroll-carousel {
     width: 100% !important;
     max-width: none !important;
