@@ -715,7 +715,11 @@
     left: 50%;
     width: 100vw;
     width: 100dvw;
-    background: var(--surfside-color-ocean-800);
+    background: linear-gradient(
+        135deg,
+        var(--surfside-color-blue-700) 0%,
+        var(--surfside-color-ocean-800) 100%
+    );
     content: "";
     transform: translateX(-50%);
 }
@@ -767,8 +771,8 @@
 
 .surfside-ready-visit__services li {
     padding: var(--surfside-space-4) var(--surfside-space-5);
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.11);
+    border: 1px solid rgba(255, 255, 255, 0.28);
     border-radius: var(--surfside-radius-md);
 }
 
