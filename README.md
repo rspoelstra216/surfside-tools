@@ -95,6 +95,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - Reveal-on-scroll utilities
 - Service, compact, and Sunday countdowns
 - Editable CSS overrides with built-in CSS reference
+- Opt-in Gutenberg page standards for shared typography, buttons, sections, cards, media, and content widths
 
 ## Staff URLs
 
@@ -188,6 +189,6 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 
 Milestones 1–9 are complete. Milestone 10 — V2 Website Experience — is in progress.
 
-The shared information, service schedule, design foundation, footer, ordered navigation, and site header were released in version 2.4.0. The next phase is a page-by-page public design audit. Surfside Tools will continue to own sitewide settings and reusable components while WordPress pages retain their unique editorial content and layouts.
+The shared information, service schedule, design foundation, footer, ordered navigation, and site header were released in version 2.4.0. Reusable opt-in Gutenberg page standards are now available, and the homepage is the first page in the public design audit. Surfside Tools will continue to own sitewide settings and reusable components while WordPress pages retain their unique editorial content and layouts.
 
 See the [roadmap](docs/ROADMAP.md) for milestone status, the [development handbook](docs/DEVELOPMENT.md) for durable decisions, and the [changelog](CHANGELOG.md) for complete release history.
