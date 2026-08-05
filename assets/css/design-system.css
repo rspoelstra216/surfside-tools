@@ -320,7 +320,11 @@
 
 .surfside-weekend {
     box-sizing: border-box;
+    width: calc(100vw - 32px);
+    max-width: none;
+    margin-left: 50%;
     padding: clamp(3.5rem, 7vw, 5.5rem) max(1rem, calc((100% - var(--surfside-content-width)) / 2));
+    transform: translateX(-50%);
     color: var(--surfside-color-ink);
     background: var(--surfside-color-sand-50);
 }
