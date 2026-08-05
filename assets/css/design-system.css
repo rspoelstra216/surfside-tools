@@ -461,7 +461,7 @@
     left: 50%;
     width: 100vw;
     width: 100dvw;
-    background: var(--surfside-color-sand-50);
+    background: var(--surfside-color-sand-100);
     content: "";
     transform: translateX(-50%);
 }
