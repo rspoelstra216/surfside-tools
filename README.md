@@ -124,6 +124,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 ### Calendar and homepage displays
 
 - `[surfside_photo_carousel]`
+- `[surfside_life_at_surfside]`
 - `[surfside_weekend_services]`
 - `[surfside_tools_upcoming_events]`
 - `[surfside_tools_calendar]`
