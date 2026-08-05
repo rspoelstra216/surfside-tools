@@ -921,7 +921,7 @@ body .wp-block-cover.surfside-prayer-cta + * {
 
 .surfside-prayer-cta .wp-block-cover__background {
     background: var(--surfside-color-ocean-900) !important;
-    opacity: 0.5 !important;
+    opacity: 0.38 !important;
 }
 
 .surfside-prayer-cta .wp-block-cover__inner-container {
