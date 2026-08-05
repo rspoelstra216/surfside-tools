@@ -146,6 +146,21 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
 - Prayer Request Contact anchor
 - Keyboard, native dialog, scrolling, and reduced-motion support
 
+### Public page design standards
+
+- Opt-in Gutenberg styling activated by adding `surfside-page` to a page's outer Group block
+- Shared heading, paragraph, Gutenberg button, focus, responsive, and reduced-motion behavior
+- Reusable page classes:
+  - `surfside-page-section` with `--compact`, `--white`, `--soft`, and `--sand` variants
+  - `surfside-page-narrow` for readable text widths
+  - `surfside-page-card` for quiet bordered content panels
+  - `surfside-page-media` for consistently framed images and embeds
+  - `surfside-page-lede` for introductory copy
+  - `surfside-page-actions` for responsive Gutenberg Button groups
+  - `surfside-button--secondary` on a Gutenberg Button block for a quieter action
+- File-based stylesheet versioning so deployed refinements are not hidden by stale caches
+- No automatic restyling of pages that have not opted in
+
 ### Project infrastructure
 
 - GitHub as the source of truth
@@ -177,7 +192,7 @@ The [changelog](../CHANGELOG.md), GitHub Releases, and merged pull requests are 
 
 Milestone 10 applies the established information and visual foundations to the public website.
 
-The shared Surfside Information source, service schedule, blue-led coastal tokens, restored logo, footer, ordered navigation, and responsive sticky header are complete. The next phase is a page-by-page design audit that prioritizes the most visible inconsistencies.
+The shared Surfside Information source, service schedule, blue-led coastal tokens, restored logo, footer, ordered navigation, responsive sticky header, and opt-in Gutenberg page standards are complete. The homepage is the first page in the design audit.
 
 Architecture boundary:
 
@@ -185,6 +200,7 @@ Architecture boundary:
 - WordPress pages retain unique editorial content and page-specific layouts.
 - Reusable plugin classes or widgets should be added only when they improve consistency or maintainability.
 - Surfside Tools will not become a general-purpose page builder.
+- Public pages adopt shared styling explicitly through the outer `surfside-page` Group class; unmodified pages retain their existing theme presentation.
 
 ### Durable public-experience decisions
 
@@ -200,6 +216,8 @@ Architecture boundary:
 - Use the shared Media Library logo selection with the restored plugin asset as fallback.
 - Normalize active header links in the browser because Site Editor shortcode markup may be captured by page caches.
 - Version header assets from their files so refinements do not depend on a plugin version bump.
+- Keep public page styling opt-in and Gutenberg-compatible so editors retain control of unique page content and layouts.
+- Version the shared design-system stylesheet from its file modification time so deployed refinements bypass stale asset caches.
 
 ## Nice Ideas
 

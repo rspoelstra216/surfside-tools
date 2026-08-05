@@ -44,12 +44,13 @@ Implementation history for completed milestones belongs in the [changelog](CHANG
 
 ## Current direction
 
-Milestone 10 is applying the shared information and blue-led coastal foundation to the public website. The ordered navigation manager and plugin-owned footer and header are complete.
+Milestone 10 is applying the shared information and blue-led coastal foundation to the public website. The ordered navigation manager, plugin-owned footer and header, and opt-in Gutenberg page standards are complete.
 
-The next phase is a page-by-page design audit:
+The homepage is the first page in the page-by-page design audit:
 
 - Surfside Tools owns sitewide settings, navigation, headers, footers, dynamic widgets, and reusable design standards.
 - WordPress pages retain unique editorial content and page-specific layouts.
+- Pages opt in to the shared public styles through a `surfside-page` class on their outer Group block.
 - Reusable plugin styles or widgets should be added only when they improve consistency or maintenance.
 - Surfside Tools will not become a general-purpose page builder.
 
