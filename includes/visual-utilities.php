@@ -39,8 +39,8 @@ function surfside_tools_visual_utilities_styles() {
     wp_register_style('surfside-tools-visual-utilities', false, array(), SURFSIDE_TOOLS_VERSION);
     wp_enqueue_style('surfside-tools-visual-utilities');
     wp_add_inline_style('surfside-tools-visual-utilities', '
-        body:not(.wp-admin) .surfside-reveal{opacity:0;transform:translateY(16px);transition:opacity 700ms ease,transform 700ms ease}
-        body:not(.wp-admin) .surfside-reveal.is-visible{opacity:1;transform:translateY(0)}
+        body:not(.wp-admin) :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft){opacity:0;transform:translateY(16px);transition:opacity 700ms ease,transform 700ms ease}
+        body:not(.wp-admin) :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft).is-visible{opacity:1;transform:translateY(0)}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-1{transition-delay:.1s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-2{transition-delay:.5s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-3{transition-delay:.75s}
@@ -48,7 +48,7 @@ function surfside_tools_visual_utilities_styles() {
         body:not(.wp-admin) .surfside-reveal.surfside-delay-5{transition-delay:1.25s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-6{transition-delay:1.5s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-7{transition-delay:1.75s}
-        .wp-admin .surfside-reveal,.editor-styles-wrapper .surfside-reveal,.block-editor-page .surfside-reveal,.interface-interface-skeleton .surfside-reveal{opacity:1!important;transform:none!important;transition:none!important}
+        .wp-admin :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft),.editor-styles-wrapper :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft),.block-editor-page :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft),.interface-interface-skeleton :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft){opacity:1!important;transform:none!important;transition:none!important}
         .surfside-countdown{text-align:center;padding:28px 20px;border-radius:18px;background:#f5f5f8;max-width:760px;margin:24px auto}
         .surfside-countdown-label{font-size:.9rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;opacity:.75;margin-bottom:6px}
         .surfside-countdown-service{font-size:1.5rem;font-weight:700;margin-bottom:18px}
@@ -67,7 +67,7 @@ function surfside_tools_visual_utilities_styles() {
         .surfside-sunday-countdown .surfside-next-service{font-size:1.35rem;font-weight:700;margin-bottom:6px}
         .surfside-sunday-countdown .surfside-compact-time{font-size:1rem;font-weight:500}
         @media(max-width:600px){.surfside-countdown-timer{grid-template-columns:repeat(2,1fr)}}
-        @media(prefers-reduced-motion:reduce){body:not(.wp-admin) .surfside-reveal{opacity:1;transform:none;transition:none}}
+        @media(prefers-reduced-motion:reduce){body:not(.wp-admin) :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft){opacity:1;transform:none;transition:none}}
     ');
 }
 add_action('wp_enqueue_scripts', 'surfside_tools_visual_utilities_styles');
@@ -78,7 +78,7 @@ function surfside_tools_visual_utilities_scripts() {
     <script>
     (function(){
         function initReveal(){
-            var items=document.querySelectorAll('.surfside-reveal');
+            var items=document.querySelectorAll('.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft');
             if(!items.length)return;
             if(!('IntersectionObserver' in window)){items.forEach(function(item){item.classList.add('is-visible');});return;}
             var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add('is-visible');observer.unobserve(entry.target);}});},{root:null,rootMargin:'0px 0px -5% 0px',threshold:.05});
