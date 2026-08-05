@@ -319,13 +319,27 @@
  */
 
 .surfside-weekend {
+    position: relative;
+    z-index: 0;
     box-sizing: border-box;
     width: 100%;
     max-width: none;
     margin: 0;
     padding: clamp(3.5rem, 7vw, 5.5rem) max(1rem, calc((100% - var(--surfside-content-width)) / 2));
     color: var(--surfside-color-ink);
+    background: transparent;
+}
+
+.surfside-weekend::before {
+    position: absolute;
+    z-index: -1;
+    inset-block: 0;
+    left: 50%;
+    width: 100vw;
+    width: 100dvw;
     background: var(--surfside-color-sand-50);
+    content: "";
+    transform: translateX(-50%);
 }
 
 .surfside-weekend__intro {
