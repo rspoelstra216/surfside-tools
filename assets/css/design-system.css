@@ -1056,7 +1056,7 @@ body .wp-block-cover.surfside-prayer-cta + * {
 
 .surfside-visit-details__inner {
     box-sizing: border-box;
-    width: min(100% - 2rem, 56rem);
+    width: min(100% - 2rem, 64rem);
     margin-inline: auto;
 }
 
@@ -1202,24 +1202,38 @@ body .wp-block-cover.surfside-prayer-cta + * {
 
 
 @media (min-width: 48rem) {
-    .surfside-visit-details__location {
+    .surfside-visit-details__inner {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(16rem, 0.85fr) minmax(28rem, 1.15fr);
+        grid-template-areas:
+            "intro services"
+            "location services";
         align-items: center;
-        column-gap: var(--surfside-space-6);
+        gap: var(--surfside-space-5) clamp(2rem, 5vw, 4rem);
+    }
+
+    .surfside-visit-details__intro {
+        grid-area: intro;
+        width: auto;
+        margin: 0;
         text-align: left;
     }
 
-    .surfside-visit-details__eyebrow,
-    .surfside-visit-details__location h3,
-    .surfside-visit-details__location h3 + p {
-        grid-column: 1;
+    .surfside-visit-details__services {
+        grid-area: services;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .surfside-visit-details__location {
+        grid-area: location;
+        align-items: flex-start;
+        width: auto;
+        margin: 0;
+        text-align: left;
     }
 
     .surfside-visit-details__button {
-        grid-column: 2;
-        grid-row: 1 / 4;
-        margin-top: 0;
+        margin-top: var(--surfside-space-4);
     }
 }
 
