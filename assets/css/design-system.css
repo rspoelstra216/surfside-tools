@@ -497,7 +497,7 @@
 
 .surfside-life__intro {
     width: min(100%, 48rem);
-    margin: 0 auto clamp(1.75rem, 3vw, 2.5rem);
+    margin: 0 auto clamp(1.25rem, 2vw, 1.75rem);
     text-align: center;
 }
 
@@ -1037,7 +1037,7 @@ body .wp-block-cover.surfside-prayer-cta + * {
     width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
-    padding-block: clamp(3rem, 5vw, 4rem);
+    padding-block: clamp(2.5rem, 4vw, 3rem);
     color: var(--surfside-color-ink);
     background: transparent;
 }
@@ -1092,7 +1092,7 @@ body .wp-block-cover.surfside-prayer-cta + * {
     box-sizing: border-box;
     min-width: 0;
     margin: 0;
-    padding: clamp(1.4rem, 2.5vw, 1.8rem);
+    padding: clamp(1.15rem, 2vw, 1.4rem);
     overflow: hidden;
     text-align: center;
     background: var(--surfside-color-white);
@@ -1142,7 +1142,7 @@ body .wp-block-cover.surfside-prayer-cta + * {
     flex-direction: column;
     align-items: center;
     width: min(100%, 42rem);
-    margin: clamp(2rem, 4vw, 3rem) auto 0;
+    margin: clamp(1.5rem, 3vw, 2rem) auto 0;
     text-align: center;
 }
 
@@ -1201,8 +1201,8 @@ body .wp-block-cover.surfside-prayer-cta + * {
 }
 
 @media (max-width: 37.5rem) {
-    .surfside-visit-details {
-        padding-block: 2.75rem;
+     .surfside-visit-details {
+        padding-block: 2.5rem;
     }
 
     .surfside-visit-details__inner {
