@@ -607,7 +607,7 @@
     gap: var(--surfside-space-3);
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(.wp-block-button__link) {
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) .wp-block-button .wp-block-button__link {
     box-sizing: border-box;
     display: inline-flex;
     min-height: 2.75rem;
@@ -629,25 +629,25 @@
         transform var(--surfside-transition-fast);
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(.wp-block-button__link):hover {
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) .wp-block-button .wp-block-button__link:hover {
     color: var(--surfside-color-white);
     background: var(--surfside-color-ocean-800);
     border-color: var(--surfside-color-ocean-800);
     transform: translateY(-1px);
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(
-    .wp-block-button.is-style-outline,
-    .wp-block-button.surfside-button--secondary
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) .wp-block-button:is(
+    .is-style-outline,
+    .surfside-button--secondary
 ) .wp-block-button__link {
     color: var(--surfside-color-ocean-900);
     background: var(--surfside-color-white);
     border: 1px solid var(--surfside-color-border-strong);
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(
-    .wp-block-button.is-style-outline,
-    .wp-block-button.surfside-button--secondary
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) .wp-block-button:is(
+    .is-style-outline,
+    .surfside-button--secondary
 ) .wp-block-button__link:hover {
     color: var(--surfside-color-ocean-900);
     background: var(--surfside-color-blue-50);
@@ -691,6 +691,24 @@
     :is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(.wp-block-button__link):hover {
         transform: none;
     }
+}
+
+/**
+ * Homepage layout and legacy-theme normalization.
+ *
+ * Top-level sections own their vertical spacing. The theme block gap and
+ * inaccessible Extendable animation wrappers around the compact Today widget
+ * should not add competing layout or motion.
+ */
+.home .wp-block-post-content > * + * {
+    margin-block-start: 0;
+}
+
+.home .surfside-page .ext-animate--on:has(.surfside-today-compact) {
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
 }
 
 /**
