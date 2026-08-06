@@ -9,11 +9,14 @@ if (!defined('ABSPATH')) {
  * Site Editor template shortcodes render too late for conditional enqueueing.
  */
 function surfside_tools_footer_assets() {
+    $style_path = SURFSIDE_TOOLS_PATH . 'assets/css/footer.css';
+    $style_version = file_exists($style_path) ? (string) filemtime($style_path) : SURFSIDE_TOOLS_VERSION;
+
     wp_enqueue_style(
         'surfside-tools-footer',
         SURFSIDE_TOOLS_URL . 'assets/css/footer.css',
         array('surfside-tools-design-system'),
-        defined('SURFSIDE_TOOLS_VERSION') ? SURFSIDE_TOOLS_VERSION : '2.3.1'
+        $style_version
     );
 }
 add_action('wp_enqueue_scripts', 'surfside_tools_footer_assets', 6);
