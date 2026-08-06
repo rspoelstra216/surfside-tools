@@ -1061,7 +1061,7 @@ body .wp-block-cover.surfside-prayer-cta + * {
 }
 
 .surfside-visit-details__intro {
-    width: min(100%, 56rem);
+    width: min(100%, 42rem);
     margin: 0 auto clamp(1rem, 2vw, 1.5rem);
     text-align: center;
 }
@@ -1141,7 +1141,7 @@ body .wp-block-cover.surfside-prayer-cta + * {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: min(100%, 42rem);
+    width: min(100%, 56rem);
     margin: clamp(1.5rem, 3vw, 2rem) auto 0;
     text-align: center;
 }
