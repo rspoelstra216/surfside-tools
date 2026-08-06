@@ -3,9 +3,9 @@
     top: 0;
     z-index: 1000;
     box-sizing: border-box;
-    width: 100vw;
+    width: 100%;
     max-width: none;
-    margin-inline: calc(50% - 50vw);
+    margin-inline: 0;
     color: var(--surfside-color-ocean-950);
     background: var(--surfside-color-white);
     transition: box-shadow var(--surfside-transition-fast);
