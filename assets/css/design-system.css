@@ -1201,7 +1201,7 @@ body .wp-block-cover.surfside-prayer-cta + * {
 }
 
 @media (max-width: 37.5rem) {
-     .surfside-visit-details {
+    .surfside-visit-details {
         padding-block: 2.5rem;
     }
 
