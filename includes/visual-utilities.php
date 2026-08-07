@@ -45,12 +45,9 @@ function surfside_tools_visual_utilities_styles() {
         body:not(.wp-admin) .surfside-reveal.surfside-delay-1{transition-delay:.1s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-2{transition-delay:.5s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-3{transition-delay:.75s}
-        body:not(.wp-admin) .surfside-staggered-cards > :nth-child(1){transition-delay:.1s}
-        body:not(.wp-admin) .surfside-staggered-cards > :nth-child(2){transition-delay:.3s}
-        body:not(.wp-admin) .surfside-staggered-cards > :nth-child(3){transition-delay:.5s}
-        body:not(.wp-admin) .surfside-staggered-cards > :nth-child(4){transition-delay:.7s}
-        body:not(.wp-admin) .surfside-staggered-cards > :nth-child(5){transition-delay:.9s}
-        body:not(.wp-admin) .surfside-staggered-cards > :nth-child(6){transition-delay:1.1s}
+        body:not(.wp-admin) .surfside-staggered-cards > :is(:nth-child(1),:nth-child(4)){transition-delay:.1s}
+        body:not(.wp-admin) .surfside-staggered-cards > :is(:nth-child(2),:nth-child(5)){transition-delay:.3s}
+        body:not(.wp-admin) .surfside-staggered-cards > :is(:nth-child(3),:nth-child(6)){transition-delay:.5s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-4{transition-delay:1s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-5{transition-delay:1.25s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-6{transition-delay:1.5s}
