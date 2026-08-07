@@ -568,11 +568,23 @@
 }
 
 /*
- * Native Grid paragraphs can inherit high-specificity theme resets. Keep the
- * opt-in expectation-card treatment authoritative without affecting other
- * Gutenberg grids or paragraphs.
+ * Gutenberg Group card grid.
+ *
+ * The theme's constrained-layout rules load after the generic grid primitive,
+ * so this opt-in component must own both the parent layout and direct card
+ * surfaces.
  */
-body .wp-block-post-content .surfside-staggered-cards:is(.is-layout-grid, .wp-block-group-is-layout-grid) > p {
+body .wp-block-post-content .wp-block-group.surfside-staggered-cards {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    align-items: stretch;
+    gap: clamp(1rem, 2.5vw, 1.5rem) !important;
+    width: 100% !important;
+    max-width: var(--surfside-content-width) !important;
+    margin-inline: auto !important;
+}
+
+body .wp-block-post-content .wp-block-group.surfside-staggered-cards > p {
     box-sizing: border-box !important;
     min-width: 0;
     height: 100%;
@@ -585,10 +597,22 @@ body .wp-block-post-content .surfside-staggered-cards:is(.is-layout-grid, .wp-bl
     box-shadow: var(--surfside-shadow-sm) !important;
 }
 
-body .wp-block-post-content .surfside-staggered-cards:is(.is-layout-grid, .wp-block-group-is-layout-grid) > p > strong:first-child {
+body .wp-block-post-content .wp-block-group.surfside-staggered-cards > p > strong:first-child {
     display: inline-block;
     margin-bottom: var(--surfside-space-2);
     color: var(--surfside-color-ocean-950);
+}
+
+@media (max-width: 48rem) {
+    body .wp-block-post-content .wp-block-group.surfside-staggered-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 37.5rem) {
+    body .wp-block-post-content .wp-block-group.surfside-staggered-cards {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 .surfside-page-media {
