@@ -54,8 +54,9 @@ function surfside_tools_visual_utilities_styles() {
         body:not(.wp-admin) .surfside-reveal.surfside-delay-5{transition-delay:1.25s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-6{transition-delay:1.5s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-7{transition-delay:1.75s}
+        .wp-block-shortcode:has(.surfside-visit-expectations){max-width:none!important;width:100%}
         .surfside-visit-expectations{background:#fff;padding:56px 16px}
-        .surfside-visit-expectations__inner{max-width:72rem;margin:0 auto}
+        .surfside-visit-expectations__inner{max-width:80rem;margin:0 auto}
         .surfside-visit-expectations h2{color:#061b33;font-size:clamp(2rem,4vw,3rem);font-weight:700;line-height:1.12;text-align:center;margin:0 0 32px}
         .surfside-visit-expectations__grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
         .surfside-visit-expectations__card{box-sizing:border-box;background:#fff;border:1px solid #d8e1e9;border-radius:16px;box-shadow:0 2px 8px rgba(6,27,51,.08);color:#10243a;min-height:184px;padding:28px}
