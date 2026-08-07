@@ -54,6 +54,21 @@ function surfside_tools_visual_utilities_styles() {
         body:not(.wp-admin) .surfside-reveal.surfside-delay-5{transition-delay:1.25s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-6{transition-delay:1.5s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-7{transition-delay:1.75s}
+        .surfside-visit-expectations{background:#fff;padding:56px 16px}
+        .surfside-visit-expectations__inner{max-width:72rem;margin:0 auto}
+        .surfside-visit-expectations h2{color:#061b33;font-size:clamp(2rem,4vw,3rem);font-weight:700;line-height:1.12;text-align:center;margin:0 0 32px}
+        .surfside-visit-expectations__grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+        .surfside-visit-expectations__card{box-sizing:border-box;background:#fff;border:1px solid #d8e1e9;border-radius:16px;box-shadow:0 2px 8px rgba(6,27,51,.08);color:#10243a;min-height:184px;padding:28px}
+        .surfside-visit-expectations__card h3{color:#061b33;font-size:1.35rem;font-weight:700;line-height:1.25;margin:0 0 12px}
+        .surfside-visit-expectations__card p{font-size:1rem;line-height:1.6;margin:0}
+        body:not(.wp-admin) .surfside-visit-expectations__grid > :nth-child(1){transition-delay:.1s}
+        body:not(.wp-admin) .surfside-visit-expectations__grid > :nth-child(2){transition-delay:.35s}
+        body:not(.wp-admin) .surfside-visit-expectations__grid > :nth-child(3){transition-delay:.6s}
+        body:not(.wp-admin) .surfside-visit-expectations__grid > :nth-child(4){transition-delay:.85s}
+        body:not(.wp-admin) .surfside-visit-expectations__grid > :nth-child(5){transition-delay:1.1s}
+        body:not(.wp-admin) .surfside-visit-expectations__grid > :nth-child(6){transition-delay:1.35s}
+        @media(max-width:900px){.surfside-visit-expectations__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        @media(max-width:600px){.surfside-visit-expectations{padding:40px 16px}.surfside-visit-expectations h2{margin-bottom:24px}.surfside-visit-expectations__grid{grid-template-columns:1fr;gap:16px}.surfside-visit-expectations__card{min-height:0;padding:24px}body:not(.wp-admin) .surfside-visit-expectations__grid > :nth-child(n){transition-delay:calc((var(--surfside-card-index) - 1) * .18s + .1s)}}
         .wp-admin :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards > *),.editor-styles-wrapper :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards > *),.block-editor-page :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards > *),.interface-interface-skeleton :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards > *){opacity:1!important;transform:none!important;transition:none!important}
         .surfside-countdown{text-align:center;padding:28px 20px;border-radius:18px;background:#f5f5f8;max-width:760px;margin:24px auto}
         .surfside-countdown-label{font-size:.9rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;opacity:.75;margin-bottom:6px}
@@ -134,6 +149,32 @@ function surfside_tools_visual_utilities_scripts() {
     <?php
 }
 add_action('wp_footer', 'surfside_tools_visual_utilities_scripts', 30);
+
+function surfside_tools_visit_expectations_shortcode() {
+    $cards = array(
+        array('icon' => '😊', 'title' => 'Friendly & Relaxed', 'text' => 'Come as you are. Whether you prefer jeans and a t-shirt or Sunday best, you’ll fit right in.'),
+        array('icon' => '☕', 'title' => 'When I Arrive', 'text' => 'Grab a coffee, say hello, and find a seat. We want you to feel comfortable from the moment you arrive.'),
+        array('icon' => '📖', 'title' => 'Biblical Teaching', 'text' => 'Pastor Erick teaches God’s Word in a way that is understandable, applicable, and relevant to everyday life.'),
+        array('icon' => '🎵', 'title' => 'Worship', 'text' => 'Our services include worship through music, prayer, and biblical teaching centered on Christ.'),
+        array('icon' => '⏱', 'title' => 'About an Hour', 'text' => 'We start on time, focus on what matters most, and strive to make every minute meaningful.'),
+        array('icon' => '🤝', 'title' => 'No Pressure', 'text' => 'You won’t be asked to stand up, introduce yourself, or participate in anything you’re uncomfortable with.'),
+    );
+
+    $html = '<section class="surfside-visit-expectations" aria-labelledby="surfside-visit-expectations-heading">';
+    $html .= '<div class="surfside-visit-expectations__inner">';
+    $html .= '<h2 id="surfside-visit-expectations-heading">What Should I Expect?</h2>';
+    $html .= '<div class="surfside-visit-expectations__grid surfside-staggered-cards">';
+
+    foreach ($cards as $index => $card) {
+        $html .= '<article class="surfside-visit-expectations__card" style="--surfside-card-index:' . esc_attr($index + 1) . '">';
+        $html .= '<h3><span aria-hidden="true">' . esc_html($card['icon']) . '</span> ' . esc_html($card['title']) . '</h3>';
+        $html .= '<p>' . esc_html($card['text']) . '</p>';
+        $html .= '</article>';
+    }
+
+    $html .= '</div></div></section>';
+    return $html;
+}
 
 function surfside_tools_service_schedule() {
     if (function_exists('surfside_tools_site_information_services')) {
@@ -250,4 +291,5 @@ add_action('init', function () {
     add_shortcode('surfside_service_countdown', 'surfside_tools_service_countdown_shortcode');
     add_shortcode('surfside_service_countdown_compact', 'surfside_tools_compact_countdown_shortcode');
     add_shortcode('surfside_sunday_countdown', 'surfside_tools_sunday_countdown_shortcode');
+    add_shortcode('surfside_visit_expectations', 'surfside_tools_visit_expectations_shortcode');
 }, 999);
