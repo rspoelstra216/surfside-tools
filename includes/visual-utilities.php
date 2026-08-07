@@ -39,8 +39,10 @@ function surfside_tools_visual_utilities_styles() {
     wp_register_style('surfside-tools-visual-utilities', false, array(), SURFSIDE_TOOLS_VERSION);
     wp_enqueue_style('surfside-tools-visual-utilities');
     wp_add_inline_style('surfside-tools-visual-utilities', '
-        body:not(.wp-admin) :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards > *){opacity:0;transform:translateY(16px);transition:opacity 700ms ease,transform 700ms ease}
-        body:not(.wp-admin) :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards > *).is-visible{opacity:1;transform:translateY(0)}
+        body:not(.wp-admin) :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta){opacity:0;transform:translateY(16px);transition:opacity 700ms ease,transform 700ms ease}
+        body:not(.wp-admin) :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta).is-visible{opacity:1;transform:translateY(0)}
+        body:not(.wp-admin) .surfside-staggered-cards > *{opacity:0;transform:translateY(16px);transition:opacity 700ms ease,transform 700ms ease}
+        body:not(.wp-admin) .surfside-staggered-cards.is-visible > *{opacity:1;transform:translateY(0)}
         body:not(.wp-admin) :is(.surfside-section-white, .surfside-section-sand, .surfside-section-soft):has(.surfside-staggered-cards){opacity:1;transform:none;transition:none}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-1{transition-delay:.1s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-2{transition-delay:.5s}
@@ -82,7 +84,7 @@ function surfside_tools_visual_utilities_scripts() {
     <script>
     (function(){
         function initReveal(){
-            var items=document.querySelectorAll('.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards > *, .surfside-staggered-cards > *');
+            var items=document.querySelectorAll('.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards');
             if(!items.length)return;
             if(!('IntersectionObserver' in window)){items.forEach(function(item){item.classList.add('is-visible');});return;}
             var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add('is-visible');observer.unobserve(entry.target);}});},{root:null,rootMargin:'0px 0px -5% 0px',threshold:.05});
