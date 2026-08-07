@@ -41,6 +41,7 @@ function surfside_tools_visual_utilities_styles() {
     wp_add_inline_style('surfside-tools-visual-utilities', '
         body:not(.wp-admin) :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards > *){opacity:0;transform:translateY(16px);transition:opacity 700ms ease,transform 700ms ease}
         body:not(.wp-admin) :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards > *).is-visible{opacity:1;transform:translateY(0)}
+        body:not(.wp-admin) :is(.surfside-section-white, .surfside-section-sand, .surfside-section-soft):has(.surfside-staggered-cards){opacity:1;transform:none;transition:none}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-1{transition-delay:.1s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-2{transition-delay:.5s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-3{transition-delay:.75s}
