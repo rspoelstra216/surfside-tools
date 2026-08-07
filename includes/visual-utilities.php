@@ -55,11 +55,11 @@ function surfside_tools_visual_utilities_styles() {
         body:not(.wp-admin) .surfside-reveal.surfside-delay-6{transition-delay:1.5s}
         body:not(.wp-admin) .surfside-reveal.surfside-delay-7{transition-delay:1.75s}
         .wp-block-group:has(> .surfside-visit-expectations){margin-block-start:0!important;padding-block:0!important}
-        .surfside-visit-expectations{box-sizing:border-box;max-width:none!important;width:100%;background:#fff;padding:56px 16px}
+        .surfside-visit-expectations{box-sizing:border-box;max-width:none!important;width:100%;background:#fff;padding:28px 16px}
         .surfside-visit-expectations__inner{max-width:80rem;margin:0 auto}
-        .surfside-visit-expectations h2{color:#061b33;font-size:clamp(2rem,4vw,3rem);font-weight:700;line-height:1.12;text-align:center;margin:0 0 32px}
-        .surfside-visit-expectations__grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
-        .surfside-visit-expectations__card{box-sizing:border-box;background:#fff;border:1px solid #d8e1e9;border-radius:16px;box-shadow:0 2px 8px rgba(6,27,51,.08);color:#10243a;min-height:184px;padding:28px}
+        .surfside-visit-expectations h2{color:#061b33;font-size:clamp(2rem,4vw,3rem);font-weight:700;line-height:1.12;text-align:center;margin:0 0 20px}
+        .surfside-visit-expectations__grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+        .surfside-visit-expectations__card{box-sizing:border-box;background:#fff;border:1px solid #d8e1e9;border-radius:16px;box-shadow:0 2px 8px rgba(6,27,51,.08);color:#10243a;min-height:150px;padding:22px}
         .surfside-visit-expectations__card h3{color:#061b33;font-size:1.35rem;font-weight:700;line-height:1.25;margin:0 0 12px}
         .surfside-visit-expectations__card p{font-size:1rem;line-height:1.6;margin:0}
         body:not(.wp-admin) .surfside-visit-expectations__grid > :nth-child(1){transition-delay:.1s}
@@ -69,7 +69,7 @@ function surfside_tools_visual_utilities_styles() {
         body:not(.wp-admin) .surfside-visit-expectations__grid > :nth-child(5){transition-delay:1.1s}
         body:not(.wp-admin) .surfside-visit-expectations__grid > :nth-child(6){transition-delay:1.35s}
         @media(max-width:900px){.surfside-visit-expectations__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-        @media(max-width:600px){.surfside-visit-expectations{padding:40px 16px}.surfside-visit-expectations h2{margin-bottom:24px}.surfside-visit-expectations__grid{grid-template-columns:1fr;gap:16px}.surfside-visit-expectations__card{min-height:0;padding:24px}body:not(.wp-admin) .surfside-visit-expectations__grid > :nth-child(n){transition-delay:calc((var(--surfside-card-index) - 1) * .18s + .1s)}}
+        @media(max-width:600px){.surfside-visit-expectations{padding:28px 16px}.surfside-visit-expectations h2{margin-bottom:20px}.surfside-visit-expectations__grid{grid-template-columns:1fr;gap:14px}.surfside-visit-expectations__card{min-height:0;padding:20px}body:not(.wp-admin) .surfside-visit-expectations__grid > :nth-child(n){transition-delay:calc((var(--surfside-card-index) - 1) * .18s + .1s)}}
         .wp-admin :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards > *),.editor-styles-wrapper :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards > *),.block-editor-page :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards > *),.interface-interface-skeleton :is(.surfside-reveal, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-prayer-cta, .surfside-staggered-cards > *){opacity:1!important;transform:none!important;transition:none!important}
         .surfside-countdown{text-align:center;padding:28px 20px;border-radius:18px;background:#f5f5f8;max-width:760px;margin:24px auto}
         .surfside-countdown-label{font-size:.9rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;opacity:.75;margin-bottom:6px}
