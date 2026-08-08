@@ -544,6 +544,11 @@ add_shortcode('surfside_weekly_docx_importer', 'surfside_weekly_docx_importer_sh
 add_action('wp_head', function () {
     ?>
     <style>
+        .surfside-message-notes > .message-title {
+            margin-inline: auto;
+            text-align: center;
+        }
+
         .surfside-message-notes .message-notes-main-heading {
             text-align: center;
             font-size: clamp(1.35rem, 2.5vw, 2rem);
