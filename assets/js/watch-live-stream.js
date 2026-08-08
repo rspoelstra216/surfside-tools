@@ -90,7 +90,7 @@
             if (state === "live" && player) {
                 window.requestAnimationFrame(() => {
                     try {
-                        player.setMuted(false);
+                        player.setMuted(true);
                         player.play();
                     } catch (error) {
                         // The visible Twitch controls remain available if a browser blocks autoplay.
@@ -112,7 +112,7 @@
                     width: "100%",
                     height: "100%",
                     autoplay: true,
-                    muted: false,
+                    muted: true,
                     parent: [window.location.hostname]
                 });
 
