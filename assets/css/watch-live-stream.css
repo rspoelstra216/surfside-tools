@@ -1,0 +1,214 @@
+.surfside-watch-live {
+    position: relative;
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: clamp(2.5rem, 5vw, 4rem) max(1rem, calc((100% - var(--surfside-content-width)) / 2));
+    color: var(--surfside-color-ink);
+    background: var(--surfside-color-white);
+}
+
+.surfside-watch-live__inner {
+    width: min(100%, 64rem);
+    margin-inline: auto;
+}
+
+.surfside-watch-live__intro {
+    width: min(100%, 48rem);
+    margin: 0 auto clamp(1.5rem, 3vw, 2rem);
+    text-align: center;
+}
+
+.surfside-watch-live__intro h2 {
+    margin: 0;
+    color: var(--surfside-color-ocean-950);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: var(--surfside-weight-bold);
+    letter-spacing: -0.025em;
+    line-height: var(--surfside-line-height-tight);
+}
+
+.surfside-watch-live__intro p {
+    margin: .75rem 0 0;
+    color: var(--surfside-color-muted);
+    font-size: clamp(1.05rem, 1.8vw, 1.2rem);
+}
+
+.surfside-watch-live__stage {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    color: var(--surfside-color-white);
+    background: var(--surfside-color-ocean-950);
+    border-radius: var(--surfside-radius-lg);
+}
+
+.surfside-watch-live__loading,
+.surfside-watch-live__offline,
+.surfside-watch-live__player,
+.surfside-watch-live__player > div,
+.surfside-watch-live__player iframe {
+    width: 100%;
+    height: 100%;
+}
+
+.surfside-watch-live__loading {
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 1rem;
+    text-align: center;
+}
+
+.surfside-watch-live__loading p {
+    margin: 0;
+}
+
+.surfside-watch-live__spinner {
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 3px solid rgba(255,255,255,.28);
+    border-top-color: var(--surfside-color-white);
+    border-radius: 50%;
+    animation: surfside-stream-spin .8s linear infinite;
+}
+
+.surfside-watch-live__player,
+.surfside-watch-live__offline {
+    position: absolute;
+    inset: 0;
+}
+
+.surfside-watch-live__video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+}
+
+.surfside-watch-live__badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    padding: .4rem .7rem;
+    color: #fff;
+    background: #b42318;
+    border-radius: var(--surfside-radius-pill);
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.surfside-watch-live__badge--announcements {
+    background: rgba(6,27,51,.82);
+}
+
+.surfside-watch-live__offline-message {
+    display: grid;
+    place-content: center;
+    height: 100%;
+    padding: 2rem;
+    text-align: center;
+    background: linear-gradient(135deg, var(--surfside-color-ocean-900), var(--surfside-color-ocean-800));
+}
+
+.surfside-watch-live__offline-message h3 {
+    margin: .35rem 0 .75rem;
+    color: #fff;
+    font-size: clamp(1.6rem, 4vw, 2.5rem);
+}
+
+.surfside-watch-live__offline-message p {
+    margin: 0;
+}
+
+.surfside-watch-live__eyebrow {
+    margin: 0;
+    color: var(--surfside-color-blue-700);
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+}
+
+.surfside-watch-live__offline-message .surfside-watch-live__eyebrow {
+    color: var(--surfside-color-blue-100);
+}
+
+.surfside-watch-live__status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-top: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--surfside-color-blue-50);
+    border: 1px solid var(--surfside-color-border);
+    border-radius: var(--surfside-radius-md);
+}
+
+.surfside-watch-live__next {
+    margin: .2rem 0 0;
+    color: var(--surfside-color-ocean-950);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.surfside-watch-live__countdown {
+    margin: .15rem 0 0;
+    color: var(--surfside-color-muted);
+    font-size: .9rem;
+}
+
+.surfside-watch-live__links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .65rem;
+}
+
+.surfside-watch-live__links .surfside-button {
+    min-height: 2.5rem;
+    padding: .55rem 1rem;
+}
+
+.surfside-watch-live__note {
+    margin: .75rem 0 0;
+    color: var(--surfside-color-muted);
+    font-size: .875rem;
+    text-align: center;
+}
+
+@keyframes surfside-stream-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 44rem) {
+    .surfside-watch-live {
+        padding-block: 2.5rem;
+    }
+
+    .surfside-watch-live__status {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .surfside-watch-live__links {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .surfside-watch-live__links .surfside-button {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .surfside-watch-live__spinner {
+        animation: none;
+    }
+}
