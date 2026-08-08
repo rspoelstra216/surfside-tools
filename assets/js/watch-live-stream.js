@@ -80,11 +80,23 @@
         const playerId = block.dataset.playerId;
         let resolved = false;
         let timeout;
+        let player;
 
         const resolveState = (state) => {
             resolved = true;
             window.clearTimeout(timeout);
             setState(block, state);
+
+            if (state === "live" && player) {
+                window.requestAnimationFrame(() => {
+                    try {
+                        player.setMuted(true);
+                        player.play();
+                    } catch (error) {
+                        // The visible Twitch controls remain available if a browser blocks autoplay.
+                    }
+                });
+            }
         };
 
         startCountdown(block);
@@ -95,7 +107,7 @@
 
         loadTwitch()
             .then(() => {
-                const player = new window.Twitch.Player(playerId, {
+                player = new window.Twitch.Player(playerId, {
                     channel,
                     width: "100%",
                     height: "100%",
