@@ -13,6 +13,8 @@ function surfside_tools_site_information_manager_notice($message, $type = 'succe
 }
 
 function surfside_tools_site_information_manager_handle_post() {
+    $defaults = surfside_tools_site_information_defaults();
+
     if (
         ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' ||
         empty($_POST['surfside_information_action'])
@@ -102,6 +104,12 @@ function surfside_tools_site_information_manager_handle_post() {
             'postal_code' => isset($_POST['postal_code']) ? wp_unslash($_POST['postal_code']) : '',
         ),
         'services' => $services,
+        'streaming' => array(
+            'twitch_channel' => isset($_POST['twitch_channel']) ? wp_unslash($_POST['twitch_channel']) : '',
+            'announcement_video_id' => isset($_POST['announcement_video_id']) ? absint($_POST['announcement_video_id']) : 0,
+            'youtube_url' => isset($_POST['stream_youtube_url']) ? wp_unslash($_POST['stream_youtube_url']) : '',
+            'facebook_url' => isset($_POST['stream_facebook_url']) ? wp_unslash($_POST['stream_facebook_url']) : '',
+        ),
         'navigation' => $navigation,
         'social' => $social,
     ));
@@ -341,6 +349,45 @@ function surfside_tools_site_information_manager_assets() {
         });
     ');
 
+    wp_add_inline_script('surfside-tools-information-manager', '
+        document.addEventListener("DOMContentLoaded", function () {
+            var control = document.querySelector("[data-surfside-stream-video]");
+            var input = document.querySelector("[data-surfside-stream-video-id]");
+            if (!control || !input || !window.wp || !wp.media) return;
+
+            var selectButton = control.querySelector("[data-surfside-stream-video-select]");
+            var removeButton = control.querySelector("[data-surfside-stream-video-remove]");
+            var status = document.querySelector("[data-surfside-stream-video-status]");
+            var frame;
+
+            selectButton.addEventListener("click", function () {
+                if (!frame) {
+                    frame = wp.media({
+                        title: "Select the offline announcement video",
+                        button: { text: "Use this video" },
+                        library: { type: "video" },
+                        multiple: false
+                    });
+                    frame.on("select", function () {
+                        var attachment = frame.state().get("selection").first().toJSON();
+                        input.value = attachment.id;
+                        selectButton.textContent = "Replace video";
+                        removeButton.disabled = false;
+                        if (status) status.textContent = "Selected: " + attachment.filename + ". Save to publish the change.";
+                    });
+                }
+                frame.open();
+            });
+
+            removeButton.addEventListener("click", function () {
+                input.value = "0";
+                selectButton.textContent = "Select video";
+                removeButton.disabled = true;
+                if (status) status.textContent = "No fallback video selected. Save to publish the change.";
+            });
+        });
+    ');
+
 }
 
 function surfside_tools_staff_site_information_shortcode() {
@@ -366,6 +413,10 @@ function surfside_tools_staff_site_information_shortcode() {
     $information = surfside_tools_get_site_information();
     $identity = $information['identity'];
     $location = $information['location'];
+    $streaming = isset($information['streaming']) && is_array($information['streaming']) ? $information['streaming'] : array();
+    $announcement_video_id = absint($streaming['announcement_video_id'] ?? 0);
+    $announcement_video_url = $announcement_video_id ? wp_get_attachment_url($announcement_video_id) : '';
+    $announcement_video_name = $announcement_video_id ? wp_basename((string) get_attached_file($announcement_video_id)) : '';
     $logo_id = absint($identity['logo_id'] ?? 0);
     $logo_url = surfside_tools_site_information_logo_url($information, 'medium_large');
     $default_logo_url = SURFSIDE_TOOLS_URL . 'assets/images/surfside-logo-restored.png';
@@ -430,6 +481,25 @@ function surfside_tools_staff_site_information_shortcode() {
                     <label class="surfside-information-field"><span>City</span><input type="text" name="city" value="<?php echo esc_attr($location['city']); ?>" required></label>
                     <label class="surfside-information-field"><span>State</span><input type="text" name="state" value="<?php echo esc_attr($location['state']); ?>" maxlength="2" required></label>
                     <label class="surfside-information-field"><span>ZIP code</span><input type="text" name="postal_code" value="<?php echo esc_attr($location['postal_code']); ?>" required></label>
+                </div>
+            </section>
+
+            <section class="surfside-information-card">
+                <h2>Watch Live Streaming</h2>
+                <p>Control the live Twitch channel and the local announcement video shown whenever Twitch is offline.</p>
+                <div class="surfside-information-grid">
+                    <label class="surfside-information-field"><span>Twitch channel</span><input type="text" name="twitch_channel" value="<?php echo esc_attr($streaming['twitch_channel'] ?? 'surfsidecf'); ?>" required><small class="surfside-information-help">Channel name only, such as surfsidecf.</small></label>
+                    <div class="surfside-information-field">
+                        <span>Offline announcement video</span>
+                        <input type="hidden" name="announcement_video_id" value="<?php echo esc_attr($announcement_video_id); ?>" data-surfside-stream-video-id>
+                        <div class="surfside-information-logo-actions" data-surfside-stream-video>
+                            <button type="button" class="surfside-information-add" data-surfside-stream-video-select><?php echo $announcement_video_id ? 'Replace video' : 'Select video'; ?></button>
+                            <button type="button" class="surfside-information-remove" data-surfside-stream-video-remove <?php disabled($announcement_video_id, 0); ?>>Remove video</button>
+                        </div>
+                        <small class="surfside-information-help" data-surfside-stream-video-status><?php echo $announcement_video_name ? esc_html('Selected: ' . $announcement_video_name) : 'No fallback video selected. The next-service panel will appear while offline.'; ?></small>
+                    </div>
+                    <label class="surfside-information-field surfside-information-field-wide"><span>YouTube destination</span><input type="url" name="stream_youtube_url" value="<?php echo esc_attr($streaming['youtube_url'] ?? ''); ?>"></label>
+                    <label class="surfside-information-field surfside-information-field-wide"><span>Facebook destination</span><input type="url" name="stream_facebook_url" value="<?php echo esc_attr($streaming['facebook_url'] ?? ''); ?>"></label>
                 </div>
             </section>
 

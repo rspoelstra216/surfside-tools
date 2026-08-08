@@ -1790,7 +1790,7 @@ function surfside_tools_message_shortcode() {
         <?php endif; ?>
 
         <?php if ($data['title']) : ?>
-            <h1><?php echo esc_html($data['title']); ?></h1>
+            <h2 class="message-title"><?php echo esc_html($data['title']); ?></h2>
         <?php endif; ?>
 
         <?php if ($data['date']) : ?>

@@ -87,6 +87,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - Current-page navigation indicated with an understated accessible active state
 - Cache-resilient header assets and browser-side active-link normalization
 - Configured livestream services automatically promote Watch Live to Live Now
+- Twitch-aware Watch Live block with a locally managed offline announcement-video fallback and next-service countdown
 
 ### Settings and visual utilities
 
@@ -126,6 +127,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - `[surfside_photo_carousel]`
 - `[surfside_life_at_surfside]`
 - `[surfside_weekend_services]`
+- `[surfside_watch_live]`
 - `[surfside_tools_upcoming_events]`
 - `[surfside_tools_calendar]`
 - `[surfside_events]`

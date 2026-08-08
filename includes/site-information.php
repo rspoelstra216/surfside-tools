@@ -43,6 +43,12 @@ function surfside_tools_site_information_defaults() {
                 'livestream' => true,
             ),
         ),
+        'streaming' => array(
+            'twitch_channel' => 'surfsidecf',
+            'announcement_video_id' => 0,
+            'youtube_url' => 'https://www.youtube.com/@addpastor',
+            'facebook_url' => 'https://www.facebook.com/SurfsideCommunityFellowship',
+        ),
         'navigation' => array(
             array('key' => 'plan-visit', 'label' => 'Plan Your Visit', 'type' => 'custom', 'page_id' => 0, 'url' => '/plan-your-visit/', 'new_tab' => false),
             array('key' => 'ministries', 'label' => 'Ministries', 'type' => 'custom', 'page_id' => 0, 'url' => '/ministries/', 'new_tab' => false),
@@ -90,6 +96,7 @@ function surfside_tools_site_information_sanitize($value) {
 
     $identity = isset($value['identity']) && is_array($value['identity']) ? $value['identity'] : array();
     $location = isset($value['location']) && is_array($value['location']) ? $value['location'] : array();
+    $streaming = isset($value['streaming']) && is_array($value['streaming']) ? $value['streaming'] : array();
 
     $clean = array(
         'identity' => array(
@@ -107,6 +114,12 @@ function surfside_tools_site_information_sanitize($value) {
             'postal_code' => sanitize_text_field($location['postal_code'] ?? $defaults['location']['postal_code']),
         ),
         'services' => array(),
+        'streaming' => array(
+            'twitch_channel' => sanitize_key($streaming['twitch_channel'] ?? $defaults['streaming']['twitch_channel']),
+            'announcement_video_id' => absint($streaming['announcement_video_id'] ?? 0),
+            'youtube_url' => surfside_tools_site_information_sanitize_url($streaming['youtube_url'] ?? $defaults['streaming']['youtube_url']),
+            'facebook_url' => surfside_tools_site_information_sanitize_url($streaming['facebook_url'] ?? $defaults['streaming']['facebook_url']),
+        ),
         'navigation' => array(),
         'social' => array(),
     );
