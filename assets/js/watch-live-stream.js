@@ -44,6 +44,10 @@
         if (label) {
             label.textContent = state === "live" ? "Live now" : "Next livestream";
         }
+
+        block.querySelectorAll(".surfside-watch-live__next, [data-stream-countdown]").forEach((element) => {
+            element.hidden = state === "live";
+        });
     }
 
     function startCountdown(block) {
