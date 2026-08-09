@@ -88,6 +88,24 @@ function surfside_tools_site_information_manager_handle_post() {
         );
     }
 
+    $posted_ministries = isset($_POST['adult_ministries']) && is_array($_POST['adult_ministries'])
+        ? wp_unslash($_POST['adult_ministries'])
+        : array();
+    $adult_ministries = array();
+    foreach ($posted_ministries as $ministry) {
+        if (!is_array($ministry)) {
+            continue;
+        }
+        $adult_ministries[] = array(
+            'key' => $ministry['key'] ?? '',
+            'icon' => $ministry['icon'] ?? '',
+            'name' => $ministry['name'] ?? '',
+            'schedule' => $ministry['schedule'] ?? '',
+            'location' => $ministry['location'] ?? '',
+            'description' => $ministry['description'] ?? '',
+        );
+    }
+
     surfside_tools_update_site_information(array(
         'identity' => array(
             'name' => isset($_POST['church_name']) ? wp_unslash($_POST['church_name']) : '',
@@ -110,6 +128,7 @@ function surfside_tools_site_information_manager_handle_post() {
             'youtube_url' => isset($_POST['stream_youtube_url']) ? wp_unslash($_POST['stream_youtube_url']) : '',
             'facebook_url' => isset($_POST['stream_facebook_url']) ? wp_unslash($_POST['stream_facebook_url']) : '',
         ),
+        'adult_ministries' => $adult_ministries,
         'navigation' => $navigation,
         'social' => $social,
     ));
@@ -143,6 +162,10 @@ function surfside_tools_site_information_manager_assets() {
     wp_enqueue_style('surfside-tools-information-manager');
     wp_add_inline_style('surfside-tools-information-manager', '
         .surfside-information-form{display:grid;gap:22px}.surfside-information-card{padding:clamp(20px,3vw,30px);border:1px solid rgba(6,27,51,.13);border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(6,27,51,.06)}.surfside-information-card h2{margin:0 0 6px;color:#061b33}.surfside-information-card>p{margin:0 0 20px;color:#56616d}.surfside-information-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.surfside-information-field{display:grid;gap:7px}.surfside-information-field-wide{grid-column:1/-1}.surfside-information-field span,.surfside-information-services legend{color:#26323d;font-weight:800}.surfside-information-field input,.surfside-information-field select{width:100%;min-height:46px;padding:10px 12px;border:1px solid #aeb9c4;border-radius:9px;background:#fff;color:#26323d;font:inherit}.surfside-information-field input:focus,.surfside-information-field select:focus{border-color:#0b5fa5;outline:3px solid rgba(11,95,165,.18);outline-offset:1px}.surfside-information-help{margin:0;color:#687480;font-size:.88rem;line-height:1.45}.surfside-information-services{display:grid;gap:16px;margin:0;padding:0;border:0}.surfside-information-service{display:grid;grid-template-columns:minmax(120px,.7fr) minmax(180px,1.15fr) minmax(120px,.65fr) auto;align-items:end;gap:14px;padding:18px;border:1px solid rgba(6,27,51,.12);border-radius:13px;background:#f7f9fb}.surfside-information-service-actions{display:flex;align-items:center;gap:14px;min-height:46px}.surfside-information-checkbox{display:inline-flex;align-items:center;gap:8px;color:#26323d;font-weight:800;white-space:nowrap}.surfside-information-checkbox input{width:20px;height:20px;margin:0;accent-color:#0b5fa5}.surfside-information-remove,.surfside-information-add{min-height:42px;padding:9px 14px;border:1px solid #0b5fa5;border-radius:9px;background:#fff;color:#0b5fa5;font:inherit;font-weight:800;cursor:pointer}.surfside-information-remove:hover,.surfside-information-remove:focus-visible,.surfside-information-add:hover,.surfside-information-add:focus-visible{background:#eaf3fb;outline:0}.surfside-information-remove:disabled{cursor:not-allowed;opacity:.45}.surfside-information-service-controls{display:flex;justify-content:flex-start;margin-top:2px}.surfside-information-link-list{display:grid;gap:13px}.surfside-information-link{display:grid;grid-template-columns:minmax(130px,.35fr) minmax(0,1fr);align-items:center;gap:14px}.surfside-information-link strong{color:#26323d}.surfside-information-actions{position:sticky;bottom:14px;z-index:3;display:flex;justify-content:flex-end;padding:14px;border:1px solid rgba(6,27,51,.12);border-radius:14px;background:rgba(255,255,255,.94);box-shadow:0 10px 28px rgba(6,27,51,.12);backdrop-filter:blur(8px)}.surfside-information-save{min-height:48px;padding:11px 22px;border:0;border-radius:9px;background:#0b5fa5;color:#fff;font:inherit;font-weight:900;cursor:pointer}.surfside-information-save:hover,.surfside-information-save:focus-visible{background:#061b33}.surfside-information-save:focus-visible{outline:3px solid rgba(11,95,165,.28);outline-offset:3px}.surfside-information-notice{margin:0 0 20px;padding:14px 16px;border-radius:10px;font-weight:800}.surfside-information-notice-success{border:1px solid #9bd2a6;background:#edf9f0;color:#17682e}.surfside-information-notice-error{border:1px solid #e7aaaa;background:#fff0f0;color:#9b2020}@media(max-width:900px){.surfside-information-service{grid-template-columns:repeat(2,minmax(0,1fr))}.surfside-information-service-actions{align-self:end}}@media(max-width:720px){.surfside-information-grid,.surfside-information-service,.surfside-information-link{grid-template-columns:1fr}.surfside-information-field-wide{grid-column:auto}.surfside-information-actions{bottom:8px}.surfside-information-save{width:100%}.surfside-information-service-actions{justify-content:space-between}}
+    ');
+
+    wp_add_inline_style('surfside-tools-information-manager', '
+        .surfside-information-ministries{display:grid;gap:14px;margin-bottom:14px}.surfside-information-ministry{display:grid;grid-template-columns:64px minmax(180px,.8fr) minmax(180px,1fr) minmax(180px,1fr) auto;align-items:end;gap:12px;padding:16px;border:1px solid rgba(6,27,51,.12);border-radius:13px;background:#f7f9fb}.surfside-information-ministry textarea{box-sizing:border-box;width:100%;padding:10px 12px;border:1px solid #aeb9c4;border-radius:9px;background:#fff;color:#26323d;font:inherit;line-height:1.5;resize:vertical}.surfside-information-ministry textarea:focus{border-color:#0b5fa5;outline:3px solid rgba(11,95,165,.18);outline-offset:1px}.surfside-information-ministry-description{grid-column:1/-1}.surfside-information-ministry-actions{display:flex;gap:6px}.surfside-information-ministry-actions button:disabled{cursor:not-allowed;opacity:.45}@media(max-width:1050px){.surfside-information-ministry{grid-template-columns:64px repeat(2,minmax(0,1fr))}.surfside-information-ministry-actions{grid-column:2/-1}}@media(max-width:720px){.surfside-information-ministry{grid-template-columns:1fr}.surfside-information-ministry>*{grid-column:auto}.surfside-information-ministry-actions{flex-wrap:wrap}}
     ');
 
     wp_add_inline_style('surfside-tools-information-manager', '
@@ -207,6 +230,51 @@ function surfside_tools_site_information_manager_assets() {
             });
 
             updateRemoveButtons();
+        });
+    ');
+
+    wp_add_inline_script('surfside-tools-information-manager', '
+        document.addEventListener("DOMContentLoaded", function () {
+            var list = document.querySelector("[data-surfside-ministries]");
+            var template = document.querySelector("[data-surfside-ministry-template]");
+            var add = document.querySelector("[data-surfside-ministry-add]");
+            var status = document.querySelector("[data-surfside-ministry-status]");
+            if (!list || !template || !add) return;
+            var nextIndex = list.children.length;
+            function items() { return Array.from(list.querySelectorAll(".surfside-information-ministry")); }
+            function announce(message) { if (status) status.textContent = message; }
+            function sync() {
+                items().forEach(function (item, index, all) {
+                    var up = item.querySelector("[data-surfside-ministry-up]");
+                    var down = item.querySelector("[data-surfside-ministry-down]");
+                    if (up) up.disabled = index === 0;
+                    if (down) down.disabled = index === all.length - 1;
+                });
+            }
+            add.addEventListener("click", function () {
+                var wrapper = document.createElement("div");
+                wrapper.innerHTML = template.innerHTML.replaceAll("__INDEX__", "new-" + nextIndex++).trim();
+                var item = wrapper.firstElementChild;
+                list.appendChild(item);
+                sync();
+                var name = item.querySelector("[data-surfside-ministry-name]");
+                if (name) name.focus();
+                announce("Adult ministry added. Save to publish it.");
+            });
+            list.addEventListener("click", function (event) {
+                var item = event.target.closest(".surfside-information-ministry");
+                if (!item) return;
+                if (event.target.closest("[data-surfside-ministry-remove]")) {
+                    item.remove(); sync(); announce("Adult ministry removed. Save to confirm."); return;
+                }
+                var direction = event.target.closest("[data-surfside-ministry-up]") ? -1 : event.target.closest("[data-surfside-ministry-down]") ? 1 : 0;
+                if (!direction) return;
+                var sibling = direction < 0 ? item.previousElementSibling : item.nextElementSibling;
+                if (!sibling) return;
+                if (direction < 0) list.insertBefore(item, sibling); else list.insertBefore(sibling, item);
+                sync(); announce("Adult ministry order changed. Save to publish.");
+            });
+            sync();
         });
     ');
 
@@ -588,6 +656,41 @@ function surfside_tools_staff_site_information_shortcode() {
                             <button type="button" class="surfside-information-remove" data-surfside-nav-down aria-label="Move link down">↓</button>
                             <button type="button" class="surfside-information-remove" data-surfside-nav-remove>Remove</button>
                         </div>
+                    </div>
+                </template>
+            </section>
+
+            <section class="surfside-information-card">
+                <h2>Adult Ministries</h2>
+                <p>Manage the ministries displayed by <code>[surfside_adult_ministries]</code>. The order here is the public card order.</p>
+                <div class="surfside-information-ministries" data-surfside-ministries>
+                    <?php foreach ((array) ($information['adult_ministries'] ?? array()) as $index => $ministry) : ?>
+                        <div class="surfside-information-ministry">
+                            <input type="hidden" name="adult_ministries[<?php echo esc_attr($index); ?>][key]" value="<?php echo esc_attr($ministry['key'] ?? ''); ?>">
+                            <label class="surfside-information-field"><span>Icon</span><input type="text" name="adult_ministries[<?php echo esc_attr($index); ?>][icon]" value="<?php echo esc_attr($ministry['icon'] ?? ''); ?>" maxlength="12" placeholder="🙏"></label>
+                            <label class="surfside-information-field"><span>Ministry name</span><input type="text" name="adult_ministries[<?php echo esc_attr($index); ?>][name]" value="<?php echo esc_attr($ministry['name'] ?? ''); ?>" required data-surfside-ministry-name></label>
+                            <label class="surfside-information-field"><span>Usual schedule</span><input type="text" name="adult_ministries[<?php echo esc_attr($index); ?>][schedule]" value="<?php echo esc_attr($ministry['schedule'] ?? ''); ?>"></label>
+                            <label class="surfside-information-field"><span>Usual location</span><input type="text" name="adult_ministries[<?php echo esc_attr($index); ?>][location]" value="<?php echo esc_attr($ministry['location'] ?? ''); ?>"></label>
+                            <div class="surfside-information-ministry-actions">
+                                <button type="button" class="surfside-information-remove" data-surfside-ministry-up aria-label="Move <?php echo esc_attr($ministry['name'] ?? 'ministry'); ?> up">↑</button>
+                                <button type="button" class="surfside-information-remove" data-surfside-ministry-down aria-label="Move <?php echo esc_attr($ministry['name'] ?? 'ministry'); ?> down">↓</button>
+                                <button type="button" class="surfside-information-remove" data-surfside-ministry-remove>Remove</button>
+                            </div>
+                            <label class="surfside-information-field surfside-information-ministry-description"><span>Description</span><textarea name="adult_ministries[<?php echo esc_attr($index); ?>][description]" rows="3"><?php echo esc_textarea($ministry['description'] ?? ''); ?></textarea></label>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <button type="button" class="surfside-information-add" data-surfside-ministry-add>+ Add adult ministry</button>
+                <p class="screen-reader-text" aria-live="polite" data-surfside-ministry-status></p>
+                <template data-surfside-ministry-template>
+                    <div class="surfside-information-ministry">
+                        <input type="hidden" name="adult_ministries[__INDEX__][key]" value="">
+                        <label class="surfside-information-field"><span>Icon</span><input type="text" name="adult_ministries[__INDEX__][icon]" maxlength="12" placeholder="🙏"></label>
+                        <label class="surfside-information-field"><span>Ministry name</span><input type="text" name="adult_ministries[__INDEX__][name]" required data-surfside-ministry-name></label>
+                        <label class="surfside-information-field"><span>Usual schedule</span><input type="text" name="adult_ministries[__INDEX__][schedule]"></label>
+                        <label class="surfside-information-field"><span>Usual location</span><input type="text" name="adult_ministries[__INDEX__][location]"></label>
+                        <div class="surfside-information-ministry-actions"><button type="button" class="surfside-information-remove" data-surfside-ministry-up aria-label="Move ministry up">↑</button><button type="button" class="surfside-information-remove" data-surfside-ministry-down aria-label="Move ministry down">↓</button><button type="button" class="surfside-information-remove" data-surfside-ministry-remove>Remove</button></div>
+                        <label class="surfside-information-field surfside-information-ministry-description"><span>Description</span><textarea name="adult_ministries[__INDEX__][description]" rows="3"></textarea></label>
                     </div>
                 </template>
             </section>

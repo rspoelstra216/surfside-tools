@@ -49,6 +49,7 @@ function surfside_tools_site_information_defaults() {
             'youtube_url' => 'https://www.youtube.com/@addpastor',
             'facebook_url' => 'https://www.facebook.com/SurfsideCommunityFellowship',
         ),
+        'adult_ministries' => array(),
         'navigation' => array(
             array('key' => 'plan-visit', 'label' => 'Plan Your Visit', 'type' => 'custom', 'page_id' => 0, 'url' => '/plan-your-visit/', 'new_tab' => false),
             array('key' => 'ministries', 'label' => 'Ministries', 'type' => 'custom', 'page_id' => 0, 'url' => '/ministries/', 'new_tab' => false),
@@ -97,6 +98,7 @@ function surfside_tools_site_information_sanitize($value) {
     $identity = isset($value['identity']) && is_array($value['identity']) ? $value['identity'] : array();
     $location = isset($value['location']) && is_array($value['location']) ? $value['location'] : array();
     $streaming = isset($value['streaming']) && is_array($value['streaming']) ? $value['streaming'] : array();
+    $adult_ministries = isset($value['adult_ministries']) && is_array($value['adult_ministries']) ? $value['adult_ministries'] : array();
 
     $clean = array(
         'identity' => array(
@@ -120,9 +122,35 @@ function surfside_tools_site_information_sanitize($value) {
             'youtube_url' => surfside_tools_site_information_sanitize_url($streaming['youtube_url'] ?? $defaults['streaming']['youtube_url']),
             'facebook_url' => surfside_tools_site_information_sanitize_url($streaming['facebook_url'] ?? $defaults['streaming']['facebook_url']),
         ),
+        'adult_ministries' => array(),
         'navigation' => array(),
         'social' => array(),
     );
+
+    foreach ($adult_ministries as $index => $ministry) {
+        if (!is_array($ministry)) {
+            continue;
+        }
+
+        $name = sanitize_text_field($ministry['name'] ?? '');
+        if ($name === '') {
+            continue;
+        }
+
+        $key = sanitize_key($ministry['key'] ?? '');
+        if ($key === '') {
+            $key = 'ministry-' . substr(md5(wp_json_encode(array($name, $index))), 0, 12);
+        }
+
+        $clean['adult_ministries'][] = array(
+            'key' => $key,
+            'icon' => sanitize_text_field($ministry['icon'] ?? ''),
+            'name' => $name,
+            'schedule' => sanitize_text_field($ministry['schedule'] ?? ''),
+            'location' => sanitize_text_field($ministry['location'] ?? ''),
+            'description' => sanitize_textarea_field($ministry['description'] ?? ''),
+        );
+    }
 
     $services = isset($value['services']) && is_array($value['services']) ? $value['services'] : $defaults['services'];
     foreach ($services as $index => $service) {
@@ -240,6 +268,9 @@ function surfside_tools_get_site_information() {
     }
     if (isset($stored['navigation']) && is_array($stored['navigation'])) {
         $merged['navigation'] = $stored['navigation'];
+    }
+    if (isset($stored['adult_ministries']) && is_array($stored['adult_ministries'])) {
+        $merged['adult_ministries'] = $stored['adult_ministries'];
     }
 
     return apply_filters(
