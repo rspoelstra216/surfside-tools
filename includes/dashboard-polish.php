@@ -72,44 +72,7 @@ function surfside_tools_dashboard_intelligence_shortcode_v3() {
             'metric_label' => 'events in the next 30 days',
             'details' => array('<strong>Next event:</strong><br>' . esc_html(surfside_tools_dashboard_next_event_text($data['calendar']['next']))),
         ),
-        'homepage' => array(
-            'title' => 'Homepage',
-            'icon' => 'document',
-            'metric' => $data['homepage']['photo_count'],
-            'metric_label' => 'photos in the carousel',
-            'details' => array('<strong>Last updated:</strong> ' . ($data['homepage']['last_updated'] ? esc_html(wp_date('F j, Y g:i A', $data['homepage']['last_updated'])) : 'No update date recorded')),
-        ),
-        'settings' => array(
-            'title' => 'Settings',
-            'icon' => 'settings',
-            'metric' => $data['settings']['saved_places_count'],
-            'metric_label' => 'saved places',
-            'details' => array(
-                '<strong>Google Places:</strong> ' . ($data['settings']['google_maps_connected'] ? 'Connected' : 'Not configured'),
-                '<strong>Visual CSS overrides:</strong> ' . ($data['settings']['visual_css_enabled'] ? 'Enabled' : 'Using defaults'),
-            ),
-        ),
     );
-
-    $site_information = function_exists('surfside_tools_get_site_information')
-        ? surfside_tools_get_site_information()
-        : array();
-    $site_identity = $site_information['identity'] ?? array();
-    $site_location = $site_information['location'] ?? array();
-    $site_schedule = function_exists('surfside_tools_site_information_service_schedule')
-        ? surfside_tools_site_information_service_schedule()
-        : array();
-    $site_address = function_exists('surfside_tools_site_information_address')
-        ? surfside_tools_site_information_address($site_information)
-        : '';
-    $site_maps_url = function_exists('surfside_tools_site_information_maps_url')
-        ? surfside_tools_site_information_maps_url($site_information)
-        : '';
-    $site_phone = trim((string) ($site_identity['phone'] ?? ''));
-    $site_phone_href = preg_replace('/[^0-9+]/', '', $site_phone);
-    $can_manage_information = function_exists('surfside_tools_site_information_capability')
-        ? current_user_can(surfside_tools_site_information_capability())
-        : current_user_can('manage_options');
 
     ob_start();
     ?>
@@ -146,40 +109,6 @@ function surfside_tools_dashboard_intelligence_shortcode_v3() {
                 </article>
             <?php endforeach; ?>
         </div>
-
-        <section class="surfside-dashboard-information" aria-labelledby="surfside-dashboard-information-title">
-            <span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('settings'); ?></span>
-            <div class="surfside-dashboard-information-copy">
-                <h2 id="surfside-dashboard-information-title">Surfside Information</h2>
-                <p>The shared source for service times, location, contact details, navigation, and social links.</p>
-            </div>
-            <div class="surfside-dashboard-information-details">
-                <?php if (!empty($site_location['venue'])) : ?>
-                    <p><strong>Currently meeting at</strong><br>
-                        <?php if ($site_maps_url !== '') : ?><a href="<?php echo esc_url($site_maps_url); ?>" target="_blank" rel="noopener noreferrer"><?php endif; ?>
-                        <?php echo esc_html($site_location['venue']); ?><?php echo $site_address !== '' ? '<br>' . esc_html($site_address) : ''; ?>
-                        <?php if ($site_maps_url !== '') : ?></a><?php endif; ?>
-                    </p>
-                <?php endif; ?>
-                <?php if ($site_schedule) : ?>
-                    <p><strong>Services</strong><br><?php
-                        $service_lines = array();
-                        foreach ($site_schedule as $service) {
-                            $service_lines[] = esc_html(trim(($service['day'] ?? '') . ' at ' . ($service['time'] ?? '')));
-                        }
-                        echo implode('<br>', $service_lines);
-                    ?></p>
-                <?php endif; ?>
-                <?php if ($site_phone !== '') : ?>
-                    <p><strong>Phone</strong><br><a href="tel:<?php echo esc_attr($site_phone_href); ?>"><?php echo esc_html($site_phone); ?></a></p>
-                <?php endif; ?>
-            </div>
-            <?php if ($can_manage_information) : ?>
-                <div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url('site-management')); ?>">Open Site Management <span class="surfside-staff-arrow">›</span></a></div>
-            <?php else : ?>
-                <span class="surfside-dashboard-information-note">Administrator access is required to edit sitewide information.</span>
-            <?php endif; ?>
-        </section>
 
         <section class="surfside-dashboard-quick-actions">
             <h2 class="surfside-dashboard-section-title">Quick Actions</h2>
