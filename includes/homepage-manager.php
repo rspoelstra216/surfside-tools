@@ -275,7 +275,7 @@ function surfside_tools_staff_homepage_shortcode() {
     ob_start();
     ?>
     <div class="surfside-staff-shell surfside-homepage-manager">
-        <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('')); ?>">← Back to Dashboard</a></div>
+        <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('site-management')); ?>">← Back to Site Management</a></div>
         <section class="surfside-staff-hero">
             <p class="surfside-staff-eyebrow">Manage Homepage</p>
             <h1>Homepage Photos</h1>

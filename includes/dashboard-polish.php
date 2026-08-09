@@ -175,7 +175,7 @@ function surfside_tools_dashboard_intelligence_shortcode_v3() {
                 <?php endif; ?>
             </div>
             <?php if ($can_manage_information) : ?>
-                <div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url('surfside-information')); ?>">Manage Information <span class="surfside-staff-arrow">›</span></a></div>
+                <div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url('site-management')); ?>">Open Site Management <span class="surfside-staff-arrow">›</span></a></div>
             <?php else : ?>
                 <span class="surfside-dashboard-information-note">Administrator access is required to edit sitewide information.</span>
             <?php endif; ?>
@@ -186,8 +186,7 @@ function surfside_tools_dashboard_intelligence_shortcode_v3() {
             <div class="surfside-staff-grid">
                 <article class="surfside-staff-card"><span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('upload'); ?></span><h2>Weekly Update</h2><p>Upload DOCX files, review, and publish.</p><div class="surfside-staff-actions"><a class="surfside-staff-button" href="<?php echo esc_url(surfside_tools_staff_page_url('weekly-update')); ?>">Open Weekly Update <span class="surfside-staff-arrow">›</span></a></div></article>
                 <article class="surfside-staff-card"><span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('calendar'); ?></span><h2>Calendar</h2><p>Manage church calendar events.</p><div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url('calendar')); ?>">Manage Calendar <span class="surfside-staff-arrow">›</span></a></div></article>
-                <article class="surfside-staff-card"><span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('document'); ?></span><h2>Manage Homepage</h2><p>Manage homepage carousel photos.</p><div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url('homepage')); ?>">Open Homepage Manager <span class="surfside-staff-arrow">›</span></a></div></article>
-                <article class="surfside-staff-card"><span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('settings'); ?></span><h2>Settings</h2><p>Manage Google Maps, saved places, and preferences.</p><div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url('settings')); ?>">Open Settings <span class="surfside-staff-arrow">›</span></a></div></article>
+                <article class="surfside-staff-card"><span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('settings'); ?></span><h2>Site Management</h2><p>Manage church information, streaming, navigation, ministries, homepage photos, and settings.</p><div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url('site-management')); ?>">Open Site Management <span class="surfside-staff-arrow">›</span></a></div></article>
             </div>
         </section>
     </div>

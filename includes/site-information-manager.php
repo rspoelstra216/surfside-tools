@@ -106,34 +106,44 @@ function surfside_tools_site_information_manager_handle_post() {
         );
     }
 
-    surfside_tools_update_site_information(array(
-        'identity' => array(
+    $section = isset($_POST['surfside_information_section'])
+        ? sanitize_key(wp_unslash($_POST['surfside_information_section']))
+        : 'information';
+    $updated_information = surfside_tools_get_site_information();
+
+    if ($section === 'information') {
+        $updated_information['identity'] = array(
             'name' => isset($_POST['church_name']) ? wp_unslash($_POST['church_name']) : '',
             'logo_id' => isset($_POST['logo_id']) ? absint($_POST['logo_id']) : 0,
             'tagline' => isset($_POST['tagline']) ? wp_unslash($_POST['tagline']) : '',
             'phone' => isset($_POST['phone']) ? wp_unslash($_POST['phone']) : '',
             'contact_url' => isset($_POST['contact_url']) ? wp_unslash($_POST['contact_url']) : '',
-        ),
-        'location' => array(
+        );
+        $updated_information['location'] = array(
             'venue' => isset($_POST['venue']) ? wp_unslash($_POST['venue']) : '',
             'street' => isset($_POST['street']) ? wp_unslash($_POST['street']) : '',
             'city' => isset($_POST['city']) ? wp_unslash($_POST['city']) : '',
             'state' => isset($_POST['state']) ? wp_unslash($_POST['state']) : '',
             'postal_code' => isset($_POST['postal_code']) ? wp_unslash($_POST['postal_code']) : '',
-        ),
-        'services' => $services,
-        'streaming' => array(
+        );
+        $updated_information['services'] = $services;
+        $updated_information['social'] = $social;
+    } elseif ($section === 'streaming') {
+        $updated_information['streaming'] = array(
             'twitch_channel' => isset($_POST['twitch_channel']) ? wp_unslash($_POST['twitch_channel']) : '',
             'announcement_video_id' => isset($_POST['announcement_video_id']) ? absint($_POST['announcement_video_id']) : 0,
             'youtube_url' => isset($_POST['stream_youtube_url']) ? wp_unslash($_POST['stream_youtube_url']) : '',
             'facebook_url' => isset($_POST['stream_facebook_url']) ? wp_unslash($_POST['stream_facebook_url']) : '',
-        ),
-        'adult_ministries' => $adult_ministries,
-        'navigation' => $navigation,
-        'social' => $social,
-    ));
+        );
+    } elseif ($section === 'navigation') {
+        $updated_information['navigation'] = $navigation;
+    } elseif ($section === 'ministries') {
+        $updated_information['adult_ministries'] = $adult_ministries;
+    }
 
-    return surfside_tools_site_information_manager_notice('Surfside Information saved.');
+    surfside_tools_update_site_information($updated_information);
+
+    return surfside_tools_site_information_manager_notice('Changes saved.');
 }
 
 function surfside_tools_site_information_manager_media_assets() {
@@ -458,7 +468,19 @@ function surfside_tools_site_information_manager_assets() {
 
 }
 
-function surfside_tools_staff_site_information_shortcode() {
+function surfside_tools_staff_site_information_shortcode($attributes = array()) {
+    $attributes = shortcode_atts(array('section' => 'information'), $attributes, 'surfside_staff_site_information');
+    $section = sanitize_key($attributes['section']);
+    $sections = array(
+        'information' => array('eyebrow' => 'Core Site Details', 'title' => 'Surfside Information', 'description' => 'Manage the church identity, location, service schedule, and social links.', 'button' => 'Save Surfside Information'),
+        'streaming' => array('eyebrow' => 'Site Management', 'title' => 'Streaming', 'description' => 'Manage Twitch and the destinations and media used by Watch Live.', 'button' => 'Save Streaming'),
+        'navigation' => array('eyebrow' => 'Site Management', 'title' => 'Navigation', 'description' => 'Manage the links shared by the website header and footer.', 'button' => 'Save Navigation'),
+        'ministries' => array('eyebrow' => 'Site Management', 'title' => 'Ministries', 'description' => 'Manage ministry content displayed by Surfside Tools.', 'button' => 'Save Ministries'),
+    );
+    if (!isset($sections[$section])) {
+        $section = 'information';
+    }
+    $page = $sections[$section];
     if (function_exists('surfside_tools_prevent_cache')) {
         surfside_tools_prevent_cache();
     }
@@ -501,11 +523,11 @@ function surfside_tools_staff_site_information_shortcode() {
     ob_start();
     ?>
     <div class="surfside-staff-shell surfside-information-manager">
-        <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('')); ?>">← Back to Dashboard</a></div>
+        <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('site-management')); ?>">← Back to Site Management</a></div>
         <section class="surfside-staff-hero">
-            <p class="surfside-staff-eyebrow">Sitewide Information</p>
-            <h1>Surfside Information</h1>
-            <p class="surfside-staff-muted">Update the shared information used by Surfside Tools and future sitewide components.</p>
+            <p class="surfside-staff-eyebrow"><?php echo esc_html($page['eyebrow']); ?></p>
+            <h1><?php echo esc_html($page['title']); ?></h1>
+            <p class="surfside-staff-muted"><?php echo esc_html($page['description']); ?></p>
         </section>
 
         <?php echo $notice; ?>
@@ -513,7 +535,9 @@ function surfside_tools_staff_site_information_shortcode() {
         <form method="post" class="surfside-information-form">
             <?php wp_nonce_field('surfside_information_update', 'surfside_information_nonce'); ?>
             <input type="hidden" name="surfside_information_action" value="save">
+            <input type="hidden" name="surfside_information_section" value="<?php echo esc_attr($section); ?>">
 
+            <?php if ($section === 'information') : ?>
             <section class="surfside-information-card">
                 <h2>Church Identity</h2>
                 <p>The public name, tagline, phone number, and Contact destination.</p>
@@ -539,7 +563,9 @@ function surfside_tools_staff_site_information_shortcode() {
                     <label class="surfside-information-field surfside-information-field-wide"><span>Contact destination</span><input type="text" name="contact_url" value="<?php echo esc_attr($identity['contact_url']); ?>" required><small class="surfside-information-help">Use a site path such as /contact/#Contact or a complete URL.</small></label>
                 </div>
             </section>
+            <?php endif; ?>
 
+            <?php if ($section === 'information') : ?>
             <section class="surfside-information-card">
                 <h2>Current Meeting Location</h2>
                 <p>This address will generate the public Google Maps destination automatically.</p>
@@ -551,7 +577,9 @@ function surfside_tools_staff_site_information_shortcode() {
                     <label class="surfside-information-field"><span>ZIP code</span><input type="text" name="postal_code" value="<?php echo esc_attr($location['postal_code']); ?>" required></label>
                 </div>
             </section>
+            <?php endif; ?>
 
+            <?php if ($section === 'streaming') : ?>
             <section class="surfside-information-card">
                 <h2>Watch Live Streaming</h2>
                 <p>Control the live Twitch channel and the local announcement video shown whenever Twitch is offline.</p>
@@ -570,7 +598,9 @@ function surfside_tools_staff_site_information_shortcode() {
                     <label class="surfside-information-field surfside-information-field-wide"><span>Facebook destination</span><input type="url" name="stream_facebook_url" value="<?php echo esc_attr($streaming['facebook_url'] ?? ''); ?>"></label>
                 </div>
             </section>
+            <?php endif; ?>
 
+            <?php if ($section === 'information') : ?>
             <section class="surfside-information-card">
                 <h2>Weekly Service Schedule</h2>
                 <p>Add every recurring weekly service here. Use Calendar Manager for one-time special services.</p>
@@ -606,7 +636,9 @@ function surfside_tools_staff_site_information_shortcode() {
                     </div>
                 </template>
             </section>
+            <?php endif; ?>
 
+            <?php if ($section === 'navigation') : ?>
             <section class="surfside-information-card">
                 <h2>Main Navigation</h2>
                 <p>Build the ordered menu shared by the footer and upcoming site header. Choose a published page to keep the link working if its title or slug changes.</p>
@@ -659,7 +691,9 @@ function surfside_tools_staff_site_information_shortcode() {
                     </div>
                 </template>
             </section>
+            <?php endif; ?>
 
+            <?php if ($section === 'ministries') : ?>
             <section class="surfside-information-card">
                 <h2>Adult Ministries</h2>
                 <p>Manage the ministries displayed by <code>[surfside_adult_ministries]</code>. The order here is the public card order.</p>
@@ -694,7 +728,9 @@ function surfside_tools_staff_site_information_shortcode() {
                     </div>
                 </template>
             </section>
+            <?php endif; ?>
 
+            <?php if ($section === 'information') : ?>
             <section class="surfside-information-card">
                 <h2>Social Destinations</h2>
                 <p>The footer will present these as accessible social icons.</p>
@@ -704,9 +740,10 @@ function surfside_tools_staff_site_information_shortcode() {
                     <?php endforeach; ?>
                 </div>
             </section>
+            <?php endif; ?>
 
             <div class="surfside-information-actions">
-                <button type="submit" class="surfside-information-save">Save Surfside Information</button>
+                <button type="submit" class="surfside-information-save"><?php echo esc_html($page['button']); ?></button>
             </div>
         </form>
     </div>
