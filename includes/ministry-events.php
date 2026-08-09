@@ -73,10 +73,10 @@ function surfside_tools_ministry_events_shortcode($attributes = array()) {
                     $detail_id = 'surfside-ministry-event-' . absint($event['id']) . '-' . str_replace('-', '', $event['date']) . '-' . absint($index);
                     ?>
                     <article class="surfside-ministry-events__card">
-                        <div class="surfside-ministry-events__date" aria-hidden="true"><span><?php echo esc_html($timestamp ? date_i18n('M', $timestamp) : ''); ?></span><strong><?php echo esc_html($timestamp ? date_i18n('j', $timestamp) : ''); ?></strong></div>
+                        <div class="surfside-ministry-events__date" aria-hidden="true"><span><?php echo esc_html($timestamp ? date_i18n('D · M', $timestamp) : ''); ?></span><strong><?php echo esc_html($timestamp ? date_i18n('j', $timestamp) : ''); ?></strong></div>
                         <button type="button" class="surfside-ministry-events__body surfside-event-detail-button" aria-haspopup="dialog" aria-controls="<?php echo esc_attr($detail_id); ?>">
                             <h3><?php echo esc_html($event['title'] ?? ''); ?></h3>
-                            <p><?php echo esc_html(surfside_tools_calendar_format_date($event['date'])); ?> · <?php echo esc_html(surfside_tools_calendar_format_time_range($event)); ?></p>
+                            <p><?php echo esc_html($timestamp ? date_i18n('l, F j', $timestamp) : surfside_tools_calendar_format_date($event['date'])); ?> · <?php echo esc_html(surfside_tools_calendar_format_time_range($event)); ?></p>
                             <?php if (!empty($event['location'])) : ?><p class="surfside-ministry-events__location">📍 <?php echo esc_html($event['location']); ?></p><?php endif; ?>
                         </button>
                         <?php echo surfside_tools_calendar_render_event_modal($event, $detail_id); ?>
