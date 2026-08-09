@@ -129,6 +129,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - `[surfside_life_at_surfside]`
 - `[surfside_weekend_services]`
 - `[surfside_adult_ministries]`
+- `[surfside_ministry_events]`
 - `[surfside_watch_live]`
 - `[surfside_tools_upcoming_events]`
 - `[surfside_tools_calendar]`
