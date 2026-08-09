@@ -18,7 +18,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 ### Staff Dashboard
 
 - Front-end dashboard for routine website management
-- Weekly Update, Calendar, Manage Homepage, and Settings tools
+- Weekly Update and Calendar tools plus a categorized Site Management hub
 - Actionable Website Status summaries focused on current needs
 - Direct Quick Actions for common staff workflows
 - Login and capability protection
@@ -121,6 +121,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - `[surfside_staff_calendar]`
 - `[surfside_staff_homepage]`
 - `[surfside_staff_settings]`
+- `[surfside_staff_site_management]`
 
 ### Calendar and homepage displays
 
