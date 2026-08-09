@@ -480,7 +480,7 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
     if (!isset($sections[$section])) {
         $section = 'information';
     }
-    $page = $sections[$section];
+    $section_config = $sections[$section];
     if (function_exists('surfside_tools_prevent_cache')) {
         surfside_tools_prevent_cache();
     }
@@ -525,9 +525,9 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
     <div class="surfside-staff-shell surfside-information-manager">
         <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('site-management')); ?>">← Back to Site Management</a></div>
         <section class="surfside-staff-hero">
-            <p class="surfside-staff-eyebrow"><?php echo esc_html($page['eyebrow']); ?></p>
-            <h1><?php echo esc_html($page['title']); ?></h1>
-            <p class="surfside-staff-muted"><?php echo esc_html($page['description']); ?></p>
+            <p class="surfside-staff-eyebrow"><?php echo esc_html($section_config['eyebrow']); ?></p>
+            <h1><?php echo esc_html($section_config['title']); ?></h1>
+            <p class="surfside-staff-muted"><?php echo esc_html($section_config['description']); ?></p>
         </section>
 
         <?php echo $notice; ?>
@@ -743,7 +743,7 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
             <?php endif; ?>
 
             <div class="surfside-information-actions">
-                <button type="submit" class="surfside-information-save"><?php echo esc_html($page['button']); ?></button>
+                <button type="submit" class="surfside-information-save"><?php echo esc_html($section_config['button']); ?></button>
             </div>
         </form>
     </div>

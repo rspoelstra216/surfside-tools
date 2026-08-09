@@ -262,6 +262,7 @@
 
 ### Fixed
 
+- Fix the Navigation manager's Save area after splitting Site Management into focused forms.
 - Removed redundant Saturday and Sunday service occurrences from “Also happening today.” ([#85](https://github.com/rspoelstra216/surfside-tools/pull/85))
 - Corrected the sermon title destination so it no longer duplicates the separate Watch Live action. ([#86](https://github.com/rspoelstra216/surfside-tools/pull/86))
 - Fixed Saturday's Today at Surfside output remaining visible on Sunday because of full-page caching. ([#87](https://github.com/rspoelstra216/surfside-tools/pull/87))
