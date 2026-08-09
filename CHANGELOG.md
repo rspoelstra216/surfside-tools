@@ -4,6 +4,7 @@
 
 ### Added
 
+- Add dashboard-managed Adult Ministries entries and the `[surfside_adult_ministries]` section shortcode.
 - Opt-in Gutenberg public-page standards for shared headings, buttons, sections, cards, media, content widths, responsive behavior, focus states, and reduced motion. ([#128](https://github.com/rspoelstra216/surfside-tools/pull/128))
 
 ### Improved
