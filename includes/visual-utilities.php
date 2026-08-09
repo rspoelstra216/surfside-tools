@@ -35,6 +35,36 @@ function surfside_tools_visual_utilities_prevent_countdown_cache() {
 }
 add_action('template_redirect', 'surfside_tools_visual_utilities_prevent_countdown_cache', 1);
 
+/**
+ * Remove Extendable's regenerated block-animation class from public markup.
+ *
+ * Gutenberg may retain the animation setting in the editor, but the public
+ * page uses only Surfside's reveal and staggered-card motion systems.
+ *
+ * @param string $block_content Rendered block markup.
+ * @return string
+ */
+function surfside_tools_disable_extendable_block_animations($block_content) {
+    if (
+        is_admin() ||
+        strpos((string) $block_content, 'ext-animate--on') === false ||
+        !class_exists('WP_HTML_Tag_Processor')
+    ) {
+        return $block_content;
+    }
+
+    $processor = new WP_HTML_Tag_Processor($block_content);
+
+    while ($processor->next_tag()) {
+        if ($processor->has_class('ext-animate--on')) {
+            $processor->remove_class('ext-animate--on');
+        }
+    }
+
+    return $processor->get_updated_html();
+}
+add_filter('render_block', 'surfside_tools_disable_extendable_block_animations', 20);
+
 function surfside_tools_visual_utilities_styles() {
     wp_register_style('surfside-tools-visual-utilities', false, array(), SURFSIDE_TOOLS_VERSION);
     wp_enqueue_style('surfside-tools-visual-utilities');
