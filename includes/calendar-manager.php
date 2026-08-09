@@ -97,6 +97,7 @@ function surfside_tools_calendar_get_event($event_id) {
         'location_maps_url' => get_post_meta($event_id, '_surfside_event_location_maps_url', true),
         'all_day' => (bool) get_post_meta($event_id, '_surfside_event_all_day', true),
         'featured' => (bool) get_post_meta($event_id, '_surfside_event_featured', true),
+        'show_on_ministries' => (bool) get_post_meta($event_id, '_surfside_event_show_on_ministries', true),
         'recurrence_type' => get_post_meta($event_id, '_surfside_event_recurrence_type', true) ?: 'none',
         'recurrence_interval' => max(1, absint(get_post_meta($event_id, '_surfside_event_recurrence_interval', true))),
         'recurrence_weekdays' => (array) get_post_meta($event_id, '_surfside_event_recurrence_weekdays', true),
@@ -428,6 +429,7 @@ function surfside_tools_calendar_handle_submission() {
     $location = $location_name;
     $description = isset($_POST['event_description']) ? wp_kses_post(wp_unslash($_POST['event_description'])) : '';
     $featured = !empty($_POST['event_featured']) ? 1 : 0;
+    $show_on_ministries = !empty($_POST['event_show_on_ministries']) ? 1 : 0;
     $recurrence_type = isset($_POST['event_recurrence_type']) ? sanitize_key(wp_unslash($_POST['event_recurrence_type'])) : 'none';
     if (!in_array($recurrence_type, array('none','daily','weekly','monthly_date','monthly_weekday'), true)) { $recurrence_type = 'none'; }
     if ($spans_multiple_days) { $recurrence_type = 'none'; }
@@ -481,6 +483,7 @@ function surfside_tools_calendar_handle_submission() {
     update_post_meta($saved_id, '_surfside_event_location_maps_url', $location_maps_url);
     update_post_meta($saved_id, '_surfside_event_all_day', $all_day);
     update_post_meta($saved_id, '_surfside_event_featured', $featured);
+    update_post_meta($saved_id, '_surfside_event_show_on_ministries', $show_on_ministries);
     update_post_meta($saved_id, '_surfside_event_recurrence_type', $recurrence_type);
     update_post_meta($saved_id, '_surfside_event_recurrence_interval', $recurrence_interval);
     update_post_meta($saved_id, '_surfside_event_recurrence_weekdays', $recurrence_weekdays);
@@ -540,6 +543,7 @@ function surfside_tools_calendar_manager_shortcode() {
         'location_maps_url' => '',
         'all_day' => false,
         'featured' => false,
+        'show_on_ministries' => false,
         'recurrence_type' => 'none', 'recurrence_interval' => 1, 'recurrence_weekdays' => array(),
         'recurrence_day_of_month' => 0, 'recurrence_week_of_month' => 1, 'recurrence_weekday' => 1, 'recurrence_end_date' => '',
         'recurrence_exceptions' => array(),
@@ -661,6 +665,11 @@ function surfside_tools_calendar_manager_shortcode() {
                         <span>Feature this event</span>
                     </label>
 
+                    <label class="surfside-calendar-checkbox surfside-calendar-featured-check">
+                        <input type="checkbox" name="event_show_on_ministries" value="1" <?php checked(!empty($form_event['show_on_ministries'])); ?>>
+                        <span>Show on Ministries page</span>
+                    </label>
+
                     <div class="surfside-calendar-form-actions">
                         <button type="submit" class="surfside-staff-button"><?php echo $editing ? 'Save Changes' : 'Add Event'; ?></button>
                         <?php if ($editing) : ?>
@@ -721,7 +730,7 @@ function surfside_tools_calendar_manager_shortcode() {
                         <?php foreach ($events as $event) : ?>
                             <article class="surfside-calendar-event">
                                 <div>
-                                    <h3><?php echo esc_html($event['title']); ?><?php if (!empty($event['featured'])) : ?> <span class="surfside-calendar-featured-badge">Featured</span><?php endif; ?></h3>
+                                    <h3><?php echo esc_html($event['title']); ?><?php if (!empty($event['featured'])) : ?> <span class="surfside-calendar-featured-badge">Featured</span><?php endif; ?><?php if (!empty($event['show_on_ministries'])) : ?> <span class="surfside-calendar-featured-badge">Ministries page</span><?php endif; ?></h3>
                                     <?php $manage_date = !empty($event['next_occurrence_date']) ? $event['next_occurrence_date'] : $event['date']; ?>
                                     <p><strong><?php echo esc_html(surfside_tools_calendar_format_date($manage_date)); ?></strong> · <?php echo esc_html(surfside_tools_calendar_format_time_range($event)); ?></p>
                                     <?php if (empty($event['next_occurrence_date'])) : ?><p class="surfside-calendar-recurrence-label">No future occurrences</p><?php endif; ?>

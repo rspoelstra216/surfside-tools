@@ -1083,6 +1083,162 @@ body .wp-block-cover.surfside-prayer-cta + * {
 }
 
 /**
+ * Curated events for the Ministries page.
+ */
+.surfside-ministry-events {
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding-block: clamp(3rem, 5vw, 4rem);
+    color: var(--surfside-color-ink);
+    background: var(--surfside-color-white);
+}
+
+.surfside-ministry-events__inner {
+    box-sizing: border-box;
+    width: min(100% - 2rem, var(--surfside-content-width));
+    margin-inline: auto;
+}
+
+.surfside-ministry-events__intro {
+    width: min(100%, 46rem);
+    margin: 0 auto 1.75rem;
+    text-align: center;
+}
+
+.surfside-ministry-events__intro h2 {
+    margin: 0;
+    color: var(--surfside-color-ocean-950);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: var(--surfside-weight-bold);
+    line-height: var(--surfside-line-height-tight);
+}
+
+.surfside-ministry-events__intro p {
+    margin: .75rem 0 0;
+    color: var(--surfside-color-muted);
+    font-size: var(--surfside-font-size-lg);
+    line-height: var(--surfside-line-height-base);
+}
+
+.surfside-ministry-events__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.125rem;
+}
+
+.surfside-ministry-events__card {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 1.25rem;
+    border: 1px solid var(--surfside-color-border);
+    border-radius: var(--surfside-radius-lg);
+    background: var(--surfside-color-white);
+    box-shadow: var(--surfside-shadow-sm);
+}
+
+.surfside-ministry-events__date {
+    overflow: hidden;
+    border-radius: var(--surfside-radius-md);
+    background: var(--surfside-color-blue-100);
+    text-align: center;
+}
+
+.surfside-ministry-events__date span,
+.surfside-ministry-events__date strong {
+    display: block;
+}
+
+.surfside-ministry-events__date span {
+    padding: .35rem;
+    background: var(--surfside-color-blue-700);
+    color: var(--surfside-color-white);
+    font-size: var(--surfside-font-size-xs);
+    font-weight: var(--surfside-weight-bold);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.surfside-ministry-events__date strong {
+    padding: .4rem;
+    color: var(--surfside-color-ocean-950);
+    font-size: 1.65rem;
+    line-height: 1.15;
+}
+
+.surfside-ministry-events__body {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.surfside-ministry-events__body h3 {
+    margin: 0 0 .5rem;
+    color: var(--surfside-color-ocean-950);
+    font-size: 1.2rem;
+    line-height: 1.3;
+}
+
+.surfside-ministry-events__body p {
+    margin: 0;
+    color: var(--surfside-color-muted);
+    font-size: var(--surfside-font-size-sm);
+    line-height: 1.45;
+}
+
+.surfside-ministry-events__location {
+    margin-top: .3rem !important;
+}
+
+.surfside-ministry-events__body:hover h3 {
+    color: var(--surfside-color-blue-700);
+    text-decoration: underline;
+}
+
+.surfside-ministry-events__body:focus-visible {
+    border-radius: var(--surfside-radius-sm);
+    outline: none;
+    box-shadow: var(--surfside-focus-ring);
+}
+
+.surfside-ministry-events__actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.75rem;
+}
+
+@media (max-width: 56.25rem) {
+    .surfside-ministry-events__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 37.5rem) {
+    .surfside-ministry-events {
+        padding-block: 2.5rem;
+    }
+
+    .surfside-ministry-events__inner {
+        width: min(100% - 1.25rem, var(--surfside-content-width));
+    }
+
+    .surfside-ministry-events__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/**
  * Dashboard-managed Adult Ministries section.
  */
 .surfside-adult-ministries {
