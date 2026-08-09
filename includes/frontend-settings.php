@@ -128,7 +128,7 @@ function surfside_tools_staff_settings_shortcode() {
     ob_start();
     ?>
     <div class="surfside-staff-shell surfside-front-settings">
-        <div class="surfside-staff-back"><a href="<?php echo esc_url(function_exists('surfside_tools_staff_page_url') ? surfside_tools_staff_page_url('') : home_url('/dashboard/')); ?>">← Back to Dashboard</a></div>
+        <div class="surfside-staff-back"><a href="<?php echo esc_url(function_exists('surfside_tools_staff_page_url') ? surfside_tools_staff_page_url('site-management') : home_url('/dashboard/site-management/')); ?>">← Back to Site Management</a></div>
         <section class="surfside-staff-hero">
             <p class="surfside-staff-eyebrow">Settings</p>
             <h1>Surfside Tools Settings</h1>
