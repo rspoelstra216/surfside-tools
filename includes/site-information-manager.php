@@ -117,6 +117,7 @@ function surfside_tools_site_information_manager_handle_post() {
             'logo_id' => isset($_POST['logo_id']) ? absint($_POST['logo_id']) : 0,
             'tagline' => isset($_POST['tagline']) ? wp_unslash($_POST['tagline']) : '',
             'phone' => isset($_POST['phone']) ? wp_unslash($_POST['phone']) : '',
+            'email' => isset($_POST['email']) ? wp_unslash($_POST['email']) : '',
             'contact_url' => isset($_POST['contact_url']) ? wp_unslash($_POST['contact_url']) : '',
         );
         $updated_information['location'] = array(
@@ -559,6 +560,7 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
                     </div>
                     <label class="surfside-information-field"><span>Church name</span><input type="text" name="church_name" value="<?php echo esc_attr($identity['name']); ?>" required></label>
                     <label class="surfside-information-field"><span>Phone</span><input type="tel" name="phone" value="<?php echo esc_attr($identity['phone']); ?>" required></label>
+                    <label class="surfside-information-field"><span>Email</span><input type="email" name="email" value="<?php echo esc_attr($identity['email']); ?>" required></label>
                     <label class="surfside-information-field surfside-information-field-wide"><span>Tagline</span><input type="text" name="tagline" value="<?php echo esc_attr($identity['tagline']); ?>" required></label>
                     <label class="surfside-information-field surfside-information-field-wide"><span>Contact destination</span><input type="text" name="contact_url" value="<?php echo esc_attr($identity['contact_url']); ?>" required><small class="surfside-information-help">Use a site path such as /contact/#Contact or a complete URL.</small></label>
                 </div>

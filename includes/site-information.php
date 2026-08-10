@@ -16,6 +16,7 @@ function surfside_tools_site_information_defaults() {
             'logo_id' => 0,
             'tagline' => 'The Perfect Church for Imperfect People.',
             'phone' => '(321) 617-2111',
+            'email' => 'surfsidesecretary@gmail.com',
             'contact_url' => '/contact/#Contact',
         ),
         'location' => array(
@@ -106,6 +107,7 @@ function surfside_tools_site_information_sanitize($value) {
             'logo_id' => absint($identity['logo_id'] ?? 0),
             'tagline' => sanitize_text_field($identity['tagline'] ?? $defaults['identity']['tagline']),
             'phone' => sanitize_text_field($identity['phone'] ?? $defaults['identity']['phone']),
+            'email' => sanitize_email($identity['email'] ?? $defaults['identity']['email']),
             'contact_url' => surfside_tools_site_information_sanitize_url($identity['contact_url'] ?? $defaults['identity']['contact_url']),
         ),
         'location' => array(
