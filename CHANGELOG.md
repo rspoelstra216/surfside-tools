@@ -4,6 +4,8 @@
 
 ### Added
 
+- Add centralized contact email management and the `[surfside_contact_details]` public contact-and-map section.
+
 - Add `surfside-section-blue-soft` for pale-blue Gutenberg CTA sections.
 
 - Add a “Show on Ministries page” event setting and the curated `[surfside_ministry_events]` feed.
