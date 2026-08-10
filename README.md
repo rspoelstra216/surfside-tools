@@ -4,8 +4,8 @@ Surfside Tools is a custom WordPress website-management platform built for Surfs
 
 It gives church staff clear front-end workflows for weekly publishing, calendar management, homepage photos, locations, and settings without requiring routine access to WordPress administration.
 
-**Current release:** `2.4.0`  
-**Current development phase:** Milestone 10 — V2 Website Experience
+**Current release:** `3.0.0`  
+**Current development phase:** V2 Website Experience complete
 
 ## Guiding principle
 
@@ -20,7 +20,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - Front-end dashboard for routine website management
 - Weekly Update and Calendar tools plus a categorized Site Management hub
 - Actionable Website Status summaries focused on current needs
-- Direct Quick Actions for common staff workflows
+- A single Manage Website entry point for information, homepage photos, navigation, streaming, ministries, and settings
 - Login and capability protection
 - Consistent navigation and front-end workflows
 
@@ -195,8 +195,10 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 
 ## Current direction
 
-Milestones 1–9 are complete. Milestone 10 — V2 Website Experience — is in progress.
+Milestones 1–10 are complete. Version 3.0.0 delivers the V2 Website Experience across every primary navigation page.
 
-The shared information, service schedule, design foundation, footer, ordered navigation, and site header were released in version 2.4.0. Reusable opt-in Gutenberg page standards are now available, and the homepage is the first page in the public design audit. Surfside Tools will continue to own sitewide settings and reusable components while WordPress pages retain their unique editorial content and layouts.
+The release combines the coastal design system, redesigned public pages, centralized information and navigation, dynamic service and contact sections, dashboard-managed adult ministries, ministry-aware events, and the Twitch-aware Watch Live experience with its local announcement-video fallback. Surfside Tools continues to own shared data, reusable components, and sitewide behavior while WordPress retains editable page content and layout.
+
+The next milestone has not been committed. Near-term work should favor maintenance and deliberate planning rather than reopening the completed V2 audit piecemeal.
 
 See the [roadmap](docs/ROADMAP.md) for milestone status, the [development handbook](docs/DEVELOPMENT.md) for durable decisions, and the [changelog](CHANGELOG.md) for complete release history.
