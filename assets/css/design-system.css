@@ -250,7 +250,7 @@
  * the shared visual language without changing unrelated theme content.
  */
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) {
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) {
     box-sizing: border-box;
     color: var(--surfside-color-ink);
     font-family: var(--surfside-font-sans);
@@ -259,26 +259,26 @@
     overflow-wrap: anywhere;
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(.wp-block-heading) {
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) :where(.wp-block-heading) {
     color: var(--surfside-color-ocean-950);
     font-weight: var(--surfside-weight-bold);
     line-height: var(--surfside-line-height-tight);
     letter-spacing: -0.025em;
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(h1.wp-block-heading) {
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) :where(h1.wp-block-heading) {
     font-size: clamp(2.5rem, 6vw, 4.5rem);
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(h2.wp-block-heading) {
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) :where(h2.wp-block-heading) {
     font-size: clamp(2rem, 4vw, 3rem);
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(h3.wp-block-heading) {
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) :where(h3.wp-block-heading) {
     font-size: clamp(1.4rem, 2.5vw, 2rem);
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(p) {
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) :where(p) {
     line-height: var(--surfside-line-height-base);
 }
 
@@ -292,7 +292,8 @@
 .surfside-page-section,
 .surfside-section-white,
 .surfside-section-sand,
-.surfside-section-soft {
+.surfside-section-soft,
+.surfside-section-blue-soft {
     box-sizing: border-box;
     padding-block: clamp(3rem, 7vw, 5.5rem);
 }
@@ -332,6 +333,10 @@
 
 .surfside-section-soft {
     background: var(--surfside-color-sand-50);
+}
+
+.surfside-section-blue-soft {
+    background: var(--surfside-color-blue-50);
 }
 
 /**
@@ -662,7 +667,7 @@ body .wp-block-post-content .wp-block-group.surfside-staggered-cards > p > stron
     gap: var(--surfside-space-3);
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) .wp-block-button .wp-block-button__link {
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) .wp-block-button .wp-block-button__link {
     box-sizing: border-box;
     display: inline-flex;
     min-height: 2.75rem;
@@ -684,14 +689,14 @@ body .wp-block-post-content .wp-block-group.surfside-staggered-cards > p > stron
         transform var(--surfside-transition-fast);
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) .wp-block-button .wp-block-button__link:hover {
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) .wp-block-button .wp-block-button__link:hover {
     color: var(--surfside-color-white);
     background: var(--surfside-color-ocean-800);
     border-color: var(--surfside-color-ocean-800);
     transform: translateY(-1px);
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) .wp-block-button:is(
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) .wp-block-button:is(
     .is-style-outline,
     .surfside-button--secondary
 ) .wp-block-button__link {
@@ -700,7 +705,7 @@ body .wp-block-post-content .wp-block-group.surfside-staggered-cards > p > stron
     border: 1px solid var(--surfside-color-border-strong);
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) .wp-block-button:is(
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) .wp-block-button:is(
     .is-style-outline,
     .surfside-button--secondary
 ) .wp-block-button__link:hover {
@@ -709,8 +714,8 @@ body .wp-block-post-content .wp-block-group.surfside-staggered-cards > p > stron
     border-color: var(--surfside-color-blue-600);
 }
 
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(.wp-block-button__link):focus-visible,
-:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(a):focus-visible {
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) :where(.wp-block-button__link):focus-visible,
+:is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) :where(a):focus-visible {
     outline: 2px solid transparent;
     box-shadow: var(--surfside-focus-ring);
 }
@@ -739,11 +744,11 @@ body .wp-block-post-content .wp-block-group.surfside-staggered-cards > p > stron
 }
 
 @media (prefers-reduced-motion: reduce) {
-    :is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(.wp-block-button__link) {
+    :is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) :where(.wp-block-button__link) {
         transition: none;
     }
 
-    :is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft) :where(.wp-block-button__link):hover {
+    :is(.surfside-page, .surfside-section-white, .surfside-section-sand, .surfside-section-soft, .surfside-section-blue-soft) :where(.wp-block-button__link):hover {
         transform: none;
     }
 }
