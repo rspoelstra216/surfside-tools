@@ -1,0 +1,232 @@
+<?php
+/**
+ * Public, read-only REST API for the Surfside mobile app.
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+add_action('rest_api_init', 'surfside_tools_mobile_api_register_routes');
+
+function surfside_tools_mobile_api_register_routes() {
+    register_rest_route('surfside/v1', '/app', array(
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'surfside_tools_mobile_api_app',
+        'permission_callback' => '__return_true',
+    ));
+
+    register_rest_route('surfside/v1', '/events', array(
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'surfside_tools_mobile_api_events',
+        'permission_callback' => '__return_true',
+        'args' => array(
+            'start' => array(
+                'description' => 'First occurrence date in YYYY-MM-DD format.',
+                'sanitize_callback' => 'sanitize_text_field',
+                'validate_callback' => 'surfside_tools_mobile_api_validate_date',
+            ),
+            'end' => array(
+                'description' => 'Last occurrence date in YYYY-MM-DD format.',
+                'sanitize_callback' => 'sanitize_text_field',
+                'validate_callback' => 'surfside_tools_mobile_api_validate_date',
+            ),
+            'limit' => array(
+                'default' => 50,
+                'sanitize_callback' => 'absint',
+                'validate_callback' => function($value) {
+                    return (int) $value >= 1 && (int) $value <= 100;
+                },
+            ),
+        ),
+    ));
+}
+
+function surfside_tools_mobile_api_validate_date($value) {
+    if ($value === null || $value === '') {
+        return true;
+    }
+
+    $date = DateTimeImmutable::createFromFormat('!Y-m-d', (string) $value);
+    return $date && $date->format('Y-m-d') === $value;
+}
+
+function surfside_tools_mobile_api_app() {
+    $information = surfside_tools_get_site_information();
+    $identity = (array) ($information['identity'] ?? array());
+    $location = (array) ($information['location'] ?? array());
+    $streaming = (array) ($information['streaming'] ?? array());
+    $announcements = surfside_tools_get_announcements_data();
+    $message = surfside_tools_get_message_data();
+    $next = function_exists('surfside_tools_watch_live_next_service')
+        ? surfside_tools_watch_live_next_service()
+        : null;
+
+    $payload = array(
+        'api_version' => 1,
+        'generated_at' => current_datetime()->format(DATE_ATOM),
+        'site' => array(
+            'name' => (string) ($identity['name'] ?? ''),
+            'tagline' => (string) ($identity['tagline'] ?? ''),
+            'logo_url' => surfside_tools_site_information_logo_url($information),
+            'website_url' => home_url('/'),
+            'phone' => (string) ($identity['phone'] ?? ''),
+            'email' => sanitize_email($identity['email'] ?? ''),
+        ),
+        'location' => array(
+            'venue' => (string) ($location['venue'] ?? ''),
+            'street' => (string) ($location['street'] ?? ''),
+            'city' => (string) ($location['city'] ?? ''),
+            'state' => (string) ($location['state'] ?? ''),
+            'postal_code' => (string) ($location['postal_code'] ?? ''),
+            'address' => surfside_tools_site_information_address($information),
+            'maps_url' => surfside_tools_site_information_maps_url($information),
+        ),
+        'services' => array_values(surfside_tools_site_information_services()),
+        'livestream' => array(
+            'twitch_channel' => sanitize_key($streaming['twitch_channel'] ?? ''),
+            'twitch_url' => !empty($streaming['twitch_channel'])
+                ? 'https://www.twitch.tv/' . sanitize_key($streaming['twitch_channel'])
+                : '',
+            'youtube_url' => surfside_tools_site_information_url($streaming['youtube_url'] ?? ''),
+            'facebook_url' => surfside_tools_site_information_url($streaming['facebook_url'] ?? ''),
+            'next_service' => surfside_tools_mobile_api_next_service($next),
+        ),
+        'announcements' => array(
+            'date' => (string) ($announcements['announcement_date'] ?? ''),
+            'items' => array_values(array_map('strval', (array) ($announcements['items'] ?? array()))),
+            'updated_at' => surfside_tools_mobile_api_timestamp($announcements['timestamp'] ?? 0),
+        ),
+        'message' => array(
+            'title' => (string) ($message['title'] ?? ''),
+            'series' => (string) ($message['series'] ?? ''),
+            'date' => (string) ($message['date'] ?? ''),
+            'main_heading' => (string) ($message['main_heading'] ?? ''),
+            'notes' => (string) ($message['notes'] ?? ''),
+            'prayer' => (string) ($message['prayer'] ?? ''),
+            'updated_at' => surfside_tools_mobile_api_timestamp($message['timestamp'] ?? 0),
+        ),
+        'links' => array(
+            'navigation' => surfside_tools_mobile_api_navigation($information['navigation'] ?? array()),
+            'social' => surfside_tools_mobile_api_social($information['social'] ?? array()),
+        ),
+    );
+
+    return rest_ensure_response(apply_filters('surfside_tools_mobile_api_app', $payload));
+}
+
+function surfside_tools_mobile_api_events(WP_REST_Request $request) {
+    $start = $request->get_param('start');
+    $end = $request->get_param('end');
+    $limit = min(100, max(1, absint($request->get_param('limit') ?: 50)));
+
+    if (!$start) {
+        $start = current_time('Y-m-d');
+    }
+    if (!$end) {
+        $end = wp_date('Y-m-d', strtotime($start . ' +1 year'));
+    }
+    if ($end < $start) {
+        return new WP_Error(
+            'surfside_invalid_date_range',
+            'The end date must be on or after the start date.',
+            array('status' => 400)
+        );
+    }
+
+    $start_date = new DateTimeImmutable($start);
+    $end_date = new DateTimeImmutable($end);
+    if ($end_date > $start_date->modify('+2 years')) {
+        return new WP_Error(
+            'surfside_date_range_too_large',
+            'The requested date range cannot exceed two years.',
+            array('status' => 400)
+        );
+    }
+
+    $occurrences = surfside_tools_calendar_get_occurrences($start, $end, $limit);
+    $events = array_map('surfside_tools_mobile_api_event', $occurrences);
+
+    return rest_ensure_response(array(
+        'api_version' => 1,
+        'generated_at' => current_datetime()->format(DATE_ATOM),
+        'range' => array('start' => $start, 'end' => $end),
+        'count' => count($events),
+        'events' => array_values($events),
+    ));
+}
+
+function surfside_tools_mobile_api_event($event) {
+    $event_id = absint($event['id'] ?? 0);
+    $image_url = $event_id ? get_the_post_thumbnail_url($event_id, 'large') : '';
+
+    return array(
+        'id' => $event_id,
+        'title' => (string) ($event['title'] ?? ''),
+        'description' => wp_strip_all_tags((string) ($event['description'] ?? ''), true),
+        'date' => (string) ($event['date'] ?? ''),
+        'end_date' => (string) ($event['end_date'] ?? ''),
+        'start_time' => (string) ($event['start_time'] ?? ''),
+        'end_time' => (string) ($event['end_time'] ?? ''),
+        'all_day' => !empty($event['all_day']),
+        'featured' => !empty($event['featured']),
+        'location' => array(
+            'name' => (string) ($event['location_name'] ?? $event['location'] ?? ''),
+            'address' => (string) ($event['location_address'] ?? ''),
+            'maps_url' => esc_url_raw($event['location_maps_url'] ?? ''),
+            'latitude' => (string) ($event['location_lat'] ?? ''),
+            'longitude' => (string) ($event['location_lng'] ?? ''),
+        ),
+        'image_url' => $image_url ? esc_url_raw($image_url) : '',
+    );
+}
+
+function surfside_tools_mobile_api_next_service($next) {
+    if (!$next || empty($next['date']) || empty($next['service'])) {
+        return null;
+    }
+
+    $service = (array) $next['service'];
+    return array(
+        'key' => (string) ($service['key'] ?? ''),
+        'label' => (string) ($service['label'] ?? ''),
+        'starts_at' => $next['date']->format(DATE_ATOM),
+    );
+}
+
+function surfside_tools_mobile_api_timestamp($timestamp) {
+    $timestamp = absint($timestamp);
+    return $timestamp ? wp_date(DATE_ATOM, $timestamp) : null;
+}
+
+function surfside_tools_mobile_api_navigation($links) {
+    $output = array();
+    foreach ((array) $links as $link) {
+        $url = surfside_tools_site_information_navigation_url($link);
+        if (!$url) {
+            continue;
+        }
+        $output[] = array(
+            'key' => sanitize_key($link['key'] ?? ''),
+            'label' => (string) ($link['label'] ?? ''),
+            'url' => $url,
+        );
+    }
+    return $output;
+}
+
+function surfside_tools_mobile_api_social($links) {
+    $output = array();
+    foreach ((array) $links as $key => $link) {
+        $url = surfside_tools_site_information_url($link['url'] ?? '');
+        if (!$url) {
+            continue;
+        }
+        $output[] = array(
+            'key' => sanitize_key($key),
+            'label' => (string) ($link['label'] ?? ucfirst((string) $key)),
+            'url' => $url,
+        );
+    }
+    return $output;
+}
