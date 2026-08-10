@@ -186,23 +186,24 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
 | 7 | Calendar Experience | 2.2.0 |
 | 8 | Church Portal | 2.3.0 |
 | 9 | Sitewide Information and V2 Foundation | 2.4.0 |
-| 10 | V2 Website Experience | In progress |
+| 10 | V2 Website Experience | 3.0.0 |
 
 The [changelog](../CHANGELOG.md), GitHub Releases, and merged pull requests are the authoritative implementation history for completed milestones.
 
-### Current focus — Milestone 10
+### Milestone 10 completion — Version 3.0.0
 
-Milestone 10 applies the established information and visual foundations to the public website.
+Milestone 10 applied the shared information and blue-led coastal foundation across the complete public navigation. Home, Plan Your Visit, Watch Live, Events, Ministries, Staff, Give, and Contact now share consistent sections, typography, buttons, cards, spacing, responsive behavior, and accessibility fundamentals.
 
-The shared Surfside Information source, service schedule, blue-led coastal tokens, restored logo, footer, ordered navigation, responsive sticky header, and opt-in Gutenberg page standards are complete. The homepage is the first page in the design audit.
+Version 3.0.0 also delivers centralized service, location, contact, navigation, streaming, and adult-ministry data; dynamic reusable page sections; ministry-aware event displays; consolidated Manage Website navigation; and Twitch-aware live/offline behavior with a locally managed announcement-video fallback.
 
 Architecture boundary:
 
-- Surfside Tools owns sitewide settings, shared navigation, headers, footers, dynamic widgets, and reusable design standards.
+- Surfside Tools owns sitewide settings, shared navigation, headers, footers, dynamic widgets, complex reusable sections, and design standards.
 - WordPress pages retain unique editorial content and page-specific layouts.
-- Reusable plugin classes or widgets should be added only when they improve consistency or maintainability.
+- Gutenberg remains preferred for straightforward editable content.
+- Plugin shortcodes are appropriate when content is dynamic or a complex block layout cannot be maintained reliably.
 - Surfside Tools will not become a general-purpose page builder.
-- Public pages adopt shared styling explicitly through the outer `surfside-page` Group class; unmodified pages retain their existing theme presentation.
+- The next milestone must be defined explicitly; post-release ideas do not automatically extend Milestone 10.
 
 ### Durable public-experience decisions
 
@@ -222,6 +223,9 @@ Architecture boundary:
 - Render the homepage weekend-service section from centralized schedule and location data instead of maintaining nested Gutenberg columns.
 - Render the homepage photo story as one plugin-owned section while preserving the existing front-end photo manager.
 - Version the shared design-system stylesheet from its file modification time so deployed refinements bypass stale asset caches.
+- Use one Manage Website entry point to organize site information, homepage photos, navigation, streaming, ministries, and settings without duplicate dashboard actions.
+- Keep adult ministries dashboard-managed and derive ministry-event displays from the central calendar's “show on ministries page” selection.
+- Detect Twitch live status automatically, but require a visitor gesture to start reliable unmuted playback; use the locally managed announcement video while offline.
 
 ## Nice Ideas
 

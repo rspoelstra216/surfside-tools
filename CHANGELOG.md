@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+_No unreleased changes._
+
 ## [3.0.0] - 2026-08-10
 
 ### Added
