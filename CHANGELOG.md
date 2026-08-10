@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.0.1] - 2026-08-10
+
+### Improved
+
+- Updated project documentation to reflect the completed Surfside Tools 3.0.0 V2 Website Experience. ([#183](https://github.com/rspoelstra216/surfside-tools/pull/183))
+
+### Additional Changes
+
+### Add read-only mobile API ([#184](https://github.com/rspoelstra216/surfside-tools/pull/184))
+
+- add a public, read-only `/wp-json/surfside/v1/app` endpoint for church identity, location, services, livestream configuration, current announcements, current message notes, and public links
+- add a public, read-only `/wp-json/surfside/v1/events` endpoint for published recurring event occurrences
+- validate date parameters, cap event ranges at two years, and cap responses at 100 occurrences
+- keep administrative settings, drafts, backups, credentials, and write operations private
+
 ## [Unreleased]
 
 _No unreleased changes._
