@@ -1633,3 +1633,95 @@ body .wp-block-cover.surfside-prayer-cta + * {
         transform: none;
     }
 }
+
+
+/**
+ * Plugin-rendered Contact page details.
+ */
+.surfside-contact-details {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    padding: clamp(2.5rem, 5vw, 3.5rem) max(1rem, calc((100% - var(--surfside-content-width)) / 2));
+    color: var(--surfside-color-ink);
+    background: var(--surfside-color-white);
+}
+
+.surfside-contact-details__cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.surfside-contact-details__card {
+    box-sizing: border-box;
+    min-width: 0;
+    padding: clamp(1.5rem, 3vw, 2rem);
+    background: var(--surfside-color-white);
+    border: 1px solid var(--surfside-color-border);
+    border-radius: var(--surfside-radius-lg);
+    box-shadow: var(--surfside-shadow-sm);
+    text-align: center;
+}
+
+.surfside-contact-details__card h2 {
+    margin: 0 0 1rem;
+    color: var(--surfside-color-ocean-950);
+    font-size: clamp(1.45rem, 2.5vw, 2rem);
+    line-height: var(--surfside-line-height-tight);
+}
+
+.surfside-contact-details__card :where(p, address) {
+    margin: 0;
+    color: var(--surfside-color-ink);
+    font-style: normal;
+    line-height: var(--surfside-line-height-base);
+}
+
+.surfside-contact-details__card :where(p, address) + :where(p, address) {
+    margin-top: 0.65rem;
+}
+
+.surfside-contact-details__card a:not(.surfside-button) {
+    color: var(--surfside-color-blue-700);
+    font-weight: var(--surfside-weight-semibold);
+    overflow-wrap: anywhere;
+    text-underline-offset: 0.15em;
+}
+
+.surfside-contact-details__services {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.surfside-contact-details__service strong {
+    display: block;
+    color: var(--surfside-color-ocean-900);
+}
+
+.surfside-contact-details__action {
+    margin-top: 1.25rem !important;
+}
+
+.surfside-contact-details__map {
+    width: 100%;
+    height: clamp(20rem, 42vw, 28rem);
+    margin-top: clamp(1.5rem, 3vw, 2rem);
+    overflow: hidden;
+    background: var(--surfside-color-blue-50);
+    border: 1px solid var(--surfside-color-border);
+    border-radius: var(--surfside-radius-lg);
+}
+
+.surfside-contact-details__map iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+@media (max-width: 50rem) {
+    .surfside-contact-details__cards {
+        grid-template-columns: 1fr;
+    }
+}
