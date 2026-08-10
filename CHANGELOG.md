@@ -4,6 +4,8 @@
 
 ### Added
 
+- Add `surfside-section-blue-soft` for pale-blue Gutenberg CTA sections.
+
 - Add a “Show on Ministries page” event setting and the curated `[surfside_ministry_events]` feed.
 - Add a Site Management hub and split sitewide information, streaming, navigation, ministries, homepage photos, and settings into focused workflows.
 - Add dashboard-managed Adult Ministries entries and the `[surfside_adult_ministries]` section shortcode.
