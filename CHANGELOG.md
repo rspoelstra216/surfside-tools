@@ -13,6 +13,8 @@
 
 ### Improved
 
+- Remove theme block gaps between adjacent design-system sections on redesigned interior pages.
+
 - Keep Homepage Photos, Surfside Information, and Settings exclusively under Site Management instead of duplicating them on the Staff Dashboard.
 - Shared design-system styles now use file-based versioning so deployed refinements are not hidden by stale browser or page caches. ([#128](https://github.com/rspoelstra216/surfside-tools/pull/128))
 - Milestone 10 now has a documented homepage-first page audit and a durable Gutenberg class reference.

@@ -339,6 +339,26 @@
     background: var(--surfside-color-blue-50);
 }
 
+/*
+ * Full-width design-system sections own their vertical rhythm. Remove the
+ * theme's default sibling block gap between a hero and section or between
+ * adjacent sections on redesigned interior pages.
+ */
+.wp-block-post-content > :is(
+    .wp-block-cover,
+    .surfside-section-white,
+    .surfside-section-sand,
+    .surfside-section-soft,
+    .surfside-section-blue-soft
+) + :is(
+    .surfside-section-white,
+    .surfside-section-sand,
+    .surfside-section-soft,
+    .surfside-section-blue-soft
+) {
+    margin-block-start: 0;
+}
+
 /**
  * Plugin-rendered homepage weekend-service section.
  *
