@@ -18,6 +18,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/core-weekly-tools.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-information.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/design-system.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/weekend-services.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/contact-details.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/plan-visit-details.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/adult-ministries.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/watch-live-stream.php';
