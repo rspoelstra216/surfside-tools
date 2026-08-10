@@ -1,5 +1,390 @@
 # Changelog
 
+## [3.0.0] - 2026-08-10
+
+### Added
+
+- Added a durable Gutenberg class reference for the shared public-page design standards. ([#129](https://github.com/rspoelstra216/surfside-tools/pull/129))
+- Reusable homepage weekend-service section classes in the shared design system. ([#130](https://github.com/rspoelstra216/surfside-tools/pull/130))
+- `[surfside_weekend_services]` homepage shortcode. ([#131](https://github.com/rspoelstra216/surfside-tools/pull/131))
+- Automatic service cards sourced from Surfside Information. ([#131](https://github.com/rspoelstra216/surfside-tools/pull/131))
+- Plugin-rendered venue and linked address. ([#131](https://github.com/rspoelstra216/surfside-tools/pull/131))
+- Full `[surfside_life_at_surfside]` homepage section shortcode. ([#136](https://github.com/rspoelstra216/surfside-tools/pull/136))
+- Full-width sand section background with centered photo-story content. ([#136](https://github.com/rspoelstra216/surfside-tools/pull/136))
+
+### Improved
+
+- Updated Milestone 10 direction to begin the page-by-page audit with the homepage. ([#129](https://github.com/rspoelstra216/surfside-tools/pull/129))
+- Clarified that pages opt in through an outer `surfside-page` Group while retaining independent editorial control. ([#129](https://github.com/rspoelstra216/surfside-tools/pull/129))
+- Consistent service-card spacing, typography, borders, coastal color treatment, and mobile behavior. ([#130](https://github.com/rspoelstra216/surfside-tools/pull/130))
+- Weekend services now use a consistent full-width layout without nested Gutenberg Columns. ([#131](https://github.com/rspoelstra216/surfside-tools/pull/131))
+- The service grid adapts automatically when another weekly service is configured. ([#131](https://github.com/rspoelstra216/surfside-tools/pull/131))
+- Homepage service content remains synchronized with shared site settings. ([#131](https://github.com/rspoelstra216/surfside-tools/pull/131))
+- Weekend-service background now reaches both viewport edges. ([#133](https://github.com/rspoelstra216/surfside-tools/pull/133))
+- Service section now uses white before the blue photo-carousel section. ([#133](https://github.com/rspoelstra216/surfside-tools/pull/133))
+- More compact service-section top and bottom spacing. ([#135](https://github.com/rspoelstra216/surfside-tools/pull/135))
+- Tighter space between the introduction and service cards. ([#135](https://github.com/rspoelstra216/surfside-tools/pull/135))
+- Shorter desktop service cards with the same content hierarchy. ([#135](https://github.com/rspoelstra216/surfside-tools/pull/135))
+- Correct H2 heading hierarchy for Life at Surfside. ([#136](https://github.com/rspoelstra216/surfside-tools/pull/136))
+- Consistent plugin-owned spacing and typography. ([#136](https://github.com/rspoelstra216/surfside-tools/pull/136))
+- Carousel now sits within the shared homepage content width without the legacy viewport offset. ([#136](https://github.com/rspoelstra216/surfside-tools/pull/136))
+- Existing staff photo-management workflow remains unchanged. ([#136](https://github.com/rspoelstra216/surfside-tools/pull/136))
+- Life at Surfside photos again span nearly the full browser width. ([#137](https://github.com/rspoelstra216/surfside-tools/pull/137))
+- Section heading and description retain their centered readable width. ([#137](https://github.com/rspoelstra216/surfside-tools/pull/137))
+- Sand section background and existing carousel animation remain unchanged. ([#137](https://github.com/rspoelstra216/surfside-tools/pull/137))
+- The white-to-sand section transition is now perceptible. ([#138](https://github.com/rspoelstra216/surfside-tools/pull/138))
+- Life at Surfside retains a warm neutral background without competing with the carousel photographs. ([#138](https://github.com/rspoelstra216/surfside-tools/pull/138))
+
+### Fixed
+
+- Nothing. ([#130](https://github.com/rspoelstra216/surfside-tools/pull/130))
+- Inconsistent spacing and constrained layouts caused by the former block hierarchy. ([#131](https://github.com/rspoelstra216/surfside-tools/pull/131))
+- Weekend service heading and Saturday card being pushed off the left side. ([#132](https://github.com/rspoelstra216/surfside-tools/pull/132))
+- Horizontal page overflow caused by the shortcode’s duplicate full-width breakout. ([#132](https://github.com/rspoelstra216/surfside-tools/pull/132))
+- Incorrect centering inside an already full-width Gutenberg Group. ([#132](https://github.com/rspoelstra216/surfside-tools/pull/132))
+- Visible left and right margins around the supposedly full-width homepage section. ([#133](https://github.com/rspoelstra216/surfside-tools/pull/133))
+- The white seam below the hero no longer contrasts against a sand section. ([#133](https://github.com/rspoelstra216/surfside-tools/pull/133))
+- Saturday and Sunday service cards stacking prematurely. ([#134](https://github.com/rspoelstra216/surfside-tools/pull/134))
+- Excessive section height at intermediate viewport widths. ([#134](https://github.com/rspoelstra216/surfside-tools/pull/134))
+- The shortcode being limited to the theme’s 672px content width inside a full-width Group. ([#134](https://github.com/rspoelstra216/surfside-tools/pull/134))
+
+### Additional Changes
+
+### Roll project documentation forward to 2.4.0 ([#126](https://github.com/rspoelstra216/surfside-tools/pull/126))
+
+- identify Surfside Tools 2.4.0 as the current release
+- record the August 4, 2026 Sitewide Experience release
+- add 2.4.0 to the concise release history
+- connect the release to the completed Milestone 9 foundation and Milestone 10 header phase
+- keep the next development focus on the public page-by-page design audit
+
+### Streamline roadmap and development documentation ([#127](https://github.com/rspoelstra216/surfside-tools/pull/127))
+
+- keep the README focused on the current product and next direction
+- replace repeated completed-milestone prose with a shared outcome/release table
+- reduce the concise development guide to current status, architecture boundary, workflow, and ownership
+- keep roadmap detail only for the active Milestone 10 phase
+- preserve architecture and durable public-experience decisions in the handbook
+- point historical implementation detail to the changelog, GitHub Releases, and merged PRs
+
+### Add reusable public page design standards ([#128](https://github.com/rspoelstra216/surfside-tools/pull/128))
+
+- add an opt-in `surfside-page` foundation for Gutenberg-managed public pages
+- add reusable section, surface, width, card, media, lede, and action classes
+- standardize page headings and Gutenberg buttons with the blue-led coastal design system
+- include responsive, focus, and reduced-motion behavior
+- version the design-system stylesheet from its modification time so deployed CSS changes are not hidden by stale caches
+
+### Fix secondary Gutenberg button outline ([#139](https://github.com/rspoelstra216/surfside-tools/pull/139))
+
+- explicitly set the secondary Gutenberg button border width and style
+- prevent WordPress theme border-width defaults from removing the outline
+- retain the existing white default and light-blue hover treatment
+
+### Keep Gutenberg button hover inside pill ([#140](https://github.com/rspoelstra216/surfside-tools/pull/140))
+
+- require the generic button base class before applying generic secondary/text modifiers
+- prevent Gutenberg's square `.wp-block-button` wrapper from receiving the hover background
+- preserve the rounded hover treatment on the nested button link
+
+### Add Gutenberg-friendly section classes ([#141](https://github.com/rspoelstra216/surfside-tools/pull/141))
+
+- add `surfside-section-white`, `surfside-section-sand`, and `surfside-section-soft`
+- make each shortcut include public-page typography, standard section spacing, its background, and reveal-on-scroll behavior
+- keep `surfside-container` separate for inner content width
+- preserve all existing classes for backward compatibility
+
+### Add parent-driven staggered card grid ([#142](https://github.com/rspoelstra216/surfside-tools/pull/142))
+
+- add `surfside-staggered-cards` for Gutenberg Columns or Group blocks
+- automatically style each direct child as a responsive white card
+- automatically reveal the first three cards with staggered delays
+- retain reduced-motion and block-editor visibility safeguards
+
+### Add flat Gutenberg video style ([#143](https://github.com/rspoelstra216/surfside-tools/pull/143))
+
+- add a single `surfside-video` class for Gutenberg video embeds
+- preserve a responsive 16:9 presentation
+- retain rounded corners without applying a drop shadow
+- ensure the embedded iframe fills the frame cleanly
+
+### Add dashboard-driven Ready to Visit section ([#144](https://github.com/rspoelstra216/surfside-tools/pull/144))
+
+- add `[surfside_ready_to_visit]` for the homepage closing call-to-action
+- read service times, venue, address, map URL, and Plan Your Visit navigation from canonical Site Information
+- support optional `title` and `intro` shortcode attributes without expanding the Information dashboard
+- add a full-width ocean treatment with responsive service cards and accessible primary/secondary actions
+- include the existing plugin-managed reveal behavior and reduced-motion safeguards
+
+### Lighten Ready to Visit background ([#145](https://github.com/rspoelstra216/surfside-tools/pull/145))
+
+- change the Ready to Visit background from `ocean-900` to `ocean-800`
+- retain the strong closing CTA treatment while reducing the near-black appearance
+- leave typography, service cards, buttons, spacing, and contrast behavior unchanged
+
+### Tighten Ready to Visit spacing ([#146](https://github.com/rspoelstra216/surfside-tools/pull/146))
+
+- reduce Ready to Visit vertical padding from as much as 88px to a maximum of 48px
+- use 40px vertical padding on mobile
+- leave the section content, colors, service cards, and actions unchanged
+
+### Add seamless Prayer hero treatment ([#147](https://github.com/rspoelstra216/surfside-tools/pull/147))
+
+- add `surfside-prayer-cta` for the existing Gutenberg Cover block
+- retain the editable hero image, wording, and link
+- replace the gray overlay with a translucent Surfside navy treatment
+- standardize heading, supporting text, and primary button styling
+- remove the WordPress block-gap seams above and below the Cover
+- include reveal-on-scroll and reduced-motion behavior automatically
+
+### Restore Prayer hero image visibility ([#148](https://github.com/rspoelstra216/surfside-tools/pull/148))
+
+- reduce the Prayer hero navy overlay from 72% to 50%
+- stop overriding the Gutenberg Cover block’s configured height
+- preserve the editor-controlled image crop and focal positioning
+- add a restrained text shadow for readability over the lighter image
+- keep the CTA button text crisp by excluding it from the shadow
+
+### Restore Prayer Cover full width ([#149](https://github.com/rspoelstra216/surfside-tools/pull/149))
+
+- remove the Prayer component’s `width: 100%` and `max-width` overrides
+- allow Gutenberg’s existing `alignfull` calculations to control the Cover width
+- preserve the seamless margins, overlay, content styling, and animation
+
+### Use Surfside brand blue for Ready to Visit ([#150](https://github.com/rspoelstra216/surfside-tools/pull/150))
+
+- Replaced the muted ocean background with a logo-inspired blue-to-ocean gradient
+- Increased the service-time cards’ translucent fill and border definition
+- Preserved white text and the existing responsive layout
+- The previous background read as slate gray rather than Surfside blue. This gives the CTA a clearer brand identity while keeping the service cards visually distinct.
+
+### Lighten the homepage prayer image ([#151](https://github.com/rspoelstra216/surfside-tools/pull/151))
+
+- Reduced the Need Prayer cover overlay from 50% to 38%
+- Preserved the ocean-blue tint, white copy, text shadow, and existing layout
+- The prayer image now appears overly dark beside the brighter Surfside-blue Ready to Visit section. A lighter overlay restores more of the photograph while retaining text contrast.
+- Change is limited to the prayer overlay opacity in `assets/css/design-system.css`
+
+### Enforce the homepage design system ([#152](https://github.com/rspoelstra216/surfside-tools/pull/152))
+
+- Increased Gutenberg button selector specificity so theme colors cannot override Surfside blue and secondary styles
+- Removed the automatic 32px WordPress block gap between top-level homepage sections
+- Neutralized inaccessible Extendable animation wrappers around the compact Today at Surfside widget
+- Replaced header and footer `100vw` breakout sizing with viewport-safe full width
+
+### Bust the footer stylesheet cache ([#153](https://github.com/rspoelstra216/surfside-tools/pull/153))
+
+- Versions `footer.css` with its file modification timestamp
+- Retains the plugin version as the fallback
+- Matches the existing header asset-loading pattern
+- The footer-width correction was deployed, but browsers continued receiving the old stylesheet URL with the static `2.4.0` version. That left the known 8px horizontal overflow in place.
+
+### Add Plan Your Visit schedule and location section ([#154](https://github.com/rspoelstra216/surfside-tools/pull/154))
+
+- add a dedicated `[surfside_visit_details]` shortcode for the Plan Your Visit page
+- read service times, service labels, venue, address, and directions from the existing Information dashboard
+- add responsive sand-section styling with flexible service cards and a brand-blue directions button
+- support any configured number of weekly services without Gutenberg Columns
+
+### Tighten Plan Your Visit details spacing ([#155](https://github.com/rspoelstra216/surfside-tools/pull/155))
+
+- reduce the visit-details section's desktop outer padding from 64px to 48px
+- reduce the heading-to-cards gap from 40px to 28px
+- reduce service-card vertical padding while preserving typography and responsive sizing
+- reduce the cards-to-location gap from 48px to 32px
+- retain a comfortable 40px section padding on mobile
+
+### Compact the Plan Your Visit details layout ([#156](https://github.com/rspoelstra216/surfside-tools/pull/156))
+
+- reduce the visit-details heading and supporting-text scale
+- make the service cards shorter and slightly narrower
+- place the meeting location and **Get Directions** button in one horizontal desktop row
+- preserve the centered stacked layout on mobile
+- restore the homepage Life at Surfside intro gap that PR #155 unintentionally matched while targeting a shared spacing value
+
+### Redesign visit details as a compact two-column section ([#157](https://github.com/rspoelstra216/surfside-tools/pull/157))
+
+- Reorganizes the Plan Your Visit details section into a two-column desktop layout
+- Places the heading, introduction, venue, address, and directions on the left
+- Places the two service-time cards on the right
+- Preserves the existing stacked layout on smaller screens
+
+### Style native Gutenberg expectation-card grids ([#158](https://github.com/rspoelstra216/surfside-tools/pull/158))
+
+- Adds an explicit card selector for Paragraph blocks inside a native Gutenberg Grid using `surfside-staggered-cards`
+- Applies the established white card surface, padding, border, radius, and shadow
+- Adds controlled spacing and navy color to each card’s bold first-line title
+- The existing generic child selector works for the earlier Columns-based pattern but was not reliably overriding the native Grid/theme styles on the redesigned Plan Your Visit section.
+
+### Enforce native expectation-card styling and timing ([#159](https://github.com/rspoelstra216/surfside-tools/pull/159))
+
+- Makes the native Gutenberg Grid card surface authoritative within post content
+- Forces the intended padding, white background, border, radius, shadow, and full-height alignment on direct Paragraph cards
+- Extends stagger timing from only the first three children to all six cards with a clear 0.2-second progression
+- The grid class was present and its reveal behavior proved the children were being detected, but higher-specificity theme resets were winning over the generic card declarations. The original stagger utility also assigned delays only to the first three cards, causing the second row to reveal immediately.
+
+### Fix Gutenberg Group expectation-card layout ([#160](https://github.com/rspoelstra216/surfside-tools/pull/160))
+
+- Explicitly turns an ordinary Gutenberg Group carrying `surfside-staggered-cards` into the card grid
+- Uses three equal columns on desktop, two on tablet, and one on mobile
+- Stretches the six direct Paragraph cards evenly across the available content width
+- Applies the established card surface directly to those Paragraph children
+
+### Prevent duplicate staggered-card reveal ([#161](https://github.com/rspoelstra216/surfside-tools/pull/161))
+
+- Keeps a styled section visible when it contains a `surfside-staggered-cards` grid
+- Leaves the individual card reveal and stagger timing active
+- The outer `surfside-section-white` container and each card were both registered reveal targets. The section animated first while its children were also transitioning, making the cards appear to pop in and then reload.
+- Only white, sand, or soft design-system sections containing a staggered-card grid are affected. Their cards continue to reveal individually; other section reveals remain unchanged.
+
+### Repeat stagger timing for each card row ([#162](https://github.com/rspoelstra216/surfside-tools/pull/162))
+
+- Repeats the three-card reveal cadence for the second row
+- Cards 1 and 4 use a 0.1s delay, 2 and 5 use 0.3s, and 3 and 6 use 0.5s
+- Keeps the existing 700ms fade-and-rise duration
+- The new six-card grid used one continuous delay sequence through 1.1 seconds. Because second-row cards also begin intersecting later while scrolling, their additional long delays created the apparent pause/reload before they moved into place. The older two-Columns implementation restarted the three-card cadence on each row.
+
+### Trigger staggered cards from the parent grid ([#163](https://github.com/rspoelstra216/surfside-tools/pull/163))
+
+- Observes each `surfside-staggered-cards` parent once instead of observing every child independently
+- Keeps all child cards hidden until the parent grid enters the viewport
+- Adds `is-visible` to the parent, triggering one coordinated six-card reveal
+- Preserves the 700ms transition and repeated row timing from PR #162
+
+### Add Plan Your Visit expectations shortcode ([#164](https://github.com/rspoelstra216/surfside-tools/pull/164))
+
+- Adds `[surfside_visit_expectations]` for the complete “What Should I Expect?” section.
+- Recreates the original six cards in a responsive three-column layout.
+- Reveals the cards sequentially from one parent trigger, without Gutenberg animation classes.
+- Preserves reduced-motion behavior and stacks cleanly on smaller screens.
+
+### Widen Plan Your Visit expectation cards ([#165](https://github.com/rspoelstra216/surfside-tools/pull/165))
+
+- Removes WordPress’s content-width cap from the Shortcode block containing the visit expectations.
+- Expands the shortcode’s inner layout from 72rem to the theme’s 80rem wide-content standard.
+- The parent Group was full width, but WordPress still constrained the nested Shortcode block to the 42rem content width. This rule targets only the visit-expectations shortcode and allows the three-column card grid to use the intended width.
+- Confirmed the selector is scoped to Shortcode blocks containing `.surfside-visit-expectations`.
+
+### Fix Plan Your Visit expectations width ([#166](https://github.com/rspoelstra216/surfside-tools/pull/166))
+
+- Applies the width override directly to the rendered visit-expectations section.
+- Removes the unused `.wp-block-shortcode:has(...)` selector.
+- Uses border-box sizing so the section’s padding remains inside its full available width.
+- On this page WordPress renders the shortcode output directly inside the full-width Group; it does not retain a `.wp-block-shortcode` wrapper. The Group’s constrained-layout rule therefore capped the shortcode’s `<section>` at 42rem.
+
+### Remove duplicate expectations section spacing ([#167](https://github.com/rspoelstra216/surfside-tools/pull/167))
+
+- Removes the automatic top-level block gap from the Group containing `[surfside_visit_expectations]`.
+- Removes the outer Group’s duplicate compact-section padding.
+- Leaves the shortcode’s own 56px section padding as the single source of vertical spacing.
+- Keeps the existing card icons and all animation behavior unchanged.
+
+### Compact Plan Your Visit expectations section ([#168](https://github.com/rspoelstra216/surfside-tools/pull/168))
+
+- Reduces shortcode padding from 56px to 28px above and below.
+- Tightens the heading-to-grid gap from 32px to 20px.
+- Reduces grid gaps from 24px to 18px.
+- Shortens cards from a 184px minimum to 150px and reduces their padding from 28px to 22px.
+
+### Add Twitch-aware Watch Live streaming block ([#169](https://github.com/rspoelstra216/surfside-tools/pull/169))
+
+- adds `[surfside_watch_live]` as a responsive 16:9 streaming section
+- detects Twitch online/offline state through the official Twitch player events
+- shows the live Twitch player when online and a locally hosted looping announcement video when offline
+- falls back to a branded next-service panel when no announcement video is selected
+- reads the next livestream from the centralized weekly service schedule and displays a countdown
+- adds Twitch channel, announcement video, YouTube, and Facebook controls to Surfside Information
+
+### Start live Twitch playback automatically ([#170](https://github.com/rspoelstra216/surfside-tools/pull/170))
+
+- explicitly requests unmuted Twitch playback when the channel reports online
+- preserves visible Twitch controls when a browser applies its own autoplay restriction
+- centers the embedded Message Notes title after its semantic change from H1 to H2
+
+### Simplify Watch Live status during broadcasts ([#172](https://github.com/rspoelstra216/surfside-tools/pull/172))
+
+- hides the scheduled service time and countdown while Twitch is online
+- leaves only the clear **Live Now** status beside the platform links
+- automatically restores the next-service time and countdown when Twitch goes offline
+
+### Disable Extendable animations on public pages ([#173](https://github.com/rspoelstra216/surfside-tools/pull/173))
+
+- removes `ext-animate--on` from rendered public block markup
+- leaves Gutenberg editor settings unchanged, avoiding repeated manual cleanup
+- preserves Surfside reveal, delayed reveal, and staggered-card animation classes
+- uses WordPress's HTML processor rather than broad CSS overrides
+
+### Add dashboard-managed Adult Ministries section ([#174](https://github.com/rspoelstra216/surfside-tools/pull/174))
+
+- add a repeatable Adult Ministries manager to Surfside Information
+- support add, edit, remove, and ordered card display
+- add the `[surfside_adult_ministries]` shortcode
+- render a responsive sand section with centered five-card layouts and staggered Surfside reveals
+- keep the shortcode empty until ministries are configured
+- document the new public shortcode
+
+### Reorganize staff tools under Site Management ([#175](https://github.com/rspoelstra216/surfside-tools/pull/175))
+
+- replace separate Homepage and Settings quick actions with one Site Management entry
+- add a focused Site Management hub for Information, Streaming, Navigation, Ministries, Homepage Photos, and Settings
+- split the former long Surfside Information form into four focused category forms
+- preserve the existing Homepage Photos and Settings tools and their stored data
+- keep the dashboard's information summary while routing management through the new hub
+- add automatic creation of the new front-end management pages
+
+### Remove duplicate management entries from dashboard ([#176](https://github.com/rspoelstra216/surfside-tools/pull/176))
+
+- remove Homepage and Settings from the dashboard Website Status cards
+- remove the separate Surfside Information management panel
+- retain only Weekly Update, Calendar, and Site Management as dashboard destinations
+- keep all homepage, information, and settings health evaluation behind the scenes for alerts
+- This corrects the incomplete consolidation from #175.
+
+### Replace duplicate quick actions with Manage Website ([#177](https://github.com/rspoelstra216/surfside-tools/pull/177))
+
+- remove the redundant Quick Actions heading and three duplicate cards
+- add one full-width Manage Website button below the Weekly Update and Calendar status cards
+- size the remaining dashboard action buttons consistently
+- fix the Navigation management page fatal error caused by a section metadata variable being overwritten during page-option rendering
+
+### Add curated Ministry events feed ([#178](https://github.com/rspoelstra216/surfside-tools/pull/178))
+
+- add a **Show on Ministries page** checkbox to Calendar Manager events
+- add the `[surfside_ministry_events]` shortcode
+- show the next six selected future events in a compact responsive card grid
+- preserve recurring-event expansion, event detail modals, and the full Events-page link
+- hide the section when no events are selected
+
+### Add weekdays to Ministry event cards ([#179](https://github.com/rspoelstra216/surfside-tools/pull/179))
+
+- Adds the day of the week to the curated Ministry events feed:
+- date badge: `SAT · AUG 15`
+- event details: `Saturday, August 15 · 6:00 PM`
+- This is a display-only follow-up to #178.
+
+### Add pale-blue Gutenberg section utility ([#180](https://github.com/rspoelstra216/surfside-tools/pull/180))
+
+- add `surfside-section-blue-soft`
+- use the existing pale-blue design token (`#F1F8FE`)
+- include the same typography, spacing, button, focus, and responsive behavior as the other Gutenberg section utilities
+- document the new utility in the changelog
+
+### Remove gaps between interior page sections ([#181](https://github.com/rspoelstra216/surfside-tools/pull/181))
+
+- remove Extendable/WordPress sibling block gaps between adjacent Surfside design-system sections
+- also remove the gap between a full-width Cover hero and the first design-system section
+- apply consistently to white, sand, soft off-white, and pale-blue sections
+- This fixes the visible white strip above the new pale-blue CTA on both Staff and Give without requiring Gutenberg margin overrides.
+
+### Add centralized Contact details section ([#182](https://github.com/rspoelstra216/surfside-tools/pull/182))
+
+- add an Email field to Surfside Information
+- add the `[surfside_contact_details]` shortcode
+- render dynamic Visit Us, Service Times, and Contact Us cards
+- provide clickable phone, email, and Get Directions links
+- generate a responsive embedded map from the centralized address
+- add responsive design-system styling and documentation
+
 ## [Unreleased]
 
 ### Added
