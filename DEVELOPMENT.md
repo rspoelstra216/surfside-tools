@@ -4,9 +4,9 @@ This is the concise entry point for current Surfside Tools development. For arch
 
 ## Current version
 
-**2.4.0** — Sitewide Experience released August 4, 2026
+**3.0.0** — V2 Website Experience released August 10, 2026
 
-Version 2.3.0 released the plugin-owned Church Portal. Version 2.3.1 added focused Today at Surfside and calendar refinements. Version 2.4.0 releases centralized Surfside Information, the shared weekly service schedule, the V2 design foundation, ordered navigation management, and the plugin-owned site footer and header.
+Version 3.0.0 applies the shared Surfside information and coastal design foundation across the complete public navigation. It adds redesigned pages, reusable dynamic sections, dashboard-managed ministries, ministry-aware events, consolidated website management, and the Twitch-aware Watch Live experience with an offline announcement-video fallback.
 
 ## Project vision
 
@@ -38,21 +38,21 @@ Surfside Tools should let church staff perform routine website maintenance throu
 | 7 | Calendar Experience | 2.2.0 |
 | 8 | Church Portal | 2.3.0 |
 | 9 | Sitewide Information and V2 Foundation | 2.4.0 |
-| 10 | V2 Website Experience | In progress |
+| 10 | V2 Website Experience | 3.0.0 |
 
 Implementation history for completed milestones belongs in the [changelog](CHANGELOG.md), GitHub Releases, and merged pull requests.
 
 ## Current direction
 
-Milestone 10 is applying the shared information and blue-led coastal foundation to the public website. The ordered navigation manager, plugin-owned footer and header, and opt-in Gutenberg page standards are complete.
+Milestones 1–10 are complete. The public homepage and every primary navigation page have been reviewed against the shared V2 design system.
 
-The homepage is the first page in the page-by-page design audit:
+Current architecture boundary:
 
-- Surfside Tools owns sitewide settings, navigation, headers, footers, dynamic widgets, and reusable design standards.
+- Surfside Tools owns sitewide settings, centralized information, navigation, headers, footers, dynamic widgets, complex reusable sections, and shared design standards.
 - WordPress pages retain unique editorial content and page-specific layouts.
-- Pages opt in to the shared public styles through a `surfside-page` class on their outer Group block.
-- Reusable plugin styles or widgets should be added only when they improve consistency or maintenance.
-- Surfside Tools will not become a general-purpose page builder.
+- Gutenberg remains the preferred editor for straightforward content; plugin shortcodes are reserved for dynamic data or layouts that proved unreliable to maintain as nested blocks.
+- The Staff Dashboard exposes one Manage Website entry point with organized management areas rather than duplicate quick actions.
+- The next milestone should be defined before feature development resumes; the completed V2 audit should remain a stable release baseline.
 
 ## Development workflow
 
