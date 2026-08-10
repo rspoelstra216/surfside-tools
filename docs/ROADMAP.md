@@ -6,8 +6,8 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 
 ## Current release
 
-**Version:** `2.4.0`  
-**Current milestone:** Milestone 10 — V2 Website Experience
+**Version:** `3.0.0`  
+**Current milestone:** Milestone 10 complete; next milestone not yet committed
 
 ## Milestone status
 
@@ -22,27 +22,28 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 | 7 | Calendar Experience | 2.2.0 |
 | 8 | Church Portal | 2.3.0 |
 | 9 | Sitewide Information and V2 Foundation | 2.4.0 |
-| 10 | V2 Website Experience | In progress |
+| 10 | V2 Website Experience | 3.0.0 |
 
 Completed implementation details are preserved in the [changelog](../CHANGELOG.md), GitHub Releases, and merged pull requests.
 
-## Current milestone
+## Completed milestone
 
 ### Milestone 10 — V2 Website Experience
 
-Apply the V2 foundation to the public website while keeping individual WordPress pages independently editable.
+Version 3.0.0 completes the page-by-page V2 website redesign while preserving independent WordPress editing where appropriate.
 
-Completed foundation:
+Delivered outcomes:
 
-- Central Surfside Information and weekly service schedule
-- Blue-led coastal design tokens and restored replaceable logo
-- Plugin-owned footer and sticky responsive header
-- Ordered navigation shared by the header and footer
-- Accessible current-page and livestream navigation states
-- Cache-resilient header and countdown behavior
-- Opt-in Gutenberg page standards for shared typography, buttons, sections, cards, media, and content widths
+- A consistent blue-led coastal design system across every primary navigation page
+- Redesigned Home, Plan Your Visit, Watch Live, Events, Ministries, Staff, Give, and Contact experiences
+- Centralized service, location, contact, navigation, streaming, and adult-ministry data
+- Dynamic service, contact, ministry, ministry-event, and Watch Live components
+- Twitch-aware live status with a local announcement-video fallback while offline
+- Consolidated Manage Website navigation for staff
+- Shared spacing, animation, button, card, media, and responsive behavior
+- Final page-wide checks for headings, widths, links, accessibility basics, and legacy styling
 
-Next phase: apply the shared standards to the homepage together, then continue the public-page audit in priority order. Add new plugin styles or widgets only where they provide clear sitewide value.
+No new milestone is committed yet. The next phase should begin with an explicit scope decision rather than treating post-release ideas as an automatic continuation of Milestone 10.
 
 ## Future ideas
 
