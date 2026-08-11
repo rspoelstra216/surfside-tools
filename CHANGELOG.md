@@ -2,18 +2,16 @@
 
 ## [3.0.1] - 2026-08-10
 
+### Added
+
+- Added a public, read-only `/wp-json/surfside/v1/app` endpoint for church identity, location, services, livestream configuration, current announcements, current message notes, and public links. ([#184](https://github.com/rspoelstra216/surfside-tools/pull/184))
+- Added a public, read-only `/wp-json/surfside/v1/events` endpoint for published recurring event occurrences. ([#184](https://github.com/rspoelstra216/surfside-tools/pull/184))
+
 ### Improved
 
+- Validated event date parameters, limited ranges to two years, and capped responses at 100 occurrences. ([#184](https://github.com/rspoelstra216/surfside-tools/pull/184))
+- Kept administrative settings, drafts, backups, credentials, and write operations private. ([#184](https://github.com/rspoelstra216/surfside-tools/pull/184))
 - Updated project documentation to reflect the completed Surfside Tools 3.0.0 V2 Website Experience. ([#183](https://github.com/rspoelstra216/surfside-tools/pull/183))
-
-### Additional Changes
-
-### Add read-only mobile API ([#184](https://github.com/rspoelstra216/surfside-tools/pull/184))
-
-- add a public, read-only `/wp-json/surfside/v1/app` endpoint for church identity, location, services, livestream configuration, current announcements, current message notes, and public links
-- add a public, read-only `/wp-json/surfside/v1/events` endpoint for published recurring event occurrences
-- validate date parameters, cap event ranges at two years, and cap responses at 100 occurrences
-- keep administrative settings, drafts, backups, credentials, and write operations private
 
 ## [Unreleased]
 
