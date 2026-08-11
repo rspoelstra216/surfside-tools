@@ -4,7 +4,7 @@ Surfside Tools is a custom WordPress website-management platform built for Surfs
 
 It gives church staff clear front-end workflows for weekly publishing, calendar management, homepage photos, locations, and settings without requiring routine access to WordPress administration.
 
-**Current release:** `3.0.0`  
+**Current release:** `3.0.1`  
 **Current development phase:** V2 Website Experience complete
 
 ## Guiding principle
@@ -88,6 +88,14 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - Cache-resilient header assets and browser-side active-link normalization
 - Configured livestream services automatically promote Watch Live to Live Now
 - Twitch-aware Watch Live block with a locally managed offline announcement-video fallback and next-service countdown
+
+### Mobile app API
+
+- Public, read-only `/wp-json/surfside/v1/app` endpoint for church identity, location, services, livestream configuration, current announcements, message notes, and public links
+- Public, read-only `/wp-json/surfside/v1/events` endpoint for published recurring event occurrences
+- Validated date ranges and response limits for predictable mobile synchronization
+- Administrative settings, drafts, backups, credentials, and write operations remain private
+- WordPress remains the single content-management source for the website and Surfside mobile apps
 
 ### Settings and visual utilities
 
@@ -195,9 +203,9 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 
 ## Current direction
 
-Milestones 1–10 are complete. Version 3.0.0 delivers the V2 Website Experience across every primary navigation page.
+Milestones 1–10 are complete. Version 3.0.0 delivers the V2 Website Experience across every primary navigation page. Version 3.0.1 adds the public read-only data bridge for the Surfside mobile apps.
 
-The release combines the coastal design system, redesigned public pages, centralized information and navigation, dynamic service and contact sections, dashboard-managed adult ministries, ministry-aware events, and the Twitch-aware Watch Live experience with its local announcement-video fallback. Surfside Tools continues to own shared data, reusable components, and sitewide behavior while WordPress retains editable page content and layout.
+The current 3.0.x release line combines the coastal design system, redesigned public pages, centralized information and navigation, dynamic service and contact sections, dashboard-managed adult ministries, ministry-aware events, and the Twitch-aware Watch Live experience with its local announcement-video fallback. Surfside Tools continues to own shared data, reusable components, and sitewide behavior while WordPress retains editable page content and layout.
 
 The next milestone has not been committed. Near-term work should favor maintenance and deliberate planning rather than reopening the completed V2 audit piecemeal.
 
