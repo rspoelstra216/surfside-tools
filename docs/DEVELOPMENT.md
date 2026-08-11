@@ -47,6 +47,12 @@ Staff Dashboard
     ├── Calendar defaults
     └── Saved Places management
 
+Public Mobile API
+├── Church identity, location, services, livestream, weekly content, and links
+├── Published recurring event occurrences
+├── Validated date ranges and response limits
+└── No public writes or administrative data
+
 Public Displays
 ├── Upcoming events
 ├── This Week
@@ -163,6 +169,14 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
 - File-based stylesheet versioning so deployed refinements are not hidden by stale caches
 - No automatic restyling of pages that have not opted in
 
+### Mobile app API
+
+- Public, read-only `/wp-json/surfside/v1/app` endpoint for church identity, location, services, livestream configuration, current announcements, current message notes, and public links
+- Public, read-only `/wp-json/surfside/v1/events` endpoint for published recurring event occurrences
+- Validated date parameters, a maximum two-year event range, and a maximum 100 occurrences per response
+- No exposure of administrative settings, drafts, backups, credentials, or write operations
+- WordPress remains the single content-management source for the public website and mobile apps
+
 ### Project infrastructure
 
 - GitHub as the source of truth
@@ -190,6 +204,12 @@ The repository root is also the WordPress plugin root. `surfside-tools.php` shou
 
 The [changelog](../CHANGELOG.md), GitHub Releases, and merged pull requests are the authoritative implementation history for completed milestones.
 
+### Current patch — Version 3.0.1
+
+Version 3.0.1 adds the read-only data bridge used by the Surfside Community Fellowship mobile apps. The API reuses centralized Surfside Tools information and published content instead of creating a second mobile-only content workflow.
+
+The patch does not begin a new website milestone. It extends the completed 3.0.0 foundation while preserving WordPress as the single source of truth and keeping all administrative data and write operations private.
+
 ### Milestone 10 completion — Version 3.0.0
 
 Milestone 10 applied the shared information and blue-led coastal foundation across the complete public navigation. Home, Plan Your Visit, Watch Live, Events, Ministries, Staff, Give, and Contact now share consistent sections, typography, buttons, cards, spacing, responsive behavior, and accessibility fundamentals.
@@ -198,7 +218,7 @@ Version 3.0.0 also delivers centralized service, location, contact, navigation, 
 
 Architecture boundary:
 
-- Surfside Tools owns sitewide settings, shared navigation, headers, footers, dynamic widgets, complex reusable sections, and design standards.
+- Surfside Tools owns sitewide settings, shared navigation, headers, footers, dynamic widgets, complex reusable sections, design standards, and the public read-only mobile data bridge.
 - WordPress pages retain unique editorial content and page-specific layouts.
 - Gutenberg remains preferred for straightforward editable content.
 - Plugin shortcodes are appropriate when content is dynamic or a complex block layout cannot be maintained reliably.
@@ -226,6 +246,7 @@ Architecture boundary:
 - Use one Manage Website entry point to organize site information, homepage photos, navigation, streaming, ministries, and settings without duplicate dashboard actions.
 - Keep adult ministries dashboard-managed and derive ministry-event displays from the central calendar's “show on ministries page” selection.
 - Detect Twitch live status automatically, but require a visitor gesture to start reliable unmuted playback; use the locally managed announcement video while offline.
+- Expose only approved public data through versioned, read-only REST endpoints; keep WordPress and Surfside Tools as the single content-management source for both the website and mobile apps.
 
 ## Nice Ideas
 
