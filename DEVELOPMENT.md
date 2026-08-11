@@ -4,9 +4,9 @@ This is the concise entry point for current Surfside Tools development. For arch
 
 ## Current version
 
-**3.0.0** — V2 Website Experience released August 10, 2026
+**3.0.1** — Mobile API patch released August 10, 2026
 
-Version 3.0.0 applies the shared Surfside information and coastal design foundation across the complete public navigation. It adds redesigned pages, reusable dynamic sections, dashboard-managed ministries, ministry-aware events, consolidated website management, and the Twitch-aware Watch Live experience with an offline announcement-video fallback.
+Version 3.0.0 applies the shared Surfside information and coastal design foundation across the complete public navigation. Version 3.0.1 adds public, read-only app and event endpoints so the Surfside mobile apps can consume the same centralized WordPress content without exposing administrative data or write operations.
 
 ## Project vision
 
@@ -52,6 +52,7 @@ Current architecture boundary:
 - WordPress pages retain unique editorial content and page-specific layouts.
 - Gutenberg remains the preferred editor for straightforward content; plugin shortcodes are reserved for dynamic data or layouts that proved unreliable to maintain as nested blocks.
 - The Staff Dashboard exposes one Manage Website entry point with organized management areas rather than duplicate quick actions.
+- Public mobile API endpoints expose approved church, service, livestream, weekly-content, link, and published-event data while WordPress remains the single source of truth.
 - The next milestone should be defined before feature development resumes; the completed V2 audit should remain a stable release baseline.
 
 ## Development workflow
