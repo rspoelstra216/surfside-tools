@@ -61,6 +61,8 @@ function surfside_tools_mobile_api_app() {
     $next = function_exists('surfside_tools_watch_live_next_service')
         ? surfside_tools_watch_live_next_service()
         : null;
+    $announcement_video_id = absint($streaming['announcement_video_id'] ?? 0);
+    $announcement_video_url = $announcement_video_id ? wp_get_attachment_url($announcement_video_id) : '';
 
     $payload = array(
         'api_version' => 1,
@@ -90,6 +92,7 @@ function surfside_tools_mobile_api_app() {
                 : '',
             'youtube_url' => surfside_tools_site_information_url($streaming['youtube_url'] ?? ''),
             'facebook_url' => surfside_tools_site_information_url($streaming['facebook_url'] ?? ''),
+            'announcement_video_url' => $announcement_video_url ? esc_url_raw($announcement_video_url) : '',
             'next_service' => surfside_tools_mobile_api_next_service($next),
         ),
         'announcements' => array(
