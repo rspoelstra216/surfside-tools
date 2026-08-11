@@ -6,7 +6,7 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 
 ## Current release
 
-**Version:** `3.0.0`  
+**Version:** `3.0.1`  
 **Current milestone:** Milestone 10 complete; next milestone not yet committed
 
 ## Milestone status
@@ -43,7 +43,9 @@ Delivered outcomes:
 - Shared spacing, animation, button, card, media, and responsive behavior
 - Final page-wide checks for headings, widths, links, accessibility basics, and legacy styling
 
-No new milestone is committed yet. The next phase should begin with an explicit scope decision rather than treating post-release ideas as an automatic continuation of Milestone 10.
+Version 3.0.1 follows Milestone 10 with a focused read-only API bridge for the Surfside mobile apps. It exposes approved church, service, livestream, weekly-content, link, and published-event data while keeping WordPress as the single content-management source and keeping administrative data private.
+
+No new website milestone is committed yet. The next phase should begin with an explicit scope decision rather than treating post-release ideas as an automatic continuation of Milestone 10.
 
 ## Future ideas
 
