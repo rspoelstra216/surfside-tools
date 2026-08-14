@@ -59,12 +59,13 @@ add_action('init', 'surfside_tools_ensure_mobile_app_page', 80);
 add_filter('do_shortcode_tag', function ($output, $tag) {
     if ($tag !== 'surfside_staff_dashboard' || !is_user_logged_in() || !current_user_can('upload_files')) return $output;
 
-    $mobile_button = '<a class="surfside-staff-button" href="' . esc_url(surfside_tools_staff_page_url('mobile-app')) . '">Manage Mobile App <span class="surfside-staff-arrow">›</span></a>';
+    $mobile_button = '<a class="surfside-staff-button-secondary surfside-mobile-dashboard-action" href="' . esc_url(surfside_tools_staff_page_url('mobile-app')) . '">Manage Mobile App <span class="surfside-staff-arrow">›</span></a>';
 
-    // Put Mobile App immediately after Manage Website inside the exact same dashboard action container.
+    // Keep Mobile App immediately after Manage Website, but give it secondary visual hierarchy.
     $website_pattern = '(<a class="surfside-staff-button"[^>]*>Manage Website <span class="surfside-staff-arrow">›</span></a>)';
     if (preg_match('~' . $website_pattern . '~', $output)) {
-        return preg_replace('~' . $website_pattern . '~', '$1' . $mobile_button, $output, 1);
+        $mobile_action = '<style>.surfside-mobile-dashboard-action{display:flex!important;width:100%!important;box-sizing:border-box;align-items:center;justify-content:center;margin-top:14px!important;text-align:center;text-decoration:none!important}</style>' . $mobile_button;
+        return preg_replace('~' . $website_pattern . '~', '$1' . $mobile_action, $output, 1);
     }
 
     return $output;
