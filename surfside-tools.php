@@ -26,6 +26,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-ready-to-visit.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/header.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/footer.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-dashboard.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-app-dashboard.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-information-manager.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-management-hub.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-manager.php';
