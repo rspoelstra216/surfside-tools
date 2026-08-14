@@ -58,9 +58,14 @@ add_action('init', 'surfside_tools_ensure_mobile_app_page', 80);
 
 add_filter('do_shortcode_tag', function ($output, $tag) {
     if ($tag !== 'surfside_staff_dashboard' || !is_user_logged_in() || !current_user_can('upload_files')) return $output;
-    $button = '<div class="surfside-mobile-dashboard-entry"><a class="surfside-staff-button" href="' . esc_url(surfside_tools_staff_page_url('mobile-app')) . '">Manage Mobile App <span class="surfside-staff-arrow">›</span></a></div><style>.surfside-mobile-dashboard-entry{margin-top:20px}</style>';
-    $needle = '</div>\n    </div>';
-    $position = strrpos($output, $needle);
-    if ($position !== false) return substr_replace($output, '</div>' . $button . '\n    </div>', $position, strlen($needle));
-    return $output . $button;
+
+    $mobile_button = '<a class="surfside-staff-button" href="' . esc_url(surfside_tools_staff_page_url('mobile-app')) . '">Manage Mobile App <span class="surfside-staff-arrow">›</span></a>';
+
+    // Put Mobile App immediately after Manage Website inside the exact same dashboard action container.
+    $website_pattern = '(<a class="surfside-staff-button"[^>]*>Manage Website <span class="surfside-staff-arrow">›</span></a>)';
+    if (preg_match('~' . $website_pattern . '~', $output)) {
+        return preg_replace('~' . $website_pattern . '~', '$1' . $mobile_button, $output, 1);
+    }
+
+    return $output;
 }, 10, 2);
