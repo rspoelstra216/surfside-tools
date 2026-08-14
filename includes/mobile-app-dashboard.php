@@ -58,7 +58,7 @@ add_action('init', 'surfside_tools_ensure_mobile_app_page', 80);
 
 add_filter('do_shortcode_tag', function ($output, $tag) {
     if ($tag !== 'surfside_staff_dashboard' || !is_user_logged_in() || !current_user_can('upload_files')) return $output;
-    $button = '<div class="surfside-mobile-dashboard-entry"><a class="surfside-staff-button-secondary" href="' . esc_url(surfside_tools_staff_page_url('mobile-app')) . '"><strong>Manage Mobile App</strong><span>App branding, home imagery, and future push notifications.</span><span class="surfside-staff-arrow">›</span></a></div><style>.surfside-mobile-dashboard-entry{margin-top:20px}.surfside-mobile-dashboard-entry .surfside-staff-button-secondary{min-height:74px;padding:16px 22px;display:grid;grid-template-columns:auto 1fr auto;text-align:left}.surfside-mobile-dashboard-entry strong{font-size:17px}.surfside-mobile-dashboard-entry span:nth-child(2){color:#4b5872;font-weight:500;margin-left:16px}@media(max-width:600px){.surfside-mobile-dashboard-entry .surfside-staff-button-secondary{grid-template-columns:1fr auto}.surfside-mobile-dashboard-entry span:nth-child(2){grid-column:1/-1;margin:5px 0 0}}</style>';
+    $button = '<div class="surfside-mobile-dashboard-entry"><a class="surfside-staff-button" href="' . esc_url(surfside_tools_staff_page_url('mobile-app')) . '">Manage Mobile App <span class="surfside-staff-arrow">›</span></a></div><style>.surfside-mobile-dashboard-entry{margin-top:20px}</style>';
     $needle = '</div>\n    </div>';
     $position = strrpos($output, $needle);
     if ($position !== false) return substr_replace($output, '</div>' . $button . '\n    </div>', $position, strlen($needle));
