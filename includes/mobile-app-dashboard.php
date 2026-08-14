@@ -64,7 +64,7 @@ add_filter('do_shortcode_tag', function ($output, $tag) {
     // Keep Mobile App immediately after Manage Website, but give it secondary visual hierarchy.
     $website_pattern = '(<a class="surfside-staff-button"[^>]*>Manage Website <span class="surfside-staff-arrow">›</span></a>)';
     if (preg_match('~' . $website_pattern . '~', $output)) {
-        $mobile_action = '<style>.surfside-mobile-dashboard-action{display:flex!important;width:100%!important;box-sizing:border-box;align-items:center;justify-content:center;margin-top:14px!important;text-align:center;text-decoration:none!important}</style>' . $mobile_button;
+        $mobile_action = '<style>.surfside-mobile-dashboard-action{display:flex!important;width:100%!important;box-sizing:border-box;align-items:center;justify-content:center;margin-top:14px!important;text-align:center;text-decoration:none!important;box-shadow:0 8px 20px rgba(15,45,65,.10)!important}</style>' . $mobile_button;
         return preg_replace('~' . $website_pattern . '~', '$1' . $mobile_action, $output, 1);
     }
 
