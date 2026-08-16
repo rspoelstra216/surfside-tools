@@ -4,13 +4,13 @@ This is the concise entry point for current Surfside Tools development. For arch
 
 ## Current version
 
-**3.0.1** — Mobile API patch released August 10, 2026
+**3.0.2** — Mobile app integration patch released August 16, 2026
 
-Version 3.0.0 applies the shared Surfside information and coastal design foundation across the complete public navigation. Version 3.0.1 adds public, read-only app and event endpoints so the Surfside mobile apps can consume the same centralized WordPress content without exposing administrative data or write operations.
+Version 3.0.0 applies the shared Surfside information and coastal design foundation across the complete public navigation. Versions 3.0.1–3.0.2 establish and refine the versioned data bridge used by the Surfside mobile app, keeping WordPress and Surfside Tools as the single source of truth for shared church, event, weekly-content, and app-presentation data.
 
 ## Project vision
 
-Surfside Tools should let church staff perform routine website maintenance through clear front-end workflows without needing WordPress Admin, while giving visitors useful and accessible public website experiences.
+Surfside Tools should let church staff perform routine website maintenance through clear front-end workflows without needing WordPress Admin, while giving visitors useful and accessible public website and mobile-app experiences.
 
 ## Design principles
 
@@ -24,6 +24,7 @@ Surfside Tools should let church staff perform routine website maintenance throu
 - Avoid adding dashboard information that is not clearly actionable.
 - Favor accessible public experiences that work well on desktop and mobile.
 - Move reusable public experiences into version-controlled plugin shortcodes instead of maintaining substantial page-specific CSS.
+- Keep website and mobile-app content centralized rather than creating parallel management workflows.
 
 ## Milestone status
 
@@ -44,16 +45,29 @@ Implementation history for completed milestones belongs in the [changelog](CHANG
 
 ## Current direction
 
-Milestones 1–10 are complete. The public homepage and every primary navigation page have been reviewed against the shared V2 design system.
+Milestones 1–10 are complete and 3.0.2 is the stable baseline for the current mobile-app integration.
 
 Current architecture boundary:
 
-- Surfside Tools owns sitewide settings, centralized information, navigation, headers, footers, dynamic widgets, complex reusable sections, and shared design standards.
+- Surfside Tools owns sitewide settings, centralized information, navigation, headers, footers, dynamic widgets, complex reusable sections, shared design standards, and the versioned mobile-app API.
 - WordPress pages retain unique editorial content and page-specific layouts.
 - Gutenberg remains the preferred editor for straightforward content; plugin shortcodes are reserved for dynamic data or layouts that proved unreliable to maintain as nested blocks.
 - The Staff Dashboard exposes one Manage Website entry point with organized management areas rather than duplicate quick actions.
-- Public mobile API endpoints expose approved church, service, livestream, weekly-content, link, and published-event data while WordPress remains the single source of truth.
-- The next milestone should be defined before feature development resumes; the completed V2 audit should remain a stable release baseline.
+- Mobile endpoints expose only the data required by the app while administrative settings, drafts, credentials, and unrelated internal data remain private.
+- Website and app features should consume the same centralized content whenever practical.
+
+### Next focused work — Native Connect workflow
+
+The next Tools feature set is the end-to-end Connect/contact system:
+
+1. Add dashboard management for Connect categories and recipient routing.
+2. Complete and test app submission through Surfside Tools to WordPress mail delivery.
+3. Preserve category-specific behavior, including prayer-team sharing and pastor preferred-contact data.
+4. Build a native Surfside Tools website contact card using the same routing and submission plumbing.
+5. Replace the existing Forminator contact form after the native workflow is verified.
+6. Treat completion of the cohesive Connect/contact system as the next minor-release boundary.
+
+After that release, primary development returns to the mobile app, beginning with Giving functionality.
 
 ## Development workflow
 
