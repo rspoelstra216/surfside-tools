@@ -4,9 +4,9 @@ This is the concise entry point for current Surfside Tools development. For arch
 
 ## Current version
 
-**3.0.2** — Mobile app integration patch released August 16, 2026
+**3.1.0** — Native Connect/contact workflow released August 16, 2026
 
-Version 3.0.0 applies the shared Surfside information and coastal design foundation across the complete public navigation. Versions 3.0.1–3.0.2 establish and refine the versioned data bridge used by the Surfside mobile app, keeping WordPress and Surfside Tools as the single source of truth for shared church, event, weekly-content, and app-presentation data.
+Version 3.0.0 applies the shared Surfside information and coastal design foundation across the complete public navigation. Versions 3.0.1–3.0.2 established and refined the versioned data bridge used by the Surfside mobile app. Version 3.1.0 completes the shared Connect workflow for the mobile app and website, including category-based routing, native website contact handling, and Cloudflare Turnstile protection.
 
 ## Project vision
 
@@ -40,34 +40,35 @@ Surfside Tools should let church staff perform routine website maintenance throu
 | 8 | Church Portal | 2.3.0 |
 | 9 | Sitewide Information and V2 Foundation | 2.4.0 |
 | 10 | V2 Website Experience | 3.0.0 |
+| — | Mobile App Data Bridge | 3.0.1–3.0.2 |
+| — | Native Connect Workflow | 3.1.0 |
 
-Implementation history for completed milestones belongs in the [changelog](CHANGELOG.md), GitHub Releases, and merged pull requests.
+Implementation history for completed work belongs in the [changelog](CHANGELOG.md), GitHub Releases, and merged pull requests.
 
 ## Current direction
 
-Milestones 1–10 are complete and 3.0.2 is the stable baseline for the current mobile-app integration.
+Version 3.1.0 is the stable Surfside Tools baseline. The native Connect/contact system is complete and verified end-to-end on both the mobile app and website.
 
 Current architecture boundary:
 
-- Surfside Tools owns sitewide settings, centralized information, navigation, headers, footers, dynamic widgets, complex reusable sections, shared design standards, and the versioned mobile-app API.
+- Surfside Tools owns sitewide settings, centralized information, navigation, headers, footers, dynamic widgets, complex reusable sections, shared design standards, the versioned mobile-app API, and shared Connect/contact routing.
 - WordPress pages retain unique editorial content and page-specific layouts.
 - Gutenberg remains the preferred editor for straightforward content; plugin shortcodes are reserved for dynamic data or layouts that proved unreliable to maintain as nested blocks.
 - The Staff Dashboard exposes one Manage Website entry point with organized management areas rather than duplicate quick actions.
 - Mobile endpoints expose only the data required by the app while administrative settings, drafts, credentials, and unrelated internal data remain private.
-- Website and app features should consume the same centralized content whenever practical.
+- Website and app features should consume the same centralized content and service plumbing whenever practical.
 
-### Next focused work — Native Connect workflow
+### Completed in 3.1.0 — Native Connect workflow
 
-The next Tools feature set is the end-to-end Connect/contact system:
+- Dashboard-managed recipient routing for General Questions, Prayer Request, Ministry Information, Small Group Information, and Speak to a Pastor.
+- Mobile-app Connect submissions routed through Surfside Tools and WordPress mail.
+- Category-specific prayer-team sharing and pastor preferred-contact data.
+- Native `[surfside_contact_form]` website form using the same routing configuration as the app.
+- Cloudflare Turnstile server-side verification plus nonce, honeypot, and rate-limit protections.
+- Native website success/error handling that returns visitors to the Contact section.
+- Forminator removed after the native website workflow was verified in production.
 
-1. Add dashboard management for Connect categories and recipient routing.
-2. Complete and test app submission through Surfside Tools to WordPress mail delivery.
-3. Preserve category-specific behavior, including prayer-team sharing and pastor preferred-contact data.
-4. Build a native Surfside Tools website contact card using the same routing and submission plumbing.
-5. Replace the existing Forminator contact form after the native workflow is verified.
-6. Treat completion of the cohesive Connect/contact system as the next minor-release boundary.
-
-After that release, primary development returns to the mobile app, beginning with Giving functionality.
+Primary development now returns to the Surfside mobile app, beginning with Giving functionality. Surfside Tools should receive additional work only when the app requires shared server-side data, management, or integration plumbing, or when a separate website improvement is intentionally scheduled.
 
 ## Development workflow
 
