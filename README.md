@@ -4,8 +4,8 @@ Surfside Tools is a custom WordPress website-management platform built for Surfs
 
 It gives church staff clear front-end workflows for weekly publishing, calendar management, homepage photos, locations, and settings without requiring routine access to WordPress administration.
 
-**Current release:** `3.0.1`  
-**Current development phase:** V2 Website Experience complete
+**Current release:** `3.0.2`  
+**Current development phase:** Mobile app integration and native Connect workflow
 
 ## Guiding principle
 
@@ -91,10 +91,12 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 
 ### Mobile app API
 
-- Public, read-only `/wp-json/surfside/v1/app` endpoint for church identity, location, services, livestream configuration, current announcements, message notes, and public links
-- Public, read-only `/wp-json/surfside/v1/events` endpoint for published recurring event occurrences
-- Validated date ranges and response limits for predictable mobile synchronization
-- Administrative settings, drafts, backups, credentials, and write operations remain private
+- Versioned `/wp-json/surfside/v1/` API surface supporting the Surfside mobile app
+- Public app configuration and church identity sourced from centralized Surfside Tools data
+- Published recurring event occurrences with validated date ranges and response limits
+- App-ready weekly message notes that preserve useful sermon-note structure and formatting
+- Mobile home-image configuration and positioning supplied from WordPress
+- Public app data remains separated from administrative settings, drafts, backups, and credentials
 - WordPress remains the single content-management source for the website and Surfside mobile apps
 
 ### Settings and visual utilities
@@ -203,10 +205,10 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 
 ## Current direction
 
-Milestones 1–10 are complete. Version 3.0.0 delivers the V2 Website Experience across every primary navigation page. Version 3.0.1 adds the public read-only data bridge for the Surfside mobile apps.
+Milestones 1–10 are complete. Version 3.0.0 delivers the V2 Website Experience across every primary navigation page. Versions 3.0.1–3.0.2 establish and refine the data bridge used by the Surfside mobile app, including app configuration, events, weekly content, and app-home presentation data.
 
-The current 3.0.x release line combines the coastal design system, redesigned public pages, centralized information and navigation, dynamic service and contact sections, dashboard-managed adult ministries, ministry-aware events, and the Twitch-aware Watch Live experience with its local announcement-video fallback. Surfside Tools continues to own shared data, reusable components, and sitewide behavior while WordPress retains editable page content and layout.
+The next focused Tools work is the native Connect workflow: dashboard-managed routing, end-to-end app submission and email delivery, and a native website contact card that can replace Forminator. Completing that cohesive feature set will be the next minor-release boundary.
 
-The next milestone has not been committed. Near-term work should favor maintenance and deliberate planning rather than reopening the completed V2 audit piecemeal.
+The current 3.0.x release line combines the coastal design system, redesigned public pages, centralized information and navigation, dynamic service and contact sections, dashboard-managed adult ministries, ministry-aware events, the Twitch-aware Watch Live experience, and the mobile-app data bridge. Surfside Tools remains the shared source of truth for website and app content while WordPress retains editable page content and layout.
 
 See the [roadmap](docs/ROADMAP.md) for milestone status, the [development handbook](docs/DEVELOPMENT.md) for durable decisions, and the [changelog](CHANGELOG.md) for complete release history.
