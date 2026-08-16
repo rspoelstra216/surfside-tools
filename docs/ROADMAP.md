@@ -6,8 +6,8 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 
 ## Current release
 
-**Version:** `3.0.1`  
-**Current milestone:** Milestone 10 complete; next milestone not yet committed
+**Version:** `3.1.0`  
+**Current focus:** Website V2 and native Connect complete; primary development returned to the Surfside mobile app
 
 ## Milestone status
 
@@ -23,29 +23,40 @@ The detailed project history, durable decisions, and complete Nice Ideas backlog
 | 8 | Church Portal | 2.3.0 |
 | 9 | Sitewide Information and V2 Foundation | 2.4.0 |
 | 10 | V2 Website Experience | 3.0.0 |
+| — | Mobile App Data Bridge | 3.0.1–3.0.2 |
+| — | Native Connect Workflow | 3.1.0 |
 
 Completed implementation details are preserved in the [changelog](../CHANGELOG.md), GitHub Releases, and merged pull requests.
 
-## Completed milestone
+## Completed platform work
 
 ### Milestone 10 — V2 Website Experience
 
 Version 3.0.0 completes the page-by-page V2 website redesign while preserving independent WordPress editing where appropriate.
 
-Delivered outcomes:
+Delivered outcomes include the blue-led coastal design system across every primary navigation page; centralized service, location, contact, navigation, streaming, and adult-ministry data; dynamic reusable components; Twitch-aware live/offline behavior; consolidated Manage Website navigation; and final page-wide accessibility and consistency checks.
 
-- A consistent blue-led coastal design system across every primary navigation page
-- Redesigned Home, Plan Your Visit, Watch Live, Events, Ministries, Staff, Give, and Contact experiences
-- Centralized service, location, contact, navigation, streaming, and adult-ministry data
-- Dynamic service, contact, ministry, ministry-event, and Watch Live components
-- Twitch-aware live status with a local announcement-video fallback while offline
-- Consolidated Manage Website navigation for staff
-- Shared spacing, animation, button, card, media, and responsive behavior
-- Final page-wide checks for headings, widths, links, accessibility basics, and legacy styling
+### Versions 3.0.1–3.0.2 — Mobile App Data Bridge
 
-Version 3.0.1 follows Milestone 10 with a focused read-only API bridge for the Surfside mobile apps. It exposes approved church, service, livestream, weekly-content, link, and published-event data while keeping WordPress as the single content-management source and keeping administrative data private.
+These patches establish and refine the versioned API bridge used by the Surfside mobile app. Approved church, service, livestream, weekly-content, link, event, sermon-note formatting, and app-presentation data remain sourced from WordPress and Surfside Tools rather than a separate mobile content system.
 
-No new website milestone is committed yet. The next phase should begin with an explicit scope decision rather than treating post-release ideas as an automatic continuation of Milestone 10.
+### Version 3.1.0 — Native Connect Workflow
+
+Version 3.1.0 completes a shared contact system for the mobile app and public website:
+
+- Category-based recipient routing managed through Surfside Tools
+- Successful app-to-WordPress-to-email submission
+- Native website `[surfside_contact_form]` using the same routing configuration
+- Prayer-team sharing and pastor preferred-contact handling
+- Cloudflare Turnstile with server-side verification
+- Nonce, honeypot, rate limiting, and input validation
+- Forminator removed after production verification
+
+## Current direction
+
+Primary feature development returns to the Surfside mobile app, beginning with Giving functionality. Surfside Tools remains the shared server-side platform and should gain new functionality when an app feature needs centralized content, API access, management controls, or integration plumbing.
+
+No additional website milestone is currently committed. New website work should begin with an explicit scope decision rather than automatically extending the completed V2 work.
 
 ## Future ideas
 
