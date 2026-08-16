@@ -2,10 +2,10 @@
 
 Surfside Tools is a custom WordPress website-management platform built for Surfside Community Fellowship.
 
-It gives church staff clear front-end workflows for weekly publishing, calendar management, homepage photos, locations, and settings without requiring routine access to WordPress administration.
+It gives church staff clear front-end workflows for weekly publishing, calendar management, homepage photos, locations, settings, and shared website/mobile-app services without requiring routine access to WordPress administration.
 
-**Current release:** `3.0.2`  
-**Current development phase:** Mobile app integration and native Connect workflow
+**Current release:** `3.1.0`  
+**Current development phase:** Mobile app development; shared Tools integrations as needed
 
 ## Guiding principle
 
@@ -20,7 +20,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - Front-end dashboard for routine website management
 - Weekly Update and Calendar tools plus a categorized Site Management hub
 - Actionable Website Status summaries focused on current needs
-- A single Manage Website entry point for information, homepage photos, navigation, streaming, ministries, and settings
+- A single Manage Website entry point for information, homepage photos, navigation, streaming, ministries, contact routing, and settings
 - Login and capability protection
 - Consistent navigation and front-end workflows
 
@@ -99,6 +99,18 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - Public app data remains separated from administrative settings, drafts, backups, and credentials
 - WordPress remains the single content-management source for the website and Surfside mobile apps
 
+### Connect and contact
+
+- Shared contact categories for the website and mobile app
+- Dashboard-managed recipient routing by category
+- Prayer Request sharing/privacy handling
+- Speak to a Pastor preferred-contact handling
+- Native `[surfside_contact_form]` website form using the same routing as the mobile app
+- WordPress mail delivery with visitor Reply-To support
+- Cloudflare Turnstile server-side verification on the public website form
+- Nonce, honeypot, rate-limit, and input-validation protections
+- Forminator is no longer required for the public Contact form
+
 ### Settings and visual utilities
 
 - Front-end Google Maps and calendar settings
@@ -114,6 +126,7 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - `/dashboard/weekly-update`
 - `/dashboard/calendar`
 - `/dashboard/homepage`
+- `/dashboard/contact-routing`
 - `/dashboard/settings`
 
 ## Public shortcodes
@@ -132,13 +145,15 @@ Surfside Tools favors simple, reviewable workflows that keep staff in one place,
 - `[surfside_staff_homepage]`
 - `[surfside_staff_settings]`
 - `[surfside_staff_site_management]`
+- `[surfside_staff_contact_management]`
 
-### Calendar and homepage displays
+### Public displays
 
 - `[surfside_photo_carousel]`
 - `[surfside_life_at_surfside]`
 - `[surfside_weekend_services]`
 - `[surfside_contact_details]`
+- `[surfside_contact_form]`
 - `[surfside_adult_ministries]`
 - `[surfside_ministry_events]`
 - `[surfside_watch_live]`
@@ -205,10 +220,8 @@ The live site continues to deploy from `main` through cPanel Git Version Control
 
 ## Current direction
 
-Milestones 1–10 are complete. Version 3.0.0 delivers the V2 Website Experience across every primary navigation page. Versions 3.0.1–3.0.2 establish and refine the data bridge used by the Surfside mobile app, including app configuration, events, weekly content, and app-home presentation data.
+Milestones 1–10 are complete. Version 3.0.0 delivers the V2 Website Experience across every primary navigation page. Versions 3.0.1–3.0.2 establish and refine the data bridge used by the Surfside mobile app. Version 3.1.0 completes the native Connect/contact workflow shared by the website and app, including dashboard-managed routing, native website submission, Cloudflare Turnstile, and removal of the Forminator dependency.
 
-The next focused Tools work is the native Connect workflow: dashboard-managed routing, end-to-end app submission and email delivery, and a native website contact card that can replace Forminator. Completing that cohesive feature set will be the next minor-release boundary.
-
-The current 3.0.x release line combines the coastal design system, redesigned public pages, centralized information and navigation, dynamic service and contact sections, dashboard-managed adult ministries, ministry-aware events, the Twitch-aware Watch Live experience, and the mobile-app data bridge. Surfside Tools remains the shared source of truth for website and app content while WordPress retains editable page content and layout.
+Primary feature development now returns to the Surfside mobile app, beginning with Giving. Surfside Tools remains the shared server-side source of truth and will continue to provide API, management, and integration plumbing when app features require it.
 
 See the [roadmap](docs/ROADMAP.md) for milestone status, the [development handbook](docs/DEVELOPMENT.md) for durable decisions, and the [changelog](CHANGELOG.md) for complete release history.
