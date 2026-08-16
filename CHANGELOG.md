@@ -1,5 +1,36 @@
 # Changelog
 
+## [3.1.0] - 2026-08-16
+
+### Added
+
+- Staff-managed Connect/contact routing by message category. ([#203](https://github.com/rspoelstra216/surfside-tools/pull/203))
+
+### Improved
+
+- Updated project documentation to reflect the 3.0.2 mobile-app integration baseline and next development sequence. ([#202](https://github.com/rspoelstra216/surfside-tools/pull/202))
+- Mobile app Connect submissions now route to the appropriate configured mailbox instead of one global recipient. ([#203](https://github.com/rspoelstra216/surfside-tools/pull/203))
+
+### Additional Changes
+
+### Add native website contact form ([#204](https://github.com/rspoelstra216/surfside-tools/pull/204))
+
+- add a native `[surfside_contact_form]` shortcode for the website Contact page
+- use the same five categories and routing configuration as the mobile app
+- show prayer-sharing controls only for Prayer Request
+- show preferred contact controls only for Speak to a Pastor
+- include email/phone validation, 2,000-character limit, honeypot, nonce protection, and basic rate limiting
+- send through WordPress `wp_mail()` with Reply-To set to the visitor when email is supplied
+
+### Fix website contact submission and add Cloudflare Turnstile ([#205](https://github.com/rspoelstra216/surfside-tools/pull/205))
+
+- fix the native contact form submission flow so successful and failed submissions return to the Contact page instead of falling into the WordPress 404 template
+- add Cloudflare Turnstile to the public website contact form
+- verify Turnstile tokens server-side before mail is sent
+- add Turnstile site-key and secret-key configuration to Manage Contact Routing
+- keep the existing nonce, honeypot, and rate limiting protections
+- preserve the shared category routing used by the mobile app
+
 ## [3.0.2] - 2026-08-16
 
 ### Improved
