@@ -15,6 +15,7 @@ define('SURFSIDE_TOOLS_URL', plugin_dir_url(__FILE__));
 require_once SURFSIDE_TOOLS_PATH . 'includes/core-weekly-tools.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-information.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/app-management.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/contact-management.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-api.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/design-system.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/weekend-services.php';
