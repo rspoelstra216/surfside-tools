@@ -1,408 +1,195 @@
 # Surfside Tools Development Handbook
 
-This is the primary project handbook for Surfside Tools. It records what the plugin does, how the project is developed, where it is heading, and the decisions that should not depend on chat history.
-
-When planning or beginning work, start here.
+This handbook records durable architecture, operating principles, and decisions for Surfside Tools. It intentionally does **not** repeat PR-by-PR implementation history; use the [Changelog](../CHANGELOG.md), GitHub Releases, and merged pull requests for that detail.
 
 ## Vision
 
-Surfside Tools is a WordPress plugin that lets church staff manage website content through clear front-end workflows instead of requiring routine access to WordPress administration.
-
-The project began as a simpler way to publish weekly announcements and sermon notes. It has grown into a Staff Dashboard that connects Weekly Update, calendar management, homepage management, saved locations, settings, publishing tools, and release automation.
-
-The immediate goal is to reduce repetitive work and uncertainty for Surfside Community Fellowship. Features should remain reusable and configurable where practical.
+Surfside Tools is the WordPress platform behind Surfside Community Fellowship's website and shared mobile-app services. It should let church staff perform routine work through clear front-end workflows while keeping shared content, configuration, and server-side integrations centralized.
 
 ## Project DNA
 
-- **Staff first.** Build for church staff, not developers.
-- **Front end first.** Staff should remain in the Staff Dashboard whenever practical.
-- **Automate when confidence is high.** Detect dates, recurrence, duplicates, and locations rather than requiring repeated entry.
-- **Ask only when needed.** When information is missing or ambiguous, prompt clearly instead of guessing.
-- **Keep workflows together.** Preserve the user's place and avoid unnecessary navigation.
-- **Prefer one clear action.** Reduce clicks without removing review or safety.
-- **Make safe behavior easy.** Duplicate protection, review states, and undo should support the normal workflow.
-- **End with confirmation.** Staff should know what was saved, published, or skipped.
-- **Preserve detail without clutter.** Compact views may hide detail, but the detail must remain available.
-- **Build in small, testable increments.** Deploy and verify focused changes before layering on more complexity.
+- **Staff first.** Build workflows for church staff, not developers.
+- **Front end first.** Routine maintenance should not require WordPress Admin.
+- **One source of truth.** Website and app features should reuse centralized content and services whenever practical.
+- **Automate when confidence is high.** Detect dates, recurrence, duplicates, locations, and reusable settings rather than requiring repeated entry.
+- **Ask when needed.** Do not guess when important information is missing or ambiguous.
+- **Keep workflows together.** Avoid unnecessary navigation and duplicate management surfaces.
+- **Preserve safety and review.** Validation, duplicate protection, confirmation, undo, privacy, and access control should support normal workflows.
+- **Build focused changes.** Small, testable PRs remain the standard even when releases group many PRs.
+- **Document outcomes, not iteration noise.** Current docs describe the product; PRs preserve the detailed implementation trail.
 
 ## Architecture
 
 ```text
 Staff Dashboard
 ├── Weekly Update
-│   ├── DOCX upload and parsing
-│   ├── Announcement review and publishing
-│   ├── Message-note review and publishing
-│   └── Calendar Suggestions
 ├── Calendar Manager
-│   ├── Single- and multi-day event creation
-│   ├── Recurrence
-│   ├── Saved and Google locations
-│   └── Event search and active-event management
-├── Manage Homepage
-│   └── Homepage carousel photos
-└── Settings
-    ├── Surfside Information and ordered navigation
-    ├── Google Maps integration
-    ├── Calendar defaults
-    └── Saved Places management
+├── Manage Website
+│   ├── Surfside Information
+│   ├── Homepage media
+│   ├── Navigation
+│   ├── Streaming
+│   ├── Ministries
+│   ├── Contact routing
+│   └── Settings
+└── Manage Mobile App
+    └── App-specific presentation settings
 
-Public Mobile API
-├── Church identity, location, services, livestream, weekly content, and links
-├── Published recurring event occurrences
-├── Validated date ranges and response limits
-└── No public writes or administrative data
+Public Website
+├── WordPress editorial pages
+├── Plugin-owned reusable sections and design system
+├── Native calendar and Today at Surfside
+├── Watch Live
+├── Church Portal
+└── Native Contact form
 
-Public Displays
-├── Upcoming events
-├── This Week
-├── Month calendar with in-page navigation
-├── Today at Surfside and compact homepage summary
-├── Event details
-├── Homepage photo carousel
-├── Church portal
-├── Site header
-└── Site footer
+Surfside Mobile API
+├── Church/app configuration
+├── Events
+├── Weekly content and formatted notes
+├── Livestream/offline media
+├── App presentation settings
+└── Connect submission
 
 Infrastructure
-├── GitHub branches and pull requests
+├── GitHub source control and pull requests
 ├── cPanel Git deployment
-├── Automated validation and ZIP builds
-└── Automated versioning, changelog, tags, and GitHub Releases
+└── GitHub Actions validation, versioning, releases, and ZIP artifacts
 ```
 
-The repository root is also the WordPress plugin root. `surfside-tools.php` should remain a small loader, while focused functional modules belong under `includes/`.
+The repository root is the WordPress plugin root. `surfside-tools.php` should remain primarily a module loader; focused functionality belongs under `includes/`.
 
-## Current Capabilities
+## Current baseline — 3.1.0
 
-### Staff Dashboard
+The platform is mature through the V2 Website Experience and the first mobile-app integrations.
 
-- Front-end dashboard
-- Consistent navigation to Weekly Update, Calendar, Manage Homepage, and Settings
-- Front-end Settings page with a WordPress-admin fallback
-- Login and capability protection
+### Staff and publishing
 
-### Weekly Update
+- Weekly DOCX announcement and sermon-note publishing.
+- Calendar suggestions with date/time/recurrence/location detection, duplicate protection, review, batch creation, and undo.
+- Native one-time, multi-day, and recurring calendar management.
+- Google Places and saved locations.
+- Front-end homepage, site information, navigation, streaming, ministry, contact-routing, and app-management workflows.
 
-- DOCX upload
-- Announcement parsing and editable review
-- Message-note parsing and editable review
-- Unified publishing workflow
-- Publish completion summary
+### Public website
 
-### Calendar Suggestions
+- Blue-led coastal design system and opt-in Gutenberg standards.
+- Plugin-owned responsive header/footer and complex reusable sections.
+- Upcoming, weekly, monthly, event-detail, Today at Surfside, print, and calendar-export experiences.
+- Church Portal with accessible dialogs and Live Slides routing.
+- Twitch-aware Watch Live with visitor-initiated playback, next-service state, and offline announcement media.
+- Native contact form using shared category routing and Cloudflare Turnstile.
 
-- Detect event dates and times from announcements
-- Conservative event-title cleanup
-- Detect recurring schedules and date ranges
-- Detect rooms and meeting locations
-- Prompt for a missing primary venue
-- Search saved locations and Google Places
-- Confidence-based duplicate detection and explanations
-- One-click one-time and recurring event creation
-- In-page review modal
-- Batch creation of selected new events
-- Undo newly created events
-- Completion tracking without leaving Weekly Update
+### Mobile app services
 
-### Calendar Manager
+- Versioned `/wp-json/surfside/v1/` API surface.
+- Approved church identity, location, services, links, and livestream data.
+- Published event occurrences with bounded queries.
+- Announcements and formatted message notes.
+- Managed Home hero image, focal position, and zoom.
+- Managed offline Worship media.
+- Validated Connect/contact submission with shared category routing.
 
-- Create and edit one-time events
-- Optional multi-day ranges with a clear End Date
-- Mutually exclusive multi-day and recurrence workflows
-- Daily, weekly, and monthly recurrence
-- Repeat-until dates
-- Venue, street address, and separate meeting-location fields
-- Google Places and saved locations
-- Active-event management that hides ended events without deleting history
-- Date-range summaries for limited recurring series
-- Recently past event display
+Administrative settings, credentials, drafts, and unrelated internal data must remain private unless an authenticated administrative endpoint is intentionally designed.
 
-### Manage Homepage
+## Architecture boundary
 
-- Front-end homepage photo management
-- Automatic one-time import from the former ACF carousel fields
-- Upload multiple new photos
-- Replace or remove individual photos
-- Drag-and-drop photo ordering
-- Existing `[surfside_photo_carousel]` shortcode preserved
-- Carousel styles included in Surfside Tools
+### Keep in Surfside Tools when
 
-### Public calendar displays
+- the value is shared by website and app;
+- staff need a durable management interface;
+- the app needs server-side validation, mail, credentials, or protected integration logic;
+- the content is dynamic and reused in multiple public experiences; or
+- a complex Gutenberg layout has proven unreliable to maintain manually.
 
-- Upcoming event list
-- This Week list
-- Monthly calendar
-- In-page Previous, Today, and Next navigation
-- Browser-history support and anchored reload fallbacks
-- Equal-height desktop weeks
-- Compact event cards with `+N more` overflow
-- Event-detail modal with venue, address, meeting location, map information, and multi-day ranges
-- Full Today at Surfside summary with service, sermon, live, empty-day, and upcoming states
-- Transparent `[surfside_today_compact]` homepage summary
+### Keep in WordPress page content when
 
-### Church Portal
+- the content is unique to one page;
+- it is straightforward editorial copy/media; and
+- Gutenberg can maintain it reliably without custom behavior.
 
-- Plugin-owned `[surfside_portal]` launcher
-- Established nine-destination card hierarchy
-- Responsive desktop and mobile presentation
-- Message Notes and Announcements dialogs using current weekly content
-- This Week events dialog using the native calendar
-- Live Slides connection-instructions route
-- Prayer Request Contact anchor
-- Keyboard, native dialog, scrolling, and reduced-motion support
+### Keep in the mobile app when
 
-### Public page design standards
+- the behavior is native navigation, presentation, orientation, interaction, or device behavior; and
+- no shared server-side source of truth or protected integration is required.
 
-- Opt-in Gutenberg styling activated by adding `surfside-page` to a page's outer Group block
-- Shared heading, paragraph, Gutenberg button, focus, responsive, and reduced-motion behavior
-- Reusable page classes:
-  - `surfside-page-section` with `--compact`, `--white`, `--soft`, and `--sand` variants
-  - `surfside-page-narrow` for readable text widths
-  - `surfside-page-card` for quiet bordered content panels
-  - `surfside-page-media` for consistently framed images and embeds
-  - `surfside-page-lede` for introductory copy
-  - `surfside-page-actions` for responsive Gutenberg Button groups
-  - `[surfside_weekend_services]` for the full-width homepage service schedule sourced from shared information
-  - `[surfside_life_at_surfside]` for the full-width sand photo-story section backed by managed homepage images
-  - `surfside-button--secondary` on a Gutenberg Button block for a quieter action
-- File-based stylesheet versioning so deployed refinements are not hidden by stale caches
-- No automatic restyling of pages that have not opted in
+Surfside Tools is not intended to become a general-purpose page builder or a duplicate CMS for app-only copies of shared church content.
 
-### Mobile app API
+## Durable public-experience decisions
 
-- Public, read-only `/wp-json/surfside/v1/app` endpoint for church identity, location, services, livestream configuration, current announcements, current message notes, and public links
-- Public, read-only `/wp-json/surfside/v1/events` endpoint for published recurring event occurrences
-- Validated date parameters, a maximum two-year event range, and a maximum 100 occurrences per response
-- No exposure of administrative settings, drafts, backups, credentials, or write operations
-- WordPress remains the single content-management source for the public website and mobile apps
+- Use Surfside Information as the canonical source for identity, logo, contact, location, services, navigation, and social destinations.
+- Store internal navigation destinations by page ID; use custom URLs for anchored, seasonal, or external links.
+- Keep substantial reusable markup, behavior, and CSS in version-controlled plugin modules rather than page-specific Custom HTML/CSS.
+- Keep public-page styling opt-in and Gutenberg-compatible.
+- Keep the public header opaque white, navigation flat, and the active-page treatment understated; reserve the prominent red treatment for Live Now.
+- Detect Twitch live status automatically but require a visitor gesture for reliable unmuted playback.
+- Treat multi-day events as inclusive date ranges distinct from recurrence.
+- Keep compact calendar views scan-friendly while preserving full details in event views.
+- Treat Today at Surfside as dynamic output and keep the compact homepage variant visually transparent.
+- Keep the Church Portal mobile-focused and use accessible dialogs for embedded weekly/event content.
+- Use one Manage Website entry point for related website-management areas rather than duplicate dashboard actions.
+- Keep Manage Mobile App separate for settings that are truly app-specific.
+- Expose only approved data through versioned public endpoints.
+- Use shared contact categories/routing for both app and website; keep recipient addresses and Turnstile secrets server-side.
 
-### Project infrastructure
+## Current development direction
 
-- GitHub as the source of truth
-- Feature branches and pull requests
-- cPanel Git deployment
-- WordPress-ready ZIP builds
-- Automated version bumps
-- Automated changelog and GitHub Release generation
-- Categorized PR release notes: Added, Improved, and Fixed
+Primary feature development is now in the **Surfside mobile app**, beginning with **Giving**. Surfside Tools returns to a supporting role: add or modify Tools functionality only when the app needs shared data, a staff-managed source of truth, protected server-side integration, or when a separate website improvement is deliberately scheduled.
 
-## Milestones
-
-| Milestone | Outcome | Release |
-| --- | --- | --- |
-| 1 | Weekly Update Foundation | 1.x |
-| 2 | Native Calendar | 1.x |
-| 3 | Google Places | 1.x |
-| 4 | Staff Dashboard | 1.x |
-| 5 | Platform Consolidation | 2.0.0 |
-| 6 | Dashboard Intelligence | 2.1.0 |
-| 7 | Calendar Experience | 2.2.0 |
-| 8 | Church Portal | 2.3.0 |
-| 9 | Sitewide Information and V2 Foundation | 2.4.0 |
-| 10 | V2 Website Experience | 3.0.0 |
-
-The [changelog](../CHANGELOG.md), GitHub Releases, and merged pull requests are the authoritative implementation history for completed milestones.
-
-### Current patch — Version 3.0.1
-
-Version 3.0.1 adds the read-only data bridge used by the Surfside Community Fellowship mobile apps. The API reuses centralized Surfside Tools information and published content instead of creating a second mobile-only content workflow.
-
-The patch does not begin a new website milestone. It extends the completed 3.0.0 foundation while preserving WordPress as the single source of truth and keeping all administrative data and write operations private.
-
-### Milestone 10 completion — Version 3.0.0
-
-Milestone 10 applied the shared information and blue-led coastal foundation across the complete public navigation. Home, Plan Your Visit, Watch Live, Events, Ministries, Staff, Give, and Contact now share consistent sections, typography, buttons, cards, spacing, responsive behavior, and accessibility fundamentals.
-
-Version 3.0.0 also delivers centralized service, location, contact, navigation, streaming, and adult-ministry data; dynamic reusable page sections; ministry-aware event displays; consolidated Manage Website navigation; and Twitch-aware live/offline behavior with a locally managed announcement-video fallback.
-
-Architecture boundary:
-
-- Surfside Tools owns sitewide settings, shared navigation, headers, footers, dynamic widgets, complex reusable sections, design standards, and the public read-only mobile data bridge.
-- WordPress pages retain unique editorial content and page-specific layouts.
-- Gutenberg remains preferred for straightforward editable content.
-- Plugin shortcodes are appropriate when content is dynamic or a complex block layout cannot be maintained reliably.
-- Surfside Tools will not become a general-purpose page builder.
-- The next milestone must be defined explicitly; post-release ideas do not automatically extend Milestone 10.
-
-### Durable public-experience decisions
-
-- Keep substantial reusable markup, behavior, and CSS in version-controlled plugin shortcodes rather than page-specific Custom HTML or CSS.
-- Keep the Church Portal mobile-focused and render Message Notes, Announcements, and This Week in accessible dialogs.
-- Treat Today at Surfside as dynamic, non-cacheable output; keep its compact homepage variant transparent.
-- Use progressive enhancement for monthly navigation while retaining real anchored links as fallbacks.
-- Treat multi-day events as inclusive date ranges distinct from recurring events.
-- Use Surfside Information as the single source for identity, logo, contact, location, services, navigation, and social destinations.
-- Store internal navigation destinations by page ID; retain custom URLs for anchored, seasonal, or external links.
-- Keep the public header opaque white, navigation flat, and the mobile breakpoint early enough to avoid crowding.
-- Use a quiet active-page indicator and reserve the prominent red pill for Live Now.
-- Use the shared Media Library logo selection with the restored plugin asset as fallback.
-- Normalize active header links in the browser because Site Editor shortcode markup may be captured by page caches.
-- Version header assets from their files so refinements do not depend on a plugin version bump.
-- Keep public page styling opt-in and Gutenberg-compatible so editors retain control of unique page content and layouts.
-- Render the homepage weekend-service section from centralized schedule and location data instead of maintaining nested Gutenberg columns.
-- Render the homepage photo story as one plugin-owned section while preserving the existing front-end photo manager.
-- Version the shared design-system stylesheet from its file modification time so deployed refinements bypass stale asset caches.
-- Use one Manage Website entry point to organize site information, homepage photos, navigation, streaming, ministries, and settings without duplicate dashboard actions.
-- Keep adult ministries dashboard-managed and derive ministry-event displays from the central calendar's “show on ministries page” selection.
-- Detect Twitch live status automatically, but require a visitor gesture to start reliable unmuted playback; use the locally managed announcement video while offline.
-- Expose only approved public data through versioned, read-only REST endpoints; keep WordPress and Surfside Tools as the single content-management source for both the website and mobile apps.
+The next app feature should be evaluated against the architecture boundary before adding new WordPress code.
 
 ## Nice Ideas
 
-Nice Ideas are intentionally unscheduled. They remain here until the project commits to building them.
+These remain unscheduled until intentionally promoted into active work.
 
-### Calendar and events
+- Drag-and-drop calendar editing and event duplication.
+- Expanded event categories, filters, bulk editing, RSVP/registration, and ministry presentation options.
+- Additional Weekly Update automation and staff-approved AI assistance.
+- Volunteer, prayer, follow-up, directory, attendance, and other ministry-management workflows.
+- Additional dashboard intelligence only where it creates a clear staff action.
+- Push-notification management when the mobile app reaches that phase.
 
-- Drag-and-drop calendar editing
-- Duplicate an existing event
-- Event categories with colors
-- Multiple campuses and locations
-- Event RSVP or registration
-- Ministry color themes
-- Mini map preview on public event details
-- Better bulk event editing and deletion
-- Expanded search and filters
+## Development workflow
 
-### Weekly Update and productivity
+1. Confirm the objective and whether it belongs in Tools.
+2. Create a focused branch from `main` using `feature/`, `fix/`, or `docs/`.
+3. Implement the smallest useful, testable change.
+4. Open a pull request with Summary, categorized Release Notes, and Testing instructions.
+5. Merge after review.
+6. In cPanel, run **Update from Remote** and **Deploy HEAD Commit**.
+7. Verify the affected live workflow.
+8. Update durable documentation when capability, architecture, or direction changes.
 
-- Create an announcement from an event
-- AI suggestions from Weekly Update content
-- AI-assisted wording or title refinement with staff approval
-- Additional parser confidence explanations
-- Saved recurring ministry templates
-- More detailed publication history
-
-### Staff Dashboard
-
-- Featured Event homepage widget
-- Upcoming-events widget
-- Recent activity feed
-- Ministry dashboards
-- Additional homepage content controls
-- Digital bulletin tools
-
-### Future ministry tools
-
-- Volunteer management
-- Prayer-request workflows
-- Forms and follow-up workflows
-- Member or contact directory
-- Attendance tools
-- Additional integrations
-
-## Rejected or Deferred Ideas
-
-### Inline Add to Calendar beside every formatted announcement
-
-**Decision:** Deferred in favor of the Calendar Suggestions panel, which already handles recurrence, duplicates, locations, confidence, review, batch creation, and completion status.
-
-### GitHub epics as another planning layer
-
-**Decision:** Not needed at the current project size. Milestone sections already group related outcomes.
-
-### GitHub Projects or Milestones as the only project memory
-
-**Decision:** Do not rely on them as the sole source of truth. This handbook must remain complete because connected tooling may not maintain every GitHub planning feature.
-
-### Use “Homepage” as a dashboard action label
-
-**Decision:** Use **Manage Homepage** so staff understand the action opens editing tools rather than the public homepage.
-
-## Decision Log
-
-### 2026-07 — GitHub is the source of truth
-
-Production code changes begin on a GitHub branch and are reviewed through a pull request before deployment.
-
-### 2026-07 — Deploy through cPanel Git
-
-After merge, cPanel uses **Update from Remote** and **Deploy HEAD Commit**. ZIP installation remains a fallback and release-distribution method.
-
-### 2026-07 — Use focused modules
-
-Functional areas belong in focused files under `includes/`; the root plugin file primarily loads modules and shared constants.
-
-### 2026-07 — Staff Dashboard is the standard term
-
-The front-end staff workspace is called the **Staff Dashboard**. “Portal” is reserved for a possible future authenticated member experience.
-
-### 2026-07 — Front-end Settings is primary
-
-Routine settings and Saved Places management belong in the Staff Dashboard. WordPress administration remains a fallback.
-
-### 2026-07 — Use native Google Places autocomplete
-
-Weekly Update uses the same native Google Places behavior as Calendar Manager. The API must be enqueued early while dynamic fields may initialize later.
-
-### 2026-07 — Preserve historical event data
-
-Ended events can be hidden from active management without deleting records or past occurrences.
-
-### 2026-07 — Month calendar prioritizes scanability
-
-Desktop weeks use a consistent height, cards are compact, and additional events use `+N more`; full details remain in event views.
-
-### 2026-07 — Releases are milestone-oriented
-
-Routine PRs may be deployed without an official release. Official versions group meaningful completed work.
-
-### 2026-07 — Pull requests use categorized release notes
-
-New PRs include user-facing entries under **Added**, **Improved**, and **Fixed**. Release automation groups them and falls back to Summary for older PRs.
-
-### 2026-07 — Consolidate tools before redesigning the dashboard
-
-The dashboard should reflect the actual completed toolset. Manage Homepage comes first, followed by a snippet audit, then dashboard refinement.
-
-## Development Workflow
-
-1. Check this handbook for current milestone context and Nice Ideas.
-2. Define the intended outcome and acceptance criteria.
-3. Create a focused branch from `main` using `feature/`, `fix/`, or `docs/`.
-4. Implement the smallest useful, testable change.
-5. Open a pull request using the repository template.
-6. Include Summary, categorized Release Notes, and Testing steps.
-7. Merge after review.
-8. In cPanel, run **Update from Remote** and **Deploy HEAD Commit**.
-9. Verify the affected live workflow.
-10. Update this handbook when capability, direction, or a durable decision changes.
-
-## Validation Checklist
+## Validation checklist
 
 Verify as applicable:
 
-- PHP syntax checks pass
-- The plugin remains active
-- Existing events still load and save
-- Recurring events generate correctly
-- List, week, month, and modal views work
-- Weekly Update parsing and publishing still work
-- Google Places and Saved Places still work
-- Homepage carousel remains populated during ACF migration
-- Homepage uploads, replacements, removals, and ordering persist
-- Keyboard and mobile behavior remain usable
-- Repository-only documentation is excluded from the production ZIP
+- PHP syntax and automated checks pass.
+- The plugin remains active after deployment.
+- Existing weekly publishing and calendar workflows still function.
+- Mobile API responses remain backward-compatible unless a deliberate version change is made.
+- Public forms validate and protect server-side operations.
+- Keyboard, mobile, responsive, and reduced-motion behavior remain usable.
+- Administrative data and credentials are not exposed through public endpoints.
+- Repository-only documentation remains excluded from the production ZIP where intended.
 
-## Release Process
+## Release process
 
-1. Finish and verify the milestone or grouped release work.
-2. Confirm merged PRs contain useful Release Notes.
-3. Open GitHub **Actions**.
-4. Run **Release Surfside Tools**.
-5. Choose patch, minor, major, or a custom version.
-6. Verify the workflow completed successfully.
-7. Verify the plugin version and changelog on `main`.
-8. Verify the Git tag and GitHub Release.
-9. Verify `surfside-tools.zip` is attached.
-10. Deploy the new `main` commit through cPanel when the live site should receive the release commit.
+1. Finish and verify the grouped release work.
+2. Confirm merged PRs contain useful release-note source material.
+3. Run **Release Surfside Tools** in GitHub Actions with the intended version increment.
+4. Verify the workflow, plugin version, tag, GitHub Release, changelog update, and attached `surfside-tools.zip`.
+5. Deploy the release commit through cPanel when appropriate.
+6. After a release, consolidate `CHANGELOG.md` to release-level outcomes when generated notes are overly granular.
 
-## Documentation Ownership
+## Documentation ownership
 
-- **This handbook:** capabilities, milestones, Nice Ideas, decisions, workflow, and project direction
-- **CHANGELOG.md:** release history generated for official versions
-- **GitHub Releases:** user-facing release packages and notes
-- **Pull requests:** implementation details, tests, and release-note source material
-- **Issues:** optional detailed planning and acceptance criteria for committed work
+- **README.md:** current product overview and navigation.
+- **Root DEVELOPMENT.md:** current baseline, architecture boundary, and active direction.
+- **This handbook:** durable architecture, decisions, workflow, and intentionally unscheduled ideas.
+- **ROADMAP.md:** concise release/milestone progression and current focus.
+- **CHANGELOG.md:** concise release-level outcomes.
+- **GitHub Releases:** versioned artifacts and generated release notes.
+- **Merged pull requests:** detailed implementation, iteration, testing, and troubleshooting history.
 
-Chat is where decisions may be discussed. This repository is where durable decisions live.
+Chat is where decisions may be discussed. The repository is where durable decisions live.
