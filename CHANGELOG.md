@@ -1,5 +1,131 @@
 # Changelog
 
+## [3.0.2] - 2026-08-16
+
+### Improved
+
+- Updated project documentation to reflect the Surfside Tools 3.0.1 mobile API patch. ([#185](https://github.com/rspoelstra216/surfside-tools/pull/185))
+
+### Additional Changes
+
+### Expose Worship offline media to mobile app ([#186](https://github.com/rspoelstra216/surfside-tools/pull/186))
+
+- Extends the existing public mobile app payload with the announcement video already configured for the Watch Live shortcode.
+- reads the existing `announcement_video_id` from shared streaming settings
+- resolves it through the WordPress media library
+- exposes `livestream.announcement_video_url` through `/wp-json/surfside/v1/app/`
+- keeps the website and mobile app tied to the same managed offline media instead of creating a second app-only setting
+
+### Add mobile app management to Surfside Tools ([#187](https://github.com/rspoelstra216/surfside-tools/pull/187))
+
+- adds a dedicated **Mobile App** area to the Surfside Tools admin/dashboard
+- adds an app-specific **Home Hero Image** setting using the WordPress Media Library
+- keeps shared church data (logo, tagline, services, events, announcements, notes) in their existing centralized tools rather than duplicating it
+- exposes the selected hero through the existing `/wp-json/surfside/v1/app` payload as `app.home_hero_image_url`
+- provides a safe empty value when no hero has been selected so the mobile app can retain its branded fallback
+
+### Add Mobile App management to staff dashboard ([#188](https://github.com/rspoelstra216/surfside-tools/pull/188))
+
+- adds **Manage Mobile App** as a first-class action directly on the main staff Dashboard, separate from Manage Website
+- creates `/dashboard/mobile-app/` as a front-end app management page
+- exposes the existing Home Hero Image control there using the WordPress Media Library
+- keeps the existing app API setting from #187, so the selected hero continues to publish as `app.home_hero_image_url`
+- reserves this management area for future push notifications and other app-only controls
+
+### Match Manage Mobile App dashboard styling ([#189](https://github.com/rspoelstra216/surfside-tools/pull/189))
+
+- changes the **Manage Mobile App** dashboard entry to use the same full-width blue button treatment as **Manage Website**
+- removes the bordered card-style description that made the app action visually inconsistent
+- keeps Mobile App as a separate first-class dashboard destination directly below Manage Website
+
+### Align Mobile App dashboard action with Manage Website ([#190](https://github.com/rspoelstra216/surfside-tools/pull/190))
+
+- places **Manage Mobile App** inside the same dashboard action container as **Manage Website**
+- uses the exact same `surfside-staff-button` markup and styling
+- removes the separate wrapper and extra margin that caused the narrower width and oversized vertical gap
+
+### Give Mobile App dashboard action secondary styling ([#191](https://github.com/rspoelstra216/surfside-tools/pull/191))
+
+- keeps **Manage Website** as the solid blue primary dashboard action
+- changes **Manage Mobile App** to the existing outlined secondary button treatment
+- keeps Mobile App full width
+- adds 14px separation between the two actions
+- This should give the two controls the same primary/secondary hierarchy already used by Open Weekly Update and Manage Calendar.
+
+### Add shadow to Mobile App dashboard action ([#192](https://github.com/rspoelstra216/surfside-tools/pull/192))
+
+- adds the same subtle raised-card feel to the outlined **Manage Mobile App** action
+- preserves the full-width outlined treatment and spacing established in the previous PR
+- This is intentionally a small visual polish pass.
+
+### Add live Home hero preview and focal point controls ([#193](https://github.com/rspoelstra216/surfside-tools/pull/193))
+
+- replaces the simple hero thumbnail with an app-shaped working Home preview
+- previews the selected photo with the Surfside logo, Welcome home text, tagline, and Coming Up card overlay
+- adds horizontal and vertical focal-point sliders with a visible crosshair
+- updates the preview live as the focal point changes
+- saves the focal point alongside the selected hero image
+- exposes `home_hero_focal_x` and `home_hero_focal_y` in the mobile app API, defaulting safely to 50/50
+
+### Improve app hero logo contrast ([#194](https://github.com/rspoelstra216/surfside-tools/pull/194))
+
+- adds a translucent white container behind the Surfside logo in the managed Home hero preview
+- uses modest padding, rounded corners, a subtle border, and a light shadow so the existing blue logo stays legible over busy photography
+- keeps Welcome home and the tagline directly on the hero photograph
+- slightly adjusts the brand block position to accommodate the logo container without crowding the heading
+
+### Soften app hero logo container ([#195](https://github.com/rspoelstra216/surfside-tools/pull/195))
+
+- reduces the app Home preview logo container from 88% to 56% white
+- softens the white border and shadow so the photo visibly shows through
+- keeps the logo readable while making the container clearly different from the solid white Coming Up card
+
+### Match Mobile App Home preview to final layout ([#196](https://github.com/rspoelstra216/surfside-tools/pull/196))
+
+- removes the Surfside logo and logo container from the dashboard Home preview
+- removes the event location line from the Coming Up preview
+- reduces the Coming Up card height to match the approved app layout
+- repositions Welcome home/tagline to better reflect the current full-bleed Home hero
+- preserves the existing live focal-point controls and saved app settings
+
+### Add drag and zoom controls for app Home hero ([#197](https://github.com/rspoelstra216/surfside-tools/pull/197))
+
+- replaces the horizontal/vertical focal sliders and crosshair with direct drag-to-position interaction in the app Home preview
+- adds a 100–200% Zoom slider
+- adds a Center & Reset Zoom control
+- saves drag position using the existing focal X/Y settings
+- saves and exposes a new `home_hero_zoom` value through the mobile API
+- keeps the approved Home preview overlay intact
+
+### Fix mobile hero focal point positioning ([#198](https://github.com/rspoelstra216/surfside-tools/pull/198))
+
+- correct the Manage Mobile App hero preview so saved X/Y values represent the actual source-image focal point
+- calculate the preview using the image's natural dimensions and a cover-style scale
+- translate focal points into CSS background positioning instead of treating CSS background-position percentages as source-image coordinates
+- make drag distance operate against the rendered image dimensions rather than the preview viewport
+- keep the existing image selection, drag, zoom, reset, and saved setting fields intact
+
+### Match mobile app dashboard preview to Home hero ([#199](https://github.com/rspoelstra216/surfside-tools/pull/199))
+
+- Updates only the Manage Mobile App dashboard preview so it more closely mirrors the current React Native Home hero: ~427×550 viewport, edge-to-edge top, 32px bottom corners, matching overlay opacity, 20px content inset, Welcome/tagline typography, and Coming Up card sizing/placement. The working focal-point and zoom calculations are unchanged.
+
+### Expose formatted message notes to mobile app ([#200](https://github.com/rspoelstra216/surfside-tools/pull/200))
+
+- add `message.notes_html` to the public mobile app API response
+- generate the HTML with the same sermon-note formatter used by the website
+- omit the separately-rendered main heading from `notes_html`
+- retain the existing plain-text `message.notes` field for backward compatibility
+- sanitize formatted output with WordPress `wp_kses_post`
+
+### Add mobile contact submission API ([#201](https://github.com/rspoelstra216/surfside-tools/pull/201))
+
+- add public `POST /wp-json/surfside/v1/contact` endpoint for the Surfside mobile app
+- support the five existing contact categories: General Questions, Prayer Request, Ministry Information, Small Group Information, and Speak to a Pastor
+- support name, email, phone, preferred contact method, message, and prayer privacy
+- validate and sanitize submissions server-side
+- deliver submissions through WordPress `wp_mail()` using the configured church email address
+- add a honeypot field and per-IP rate limiting to reduce automated abuse
+
 ## [3.0.1] - 2026-08-10
 
 ### Added

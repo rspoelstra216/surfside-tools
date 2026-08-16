@@ -2,13 +2,13 @@
 /**
  * Plugin Name: Surfside Tools
  * Description: Custom Surfside website tools for weekly announcements and sermon notes publishing.
- * Version: 3.0.1
+ * Version: 3.0.2
  * Author: Surfside Community Fellowship
  */
 
 if (!defined('ABSPATH')) { exit; }
 
-define('SURFSIDE_TOOLS_VERSION', '3.0.1');
+define('SURFSIDE_TOOLS_VERSION', '3.0.2');
 define('SURFSIDE_TOOLS_PATH', plugin_dir_path(__FILE__));
 define('SURFSIDE_TOOLS_URL', plugin_dir_url(__FILE__));
 
