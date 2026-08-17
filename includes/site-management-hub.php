@@ -14,6 +14,9 @@ function surfside_tools_staff_site_management_shortcode() {
         $cards[]=array('title'=>'Navigation','description'=>'Header and footer links, destinations, and order.','path'=>'site-navigation','icon'=>'document');
     }
     $cards[]=array('title'=>'Homepage Photos','description'=>'Upload, remove, and reorder carousel photography.','path'=>'homepage','icon'=>'document');
+    if($can_configure){
+        $cards[]=array('title'=>'Ministries','description'=>'Manage ongoing ministries and their audience classifications.','path'=>'site-ministries','icon'=>'document');
+    }
 
     ob_start(); ?>
     <div class="surfside-staff-shell surfside-site-management">
@@ -30,6 +33,6 @@ function surfside_tools_ensure_site_management_pages(){
     surfside_tools_ensure_staff_page('Site Management','site-management','[surfside_staff_site_management]',$parent_id);
     surfside_tools_ensure_staff_page('Streaming','site-streaming','[surfside_staff_site_information section="streaming"]',$parent_id);
     surfside_tools_ensure_staff_page('Navigation','site-navigation','[surfside_staff_site_information section="navigation"]',$parent_id);
-    surfside_tools_ensure_staff_page('Ministries','site-ministries','[surfside_staff_site_information section="ministries"]',$parent_id);
+    surfside_tools_ensure_staff_page('Ministries','site-ministries','[surfside_staff_ministries_manager]',$parent_id);
 }
 add_action('init','surfside_tools_ensure_site_management_pages',75);
