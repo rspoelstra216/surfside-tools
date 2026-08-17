@@ -1,6 +1,6 @@
 <?php
 /**
- * Mobile app presentation settings.
+ * Mobile app presentation and integration settings.
  */
 if (!defined('ABSPATH')) { exit; }
 
@@ -16,14 +16,22 @@ function surfside_tools_app_hero_image_url() {
     return $url ? esc_url_raw($url) : '';
 }
 
+function surfside_tools_app_giving_url() {
+    $settings = surfside_tools_app_settings();
+    return esc_url_raw($settings['giving_url'] ?? '');
+}
+
 add_action('admin_init', function () {
     register_setting('surfside_tools_app_settings_group', 'surfside_tools_app_settings', array(
         'type' => 'array',
         'sanitize_callback' => function ($input) {
             $input = is_array($input) ? $input : array();
-            return array('home_hero_image_id' => absint($input['home_hero_image_id'] ?? 0));
+            return array(
+                'home_hero_image_id' => absint($input['home_hero_image_id'] ?? 0),
+                'giving_url' => esc_url_raw(trim((string)($input['giving_url'] ?? ''))),
+            );
         },
-        'default' => array('home_hero_image_id' => 0),
+        'default' => array('home_hero_image_id' => 0, 'giving_url' => ''),
     ));
 });
 
@@ -40,11 +48,12 @@ function surfside_tools_admin_app_page() {
     $settings = surfside_tools_app_settings();
     $image_id = absint($settings['home_hero_image_id'] ?? 0);
     $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'large') : '';
+    $giving_url = esc_url($settings['giving_url'] ?? '');
     ?>
     <div class="wrap surfside-admin-wrap">
         <div class="surfside-admin-hero">
             <h1>Mobile App</h1>
-            <p class="surfside-admin-muted">Manage presentation settings that are unique to the Surfside mobile app. Shared church information, events, announcements, and sermon notes remain managed in their existing tools.</p>
+            <p class="surfside-admin-muted">Manage settings that are unique to the Surfside mobile app. Shared church information, events, announcements, and sermon notes remain managed in their existing tools.</p>
         </div>
         <?php settings_errors(); ?>
         <form method="post" action="options.php">
@@ -56,6 +65,13 @@ function surfside_tools_admin_app_page() {
                 <img id="surfside-app-hero-preview" src="<?php echo esc_url($image_url); ?>" alt="" style="<?php echo $image_url ? '' : 'display:none;'; ?>width:100%;max-width:640px;max-height:300px;object-fit:cover;border-radius:12px;margin:8px 0 14px;">
                 <p><button type="button" class="button button-primary" id="surfside-app-select-hero"><?php echo $image_id ? 'Replace Hero Image' : 'Select Hero Image'; ?></button> <button type="button" class="button" id="surfside-app-remove-hero" style="<?php echo $image_id ? '' : 'display:none;'; ?>">Remove</button></p>
                 <p class="description">If no image is selected, the mobile app can fall back to its standard branded hero.</p>
+            </div>
+            <div class="surfside-admin-card" style="max-width:760px;">
+                <h2>Giving</h2>
+                <p class="surfside-admin-muted">Set the secure giving form that opens inside the Surfside mobile app.</p>
+                <p><label for="surfside-app-giving-url"><strong>Giving Form URL</strong></label></p>
+                <input type="url" class="regular-text" style="width:100%;max-width:640px;" id="surfside-app-giving-url" name="surfside_tools_app_settings[giving_url]" value="<?php echo esc_attr($giving_url); ?>" placeholder="https://give.tithe.ly/?formId=...">
+                <p class="description">Use the direct Tithely Giving Form URL, not the kiosk URL or embed code. Changes here can update the app without publishing a new app release.</p>
             </div>
             <?php submit_button('Save App Settings'); ?>
         </form>
