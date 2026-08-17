@@ -1,6 +1,10 @@
 <?php
 /**
- * Dashboard-managed Adult Ministries section.
+ * Dashboard-managed Ministries section.
+ *
+ * The legacy surfside_adult_ministries shortcode remains available so the
+ * current Ministries page keeps working while content moves to the broader
+ * audience-aware ministry model.
  *
  * @package SurfsideTools
  */
@@ -9,22 +13,23 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-function surfside_tools_adult_ministries_shortcode($attributes = array()) {
+function surfside_tools_ministries_shortcode($attributes = array()) {
     $attributes = shortcode_atts(array(
-        'title' => 'Adult Ministries',
-        'intro' => 'Find a place to connect, grow, and build meaningful relationships throughout the week.',
-    ), $attributes, 'surfside_adult_ministries');
+        'title' => 'Ministries',
+        'intro' => 'Find a place to connect, grow, serve, and build meaningful relationships throughout the week.',
+    ), $attributes, 'surfside_ministries');
 
-    $information = surfside_tools_get_site_information();
-    $ministries = (array) ($information['adult_ministries'] ?? array());
+    $ministries = function_exists('surfside_tools_get_ministries')
+        ? surfside_tools_get_ministries()
+        : array();
     if (empty($ministries)) {
         return '';
     }
 
-    $heading_id = wp_unique_id('surfside-adult-ministries-heading-');
+    $heading_id = wp_unique_id('surfside-ministries-heading-');
     ob_start();
     ?>
-    <section class="surfside-adult-ministries" aria-labelledby="<?php echo esc_attr($heading_id); ?>">
+    <section class="surfside-adult-ministries surfside-ministries" aria-labelledby="<?php echo esc_attr($heading_id); ?>">
         <div class="surfside-adult-ministries__inner">
             <div class="surfside-adult-ministries__intro">
                 <h2 id="<?php echo esc_attr($heading_id); ?>"><?php echo esc_html($attributes['title']); ?></h2>
@@ -34,6 +39,12 @@ function surfside_tools_adult_ministries_shortcode($attributes = array()) {
                 <?php foreach ($ministries as $ministry) : ?>
                     <article class="surfside-adult-ministries__card">
                         <h3><?php if (!empty($ministry['icon'])) : ?><span aria-hidden="true"><?php echo esc_html($ministry['icon']); ?></span> <?php endif; ?><?php echo esc_html($ministry['name'] ?? ''); ?></h3>
+                        <?php $audience_labels = function_exists('surfside_tools_ministry_audience_labels') ? surfside_tools_ministry_audience_labels($ministry) : array(); ?>
+                        <?php if (!empty($audience_labels)) : ?>
+                            <p class="surfside-ministries__audiences" aria-label="Audience">
+                                <?php foreach ($audience_labels as $label) : ?><span class="surfside-ministries__audience"><?php echo esc_html($label); ?></span><?php endforeach; ?>
+                            </p>
+                        <?php endif; ?>
                         <?php if (!empty($ministry['schedule'])) : ?><p class="surfside-adult-ministries__schedule"><?php echo esc_html($ministry['schedule']); ?></p><?php endif; ?>
                         <?php if (!empty($ministry['location'])) : ?><p class="surfside-adult-ministries__location"><?php echo esc_html($ministry['location']); ?></p><?php endif; ?>
                         <?php if (!empty($ministry['description'])) : ?><p class="surfside-adult-ministries__description"><?php echo esc_html($ministry['description']); ?></p><?php endif; ?>
@@ -41,8 +52,14 @@ function surfside_tools_adult_ministries_shortcode($attributes = array()) {
                 <?php endforeach; ?>
             </div>
         </div>
+        <style>.surfside-ministries__audiences{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 12px}.surfside-ministries__audience{display:inline-flex;padding:5px 9px;border-radius:999px;background:#eef4f7;color:#31566d;font-size:.78rem;font-weight:800;line-height:1}</style>
     </section>
     <?php
     return ob_get_clean();
+}
+add_shortcode('surfside_ministries', 'surfside_tools_ministries_shortcode');
+
+function surfside_tools_adult_ministries_shortcode($attributes = array()) {
+    return surfside_tools_ministries_shortcode($attributes);
 }
 add_shortcode('surfside_adult_ministries', 'surfside_tools_adult_ministries_shortcode');
