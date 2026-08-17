@@ -27,7 +27,7 @@ function surfside_tools_staff_contact_management_shortcode(){
     }
     $settings=surfside_tools_contact_settings(); ob_start(); ?>
     <div class="surfside-staff-shell">
-      <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('')); ?>">← Back to Dashboard</a></div>
+      <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('site-management')); ?>">← Back to Site Management</a></div>
       <section class="surfside-staff-hero"><p class="surfside-staff-eyebrow">Connect</p><h1>Manage Contact Routing</h1><p class="surfside-staff-muted">Choose where each website and mobile-app Connect message should be delivered. These addresses stay on the server and are never exposed in the app.</p></section>
       <?php if($saved):?><div style="padding:14px 18px;margin-bottom:20px;border-radius:10px;background:#eaf7ef;color:#126b36;font-weight:700">Contact settings saved.</div><?php endif; ?>
       <form method="post"><?php wp_nonce_field('surfside_contact_save','surfside_contact_nonce'); ?>
@@ -42,4 +42,3 @@ function surfside_tools_staff_contact_management_shortcode(){
 }
 add_shortcode('surfside_staff_contact_management','surfside_tools_staff_contact_management_shortcode');
 function surfside_tools_ensure_contact_management_page(){if(!function_exists('surfside_tools_ensure_staff_page'))return;$dashboard=get_page_by_path('dashboard');if(!$dashboard)return;surfside_tools_ensure_staff_page('Manage Contact Routing','contact-routing','[surfside_staff_contact_management]',(int)$dashboard->ID);} add_action('init','surfside_tools_ensure_contact_management_page',81);
-add_filter('do_shortcode_tag',function($output,$tag){if($tag!=='surfside_staff_dashboard'||!is_user_logged_in()||!current_user_can('manage_options'))return $output;$button='<a class="surfside-staff-button-secondary surfside-contact-dashboard-action" href="'.esc_url(surfside_tools_staff_page_url('contact-routing')).'">Manage Contact Routing <span class="surfside-staff-arrow">›</span></a>';$anchor='(<a class="surfside-staff-button-secondary surfside-mobile-dashboard-action"[^>]*>Manage Mobile App <span class="surfside-staff-arrow">›</span></a>)';if(preg_match('~'.$anchor.'~',$output))return preg_replace('~'.$anchor.'~','$1<style>.surfside-contact-dashboard-action{display:flex!important;width:100%!important;box-sizing:border-box;align-items:center;justify-content:center;margin-top:14px!important;text-align:center;text-decoration:none!important}</style>'.$button,$output,1);return $output;},20,2);
