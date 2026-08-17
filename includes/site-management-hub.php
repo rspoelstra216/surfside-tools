@@ -14,6 +14,9 @@ function surfside_tools_staff_site_management_shortcode() {
         $cards[]=array('title'=>'Navigation','description'=>'Header and footer links, destinations, and order.','path'=>'site-navigation','icon'=>'document');
     }
     $cards[]=array('title'=>'Homepage Photos','description'=>'Upload, remove, and reorder carousel photography.','path'=>'homepage','icon'=>'document');
+    if($can_configure){
+        $cards[]=array('title'=>'Ministries','description'=>'Manage ongoing ministries and their audience classifications.','path'=>'site-ministries','icon'=>'document');
+    }
 
     ob_start(); ?>
     <div class="surfside-staff-shell surfside-site-management">
