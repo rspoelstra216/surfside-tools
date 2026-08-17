@@ -34,6 +34,7 @@ function surfside_tools_staff_site_management_shortcode() {
             array('title' => 'Streaming', 'description' => 'Twitch, offline announcements, YouTube, and Facebook.', 'path' => 'site-streaming', 'icon' => 'settings'),
             array('title' => 'Navigation', 'description' => 'Header and footer links, destinations, and order.', 'path' => 'site-navigation', 'icon' => 'document'),
             array('title' => 'Ministries', 'description' => 'Adult Ministries and future managed ministry content.', 'path' => 'site-ministries', 'icon' => 'document'),
+            array('title' => 'Contact Routing', 'description' => 'Message recipients and spam protection shared by the website and mobile app.', 'path' => 'contact-routing', 'icon' => 'settings'),
         );
     }
     $cards[] = array('title' => 'Homepage Photos', 'description' => 'Upload, remove, and reorder carousel photography.', 'path' => 'homepage', 'icon' => 'document');
