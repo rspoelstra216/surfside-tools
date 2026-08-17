@@ -12,7 +12,6 @@ function surfside_tools_staff_site_management_shortcode() {
     $cards=array();
     if($can_configure){
         $cards[]=array('title'=>'Navigation','description'=>'Header and footer links, destinations, and order.','path'=>'site-navigation','icon'=>'document');
-        $cards[]=array('title'=>'Ministries','description'=>'Adult Ministries and future managed ministry content.','path'=>'site-ministries','icon'=>'document');
     }
     $cards[]=array('title'=>'Homepage Photos','description'=>'Upload, remove, and reorder carousel photography.','path'=>'homepage','icon'=>'document');
 
