@@ -18,6 +18,9 @@ function surfside_tools_ministry_event_occurrences($limit = 6) {
         if (empty($event['show_on_ministries'])) {
             continue;
         }
+        if (function_exists('surfside_tools_event_is_featured_ministry') && !surfside_tools_event_is_featured_ministry($event['id'] ?? 0)) {
+            continue;
+        }
         $events = array_merge($events, surfside_tools_calendar_event_occurrences($event, $today, $range_end));
     }
 
