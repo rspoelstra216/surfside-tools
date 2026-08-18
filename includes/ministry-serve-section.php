@@ -25,7 +25,6 @@ function surfside_tools_serve_ministries_shortcode($attributes=array()) {
           <?php foreach($items as $ministry): ?>
             <article class="surfside-adult-ministries__card">
               <h3><?php if(!empty($ministry['icon'])): ?><span aria-hidden="true"><?php echo esc_html($ministry['icon']); ?></span> <?php endif; ?><?php echo esc_html($ministry['name']??''); ?></h3>
-              <?php $labels=function_exists('surfside_tools_ministry_audience_labels')?surfside_tools_ministry_audience_labels($ministry):array(); if($labels): ?><p class="surfside-ministries__audiences"><?php foreach($labels as $label): ?><span class="surfside-ministries__audience"><?php echo esc_html($label); ?></span><?php endforeach; ?></p><?php endif; ?>
               <?php if(!empty($ministry['schedule'])): ?><p class="surfside-adult-ministries__schedule"><?php echo esc_html($ministry['schedule']); ?></p><?php endif; ?>
               <?php if(!empty($ministry['location'])): ?><p class="surfside-adult-ministries__location"><?php echo esc_html($ministry['location']); ?></p><?php endif; ?>
               <?php if(!empty($ministry['description'])): ?><p class="surfside-adult-ministries__description"><?php echo esc_html($ministry['description']); ?></p><?php endif; ?>
@@ -38,7 +37,6 @@ function surfside_tools_serve_ministries_shortcode($attributes=array()) {
            come from the proven surfside-adult-ministries implementation. */
         .surfside-serve-ministries__intro h3{margin:.4rem 0 .85rem;color:var(--surfside-color-blue-700,#075c9c);font-size:1.08rem;font-weight:700}
         .surfside-serve-ministries__intro>p{margin-top:0}
-        .surfside-ministries__audiences{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 12px}.surfside-ministries__audience{display:inline-flex;padding:5px 9px;border-radius:999px;background:#eef4f7;color:#31566d;font-size:.78rem;font-weight:800;line-height:1}
       </style>
     </section>
     <?php return ob_get_clean();
