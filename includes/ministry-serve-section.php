@@ -40,7 +40,7 @@ function surfside_tools_serve_ministries_shortcode($attributes=array()) {
         </div>
       </div>
       <style>
-        .surfside-serve-ministries{box-sizing:border-box;position:relative;left:50%;width:100vw;margin-left:-50vw;padding:52px max(24px,calc((100vw - 1180px)/2));background:var(--surfside-color-sand-100,#f5f1e9);color:var(--surfside-color-ink,#10243a)}
+        .surfside-serve-ministries{box-sizing:border-box;width:auto;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);padding:52px max(24px,calc((100vw - 1180px)/2));background:var(--surfside-color-sand-100,#f5f1e9);color:var(--surfside-color-ink,#10243a);overflow-x:clip}
         .surfside-serve-ministries__inner{width:100%;max-width:1180px;margin:0 auto}
         .surfside-serve-ministries__intro{text-align:center;width:100%;margin:0 auto 28px}
         .surfside-serve-ministries__intro h2{margin:0 0 10px;font-size:clamp(2rem,4vw,3rem);line-height:1.08;color:var(--surfside-color-ocean-950,#061b33)}
