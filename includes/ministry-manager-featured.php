@@ -57,13 +57,55 @@ function surfside_tools_featured_ministries_manager_shortcode($attributes=array(
 }
 
 function surfside_tools_all_ministries_manager_shortcode($attributes=array()) {
-    $attributes=shortcode_atts(array('title'=>'Ministry Directory','intro'=>'Explore more ways to connect, grow, and serve at Surfside.'),$attributes,'surfside_all_ministries');
-    $items=array_values(array_filter((array)surfside_tools_get_ministries(),function($m){return empty($m['featured']);})); if(empty($items))return '';
-    ob_start(); ?><section class="surfside-all-ministries"><div class="surfside-all-ministries__inner"><div class="surfside-all-ministries__intro"><h2><?php echo esc_html($attributes['title']); ?></h2><?php if(trim((string)$attributes['intro'])!==''): ?><p><?php echo esc_html($attributes['intro']); ?></p><?php endif; ?></div><div class="surfside-all-ministries__list">
-    <?php foreach($items as $m): ?><article class="surfside-all-ministries__item"><div class="surfside-all-ministries__top"><h3><?php if(!empty($m['icon'])): ?><span aria-hidden="true"><?php echo esc_html($m['icon']); ?></span> <?php endif; ?><?php echo esc_html($m['name']??''); ?></h3><?php $labels=surfside_tools_ministry_audience_labels($m); if($labels): ?><span class="surfside-all-ministries__audience"><?php echo esc_html(implode(' · ',$labels)); ?></span><?php endif; ?></div><p class="surfside-all-ministries__meta"><?php if(!empty($m['schedule'])): ?><span><?php echo esc_html($m['schedule']); ?></span><?php endif; ?><?php if(!empty($m['location'])): ?><span><?php echo esc_html($m['location']); ?></span><?php endif; ?></p></article><?php endforeach; ?>
-    </div></div><style>
-    .surfside-all-ministries{margin:24px 0}.surfside-all-ministries__inner{max-width:1180px;margin:0 auto}.surfside-all-ministries__intro{margin-bottom:14px}.surfside-all-ministries__intro h2{margin:0 0 4px}.surfside-all-ministries__intro p{margin:0;color:#60708a}.surfside-all-ministries__list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.surfside-all-ministries__item{padding:10px 12px;border:1px solid var(--surfside-color-border,#d8e1e9);border-radius:10px;background:#fff}.surfside-all-ministries__top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}.surfside-all-ministries__item h3{margin:0;font-size:1rem;line-height:1.2}.surfside-all-ministries__audience{flex:0 0 auto;color:#31566d;font-size:.72rem;font-weight:800}.surfside-all-ministries__meta{display:flex;gap:0;flex-wrap:wrap;margin:4px 0 0;color:#60708a;font-size:.8rem;line-height:1.3}.surfside-all-ministries__meta span+span:before{content:' · ';}@media(max-width:900px){.surfside-all-ministries__list{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.surfside-all-ministries__list{grid-template-columns:1fr}.surfside-all-ministries__top{display:block}.surfside-all-ministries__audience{display:inline-block;margin-top:3px}}
-    </style></section><?php return ob_get_clean();
+    $attributes=shortcode_atts(array(
+        'title'=>'Ministry Directory',
+        'intro'=>'Explore more ways to connect, grow, and serve at Surfside.',
+        'closing_title'=>'Interested in Serving?',
+        'closing'=>'There are too many opportunities to list here! We’d love to help you find a place to use your gifts and talents.',
+        'button'=>'Contact Us About Serving',
+        'button_url'=>home_url('/contact/'),
+    ),$attributes,'surfside_all_ministries');
+    $items=array_values(array_filter((array)surfside_tools_get_ministries(),function($m){return empty($m['featured']);}));
+    if(empty($items))return '';
+    ob_start(); ?>
+    <section class="surfside-all-ministries">
+      <div class="surfside-all-ministries__inner">
+        <div class="surfside-all-ministries__intro">
+          <h2><?php echo esc_html($attributes['title']); ?></h2>
+          <?php if(trim((string)$attributes['intro'])!==''): ?><p><?php echo esc_html($attributes['intro']); ?></p><?php endif; ?>
+        </div>
+        <div class="surfside-all-ministries__list">
+          <?php foreach($items as $m): ?>
+            <article class="surfside-all-ministries__item">
+              <div class="surfside-all-ministries__top">
+                <h3><?php if(!empty($m['icon'])): ?><span aria-hidden="true"><?php echo esc_html($m['icon']); ?></span> <?php endif; ?><?php echo esc_html($m['name']??''); ?></h3>
+                <?php $labels=surfside_tools_ministry_audience_labels($m); if($labels): ?><span class="surfside-all-ministries__audience"><?php echo esc_html(implode(' · ',$labels)); ?></span><?php endif; ?>
+              </div>
+              <p class="surfside-all-ministries__meta"><?php if(!empty($m['schedule'])): ?><span><?php echo esc_html($m['schedule']); ?></span><?php endif; ?><?php if(!empty($m['location'])): ?><span><?php echo esc_html($m['location']); ?></span><?php endif; ?></p>
+            </article>
+          <?php endforeach; ?>
+        </div>
+        <div class="surfside-all-ministries__closing">
+          <?php if(trim((string)$attributes['closing_title'])!==''): ?><h3><?php echo esc_html($attributes['closing_title']); ?></h3><?php endif; ?>
+          <?php if(trim((string)$attributes['closing'])!==''): ?><p><?php echo esc_html($attributes['closing']); ?></p><?php endif; ?>
+          <?php if(trim((string)$attributes['button'])!=='' && trim((string)$attributes['button_url'])!==''): ?><a class="surfside-button" href="<?php echo esc_url($attributes['button_url']); ?>"><?php echo esc_html($attributes['button']); ?></a><?php endif; ?>
+        </div>
+      </div>
+      <style>
+      .surfside-all-ministries{position:relative;z-index:0;box-sizing:border-box;width:100%!important;max-width:none!important;margin:0!important;padding-block:clamp(2.5rem,4vw,3.25rem);color:var(--surfside-color-ink,#10243a)}
+      .surfside-all-ministries::before{position:absolute;z-index:-1;inset-block:0;left:50%;width:100vw;width:100dvw;background:var(--surfside-color-white,#fff);content:"";transform:translateX(-50%)}
+      .surfside-all-ministries__inner{box-sizing:border-box;width:min(100% - 2rem,72rem);margin-inline:auto}
+      .surfside-all-ministries__intro{margin-bottom:14px}.surfside-all-ministries__intro h2{margin:0 0 4px}.surfside-all-ministries__intro p{margin:0;color:#60708a}
+      .surfside-all-ministries__list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+      .surfside-all-ministries__item{padding:10px 12px;border:1px solid var(--surfside-color-border,#d8e1e9);border-radius:10px;background:#fff}
+      .surfside-all-ministries__top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}.surfside-all-ministries__item h3{margin:0;font-size:1rem;line-height:1.2}.surfside-all-ministries__audience{flex:0 0 auto;color:#31566d;font-size:.72rem;font-weight:800}
+      .surfside-all-ministries__meta{display:flex;gap:0;flex-wrap:wrap;margin:4px 0 0;color:#60708a;font-size:.8rem;line-height:1.3}.surfside-all-ministries__meta span+span:before{content:' · '}
+      .surfside-all-ministries__closing{text-align:center;max-width:54rem;margin:2rem auto 0}.surfside-all-ministries__closing h3{margin:0 0 .35rem;color:var(--surfside-color-ocean-950,#061b33);font-size:1.05rem}.surfside-all-ministries__closing p{margin:0 0 .9rem;color:var(--surfside-color-muted,#536579)}
+      @media(max-width:900px){.surfside-all-ministries__list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+      @media(max-width:700px){.surfside-all-ministries__inner{width:min(100% - 1.25rem,72rem)}.surfside-all-ministries__list{grid-template-columns:1fr}.surfside-all-ministries__top{display:block}.surfside-all-ministries__audience{display:inline-block;margin-top:3px}}
+      </style>
+    </section>
+    <?php return ob_get_clean();
 }
 
 add_action('init',function(){remove_shortcode('surfside_featured_ministries');remove_shortcode('surfside_all_ministries');add_shortcode('surfside_featured_ministries','surfside_tools_featured_ministries_manager_shortcode');add_shortcode('surfside_all_ministries','surfside_tools_all_ministries_manager_shortcode');},20);
