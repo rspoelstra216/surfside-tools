@@ -18,7 +18,6 @@ function surfside_tools_ensure_site_settings_page(){if(!function_exists('surfsid
  * custom WordPress page content is intentionally left untouched.
  */
 function surfside_tools_migrate_site_ministries_page(){
- if(!is_admin())return;
  $page=get_page_by_path('dashboard/site-ministries');
  if(!$page)return;
  $content=(string)$page->post_content;
@@ -36,7 +35,7 @@ function surfside_tools_migrate_site_ministries_page(){
   'post_status'=>'publish',
  ));
 }
-add_action('admin_init','surfside_tools_migrate_site_ministries_page',40);
+add_action('init','surfside_tools_migrate_site_ministries_page',90);
 
 add_filter('do_shortcode_tag',function($output,$tag){if($tag!=='surfside_staff_dashboard'||!is_user_logged_in()||!current_user_can('manage_options'))return $output;$button='<a class="surfside-staff-button-secondary surfside-site-settings-dashboard-action" href="'.esc_url(surfside_tools_staff_page_url('site-settings')).'">Site Settings <span class="surfside-staff-arrow">›</span></a>';$anchor='(<a class="surfside-staff-button-secondary surfside-mobile-dashboard-action"[^>]*>Manage Mobile App <span class="surfside-staff-arrow">›</span></a>)';if(preg_match('~'.$anchor.'~',$output))return preg_replace('~'.$anchor.'~','$1<style>.surfside-site-settings-dashboard-action{display:flex!important;width:100%!important;box-sizing:border-box;align-items:center;justify-content:center;margin-top:14px!important;text-align:center;text-decoration:none!important}</style>'.$button,$output,1);return $output;},20,2);
 /* Giving is shared configuration. Remove its visible panel from Manage Mobile App while preserving the value in that form so saving app presentation settings cannot clear it. */
