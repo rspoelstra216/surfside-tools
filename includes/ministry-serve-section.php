@@ -40,20 +40,20 @@ function surfside_tools_serve_ministries_shortcode($attributes=array()) {
         </div>
       </div>
       <style>
-        .surfside-serve-ministries{box-sizing:border-box;width:100vw;margin-left:calc(50% - 50vw);padding:48px max(24px,calc((100vw - 1180px)/2));background:transparent;color:var(--surfside-color-ink,#10243a)}
-        .surfside-serve-ministries__inner{max-width:1180px;margin:0 auto}
-        .surfside-serve-ministries__intro{text-align:center;margin:0 auto 28px}
-        .surfside-serve-ministries__intro h2{margin:0 0 12px;font-size:clamp(2rem,4vw,3rem);line-height:1.1;color:var(--surfside-color-ocean-950,#061b33)}
-        .surfside-serve-ministries__intro h3{margin:0 0 12px;font-size:1.08rem;font-weight:700;color:var(--surfside-color-blue-700,#075c9c)}
-        .surfside-serve-ministries__intro p{margin:0;text-align:left;color:var(--surfside-color-muted,#536579);line-height:1.6}
+        .surfside-serve-ministries{box-sizing:border-box;position:relative;left:50%;width:100vw;margin-left:-50vw;padding:52px max(24px,calc((100vw - 1180px)/2));background:var(--surfside-color-sand-100,#f5f1e9);color:var(--surfside-color-ink,#10243a)}
+        .surfside-serve-ministries__inner{width:100%;max-width:1180px;margin:0 auto}
+        .surfside-serve-ministries__intro{text-align:center;width:100%;margin:0 auto 28px}
+        .surfside-serve-ministries__intro h2{margin:0 0 10px;font-size:clamp(2rem,4vw,3rem);line-height:1.08;color:var(--surfside-color-ocean-950,#061b33)}
+        .surfside-serve-ministries__intro h3{margin:0 0 14px;font-size:1.08rem;font-weight:700;color:var(--surfside-color-blue-700,#075c9c)}
+        .surfside-serve-ministries__intro p{max-width:1080px;margin:0 auto;text-align:left;color:var(--surfside-color-muted,#536579);line-height:1.6}
         .surfside-serve-ministries__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 56px;margin-top:30px}
-        .surfside-serve-ministries__item{padding:0;background:transparent;border:0;box-shadow:none}
+        .surfside-serve-ministries__item{min-width:0;padding:0;background:transparent;border:0;box-shadow:none}
         .surfside-serve-ministries__item h4{margin:0 0 6px;font-size:1rem;line-height:1.3;color:var(--surfside-color-ocean-950,#061b33)}
         .surfside-serve-ministries__item p{margin:0;color:var(--surfside-color-muted,#536579);font-size:.95rem;line-height:1.5}
         .surfside-serve-ministries__closing{text-align:center;max-width:860px;margin:34px auto 0}
         .surfside-serve-ministries__closing h3{margin:0 0 6px;font-size:1.05rem;color:var(--surfside-color-ocean-950,#061b33)}
         .surfside-serve-ministries__closing p{margin:0 0 14px;color:var(--surfside-color-muted,#536579)}
-        @media(max-width:700px){.surfside-serve-ministries{padding-top:36px;padding-bottom:36px}.surfside-serve-ministries__grid{grid-template-columns:1fr;gap:20px}.surfside-serve-ministries__intro p{text-align:center}}
+        @media(max-width:700px){.surfside-serve-ministries{padding-top:38px;padding-bottom:38px}.surfside-serve-ministries__grid{grid-template-columns:1fr;gap:20px}.surfside-serve-ministries__intro p{text-align:center}}
       </style>
     </section>
     <?php return ob_get_clean();
