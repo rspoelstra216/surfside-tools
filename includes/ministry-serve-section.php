@@ -7,10 +7,6 @@ function surfside_tools_serve_ministries_shortcode($attributes=array()) {
         'title'=>'Serve & Get Involved',
         'subheading'=>'Use Your Gifts to Serve Others',
         'intro'=>'The church isn’t just a place to attend—it’s a place to belong, serve, and make a difference. Whether you enjoy welcoming guests, working behind the scenes, or helping people feel connected, there are opportunities to get involved.',
-        'closing_title'=>'Interested in Serving?',
-        'closing'=>'There are too many opportunities to list here! We’d love to help you find a place to use your gifts and talents.',
-        'button'=>'Contact Us About Serving',
-        'button_url'=>home_url('/contact/'),
     ),$attributes,'surfside_featured_ministries');
 
     $items=array_values(array_filter((array)surfside_tools_get_ministries(),function($m){return !empty($m['featured']);}));
@@ -36,11 +32,6 @@ function surfside_tools_serve_ministries_shortcode($attributes=array()) {
             </article>
           <?php endforeach; ?>
         </div>
-        <div class="surfside-serve-ministries__closing">
-          <?php if(trim((string)$attributes['closing_title'])!==''): ?><h3><?php echo esc_html($attributes['closing_title']); ?></h3><?php endif; ?>
-          <?php if(trim((string)$attributes['closing'])!==''): ?><p><?php echo esc_html($attributes['closing']); ?></p><?php endif; ?>
-          <?php if(trim((string)$attributes['button'])!=='' && trim((string)$attributes['button_url'])!==''): ?><a class="surfside-button" href="<?php echo esc_url($attributes['button_url']); ?>"><?php echo esc_html($attributes['button']); ?></a><?php endif; ?>
-        </div>
       </div>
       <style>
         /* Width, sand-band breakout, inner container, grid, and cards intentionally
@@ -48,9 +39,6 @@ function surfside_tools_serve_ministries_shortcode($attributes=array()) {
         .surfside-serve-ministries__intro h3{margin:.4rem 0 .85rem;color:var(--surfside-color-blue-700,#075c9c);font-size:1.08rem;font-weight:700}
         .surfside-serve-ministries__intro>p{margin-top:0}
         .surfside-ministries__audiences{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 12px}.surfside-ministries__audience{display:inline-flex;padding:5px 9px;border-radius:999px;background:#eef4f7;color:#31566d;font-size:.78rem;font-weight:800;line-height:1}
-        .surfside-serve-ministries__closing{text-align:center;max-width:54rem;margin:2rem auto 0}
-        .surfside-serve-ministries__closing h3{margin:0 0 .35rem;color:var(--surfside-color-ocean-950,#061b33);font-size:1.05rem}
-        .surfside-serve-ministries__closing p{margin:0 0 .9rem;color:var(--surfside-color-muted,#536579)}
       </style>
     </section>
     <?php return ob_get_clean();
