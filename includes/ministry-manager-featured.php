@@ -84,6 +84,7 @@ function surfside_tools_all_ministries_manager_shortcode($attributes=array()) {
     });
 
     $directory_id=wp_unique_id('surfside-ministry-directory-');
+    $dialog_id=wp_unique_id('surfside-ministry-dialog-');
     ob_start(); ?>
     <section class="surfside-all-ministries" id="<?php echo esc_attr($directory_id); ?>">
       <div class="surfside-all-ministries__inner">
@@ -104,14 +105,23 @@ function surfside_tools_all_ministries_manager_shortcode($attributes=array()) {
               $audience_slugs=array_values(array_filter(array_map('sanitize_title',$labels)));
               $is_featured=!empty($m['featured']);
           ?>
-            <article class="surfside-all-ministries__item" data-ministry-directory-item data-featured="<?php echo $is_featured?'1':'0'; ?>" data-audiences="<?php echo esc_attr(implode(' ', $audience_slugs)); ?>" <?php if($is_featured): ?>hidden<?php endif; ?>>
-              <div class="surfside-all-ministries__top">
-                <h3><?php if(!empty($m['icon'])): ?><span aria-hidden="true"><?php echo esc_html($m['icon']); ?></span> <?php endif; ?><?php echo esc_html($m['name']??''); ?></h3>
-              </div>
-              <p class="surfside-all-ministries__meta"><?php if(!empty($m['schedule'])): ?><span><?php echo esc_html($m['schedule']); ?></span><?php endif; ?><?php if(!empty($m['location'])): ?><span><?php echo esc_html($m['location']); ?></span><?php endif; ?></p>
-            </article>
+            <button type="button" class="surfside-all-ministries__item" data-ministry-directory-item data-featured="<?php echo $is_featured?'1':'0'; ?>" data-audiences="<?php echo esc_attr(implode(' ', $audience_slugs)); ?>" data-name="<?php echo esc_attr($m['name']??''); ?>" data-icon="<?php echo esc_attr($m['icon']??''); ?>" data-schedule="<?php echo esc_attr($m['schedule']??''); ?>" data-location="<?php echo esc_attr($m['location']??''); ?>" data-description="<?php echo esc_attr($m['description']??''); ?>" aria-haspopup="dialog" aria-controls="<?php echo esc_attr($dialog_id); ?>" <?php if($is_featured): ?>hidden<?php endif; ?>>
+              <span class="surfside-all-ministries__name"><?php if(!empty($m['icon'])): ?><span aria-hidden="true"><?php echo esc_html($m['icon']); ?></span> <?php endif; ?><?php echo esc_html($m['name']??''); ?></span>
+              <span class="surfside-all-ministries__view">View details</span>
+            </button>
           <?php endforeach; ?>
         </div>
+
+        <dialog class="surfside-ministry-dialog" id="<?php echo esc_attr($dialog_id); ?>" data-ministry-dialog aria-labelledby="<?php echo esc_attr($dialog_id); ?>-title">
+          <div class="surfside-ministry-dialog__panel">
+            <button type="button" class="surfside-ministry-dialog__close" data-ministry-dialog-close aria-label="Close ministry details">×</button>
+            <h3 id="<?php echo esc_attr($dialog_id); ?>-title" data-ministry-dialog-title></h3>
+            <p class="surfside-ministry-dialog__schedule" data-ministry-dialog-schedule hidden></p>
+            <p class="surfside-ministry-dialog__location" data-ministry-dialog-location hidden></p>
+            <p class="surfside-ministry-dialog__description" data-ministry-dialog-description hidden></p>
+          </div>
+        </dialog>
+
         <div class="surfside-all-ministries__closing">
           <?php if(trim((string)$attributes['closing_title'])!==''): ?><h3><?php echo esc_html($attributes['closing_title']); ?></h3><?php endif; ?>
           <?php if(trim((string)$attributes['closing'])!==''): ?><p><?php echo esc_html($attributes['closing']); ?></p><?php endif; ?>
@@ -125,12 +135,12 @@ function surfside_tools_all_ministries_manager_shortcode($attributes=array()) {
       .surfside-all-ministries__intro{margin-bottom:14px}.surfside-all-ministries__intro h2{margin:0 0 4px}.surfside-all-ministries__intro p{margin:0;color:#60708a}
       .surfside-all-ministries__filters{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin:0 0 14px;color:#60708a;font-size:.85rem}.surfside-all-ministries__filters>span{font-weight:700;color:#31566d}.surfside-all-ministries__filters button{padding:6px 10px;border:1px solid var(--surfside-color-border,#d8e1e9);border-radius:999px;background:#fff;color:#31566d;font:inherit;font-weight:800;cursor:pointer}.surfside-all-ministries__filters button[aria-pressed="true"]{border-color:var(--surfside-color-blue-700,#075c9c);background:#eef4f7;color:var(--surfside-color-blue-700,#075c9c)}.surfside-all-ministries__filters button:focus-visible{outline:3px solid rgba(11,95,165,.2);outline-offset:2px}.surfside-all-ministries__clear{border-color:transparent!important;background:transparent!important;text-decoration:underline}
       .surfside-all-ministries__list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-      .surfside-all-ministries__item{padding:10px 12px;border:1px solid var(--surfside-color-border,#d8e1e9);border-radius:10px;background:#fff}.surfside-all-ministries__item[hidden]{display:none!important}
-      .surfside-all-ministries__top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}.surfside-all-ministries__item h3{margin:0;font-size:1rem;line-height:1.2}
-      .surfside-all-ministries__meta{display:flex;gap:0;flex-wrap:wrap;margin:4px 0 0;color:#60708a;font-size:.8rem;line-height:1.3}.surfside-all-ministries__meta span+span:before{content:' · '}
+      .surfside-all-ministries__item{appearance:none;display:flex;min-height:74px;padding:10px 14px;border:1px solid var(--surfside-color-border,#d8e1e9);border-radius:10px;background:#fff;color:inherit;font:inherit;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}.surfside-all-ministries__item[hidden]{display:none!important}.surfside-all-ministries__item:hover{border-color:#a9bdca;box-shadow:0 4px 12px rgba(6,27,51,.07);transform:translateY(-1px)}.surfside-all-ministries__item:focus-visible{outline:3px solid rgba(11,95,165,.2);outline-offset:2px}
+      .surfside-all-ministries__name{font-size:1rem;font-weight:800;line-height:1.2}.surfside-all-ministries__view{color:#60708a;font-size:.75rem;font-weight:700}
       .surfside-all-ministries__closing{text-align:center;max-width:54rem;margin:2rem auto 0}.surfside-all-ministries__closing h3{margin:0 0 .35rem;color:var(--surfside-color-ocean-950,#061b33);font-size:1.05rem}.surfside-all-ministries__closing p{margin:0 0 .9rem;color:var(--surfside-color-muted,#536579)}
+      .surfside-ministry-dialog{width:min(calc(100% - 2rem),34rem);padding:0;border:0;border-radius:18px;background:#fff;color:var(--surfside-color-ink,#10243a);box-shadow:0 24px 70px rgba(6,27,51,.28)}.surfside-ministry-dialog::backdrop{background:rgba(6,27,51,.52)}.surfside-ministry-dialog__panel{position:relative;padding:28px}.surfside-ministry-dialog__close{position:absolute;top:12px;right:14px;width:38px;height:38px;padding:0;border:0;border-radius:50%;background:#eef4f7;color:#31566d;font-size:1.6rem;line-height:1;cursor:pointer}.surfside-ministry-dialog h3{margin:0 44px 16px 0;color:var(--surfside-color-ocean-950,#061b33);font-size:1.55rem;line-height:1.2}.surfside-ministry-dialog__schedule{margin:0;color:var(--surfside-color-blue-700,#075c9c);font-weight:800}.surfside-ministry-dialog__location{margin:.25rem 0 0;color:#60708a}.surfside-ministry-dialog__description{margin:1rem 0 0;line-height:1.6}.surfside-ministry-dialog p[hidden]{display:none!important}
       @media(max-width:900px){.surfside-all-ministries__list{grid-template-columns:repeat(2,minmax(0,1fr))}}
-      @media(max-width:700px){.surfside-all-ministries__inner{width:min(100% - 1.25rem,72rem)}.surfside-all-ministries__list{grid-template-columns:1fr}}
+      @media(max-width:700px){.surfside-all-ministries__inner{width:min(100% - 1.25rem,72rem)}.surfside-all-ministries__list{grid-template-columns:1fr}.surfside-all-ministries__item{min-height:64px}}
       </style>
       <script>
       (function(){
@@ -138,18 +148,40 @@ function surfside_tools_all_ministries_manager_shortcode($attributes=array()) {
         var items=root.querySelectorAll('[data-ministry-directory-item]');
         var buttons=root.querySelectorAll('[data-ministry-filter]');
         var clear=root.querySelector('[data-ministry-filter-clear]');
+        var dialog=root.querySelector('[data-ministry-dialog]');
+        var dialogTitle=root.querySelector('[data-ministry-dialog-title]');
+        var dialogSchedule=root.querySelector('[data-ministry-dialog-schedule]');
+        var dialogLocation=root.querySelector('[data-ministry-dialog-location]');
+        var dialogDescription=root.querySelector('[data-ministry-dialog-description]');
+        var dialogClose=root.querySelector('[data-ministry-dialog-close]');
+
         function reset(){
           items.forEach(function(item){item.hidden=item.getAttribute('data-featured')==='1';});
           buttons.forEach(function(button){button.setAttribute('aria-pressed','false');});
           if(clear)clear.hidden=true;
         }
+        function fillField(node,value){if(!node)return;node.textContent=value||'';node.hidden=!value;}
+        function openDetails(item){
+          if(!dialog)return;
+          var name=item.getAttribute('data-name')||'';
+          var icon=item.getAttribute('data-icon')||'';
+          if(dialogTitle)dialogTitle.textContent=(icon?icon+' ':'')+name;
+          fillField(dialogSchedule,item.getAttribute('data-schedule')||'');
+          fillField(dialogLocation,item.getAttribute('data-location')||'');
+          fillField(dialogDescription,item.getAttribute('data-description')||'');
+          if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','open');
+        }
+
         buttons.forEach(function(button){button.addEventListener('click',function(){
           var filter=button.getAttribute('data-ministry-filter');
           buttons.forEach(function(other){other.setAttribute('aria-pressed',other===button?'true':'false');});
           items.forEach(function(item){var audiences=(item.getAttribute('data-audiences')||'').split(/\s+/); item.hidden=audiences.indexOf(filter)===-1;});
           if(clear)clear.hidden=false;
         });});
+        items.forEach(function(item){item.addEventListener('click',function(){openDetails(item);});});
         if(clear)clear.addEventListener('click',reset);
+        if(dialogClose)dialogClose.addEventListener('click',function(){if(typeof dialog.close==='function')dialog.close();else dialog.removeAttribute('open');});
+        if(dialog)dialog.addEventListener('click',function(event){if(event.target===dialog&&typeof dialog.close==='function')dialog.close();});
         reset();
       }());
       </script>
