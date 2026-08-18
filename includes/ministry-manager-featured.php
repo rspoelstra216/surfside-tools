@@ -51,8 +51,8 @@ function surfside_tools_featured_ministries_manager_shortcode($attributes=array(
     if(empty($items)) return '';
     $heading_id=wp_unique_id('surfside-featured-ministries-heading-'); ob_start(); ?>
     <section class="surfside-adult-ministries surfside-featured-ministries" aria-labelledby="<?php echo esc_attr($heading_id); ?>"><div class="surfside-adult-ministries__inner"><div class="surfside-adult-ministries__intro"><h2 id="<?php echo esc_attr($heading_id); ?>"><?php echo esc_html($attributes['title']); ?></h2><?php if(trim((string)$attributes['intro'])!==''): ?><p><?php echo esc_html($attributes['intro']); ?></p><?php endif; ?></div><div class="surfside-adult-ministries__grid surfside-staggered-cards">
-    <?php foreach($items as $ministry): ?><article class="surfside-adult-ministries__card surfside-featured-ministries__card"><h3><?php if(!empty($ministry['icon'])): ?><span aria-hidden="true"><?php echo esc_html($ministry['icon']); ?></span> <?php endif; ?><?php echo esc_html($ministry['name']??''); ?></h3><?php $labels=surfside_tools_ministry_audience_labels($ministry); if($labels): ?><p class="surfside-ministries__audiences"><?php foreach($labels as $label): ?><span class="surfside-ministries__audience"><?php echo esc_html($label); ?></span><?php endforeach; ?></p><?php endif; ?><?php if(!empty($ministry['schedule'])): ?><p class="surfside-adult-ministries__schedule"><?php echo esc_html($ministry['schedule']); ?></p><?php endif; ?><?php if(!empty($ministry['location'])): ?><p class="surfside-adult-ministries__location"><?php echo esc_html($ministry['location']); ?></p><?php endif; ?><?php if(!empty($ministry['description'])): ?><p class="surfside-adult-ministries__description"><?php echo esc_html($ministry['description']); ?></p><?php endif; ?></article><?php endforeach; ?>
-    </div></div><style>.surfside-featured-ministries__card{background:#fff!important}.surfside-ministries__audiences{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 12px}.surfside-ministries__audience{display:inline-flex;padding:5px 9px;border-radius:999px;background:#eef4f7;color:#31566d;font-size:.78rem;font-weight:800;line-height:1}</style></section>
+    <?php foreach($items as $ministry): ?><article class="surfside-adult-ministries__card surfside-featured-ministries__card"><h3><?php if(!empty($ministry['icon'])): ?><span aria-hidden="true"><?php echo esc_html($ministry['icon']); ?></span> <?php endif; ?><?php echo esc_html($ministry['name']??''); ?></h3><?php if(!empty($ministry['schedule'])): ?><p class="surfside-adult-ministries__schedule"><?php echo esc_html($ministry['schedule']); ?></p><?php endif; ?><?php if(!empty($ministry['location'])): ?><p class="surfside-adult-ministries__location"><?php echo esc_html($ministry['location']); ?></p><?php endif; ?><?php if(!empty($ministry['description'])): ?><p class="surfside-adult-ministries__description"><?php echo esc_html($ministry['description']); ?></p><?php endif; ?></article><?php endforeach; ?>
+    </div></div><style>.surfside-featured-ministries__card{background:#fff!important}</style></section>
     <?php return ob_get_clean();
 }
 
@@ -65,21 +65,48 @@ function surfside_tools_all_ministries_manager_shortcode($attributes=array()) {
         'button'=>'Contact Us About Serving',
         'button_url'=>home_url('/contact/'),
     ),$attributes,'surfside_all_ministries');
-    $items=array_values(array_filter((array)surfside_tools_get_ministries(),function($m){return empty($m['featured']);}));
+
+    $items=array_values((array)surfside_tools_get_ministries());
     if(empty($items))return '';
+
+    $filters=array();
+    foreach($items as $m){
+        $labels=function_exists('surfside_tools_ministry_audience_labels')?surfside_tools_ministry_audience_labels($m):array();
+        foreach($labels as $label){
+            $slug=sanitize_title($label);
+            if($slug!==''&&!isset($filters[$slug]))$filters[$slug]=$label;
+        }
+    }
+    $preferred=array('kids'=>1,'youth'=>2,'adults'=>3,'all-ages'=>4);
+    uksort($filters,function($a,$b)use($preferred){
+        $pa=$preferred[$a]??99; $pb=$preferred[$b]??99;
+        return $pa===$pb?strcmp($a,$b):($pa<$pb?-1:1);
+    });
+
+    $directory_id=wp_unique_id('surfside-ministry-directory-');
     ob_start(); ?>
-    <section class="surfside-all-ministries">
+    <section class="surfside-all-ministries" id="<?php echo esc_attr($directory_id); ?>">
       <div class="surfside-all-ministries__inner">
         <div class="surfside-all-ministries__intro">
           <h2><?php echo esc_html($attributes['title']); ?></h2>
           <?php if(trim((string)$attributes['intro'])!==''): ?><p><?php echo esc_html($attributes['intro']); ?></p><?php endif; ?>
         </div>
-        <div class="surfside-all-ministries__list">
-          <?php foreach($items as $m): ?>
-            <article class="surfside-all-ministries__item">
+        <?php if(!empty($filters)): ?>
+          <div class="surfside-all-ministries__filters" aria-label="Filter ministries by audience">
+            <span>Filter by audience:</span>
+            <?php foreach($filters as $slug=>$label): ?><button type="button" data-ministry-filter="<?php echo esc_attr($slug); ?>" aria-pressed="false"><?php echo esc_html($label); ?></button><?php endforeach; ?>
+            <button type="button" class="surfside-all-ministries__clear" data-ministry-filter-clear hidden>Clear filter</button>
+          </div>
+        <?php endif; ?>
+        <div class="surfside-all-ministries__list" data-ministry-directory-list>
+          <?php foreach($items as $m):
+              $labels=function_exists('surfside_tools_ministry_audience_labels')?surfside_tools_ministry_audience_labels($m):array();
+              $audience_slugs=array_values(array_filter(array_map('sanitize_title',$labels)));
+              $is_featured=!empty($m['featured']);
+          ?>
+            <article class="surfside-all-ministries__item" data-ministry-directory-item data-featured="<?php echo $is_featured?'1':'0'; ?>" data-audiences="<?php echo esc_attr(implode(' ', $audience_slugs)); ?>" <?php if($is_featured): ?>hidden<?php endif; ?>>
               <div class="surfside-all-ministries__top">
                 <h3><?php if(!empty($m['icon'])): ?><span aria-hidden="true"><?php echo esc_html($m['icon']); ?></span> <?php endif; ?><?php echo esc_html($m['name']??''); ?></h3>
-                <?php $labels=surfside_tools_ministry_audience_labels($m); if($labels): ?><span class="surfside-all-ministries__audience"><?php echo esc_html(implode(' · ',$labels)); ?></span><?php endif; ?>
               </div>
               <p class="surfside-all-ministries__meta"><?php if(!empty($m['schedule'])): ?><span><?php echo esc_html($m['schedule']); ?></span><?php endif; ?><?php if(!empty($m['location'])): ?><span><?php echo esc_html($m['location']); ?></span><?php endif; ?></p>
             </article>
@@ -96,14 +123,36 @@ function surfside_tools_all_ministries_manager_shortcode($attributes=array()) {
       .surfside-all-ministries::before{position:absolute;z-index:-1;inset-block:0;left:50%;width:100vw;width:100dvw;background:var(--surfside-color-white,#fff);content:"";transform:translateX(-50%)}
       .surfside-all-ministries__inner{box-sizing:border-box;width:min(100% - 2rem,72rem);margin-inline:auto}
       .surfside-all-ministries__intro{margin-bottom:14px}.surfside-all-ministries__intro h2{margin:0 0 4px}.surfside-all-ministries__intro p{margin:0;color:#60708a}
+      .surfside-all-ministries__filters{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin:0 0 14px;color:#60708a;font-size:.85rem}.surfside-all-ministries__filters>span{font-weight:700;color:#31566d}.surfside-all-ministries__filters button{padding:6px 10px;border:1px solid var(--surfside-color-border,#d8e1e9);border-radius:999px;background:#fff;color:#31566d;font:inherit;font-weight:800;cursor:pointer}.surfside-all-ministries__filters button[aria-pressed="true"]{border-color:var(--surfside-color-blue-700,#075c9c);background:#eef4f7;color:var(--surfside-color-blue-700,#075c9c)}.surfside-all-ministries__filters button:focus-visible{outline:3px solid rgba(11,95,165,.2);outline-offset:2px}.surfside-all-ministries__clear{border-color:transparent!important;background:transparent!important;text-decoration:underline}
       .surfside-all-ministries__list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-      .surfside-all-ministries__item{padding:10px 12px;border:1px solid var(--surfside-color-border,#d8e1e9);border-radius:10px;background:#fff}
-      .surfside-all-ministries__top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}.surfside-all-ministries__item h3{margin:0;font-size:1rem;line-height:1.2}.surfside-all-ministries__audience{flex:0 0 auto;color:#31566d;font-size:.72rem;font-weight:800}
+      .surfside-all-ministries__item{padding:10px 12px;border:1px solid var(--surfside-color-border,#d8e1e9);border-radius:10px;background:#fff}.surfside-all-ministries__item[hidden]{display:none!important}
+      .surfside-all-ministries__top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}.surfside-all-ministries__item h3{margin:0;font-size:1rem;line-height:1.2}
       .surfside-all-ministries__meta{display:flex;gap:0;flex-wrap:wrap;margin:4px 0 0;color:#60708a;font-size:.8rem;line-height:1.3}.surfside-all-ministries__meta span+span:before{content:' · '}
       .surfside-all-ministries__closing{text-align:center;max-width:54rem;margin:2rem auto 0}.surfside-all-ministries__closing h3{margin:0 0 .35rem;color:var(--surfside-color-ocean-950,#061b33);font-size:1.05rem}.surfside-all-ministries__closing p{margin:0 0 .9rem;color:var(--surfside-color-muted,#536579)}
       @media(max-width:900px){.surfside-all-ministries__list{grid-template-columns:repeat(2,minmax(0,1fr))}}
-      @media(max-width:700px){.surfside-all-ministries__inner{width:min(100% - 1.25rem,72rem)}.surfside-all-ministries__list{grid-template-columns:1fr}.surfside-all-ministries__top{display:block}.surfside-all-ministries__audience{display:inline-block;margin-top:3px}}
+      @media(max-width:700px){.surfside-all-ministries__inner{width:min(100% - 1.25rem,72rem)}.surfside-all-ministries__list{grid-template-columns:1fr}}
       </style>
+      <script>
+      (function(){
+        var root=document.getElementById(<?php echo wp_json_encode($directory_id); ?>); if(!root)return;
+        var items=root.querySelectorAll('[data-ministry-directory-item]');
+        var buttons=root.querySelectorAll('[data-ministry-filter]');
+        var clear=root.querySelector('[data-ministry-filter-clear]');
+        function reset(){
+          items.forEach(function(item){item.hidden=item.getAttribute('data-featured')==='1';});
+          buttons.forEach(function(button){button.setAttribute('aria-pressed','false');});
+          if(clear)clear.hidden=true;
+        }
+        buttons.forEach(function(button){button.addEventListener('click',function(){
+          var filter=button.getAttribute('data-ministry-filter');
+          buttons.forEach(function(other){other.setAttribute('aria-pressed',other===button?'true':'false');});
+          items.forEach(function(item){var audiences=(item.getAttribute('data-audiences')||'').split(/\s+/); item.hidden=audiences.indexOf(filter)===-1;});
+          if(clear)clear.hidden=false;
+        });});
+        if(clear)clear.addEventListener('click',reset);
+        reset();
+      }());
+      </script>
     </section>
     <?php return ob_get_clean();
 }
