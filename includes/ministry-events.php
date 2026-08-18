@@ -50,8 +50,8 @@ function surfside_tools_ministry_events_url() {
 
 function surfside_tools_ministry_events_shortcode($attributes = array()) {
     $attributes = shortcode_atts(array(
-        'title' => 'Upcoming Ministry Events',
-        'intro' => 'Connect with a ministry at one of these upcoming gatherings.',
+        'title' => 'Featured Ministries',
+        'intro' => 'Connect with one of these featured Surfside ministries.',
         'limit' => 6,
     ), $attributes, 'surfside_featured_ministries');
 
