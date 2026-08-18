@@ -25,14 +25,20 @@ function surfside_tools_serve_ministries_shortcode($attributes=array()) {
           <?php if(trim((string)$attributes['subheading'])!==''): ?><h3><?php echo esc_html($attributes['subheading']); ?></h3><?php endif; ?>
           <?php if(trim((string)$attributes['intro'])!==''): ?><p><?php echo esc_html($attributes['intro']); ?></p><?php endif; ?>
         </div>
-        <div class="surfside-serve-ministries__grid">
+
+        <div class="surfside-adult-ministries__grid surfside-staggered-cards surfside-serve-ministries__grid">
           <?php foreach($items as $ministry): ?>
-            <article class="surfside-serve-ministries__item">
-              <h4><?php if(!empty($ministry['icon'])): ?><span aria-hidden="true"><?php echo esc_html($ministry['icon']); ?></span> <?php endif; ?><?php echo esc_html($ministry['name']??''); ?></h4>
-              <?php if(!empty($ministry['description'])): ?><p><?php echo esc_html($ministry['description']); ?></p><?php endif; ?>
+            <article class="surfside-adult-ministries__card surfside-featured-ministries__card">
+              <h3><?php if(!empty($ministry['icon'])): ?><span aria-hidden="true"><?php echo esc_html($ministry['icon']); ?></span> <?php endif; ?><?php echo esc_html($ministry['name']??''); ?></h3>
+              <?php $labels=function_exists('surfside_tools_ministry_audience_labels')?surfside_tools_ministry_audience_labels($ministry):array(); ?>
+              <?php if($labels): ?><p class="surfside-ministries__audiences"><?php foreach($labels as $label): ?><span class="surfside-ministries__audience"><?php echo esc_html($label); ?></span><?php endforeach; ?></p><?php endif; ?>
+              <?php if(!empty($ministry['schedule'])): ?><p class="surfside-adult-ministries__schedule"><?php echo esc_html($ministry['schedule']); ?></p><?php endif; ?>
+              <?php if(!empty($ministry['location'])): ?><p class="surfside-adult-ministries__location"><?php echo esc_html($ministry['location']); ?></p><?php endif; ?>
+              <?php if(!empty($ministry['description'])): ?><p class="surfside-adult-ministries__description"><?php echo esc_html($ministry['description']); ?></p><?php endif; ?>
             </article>
           <?php endforeach; ?>
         </div>
+
         <div class="surfside-serve-ministries__closing">
           <?php if(trim((string)$attributes['closing_title'])!==''): ?><h3><?php echo esc_html($attributes['closing_title']); ?></h3><?php endif; ?>
           <?php if(trim((string)$attributes['closing'])!==''): ?><p><?php echo esc_html($attributes['closing']); ?></p><?php endif; ?>
@@ -40,20 +46,20 @@ function surfside_tools_serve_ministries_shortcode($attributes=array()) {
         </div>
       </div>
       <style>
-        .surfside-serve-ministries{box-sizing:border-box;position:relative;left:50%;width:100vw;margin-left:-50vw;padding:52px max(24px,calc((100vw - 1180px)/2));background:var(--surfside-color-sand-100,#f5f1e9);color:var(--surfside-color-ink,#10243a)}
+        .surfside-serve-ministries{box-sizing:border-box;width:auto;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);padding:52px max(24px,calc((100vw - 1180px)/2));background:var(--surfside-color-sand-100,#f5f1e9);color:var(--surfside-color-ink,#10243a);overflow-x:clip}
         .surfside-serve-ministries__inner{width:100%;max-width:1180px;margin:0 auto}
         .surfside-serve-ministries__intro{text-align:center;width:100%;margin:0 auto 28px}
         .surfside-serve-ministries__intro h2{margin:0 0 10px;font-size:clamp(2rem,4vw,3rem);line-height:1.08;color:var(--surfside-color-ocean-950,#061b33)}
         .surfside-serve-ministries__intro h3{margin:0 0 14px;font-size:1.08rem;font-weight:700;color:var(--surfside-color-blue-700,#075c9c)}
         .surfside-serve-ministries__intro p{max-width:1080px;margin:0 auto;text-align:left;color:var(--surfside-color-muted,#536579);line-height:1.6}
-        .surfside-serve-ministries__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 56px;margin-top:30px}
-        .surfside-serve-ministries__item{min-width:0;padding:0;background:transparent;border:0;box-shadow:none}
-        .surfside-serve-ministries__item h4{margin:0 0 6px;font-size:1rem;line-height:1.3;color:var(--surfside-color-ocean-950,#061b33)}
-        .surfside-serve-ministries__item p{margin:0;color:var(--surfside-color-muted,#536579);font-size:.95rem;line-height:1.5}
+        .surfside-serve-ministries__grid{margin-top:30px}
+        .surfside-featured-ministries__card{background:#fff!important}
+        .surfside-ministries__audiences{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 12px}
+        .surfside-ministries__audience{display:inline-flex;padding:5px 9px;border-radius:999px;background:#eef4f7;color:#31566d;font-size:.78rem;font-weight:800;line-height:1}
         .surfside-serve-ministries__closing{text-align:center;max-width:860px;margin:34px auto 0}
         .surfside-serve-ministries__closing h3{margin:0 0 6px;font-size:1.05rem;color:var(--surfside-color-ocean-950,#061b33)}
         .surfside-serve-ministries__closing p{margin:0 0 14px;color:var(--surfside-color-muted,#536579)}
-        @media(max-width:700px){.surfside-serve-ministries{padding-top:38px;padding-bottom:38px}.surfside-serve-ministries__grid{grid-template-columns:1fr;gap:20px}.surfside-serve-ministries__intro p{text-align:center}}
+        @media(max-width:700px){.surfside-serve-ministries{padding-top:38px;padding-bottom:38px}.surfside-serve-ministries__intro p{text-align:center}}
       </style>
     </section>
     <?php return ob_get_clean();
