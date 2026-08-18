@@ -41,6 +41,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/bible-studies.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/event-audiences.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/featured-ministries.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/ministry-events.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/ministry-manager-featured.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-day-details.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-simple-overflow-layout.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-month-navigation.php';
