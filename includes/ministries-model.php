@@ -118,11 +118,12 @@ function surfside_tools_mobile_api_ministries() {
     ));
 }
 
-/** Keep the Ministry Directory intro centered without changing the filter/list alignment. */
+/** Keep the Ministry Directory intro and filter controls centered. */
 function surfside_tools_ministry_directory_heading_style() {
     ?>
     <style>
         .surfside-all-ministries__intro { text-align: center; }
+        .surfside-all-ministries__filters { justify-content: center; }
     </style>
     <?php
 }
