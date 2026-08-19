@@ -82,3 +82,48 @@ function surfside_tools_ministry_audience_labels($ministry) {
     foreach ($audiences as $audience) if (isset($choices[$audience])) $labels[] = $choices[$audience];
     return $labels;
 }
+
+/** Public mobile API for the canonical Ministry Manager records. */
+function surfside_tools_register_ministries_mobile_route() {
+    register_rest_route('surfside/v1', '/ministries', array(
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'surfside_tools_mobile_api_ministries',
+        'permission_callback' => '__return_true',
+    ));
+}
+add_action('rest_api_init', 'surfside_tools_register_ministries_mobile_route');
+
+function surfside_tools_mobile_api_ministries() {
+    $ministries = array();
+
+    foreach ((array) surfside_tools_get_ministries() as $ministry) {
+        $ministries[] = array(
+            'key' => (string) ($ministry['key'] ?? ''),
+            'icon' => (string) ($ministry['icon'] ?? ''),
+            'name' => (string) ($ministry['name'] ?? ''),
+            'schedule' => (string) ($ministry['schedule'] ?? ''),
+            'location' => (string) ($ministry['location'] ?? ''),
+            'description' => (string) ($ministry['description'] ?? ''),
+            'audiences' => array_values((array) ($ministry['audiences'] ?? array())),
+            'audience_labels' => surfside_tools_ministry_audience_labels($ministry),
+            'featured' => !empty($ministry['featured']),
+        );
+    }
+
+    return rest_ensure_response(array(
+        'api_version' => 1,
+        'generated_at' => current_datetime()->format(DATE_ATOM),
+        'count' => count($ministries),
+        'ministries' => $ministries,
+    ));
+}
+
+/** Keep the Ministry Directory heading centered without changing the filter/list alignment. */
+function surfside_tools_ministry_directory_heading_style() {
+    ?>
+    <style>
+        .surfside-all-ministries__intro h2 { text-align: center; }
+    </style>
+    <?php
+}
+add_action('wp_head', 'surfside_tools_ministry_directory_heading_style', 30);
