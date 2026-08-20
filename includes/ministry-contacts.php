@@ -2,10 +2,19 @@
 /** Contact details for canonical Ministry Manager records. */
 if (!defined('ABSPATH')) { exit; }
 
+/** Return true only when the current front-end page actually contains a shortcode. */
+function surfside_tools_ministry_contacts_has_shortcode($tag) {
+    if (is_admin()) return false;
+    $post = get_post();
+    if (!$post || !isset($post->post_content) || !is_string($post->post_content)) return false;
+    return has_shortcode($post->post_content, $tag);
+}
+
 /** Save the fallback email alongside the existing Ministry Manager form. */
 function surfside_tools_ministry_contacts_save_default() {
-    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !current_user_can('manage_options')) return;
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') return;
     if (!isset($_POST['surfside_ministries_nonce'])) return;
+    if (!current_user_can('manage_options')) return;
     $nonce = sanitize_text_field(wp_unslash($_POST['surfside_ministries_nonce']));
     if (!wp_verify_nonce($nonce, 'surfside_ministries_save')) return;
 
@@ -14,8 +23,9 @@ function surfside_tools_ministry_contacts_save_default() {
 }
 add_action('wp_loaded', 'surfside_tools_ministry_contacts_save_default');
 
-/** Add contact controls to the staff Ministry Manager without duplicating its renderer. */
+/** Add contact controls only on the staff Ministry Manager page. */
 function surfside_tools_ministry_contacts_manager_fields() {
+    if (!surfside_tools_ministry_contacts_has_shortcode('surfside_staff_ministries_manager')) return;
     if (!is_user_logged_in() || !current_user_can('manage_options')) return;
 
     $default_email = function_exists('surfside_tools_get_ministry_default_email') ? surfside_tools_get_ministry_default_email() : '';
@@ -71,9 +81,10 @@ function surfside_tools_ministry_contacts_manager_fields() {
 }
 add_action('wp_footer', 'surfside_tools_ministry_contacts_manager_fields', 102);
 
-/** Add resolved contact actions to the public Ministry Directory modal. */
+/** Add resolved contact actions only when the Ministry Directory is on the page. */
 function surfside_tools_ministry_contacts_directory_details() {
-    if (is_admin()) return;
+    if (!surfside_tools_ministry_contacts_has_shortcode('surfside_all_ministries')) return;
+
     $contacts = array();
     foreach ((array) surfside_tools_get_ministries() as $ministry) {
         $name = (string) ($ministry['name'] ?? '');
