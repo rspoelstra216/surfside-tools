@@ -12,6 +12,13 @@ define('SURFSIDE_TOOLS_VERSION', '3.1.0');
 define('SURFSIDE_TOOLS_PATH', plugin_dir_path(__FILE__));
 define('SURFSIDE_TOOLS_URL', plugin_dir_url(__FILE__));
 
+/*
+ * Temporary production diagnostic: isolate the later admin/productivity module
+ * group while preserving the public site, core APIs, ministries, calendar,
+ * Today portal, header/footer, and primary staff dashboard functionality.
+ */
+define('SURFSIDE_TOOLS_DIAGNOSTIC_ISOLATION_A', true);
+
 require_once SURFSIDE_TOOLS_PATH . 'includes/core-weekly-tools.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-information.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/ministries-model.php';
@@ -53,32 +60,36 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-action-branding.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-event-images.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/today-at-surfside.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/portal-foundation.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestions.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-duplicates.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-completion.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-one-click.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-locations.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-location-search-fix.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-manager-refinements.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/saved-places-settings.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/productivity-finish.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/productivity-modal-tracking.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/frontend-settings.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/google-places-regression-fix.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/final-productivity-fixes.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/weekly-update-native-google-places.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/location-clarity.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-life-section.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-page-registration-fix.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager-compact.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager-drag-fix.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-carousel-cache-sync.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-carousel-full-width.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities-settings.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-intelligence.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-recent-activity.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-polish.php';
+
+if (!SURFSIDE_TOOLS_DIAGNOSTIC_ISOLATION_A) {
+    require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestions.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-duplicates.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-completion.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-one-click.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-locations.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-suggestion-location-search-fix.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-manager-refinements.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/saved-places-settings.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/productivity-finish.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/productivity-modal-tracking.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/frontend-settings.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/google-places-regression-fix.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/final-productivity-fixes.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/weekly-update-native-google-places.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/location-clarity.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-life-section.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-page-registration-fix.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager-compact.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager-drag-fix.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-carousel-cache-sync.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-carousel-full-width.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities-settings.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-intelligence.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-recent-activity.php';
+    require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-polish.php';
+}
+
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/runtime-stabilization.php';
