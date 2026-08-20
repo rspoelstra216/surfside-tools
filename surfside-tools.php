@@ -81,3 +81,4 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-intelligence.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-recent-activity.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-polish.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/runtime-stabilization.php';
