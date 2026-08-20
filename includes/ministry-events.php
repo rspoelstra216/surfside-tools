@@ -18,9 +18,6 @@ function surfside_tools_ministry_event_occurrences($limit = 6) {
         if (empty($event['show_on_ministries'])) {
             continue;
         }
-        if (function_exists('surfside_tools_event_is_featured_ministry') && !surfside_tools_event_is_featured_ministry($event['id'] ?? 0)) {
-            continue;
-        }
         $events = array_merge($events, surfside_tools_calendar_event_occurrences($event, $today, $range_end));
     }
 
@@ -50,10 +47,10 @@ function surfside_tools_ministry_events_url() {
 
 function surfside_tools_ministry_events_shortcode($attributes = array()) {
     $attributes = shortcode_atts(array(
-        'title' => 'Featured Ministries',
-        'intro' => 'Connect with one of these featured Surfside ministries.',
+        'title' => 'Upcoming Ministry Events',
+        'intro' => 'Connect with a ministry at one of these upcoming gatherings.',
         'limit' => 6,
-    ), $attributes, 'surfside_featured_ministries');
+    ), $attributes, 'surfside_ministry_events');
 
     $events = surfside_tools_ministry_event_occurrences($attributes['limit']);
     if (empty($events)) {
@@ -92,6 +89,4 @@ function surfside_tools_ministry_events_shortcode($attributes = array()) {
     <?php
     return ob_get_clean();
 }
-add_shortcode('surfside_featured_ministries', 'surfside_tools_ministry_events_shortcode');
-// Temporary compatibility alias for pages that still use the previous shortcode name.
 add_shortcode('surfside_ministry_events', 'surfside_tools_ministry_events_shortcode');
