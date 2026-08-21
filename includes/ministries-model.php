@@ -24,10 +24,14 @@ function surfside_tools_sanitize_ministries($ministries) {
     $clean = array();
 
     foreach ($ministries as $index => $ministry) {
-        if (!is_array($ministry)) continue;
+        if (!is_array($ministry)) {
+            continue;
+        }
 
         $name = sanitize_text_field($ministry['name'] ?? '');
-        if ($name === '') continue;
+        if ($name === '') {
+            continue;
+        }
 
         $key = sanitize_key($ministry['key'] ?? '');
         if ($key === '') {
@@ -38,7 +42,9 @@ function surfside_tools_sanitize_ministries($ministries) {
             ? array_map('sanitize_key', $ministry['audiences'])
             : array('adults');
         $audiences = array_values(array_unique(array_intersect($audiences, $allowed_audiences)));
-        if (empty($audiences)) $audiences = array('adults');
+        if (empty($audiences)) {
+            $audiences = array('adults');
+        }
 
         $clean[] = array(
             'key' => $key,
@@ -48,7 +54,6 @@ function surfside_tools_sanitize_ministries($ministries) {
             'location' => sanitize_text_field($ministry['location'] ?? ''),
             'description' => sanitize_textarea_field($ministry['description'] ?? ''),
             'audiences' => $audiences,
-            'featured' => !empty($ministry['featured']),
         );
     }
 
@@ -69,7 +74,9 @@ function surfside_tools_get_ministries() {
         : array();
 
     foreach ($legacy as &$ministry) {
-        if (is_array($ministry) && empty($ministry['audiences'])) $ministry['audiences'] = array('adults');
+        if (is_array($ministry) && empty($ministry['audiences'])) {
+            $ministry['audiences'] = array('adults');
+        }
     }
     unset($ministry);
 
@@ -79,7 +86,9 @@ function surfside_tools_get_ministries() {
 function surfside_tools_update_ministries($ministries) {
     $clean = surfside_tools_sanitize_ministries($ministries);
     $updated = update_option(SURFSIDE_TOOLS_MINISTRIES_OPTION, $clean, false);
-    if (function_exists('surfside_tools_purge_cache')) surfside_tools_purge_cache();
+    if (function_exists('surfside_tools_purge_cache')) {
+        surfside_tools_purge_cache();
+    }
     return $updated;
 }
 
@@ -89,6 +98,10 @@ function surfside_tools_ministry_audience_labels($ministry) {
         ? $ministry['audiences']
         : array('adults');
     $labels = array();
-    foreach ($audiences as $audience) if (isset($choices[$audience])) $labels[] = $choices[$audience];
+    foreach ($audiences as $audience) {
+        if (isset($choices[$audience])) {
+            $labels[] = $choices[$audience];
+        }
+    }
     return $labels;
 }
