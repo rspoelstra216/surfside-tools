@@ -59,4 +59,4 @@ function surfside_tools_staff_push_notifications_shortcode(){
     <?php return ob_get_clean();
 }
 add_shortcode('surfside_staff_push_notifications','surfside_tools_staff_push_notifications_shortcode');
-function surfside_tools_ensure_push_notifications_page(){if(!function_exists('surfside_tools_ensure_staff_page'))return;$parent=get_page_by_path('dashboard/mobile-app');if(!$parent)return;surfside_tools_ensure_staff_page('Push Notifications','push-notifications','[surfside_staff_push_notifications]',(int)$parent->ID);}add_action('init','surfside_tools_ensure_push_notifications_page',84);
+function surfside_tools_ensure_push_notifications_page(){if(!function_exists('surfside_tools_ensure_staff_page'))return;$parent=get_page_by_path('dashboard/mobile-app');if(!$parent)return;surfside_tools_ensure_staff_page('Push Notifications','push-notifications','[surfside_staff_push_notifications]',(int)$parent->ID);}
