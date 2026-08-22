@@ -6,22 +6,23 @@ function surfside_tools_ministry_ui_polish($output, $tag) {
     if ($tag === 'surfside_staff_ministries_manager') {
         $output .= <<<'HTML'
 <style>
-.surfside-information-ministries{display:grid;gap:16px}
-.surfside-information-ministry{position:relative;padding:16px 18px!important;border:1px solid #d7e0e8!important;border-left:5px solid #0b5fa5!important;border-radius:14px!important;background:#fff!important;grid-template-columns:110px repeat(3,minmax(0,1fr))!important;gap:9px 12px!important;align-items:end}
+.surfside-information-ministries{display:grid;gap:18px}
+.surfside-information-ministry{position:relative;padding:16px 18px 18px!important;border:1px solid #d7e0e8!important;border-left:5px solid #0b5fa5!important;border-radius:14px!important;background:#fff!important;grid-template-columns:110px repeat(3,minmax(0,1fr))!important;column-gap:12px!important;row-gap:13px!important;align-items:end}
 .surfside-information-ministry:nth-child(even){background:#f5f8fb!important;border-left-color:#6b8ca4!important}
-.surfside-ministry-card-heading{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:-2px 0 2px;color:#061b33;font-size:1.02rem;font-weight:900;line-height:1.25}
+.surfside-ministry-card-heading{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:-2px 0 3px;padding-bottom:8px;border-bottom:1px solid rgba(96,112,138,.18);color:#061b33;font-size:1.02rem;font-weight:900;line-height:1.25}
 .surfside-ministry-card-heading small{color:#60708a;font-size:.76rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
-.surfside-ministry-audiences{margin:0!important;padding:4px 0 0!important;gap:10px!important}
-.surfside-ministry-audiences legend{margin-bottom:2px!important;font-size:.9rem}
-.surfside-ministry-contact-fields{padding:10px!important;gap:8px 10px!important;background:rgba(255,255,255,.58)!important}
+.surfside-ministry-audiences{margin:2px 0 0!important;padding:7px 0 5px!important;gap:10px!important}
+.surfside-ministry-audiences legend{margin-bottom:5px!important;font-size:.9rem}
+.surfside-ministry-contact-fields{margin-top:2px!important;padding:12px!important;gap:10px 12px!important;background:rgba(255,255,255,.58)!important}
 .surfside-information-ministry:nth-child(even) .surfside-ministry-contact-fields{background:rgba(255,255,255,.82)!important}
-.surfside-ministry-contact-note{font-size:.78rem!important;line-height:1.3}
-.surfside-ministry-featured{margin:0!important;padding:1px 0!important}
+.surfside-ministry-contact-note{margin-top:3px!important;font-size:.78rem!important;line-height:1.35}
+.surfside-ministry-featured{margin:2px 0!important;padding:5px 0!important}
+.surfside-information-ministry-description{margin-top:1px!important}
 .surfside-information-ministry-description textarea{min-height:64px!important;height:64px;resize:vertical}
-.surfside-information-ministry-actions{margin-top:-2px!important}
-.surfside-information-ministry .surfside-information-field>span{font-size:.86rem}
+.surfside-information-ministry-actions{margin-top:1px!important;padding-top:4px!important}
+.surfside-information-ministry .surfside-information-field>span{display:block;margin-bottom:4px;font-size:.86rem}
 @media(max-width:900px){.surfside-information-ministry{grid-template-columns:90px repeat(2,minmax(0,1fr))!important}.surfside-ministry-contact-fields{grid-template-columns:1fr 1fr!important}}
-@media(max-width:700px){.surfside-information-ministry,.surfside-ministry-contact-fields{grid-template-columns:1fr!important}.surfside-information-ministry{padding:14px!important}}
+@media(max-width:700px){.surfside-information-ministry,.surfside-ministry-contact-fields{grid-template-columns:1fr!important}.surfside-information-ministry{padding:14px!important;row-gap:12px!important}}
 </style>
 <script>
 (function(){
