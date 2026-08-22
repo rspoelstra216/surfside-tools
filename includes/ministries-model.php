@@ -1,6 +1,6 @@
 <?php
 /**
- * Canonical ministry data model with audience classification.
+ * Canonical ministry data model with audience classification and contact details.
  *
  * Existing Adult Ministries records remain supported as a fallback so the
  * website can migrate without losing any current content.
@@ -8,6 +8,7 @@
 if (!defined('ABSPATH')) { exit; }
 
 const SURFSIDE_TOOLS_MINISTRIES_OPTION = 'surfside_tools_ministries';
+const SURFSIDE_TOOLS_MINISTRY_DEFAULT_EMAIL_OPTION = 'surfside_tools_ministry_default_email';
 
 function surfside_tools_ministry_audience_choices() {
     return array(
@@ -59,6 +60,9 @@ function surfside_tools_sanitize_ministries($ministries) {
             'description' => sanitize_textarea_field($ministry['description'] ?? ''),
             'audiences' => $audiences,
             'featured' => $featured,
+            'contact_name' => sanitize_text_field($ministry['contact_name'] ?? ''),
+            'contact_email' => sanitize_email($ministry['contact_email'] ?? ''),
+            'contact_phone' => sanitize_text_field($ministry['contact_phone'] ?? ''),
         );
     }
 
@@ -98,6 +102,30 @@ function surfside_tools_update_ministries($ministries) {
         surfside_tools_purge_cache();
     }
     return $updated;
+}
+
+function surfside_tools_get_ministry_default_email() {
+    return sanitize_email((string) get_option(SURFSIDE_TOOLS_MINISTRY_DEFAULT_EMAIL_OPTION, ''));
+}
+
+function surfside_tools_update_ministry_default_email($email) {
+    return update_option(SURFSIDE_TOOLS_MINISTRY_DEFAULT_EMAIL_OPTION, sanitize_email($email), false);
+}
+
+function surfside_tools_resolve_ministry_contact($ministry) {
+    $email = sanitize_email($ministry['contact_email'] ?? '');
+    $source = 'ministry';
+    if ($email === '') {
+        $email = surfside_tools_get_ministry_default_email();
+        $source = 'default';
+    }
+
+    return array(
+        'name' => sanitize_text_field($ministry['contact_name'] ?? ''),
+        'email' => $email,
+        'phone' => sanitize_text_field($ministry['contact_phone'] ?? ''),
+        'source' => $source,
+    );
 }
 
 function surfside_tools_ministry_audience_labels($ministry) {
