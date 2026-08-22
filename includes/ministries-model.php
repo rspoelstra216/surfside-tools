@@ -46,6 +46,10 @@ function surfside_tools_sanitize_ministries($ministries) {
             $audiences = array('adults');
         }
 
+        // Existing records predate this field. Keep them featured until staff
+        // explicitly changes the setting and saves the Ministry Manager.
+        $featured = array_key_exists('featured', $ministry) ? !empty($ministry['featured']) : true;
+
         $clean[] = array(
             'key' => $key,
             'icon' => sanitize_text_field($ministry['icon'] ?? ''),
@@ -54,6 +58,7 @@ function surfside_tools_sanitize_ministries($ministries) {
             'location' => sanitize_text_field($ministry['location'] ?? ''),
             'description' => sanitize_textarea_field($ministry['description'] ?? ''),
             'audiences' => $audiences,
+            'featured' => $featured,
         );
     }
 
@@ -76,6 +81,9 @@ function surfside_tools_get_ministries() {
     foreach ($legacy as &$ministry) {
         if (is_array($ministry) && empty($ministry['audiences'])) {
             $ministry['audiences'] = array('adults');
+        }
+        if (is_array($ministry) && !array_key_exists('featured', $ministry)) {
+            $ministry['featured'] = true;
         }
     }
     unset($ministry);
