@@ -7,7 +7,7 @@ function surfside_tools_ministry_ui_polish($output, $tag) {
         $output .= <<<'HTML'
 <style>
 .surfside-information-ministries{display:grid;gap:18px}
-.surfside-information-ministry{position:relative;padding:16px 18px 18px!important;border:1px solid #d7e0e8!important;border-left:5px solid #0b5fa5!important;border-radius:14px!important;background:#fff!important;grid-template-columns:110px repeat(3,minmax(0,1fr))!important;column-gap:12px!important;row-gap:13px!important;align-items:end}
+.surfside-information-ministry{position:relative;padding:16px 18px 18px!important;border:1px solid #d7e0e8!important;border-left:5px solid #0b5fa5!important;border-radius:14px!important;background:#fff!important;grid-template-columns:72px repeat(3,minmax(0,1fr))!important;column-gap:12px!important;row-gap:13px!important;align-items:end}
 .surfside-information-ministry:nth-child(even){background:#f5f8fb!important;border-left-color:#6b8ca4!important}
 .surfside-ministry-card-heading{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:-2px 0 3px;padding-bottom:8px;border-bottom:1px solid rgba(96,112,138,.18);color:#061b33;font-size:1.02rem;font-weight:900;line-height:1.25}
 .surfside-ministry-card-heading small{color:#60708a;font-size:.76rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
@@ -21,8 +21,12 @@ function surfside_tools_ministry_ui_polish($output, $tag) {
 .surfside-information-ministry-description textarea{min-height:64px!important;height:64px;resize:vertical}
 .surfside-information-ministry-actions{margin-top:1px!important;padding-top:4px!important}
 .surfside-information-ministry .surfside-information-field>span{display:block;margin-bottom:4px;font-size:.86rem}
-@media(max-width:900px){.surfside-information-ministry{grid-template-columns:90px repeat(2,minmax(0,1fr))!important}.surfside-ministry-contact-fields{grid-template-columns:1fr 1fr!important}}
-@media(max-width:700px){.surfside-information-ministry,.surfside-ministry-contact-fields{grid-template-columns:1fr!important}.surfside-information-ministry{padding:14px!important;row-gap:12px!important}}
+.surfside-ministry-icon-control{display:block!important}
+.surfside-ministry-icon-control input[data-ministry-icon-input]{box-sizing:border-box!important;width:58px!important;min-width:58px!important;max-width:58px!important;height:48px!important;padding:6px!important;border-radius:10px!important;text-align:center!important;font-size:1.45rem!important;line-height:1!important;cursor:pointer!important;caret-color:transparent!important}
+.surfside-ministry-icon-control input[data-ministry-icon-input]:hover,.surfside-ministry-icon-control input[data-ministry-icon-input]:focus-visible{border-color:#0b5fa5!important;box-shadow:0 0 0 3px rgba(11,95,165,.12)!important;outline:0!important}
+.surfside-ministry-icon-button{display:none!important}
+@media(max-width:900px){.surfside-information-ministry{grid-template-columns:72px repeat(2,minmax(0,1fr))!important}.surfside-ministry-contact-fields{grid-template-columns:1fr 1fr!important}}
+@media(max-width:700px){.surfside-information-ministry,.surfside-ministry-contact-fields{grid-template-columns:1fr!important}.surfside-information-ministry{padding:14px!important;row-gap:12px!important}.surfside-ministry-icon-field{max-width:72px}}
 </style>
 <script>
 (function(){
@@ -36,10 +40,16 @@ function surfside_tools_ministry_ui_polish($output, $tag) {
       var name=nameInput&&nameInput.value?nameInput.value:'New ministry';
       var icon=iconInput&&iconInput.value?iconInput.value:'';
       heading.innerHTML='<small>Ministry '+(index+1)+'</small><span>'+(icon?icon+' ':'')+name.replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c];})+'</span>';
+      if(iconInput){iconInput.setAttribute('readonly','readonly');iconInput.setAttribute('aria-label','Choose ministry emoji');iconInput.setAttribute('title','Choose ministry emoji');}
     });
   }
   list.addEventListener('input',function(e){if(e.target.matches('input[name$="[name]"],input[name$="[icon]"]'))decorate();});
-  list.addEventListener('click',function(){setTimeout(decorate,0);});
+  list.addEventListener('click',function(e){
+    var iconInput=e.target.closest('input[data-ministry-icon-input]');
+    if(iconInput){var card=iconInput.closest('.surfside-information-ministry'),button=card&&card.querySelector('[data-ministry-icon-open]');if(button){e.preventDefault();button.click();return;}}
+    setTimeout(decorate,0);
+  });
+  list.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.matches('input[data-ministry-icon-input]')){e.preventDefault();var card=e.target.closest('.surfside-information-ministry'),button=card&&card.querySelector('[data-ministry-icon-open]');if(button)button.click();}});
   new MutationObserver(decorate).observe(list,{childList:true});
   decorate();
 })();
