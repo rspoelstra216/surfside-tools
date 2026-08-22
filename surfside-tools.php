@@ -35,6 +35,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-app-home-manager.php';
 remove_action('init', 'surfside_tools_ensure_mobile_app_home_page', 83);
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-information-manager.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/ministries-manager.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/ministry-featured-manager.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-management-hub.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-settings-hub.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-manager.php';
