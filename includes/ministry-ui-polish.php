@@ -31,19 +31,28 @@ function surfside_tools_ministry_ui_polish($output, $tag) {
 <script>
 (function(){
   var list=document.querySelector('[data-surfside-ministries]'); if(!list)return;
+  function formatPhone(value){
+    var digits=(value||'').replace(/\D/g,'');
+    if(digits.length===11&&digits.charAt(0)==='1')digits=digits.slice(1);
+    if(digits.length!==10)return value;
+    return '('+digits.slice(0,3)+') '+digits.slice(3,6)+'-'+digits.slice(6);
+  }
   function decorate(){
     Array.from(list.querySelectorAll('.surfside-information-ministry')).forEach(function(card,index){
       var heading=card.querySelector('.surfside-ministry-card-heading');
       if(!heading){heading=document.createElement('div');heading.className='surfside-ministry-card-heading';card.insertBefore(heading,card.firstChild);}
       var nameInput=card.querySelector('input[name$="[name]"]');
       var iconInput=card.querySelector('input[name$="[icon]"]');
+      var phoneInput=card.querySelector('input[name$="[contact_phone]"]');
       var name=nameInput&&nameInput.value?nameInput.value:'New ministry';
       var icon=iconInput&&iconInput.value?iconInput.value:'';
       heading.innerHTML='<small>Ministry '+(index+1)+'</small><span>'+(icon?icon+' ':'')+name.replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c];})+'</span>';
       if(iconInput){iconInput.setAttribute('readonly','readonly');iconInput.setAttribute('aria-label','Choose ministry emoji');iconInput.setAttribute('title','Choose ministry emoji');}
+      if(phoneInput){phoneInput.setAttribute('inputmode','tel');phoneInput.setAttribute('placeholder','(321) 555-1234');phoneInput.value=formatPhone(phoneInput.value);}
     });
   }
   list.addEventListener('input',function(e){if(e.target.matches('input[name$="[name]"],input[name$="[icon]"]'))decorate();});
+  list.addEventListener('blur',function(e){if(e.target.matches('input[name$="[contact_phone]"]'))e.target.value=formatPhone(e.target.value);},true);
   list.addEventListener('click',function(e){
     var iconInput=e.target.closest('input[data-ministry-icon-input]');
     if(iconInput){var card=iconInput.closest('.surfside-information-ministry'),button=card&&card.querySelector('[data-ministry-icon-open]');if(button){e.preventDefault();button.click();return;}}
@@ -65,6 +74,7 @@ HTML;
 </style>
 <script>
 (function(){
+  function formatPhone(value){var digits=(value||'').replace(/\D/g,'');if(digits.length===11&&digits.charAt(0)==='1')digits=digits.slice(1);return digits.length===10?'('+digits.slice(0,3)+') '+digits.slice(3,6)+'-'+digits.slice(6):value;}
   document.querySelectorAll('[data-ministry-directory-item]').forEach(function(item){
     item.addEventListener('click',function(){
       var dialog=document.querySelector('[data-ministry-dialog][open]'); if(!dialog)return;
@@ -73,7 +83,7 @@ HTML;
       var emailValue=item.getAttribute('data-contact-email')||'';
       var phoneValue=item.getAttribute('data-contact-phone')||'';
       if(email&&emailValue){email.textContent='Email: '+emailValue;email.setAttribute('title','Email '+emailValue);}
-      if(phone&&phoneValue){phone.removeAttribute('href');phone.textContent='Phone: '+phoneValue;phone.classList.add('surfside-phone-display');phone.setAttribute('aria-label','Phone '+phoneValue);}
+      if(phone&&phoneValue){phone.removeAttribute('href');phone.textContent='Phone: '+formatPhone(phoneValue);phone.classList.add('surfside-phone-display');phone.setAttribute('aria-label','Phone '+formatPhone(phoneValue));}
     });
   });
 })();
