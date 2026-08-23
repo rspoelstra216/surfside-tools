@@ -67,11 +67,25 @@ HTML;
     }
 
     if ($tag === 'surfside_all_ministries') {
+        $contact_url = esc_url(home_url('/contact/'));
         $output .= <<<'HTML'
 <style>
+.surfside-all-ministries{position:relative;z-index:0;box-sizing:border-box;width:100%!important;max-width:none!important;margin:0!important;padding-block:clamp(2.5rem,4vw,3.25rem)}
+.surfside-all-ministries::before{position:absolute;z-index:-1;inset-block:0;left:50%;width:100vw;width:100dvw;background:var(--surfside-color-white,#fff);content:"";transform:translateX(-50%)}
+.surfside-all-ministries__inner{box-sizing:border-box!important;width:min(100% - 2rem,72rem)!important;max-width:none!important;margin-inline:auto!important}
+.surfside-all-ministries__intro{text-align:center}
+.surfside-all-ministries__filters{justify-content:center}
+.surfside-all-ministries__closing{text-align:center;max-width:54rem;margin:2rem auto 0;padding-top:.35rem}
+.surfside-all-ministries__closing h3{margin:0 0 .35rem;color:var(--surfside-color-ocean-950,#061b33);font-size:1.05rem}
+.surfside-all-ministries__closing p{margin:0 0 .9rem;color:var(--surfside-color-muted,#536579)}
+.surfside-all-ministries__closing .surfside-button{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
 .surfside-ministry-dialog__contact-actions a[data-ministry-dialog-email]{max-width:100%;overflow-wrap:anywhere}
 .surfside-ministry-dialog__contact-actions a[data-ministry-dialog-phone].surfside-phone-display{background:#eef4f7!important;color:#31566d!important;cursor:text;user-select:text}
+@media(max-width:700px){.surfside-all-ministries__inner{width:min(100% - 1.25rem,72rem)!important}}
 </style>
+HTML;
+        $output .= '<div class="surfside-all-ministries__closing"><h3>Interested in Serving?</h3><p>There are too many opportunities to list here! We’d love to help you find a place to use your gifts and talents.</p><a class="surfside-button" href="' . $contact_url . '">Contact Us About Serving</a></div>';
+        $output .= <<<'HTML'
 <script>
 (function(){
   function formatPhone(value){var digits=(value||'').replace(/\D/g,'');if(digits.length===11&&digits.charAt(0)==='1')digits=digits.slice(1);return digits.length===10?'('+digits.slice(0,3)+') '+digits.slice(3,6)+'-'+digits.slice(6):value;}
