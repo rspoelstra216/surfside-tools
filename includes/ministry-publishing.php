@@ -44,6 +44,16 @@ function surfside_tools_ministry_publishing_manager_ui($output, $tag) {
 }
 add_filter('do_shortcode_tag', 'surfside_tools_ministry_publishing_manager_ui', 50, 2);
 
+/** Explain the draft workflow immediately when Ministry is selected in Calendar Manager. */
+function surfside_tools_ministry_publishing_calendar_notice($output, $tag) {
+    if ($tag !== 'surfside_tools_calendar_manager' || !is_user_logged_in() || !current_user_can('upload_files')) return $output;
+    $manager_url = function_exists('surfside_tools_staff_page_url') ? surfside_tools_staff_page_url('site-ministries') : home_url('/dashboard/site-ministries/');
+    $output .= '<style>.surfside-calendar-ministry-draft-note{width:100%;box-sizing:border-box;margin:2px 0 0;padding:10px 12px;border-left:4px solid #d59a00;border-radius:8px;background:#fff8e5;color:#5f4600;font-size:.88rem;line-height:1.45}.surfside-calendar-ministry-draft-note[hidden]{display:none!important}.surfside-calendar-ministry-draft-note a{font-weight:800;color:#075c9c}</style>';
+    $output .= '<script>(function(){var form=document.querySelector(".surfside-calendar-form");if(!form)return;var ministry=form.querySelector("input[name=event_show_on_ministries]");if(!ministry)return;var row=ministry.closest(".surfside-calendar-classification-row")||ministry.closest("label");if(!row)return;var note=document.createElement("p");note.className="surfside-calendar-ministry-draft-note";note.innerHTML="This creates a <strong>Draft</strong> Ministry Manager entry. After saving this event, open <a href=' . wp_json_encode(esc_url($manager_url)) . '>Ministry Manager</a> to add or review the ministry details, then mark it <strong>Published</strong> when it is ready for the website and app.";function update(){note.hidden=!ministry.checked;}row.appendChild(note);ministry.addEventListener("change",update);update();})();</script>';
+    return $output;
+}
+add_filter('do_shortcode_tag', 'surfside_tools_ministry_publishing_calendar_notice', 55, 2);
+
 /** Remove draft ministries from public shortcode output. The mobile API filters them server-side in ministries-model.php. */
 function surfside_tools_hide_draft_ministries_public($output, $tag) {
     if (!in_array($tag, array('surfside_ministries','surfside_adult_ministries','surfside_featured_ministries','surfside_all_ministries'), true)) return $output;
