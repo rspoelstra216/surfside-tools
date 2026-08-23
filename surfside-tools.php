@@ -40,6 +40,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/ministry-ui-polish.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-management-hub.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-settings-hub.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-manager.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-classifications.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/ministry-events.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-day-details.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-simple-overflow-layout.php';
