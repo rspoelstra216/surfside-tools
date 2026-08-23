@@ -106,3 +106,69 @@ function surfside_tools_calendar_classification_manager_ui($output, $tag) {
     return $output;
 }
 add_filter('do_shortcode_tag', 'surfside_tools_calendar_classification_manager_ui', 35, 2);
+
+/** Register the series-level Bible Studies endpoint used by the mobile app. */
+function surfside_tools_bible_study_register_mobile_route() {
+    register_rest_route('surfside/v1', '/bible-studies', array(
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'surfside_tools_mobile_api_bible_studies',
+        'permission_callback' => '__return_true',
+    ));
+}
+add_action('rest_api_init', 'surfside_tools_bible_study_register_mobile_route');
+
+/**
+ * Return each active Bible Study series once, using its next occurrence for date/time
+ * and a small list of upcoming dates for native app presentation.
+ */
+function surfside_tools_mobile_api_bible_studies() {
+    if (!function_exists('surfside_tools_calendar_get_all_events') || !function_exists('surfside_tools_calendar_event_occurrences')) {
+        return new WP_Error('surfside_bible_studies_unavailable', 'Bible Studies are temporarily unavailable.', array('status' => 503));
+    }
+
+    $today = current_time('Y-m-d');
+    $range_end = wp_date('Y-m-d', strtotime($today . ' +2 years'));
+    $studies = array();
+
+    foreach (surfside_tools_calendar_get_all_events() as $event) {
+        $event_id = absint($event['id'] ?? 0);
+        if (!$event_id || !surfside_tools_event_is_bible_study($event_id)) continue;
+
+        $occurrences = surfside_tools_calendar_event_occurrences($event, $today, $range_end);
+        if (empty($occurrences)) continue;
+
+        $next = $occurrences[0];
+        $item = function_exists('surfside_tools_mobile_api_event')
+            ? surfside_tools_mobile_api_event($next)
+            : array(
+                'id' => $event_id,
+                'title' => (string) ($event['title'] ?? ''),
+                'description' => wp_strip_all_tags((string) ($event['description'] ?? ''), true),
+                'date' => (string) ($next['date'] ?? ''),
+                'start_time' => (string) ($event['start_time'] ?? ''),
+                'end_time' => (string) ($event['end_time'] ?? ''),
+            );
+
+        $item['is_ministry'] = !empty($event['show_on_ministries']);
+        $item['is_bible_study'] = true;
+        $item['next_occurrence'] = (string) ($next['date'] ?? '');
+        $item['recurrence_label'] = function_exists('surfside_tools_calendar_recurrence_label') ? surfside_tools_calendar_recurrence_label($event) : '';
+        $item['upcoming_dates'] = array_values(array_slice(array_map(function ($occurrence) {
+            return (string) ($occurrence['date'] ?? '');
+        }, $occurrences), 0, 12));
+        $studies[] = $item;
+    }
+
+    usort($studies, function ($a, $b) {
+        $a_key = ($a['next_occurrence'] ?? '') . ' ' . (($a['start_time'] ?? '') ?: '00:00');
+        $b_key = ($b['next_occurrence'] ?? '') . ' ' . (($b['start_time'] ?? '') ?: '00:00');
+        return strcmp($a_key, $b_key);
+    });
+
+    return rest_ensure_response(array(
+        'api_version' => 1,
+        'generated_at' => current_datetime()->format(DATE_ATOM),
+        'count' => count($studies),
+        'studies' => array_values($studies),
+    ));
+}
