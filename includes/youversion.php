@@ -56,17 +56,22 @@ function surfside_tools_youversion_request($path, $query = array()) {
         return is_array($data) ? $data : array();
     }
 
-    if ($status === 429) {
-        return new WP_Error(
-            'surfside_youversion_rate_limited',
-            'YouVersion API rate limit reached.',
-            array('retry_after' => wp_remote_retrieve_header($response, 'retry-after'))
-        );
+    $message = 'YouVersion API request failed.';
+    if (is_array($data)) {
+        foreach (array('message', 'error_description', 'error', 'detail') as $field) {
+            if (!empty($data[$field]) && is_scalar($data[$field])) {
+                $message = sanitize_text_field((string)$data[$field]);
+                break;
+            }
+        }
     }
 
-    $message = is_array($data) && !empty($data['message'])
-        ? sanitize_text_field((string)$data['message'])
-        : 'YouVersion API request failed.';
+    $error_data = array('status' => $status);
+    if ($status === 429) {
+        $message = 'YouVersion API rate limit reached.';
+        $error_data['retry_after'] = wp_remote_retrieve_header($response, 'retry-after');
+        return new WP_Error('surfside_youversion_rate_limited', $message, $error_data);
+    }
 
-    return new WP_Error('surfside_youversion_api_error', $message, array('status' => $status));
+    return new WP_Error('surfside_youversion_api_error', $message, $error_data);
 }
