@@ -65,6 +65,17 @@ function surfside_tools_youversion_request($path, $query = array()) {
         return new WP_Error('surfside_youversion_invalid_path', 'Invalid YouVersion API path.');
     }
 
+    // Keep Bible collection requests aligned with the exact query shape that
+    // has been verified against the live YouVersion Platform API. The API
+    // currently accepts `language_ranges[]=en`; wildcard ranges and page_size
+    // caused validation failures for this application.
+    if ($path === 'bibles' && is_array($query)) {
+        if (($query['language_ranges[]'] ?? '') === 'en*') {
+            $query['language_ranges[]'] = 'en';
+        }
+        unset($query['page_size']);
+    }
+
     $url = 'https://api.youversion.com/v1/' . $path;
     if (!empty($query) && is_array($query)) {
         $url = add_query_arg($query, $url);
