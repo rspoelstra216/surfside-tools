@@ -28,9 +28,15 @@ function surfside_tools_youversion_settings_handle_post() {
             : new WP_Error('surfside_youversion_client_missing', 'YouVersion client is unavailable.');
 
         if (is_wp_error($result)) {
+            $data = $result->get_error_data();
+            $status = is_array($data) ? absint($data['status'] ?? 0) : 0;
+            $message = $result->get_error_message();
+            if ($status) {
+                $message = 'HTTP ' . $status . ' — ' . $message;
+            }
             $test = array(
                 'success' => false,
-                'message' => $result->get_error_message(),
+                'message' => $message,
             );
         } else {
             $bibles = isset($result['data']) && is_array($result['data']) ? $result['data'] : array();
@@ -100,23 +106,29 @@ add_filter('do_shortcode_tag', function ($output, $tag) {
     ob_start();
     ?>
     <section class="surfside-front-settings-card surfside-youversion-settings-card">
-        <h2>YouVersion Integration</h2>
-        <p class="surfside-staff-muted">Server-side credentials for Scripture integration in Surfside experiences.</p>
+        <div class="surfside-youversion-heading">
+            <div>
+                <h2>YouVersion</h2>
+                <p class="surfside-front-description">Scripture API credential and connection status.</p>
+            </div>
+            <span class="surfside-youversion-status <?php echo $configured ? 'is-configured' : ''; ?>"><?php echo $configured ? 'Configured' : 'Not configured'; ?></span>
+        </div>
+
         <?php if (isset($_GET['youversion_saved'])) : ?>
-            <div class="surfside-front-settings-notice surfside-front-settings-success">YouVersion settings saved.</div>
+            <div class="surfside-front-settings-notice surfside-front-settings-success surfside-youversion-notice">YouVersion settings saved.</div>
         <?php endif; ?>
         <?php if (is_array($test)) : ?>
-            <div class="surfside-front-settings-notice <?php echo !empty($test['success']) ? 'surfside-front-settings-success' : 'surfside-front-settings-error'; ?>">
+            <div class="surfside-front-settings-notice <?php echo !empty($test['success']) ? 'surfside-front-settings-success' : 'surfside-front-settings-error'; ?> surfside-youversion-notice">
                 <?php echo esc_html($test['message'] ?? 'YouVersion connection test completed.'); ?>
                 <?php if (!empty($test['success'])) : ?>
                     <?php $count = absint($test['count'] ?? 0); ?>
-                    <?php if ($count) : ?> Accessible English Bible versions: <?php echo esc_html(number_format_i18n($count)); ?>.<?php endif; ?>
+                    <?php if ($count) : ?> Accessible English versions: <?php echo esc_html(number_format_i18n($count)); ?>.<?php endif; ?>
                 <?php endif; ?>
             </div>
             <?php if (!empty($test['success']) && !empty($test['versions']) && is_array($test['versions'])) : ?>
-                <details style="margin:0 0 18px;">
-                    <summary><strong>Show available version sample</strong></summary>
-                    <ul style="columns:2;column-gap:28px;margin-top:12px;">
+                <details class="surfside-youversion-versions">
+                    <summary>Available version sample</summary>
+                    <ul>
                         <?php foreach ($test['versions'] as $version) : ?>
                             <li><?php echo esc_html(trim(($version['abbreviation'] ?? '') . (($version['abbreviation'] ?? '') && ($version['title'] ?? '') ? ' — ' : '') . ($version['title'] ?? ''))); ?></li>
                         <?php endforeach; ?>
@@ -124,26 +136,28 @@ add_filter('do_shortcode_tag', function ($output, $tag) {
                 </details>
             <?php endif; ?>
         <?php endif; ?>
-        <p><strong>Status:</strong> <?php echo $configured ? '<span style="color:#245f2a;font-weight:700;">Configured</span>' : 'Not configured'; ?></p>
-        <form method="post">
+
+        <form method="post" class="surfside-youversion-form">
             <?php wp_nonce_field('surfside_youversion_settings', 'surfside_youversion_settings_nonce'); ?>
-            <input type="hidden" name="surfside_youversion_settings_action" value="save">
-            <label for="surfside-youversion-app-key"><strong>YouVersion App Key</strong></label>
-            <input id="surfside-youversion-app-key" type="password" autocomplete="new-password" name="youversion_app_key" value="" placeholder="<?php echo $configured ? 'Leave blank to keep the saved key' : 'Paste YouVersion App Key'; ?>" style="display:block;width:100%;max-width:720px;box-sizing:border-box;margin-top:8px;padding:10px 12px;border:1px solid #9aa9b8;border-radius:7px;font:inherit;">
-            <p class="surfside-front-description">The saved key is not displayed again and is never included in mobile API responses.</p>
-            <?php if ($configured) : ?>
-                <p><label><input type="checkbox" name="clear_youversion_app_key" value="1"> Remove the saved YouVersion App Key</label></p>
-            <?php endif; ?>
-            <p><button type="submit" class="surfside-front-primary-button">Save YouVersion Settings</button></p>
+            <label class="screen-reader-text" for="surfside-youversion-app-key">YouVersion App Key</label>
+            <div class="surfside-youversion-row">
+                <input id="surfside-youversion-app-key" type="password" autocomplete="new-password" name="youversion_app_key" value="" placeholder="<?php echo $configured ? 'App Key saved — enter a new key to replace' : 'Paste YouVersion App Key'; ?>">
+                <button type="submit" name="surfside_youversion_settings_action" value="save" class="surfside-front-primary-button surfside-youversion-button">Save</button>
+                <?php if ($configured) : ?>
+                    <button type="submit" name="surfside_youversion_settings_action" value="test" class="surfside-front-secondary-button surfside-youversion-button">Test</button>
+                <?php endif; ?>
+            </div>
+            <div class="surfside-youversion-meta">
+                <span>The saved key is never displayed or included in mobile API responses.</span>
+                <?php if ($configured) : ?>
+                    <label><input type="checkbox" name="clear_youversion_app_key" value="1"> Remove key on Save</label>
+                <?php endif; ?>
+            </div>
         </form>
-        <?php if ($configured) : ?>
-            <form method="post" style="margin-top:10px;">
-                <?php wp_nonce_field('surfside_youversion_settings', 'surfside_youversion_settings_nonce'); ?>
-                <input type="hidden" name="surfside_youversion_settings_action" value="test">
-                <button type="submit" class="surfside-front-secondary-button">Test YouVersion Connection</button>
-            </form>
-        <?php endif; ?>
     </section>
+    <style>
+        .surfside-youversion-settings-card{padding:18px 20px!important}.surfside-youversion-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}.surfside-youversion-heading h2{margin:0 0 2px}.surfside-youversion-heading p{margin:0}.surfside-youversion-status{flex:0 0 auto;border:1px solid #cbd5df;border-radius:999px;padding:4px 9px;font-size:.8rem;font-weight:700;color:#526279;background:#f7f9fb}.surfside-youversion-status.is-configured{border-color:#b9dcc4;background:#edf7ed;color:#245f2a}.surfside-youversion-notice{margin:12px 0 0!important;padding:9px 11px!important;font-size:.92rem}.surfside-youversion-form{margin-top:14px}.surfside-youversion-row{display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:8px;align-items:center}.surfside-youversion-row input{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid #9aa9b8;border-radius:7px;font:inherit}.surfside-youversion-button{width:auto!important;min-width:0!important;margin:0!important;padding:9px 14px!important;white-space:nowrap}.surfside-youversion-meta{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:7px;color:#65758a;font-size:.82rem}.surfside-youversion-meta label{white-space:nowrap}.surfside-youversion-versions{margin-top:8px;font-size:.9rem}.surfside-youversion-versions ul{columns:2;column-gap:28px;margin:8px 0 0;padding-left:20px}@media(max-width:680px){.surfside-youversion-row{grid-template-columns:1fr auto}.surfside-youversion-row input{grid-column:1/-1}.surfside-youversion-meta{display:block}.surfside-youversion-meta label{display:block;margin-top:5px}.surfside-youversion-versions ul{columns:1}}
+    </style>
     <?php
     $panel = ob_get_clean();
 
