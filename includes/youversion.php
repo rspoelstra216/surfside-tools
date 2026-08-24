@@ -5,6 +5,13 @@
 if (!defined('ABSPATH')) { exit; }
 
 function surfside_tools_youversion_app_key() {
+    $key = trim((string)get_option('surfside_tools_youversion_app_key', ''));
+    if ($key !== '') {
+        return $key;
+    }
+
+    // Backward-compatible fallback for the initial foundation PR. The next
+    // Site Settings -> Integrations save migrates this value to the dedicated option.
     $settings = function_exists('surfside_tools_app_settings') ? surfside_tools_app_settings() : array();
     return trim((string)($settings['youversion_app_key'] ?? ''));
 }
