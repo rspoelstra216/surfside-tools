@@ -142,44 +142,58 @@ function surfside_tools_youversion_mobile_api_resolve_version($requested) {
 }
 
 function surfside_tools_youversion_mobile_api_get_versions() {
-    $cached = get_transient('surfside_youversion_mobile_english_versions');
+    $cached = get_transient('surfside_youversion_mobile_supported_versions');
     if (is_array($cached) && !empty($cached)) {
         return $cached;
     }
 
-    $versions = array();
-    $page_token = '';
-    $pages = 0;
+    // Surfside intentionally exposes English first, plus the additional
+    // languages selected for the mobile app experience.
+    $language_ranges = array('en', 'es', 'pt', 'vi', 'fr', 'de');
+    $versions_by_id = array();
 
-    do {
-        $query = array(
-            'language_ranges[]' => 'en*',
-            'page_size' => 100,
-        );
-        if ($page_token !== '') {
-            $query['page_token'] = $page_token;
-        }
+    foreach ($language_ranges as $language_range) {
+        $page_token = '';
+        $pages = 0;
 
-        $result = surfside_tools_youversion_request('bibles', $query);
-        if (is_wp_error($result)) {
-            return surfside_tools_youversion_mobile_api_public_error($result, 'Bible versions are temporarily unavailable.');
-        }
-
-        foreach ((array)($result['data'] ?? array()) as $version) {
-            if (is_array($version) && !empty($version['id'])) {
-                $versions[] = $version;
+        do {
+            $query = array('language_ranges[]' => $language_range);
+            if ($page_token !== '') {
+                $query['page_token'] = $page_token;
             }
-        }
 
-        $page_token = trim((string)($result['next_page_token'] ?? ''));
-        $pages++;
-    } while ($page_token !== '' && $pages < 10);
+            $result = surfside_tools_youversion_request('bibles', $query);
+            if (is_wp_error($result)) {
+                return surfside_tools_youversion_mobile_api_public_error($result, 'Bible versions are temporarily unavailable.');
+            }
 
+            foreach ((array)($result['data'] ?? array()) as $version) {
+                if (is_array($version) && !empty($version['id'])) {
+                    $versions_by_id[(string)$version['id']] = $version;
+                }
+            }
+
+            $page_token = trim((string)($result['next_page_token'] ?? ''));
+            $pages++;
+        } while ($page_token !== '' && $pages < 10);
+    }
+
+    $versions = array_values($versions_by_id);
     if (!empty($versions)) {
-        usort($versions, function ($a, $b) {
+        $language_order = array('en' => 0, 'es' => 1, 'pt' => 2, 'vi' => 3, 'fr' => 4, 'de' => 5);
+        usort($versions, function ($a, $b) use ($language_order) {
+            $a_tag = strtolower((string)($a['language_tag'] ?? ''));
+            $b_tag = strtolower((string)($b['language_tag'] ?? ''));
+            $a_base = strtok($a_tag, '-');
+            $b_base = strtok($b_tag, '-');
+            $a_order = $language_order[$a_base] ?? 99;
+            $b_order = $language_order[$b_base] ?? 99;
+            if ($a_order !== $b_order) {
+                return $a_order <=> $b_order;
+            }
             return strcasecmp((string)($a['localized_abbreviation'] ?? $a['abbreviation'] ?? ''), (string)($b['localized_abbreviation'] ?? $b['abbreviation'] ?? ''));
         });
-        set_transient('surfside_youversion_mobile_english_versions', $versions, HOUR_IN_SECONDS);
+        set_transient('surfside_youversion_mobile_supported_versions', $versions, HOUR_IN_SECONDS);
     }
 
     return $versions;
