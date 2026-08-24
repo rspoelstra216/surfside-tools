@@ -20,6 +20,40 @@ function surfside_tools_youversion_is_configured() {
     return surfside_tools_youversion_app_key() !== '';
 }
 
+function surfside_tools_youversion_error_message($data) {
+    if (!is_array($data)) {
+        return '';
+    }
+
+    foreach (array('message', 'error_description', 'error', 'detail', 'title') as $field) {
+        if (!empty($data[$field]) && is_scalar($data[$field])) {
+            return sanitize_text_field((string)$data[$field]);
+        }
+    }
+
+    foreach (array('errors', 'details', 'validation_errors') as $field) {
+        if (empty($data[$field]) || !is_array($data[$field])) {
+            continue;
+        }
+
+        foreach ($data[$field] as $item) {
+            if (is_scalar($item)) {
+                return sanitize_text_field((string)$item);
+            }
+            if (!is_array($item)) {
+                continue;
+            }
+            foreach (array('message', 'detail', 'title', 'reason') as $nested_field) {
+                if (!empty($item[$nested_field]) && is_scalar($item[$nested_field])) {
+                    return sanitize_text_field((string)$item[$nested_field]);
+                }
+            }
+        }
+    }
+
+    return '';
+}
+
 function surfside_tools_youversion_request($path, $query = array()) {
     $app_key = surfside_tools_youversion_app_key();
     if ($app_key === '') {
@@ -56,14 +90,9 @@ function surfside_tools_youversion_request($path, $query = array()) {
         return is_array($data) ? $data : array();
     }
 
-    $message = 'YouVersion API request failed.';
-    if (is_array($data)) {
-        foreach (array('message', 'error_description', 'error', 'detail') as $field) {
-            if (!empty($data[$field]) && is_scalar($data[$field])) {
-                $message = sanitize_text_field((string)$data[$field]);
-                break;
-            }
-        }
+    $message = surfside_tools_youversion_error_message($data);
+    if ($message === '') {
+        $message = 'YouVersion API request failed.';
     }
 
     $error_data = array('status' => $status);
