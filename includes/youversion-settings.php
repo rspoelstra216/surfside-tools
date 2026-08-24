@@ -23,8 +23,11 @@ function surfside_tools_youversion_settings_handle_post() {
     $referer = wp_get_referer() ?: home_url('/dashboard/settings/');
 
     if ($action === 'test') {
+        // Keep the validation request identical to YouVersion's documented first
+        // request. Query filtering can be added only after basic authentication
+        // and Bible access have been confirmed.
         $result = function_exists('surfside_tools_youversion_request')
-            ? surfside_tools_youversion_request('bibles', array('language_ranges' => 'en', 'page_size' => 99))
+            ? surfside_tools_youversion_request('bibles')
             : new WP_Error('surfside_youversion_client_missing', 'YouVersion client is unavailable.');
 
         if (is_wp_error($result)) {
@@ -122,7 +125,7 @@ add_filter('do_shortcode_tag', function ($output, $tag) {
                 <?php echo esc_html($test['message'] ?? 'YouVersion connection test completed.'); ?>
                 <?php if (!empty($test['success'])) : ?>
                     <?php $count = absint($test['count'] ?? 0); ?>
-                    <?php if ($count) : ?> Accessible English versions: <?php echo esc_html(number_format_i18n($count)); ?>.<?php endif; ?>
+                    <?php if ($count) : ?> Accessible Bible versions: <?php echo esc_html(number_format_i18n($count)); ?>.<?php endif; ?>
                 <?php endif; ?>
             </div>
             <?php if (!empty($test['success']) && !empty($test['versions']) && is_array($test['versions'])) : ?>
