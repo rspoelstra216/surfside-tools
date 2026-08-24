@@ -60,7 +60,8 @@ function surfside_tools_youversion_settings_handle_post() {
         }
 
         set_transient(surfside_tools_youversion_test_transient_key(), $test, 5 * MINUTE_IN_SECONDS);
-        wp_safe_redirect(add_query_arg('youversion_tested', '1', $referer));
+        $redirect = add_query_arg('youversion_tested', '1', $referer) . '#surfside-youversion';
+        wp_safe_redirect($redirect);
         exit;
     }
 
@@ -90,7 +91,8 @@ function surfside_tools_youversion_settings_handle_post() {
         update_option('surfside_tools_app_settings', $legacy, false);
     }
 
-    wp_safe_redirect(add_query_arg('youversion_saved', '1', $referer));
+    $redirect = add_query_arg('youversion_saved', '1', $referer) . '#surfside-youversion';
+    wp_safe_redirect($redirect);
     exit;
 }
 add_action('template_redirect', 'surfside_tools_youversion_settings_handle_post', 5);
@@ -108,7 +110,7 @@ add_filter('do_shortcode_tag', function ($output, $tag) {
 
     ob_start();
     ?>
-    <section class="surfside-front-settings-card surfside-youversion-settings-card">
+    <section id="surfside-youversion" class="surfside-front-settings-card surfside-youversion-settings-card">
         <div class="surfside-youversion-heading">
             <div>
                 <h2>YouVersion</h2>
@@ -159,7 +161,7 @@ add_filter('do_shortcode_tag', function ($output, $tag) {
         </form>
     </section>
     <style>
-        .surfside-youversion-settings-card{padding:18px 20px!important}.surfside-youversion-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}.surfside-youversion-heading h2{margin:0 0 2px}.surfside-youversion-heading p{margin:0}.surfside-youversion-status{flex:0 0 auto;border:1px solid #cbd5df;border-radius:999px;padding:4px 9px;font-size:.8rem;font-weight:700;color:#526279;background:#f7f9fb}.surfside-youversion-status.is-configured{border-color:#b9dcc4;background:#edf7ed;color:#245f2a}.surfside-youversion-notice{margin:12px 0 0!important;padding:9px 11px!important;font-size:.92rem}.surfside-youversion-form{margin-top:14px}.surfside-youversion-row{display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:8px;align-items:center}.surfside-youversion-row input{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid #9aa9b8;border-radius:7px;font:inherit}.surfside-youversion-button{width:auto!important;min-width:0!important;margin:0!important;padding:9px 14px!important;white-space:nowrap}.surfside-youversion-meta{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:7px;color:#65758a;font-size:.82rem}.surfside-youversion-meta label{white-space:nowrap}.surfside-youversion-versions{margin-top:8px;font-size:.9rem}.surfside-youversion-versions ul{columns:2;column-gap:28px;margin:8px 0 0;padding-left:20px}@media(max-width:680px){.surfside-youversion-row{grid-template-columns:1fr auto}.surfside-youversion-row input{grid-column:1/-1}.surfside-youversion-meta{display:block}.surfside-youversion-meta label{display:block;margin-top:5px}.surfside-youversion-versions ul{columns:1}}
+        #surfside-youversion{scroll-margin-top:24px}.surfside-youversion-settings-card{padding:18px 20px!important}.surfside-youversion-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}.surfside-youversion-heading h2{margin:0 0 2px}.surfside-youversion-heading p{margin:0}.surfside-youversion-status{flex:0 0 auto;border:1px solid #cbd5df;border-radius:999px;padding:4px 9px;font-size:.8rem;font-weight:700;color:#526279;background:#f7f9fb}.surfside-youversion-status.is-configured{border-color:#b9dcc4;background:#edf7ed;color:#245f2a}.surfside-youversion-notice{margin:12px 0 0!important;padding:9px 11px!important;font-size:.92rem}.surfside-youversion-form{margin-top:14px}.surfside-youversion-row{display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:8px;align-items:center}.surfside-youversion-row input{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid #9aa9b8;border-radius:7px;font:inherit}.surfside-youversion-button{width:auto!important;min-width:0!important;margin:0!important;padding:9px 14px!important;white-space:nowrap}.surfside-youversion-meta{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:7px;color:#65758a;font-size:.82rem}.surfside-youversion-meta label{white-space:nowrap}.surfside-youversion-versions{margin-top:8px;font-size:.9rem}.surfside-youversion-versions ul{columns:2;column-gap:28px;margin:8px 0 0;padding-left:20px}@media(max-width:680px){.surfside-youversion-row{grid-template-columns:1fr auto}.surfside-youversion-row input{grid-column:1/-1}.surfside-youversion-meta{display:block}.surfside-youversion-meta label{display:block;margin-top:5px}.surfside-youversion-versions ul{columns:1}}
     </style>
     <?php
     $panel = ob_get_clean();
