@@ -23,11 +23,11 @@ function surfside_tools_youversion_settings_handle_post() {
     $referer = wp_get_referer() ?: home_url('/dashboard/settings/');
 
     if ($action === 'test') {
-        // Keep the validation request identical to YouVersion's documented first
-        // request. Query filtering can be added only after basic authentication
-        // and Bible access have been confirmed.
+        // YouVersion currently requires language_ranges[] on the Bible collection
+        // endpoint. Use English for the connection test and filter/display results
+        // server-side from the licensed versions returned for this App Key.
         $result = function_exists('surfside_tools_youversion_request')
-            ? surfside_tools_youversion_request('bibles')
+            ? surfside_tools_youversion_request('bibles', array('language_ranges[]' => 'en'))
             : new WP_Error('surfside_youversion_client_missing', 'YouVersion client is unavailable.');
 
         if (is_wp_error($result)) {
