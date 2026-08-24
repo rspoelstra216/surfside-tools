@@ -16,6 +16,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/core-weekly-tools.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-information.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/ministries-model.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/app-management.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/youversion.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/contact-management.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/contact-form.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-api.php';
