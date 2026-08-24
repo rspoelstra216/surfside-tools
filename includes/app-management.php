@@ -27,18 +27,12 @@ add_action('admin_init', function () {
         'sanitize_callback' => function ($input) {
             $input = is_array($input) ? $input : array();
             $existing = surfside_tools_app_settings();
-            $youversion_key = trim((string)($input['youversion_app_key'] ?? ''));
-
-            if (!empty($input['clear_youversion_app_key'])) {
-                $youversion_key = '';
-            } elseif ($youversion_key === '') {
-                $youversion_key = trim((string)($existing['youversion_app_key'] ?? ''));
-            }
-
             return array(
                 'home_hero_image_id' => absint($input['home_hero_image_id'] ?? 0),
                 'giving_url' => esc_url_raw(trim((string)($input['giving_url'] ?? ''))),
-                'youversion_app_key' => sanitize_text_field($youversion_key),
+                // Preserve any key saved by the initial YouVersion foundation until
+                // Site Settings -> Integrations migrates it to the dedicated option.
+                'youversion_app_key' => sanitize_text_field((string)($existing['youversion_app_key'] ?? '')),
             );
         },
         'default' => array('home_hero_image_id' => 0, 'giving_url' => '', 'youversion_app_key' => ''),
@@ -59,7 +53,6 @@ function surfside_tools_admin_app_page() {
     $image_id = absint($settings['home_hero_image_id'] ?? 0);
     $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'large') : '';
     $giving_url = esc_url($settings['giving_url'] ?? '');
-    $youversion_configured = trim((string)($settings['youversion_app_key'] ?? '')) !== '';
     ?>
     <div class="wrap surfside-admin-wrap">
         <div class="surfside-admin-hero">
@@ -83,17 +76,6 @@ function surfside_tools_admin_app_page() {
                 <p><label for="surfside-app-giving-url"><strong>Giving Form URL</strong></label></p>
                 <input type="url" class="regular-text" style="width:100%;max-width:640px;" id="surfside-app-giving-url" name="surfside_tools_app_settings[giving_url]" value="<?php echo esc_attr($giving_url); ?>" placeholder="https://give.tithe.ly/?formId=...">
                 <p class="description">Use the direct Tithely Giving Form URL, not the kiosk URL or embed code. Changes here can update the app without publishing a new app release.</p>
-            </div>
-            <div class="surfside-admin-card" style="max-width:760px;">
-                <h2>YouVersion</h2>
-                <p class="surfside-admin-muted">Store the YouVersion Platform App Key server-side for future Scripture integration. The key is never exposed through the mobile API by this setting.</p>
-                <p><strong>Status:</strong> <?php echo $youversion_configured ? '<span style="color:#137333;">Configured</span>' : '<span class="surfside-admin-muted">Not configured</span>'; ?></p>
-                <p><label for="surfside-app-youversion-key"><strong>App Key</strong></label></p>
-                <input type="password" class="regular-text" style="width:100%;max-width:640px;" id="surfside-app-youversion-key" name="surfside_tools_app_settings[youversion_app_key]" value="" autocomplete="new-password" placeholder="<?php echo $youversion_configured ? 'Leave blank to keep the saved key' : 'Paste YouVersion App Key'; ?>">
-                <p class="description">For security, the saved key is not displayed again. Leaving this field blank preserves the existing key.</p>
-                <?php if ($youversion_configured) : ?>
-                    <p><label><input type="checkbox" name="surfside_tools_app_settings[clear_youversion_app_key]" value="1"> Remove the saved YouVersion App Key</label></p>
-                <?php endif; ?>
             </div>
             <?php submit_button('Save App Settings'); ?>
         </form>
