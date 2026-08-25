@@ -14,14 +14,11 @@ function surfside_tools_staff_site_management_shortcode() {
         $cards[]=array('title'=>'Navigation','description'=>'Header and footer links, destinations, and order.','path'=>'site-navigation','icon'=>'document');
     }
     $cards[]=array('title'=>'Homepage Photos','description'=>'Upload, remove, and reorder carousel photography.','path'=>'homepage','icon'=>'document');
-    if($can_configure){
-        $cards[]=array('title'=>'Ministries','description'=>'Manage ongoing ministries and their audience classifications.','path'=>'site-ministries','icon'=>'document');
-    }
 
     ob_start(); ?>
     <div class="surfside-staff-shell surfside-site-management">
       <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('')); ?>">← Back to Dashboard</a></div>
-      <section class="surfside-staff-hero"><p class="surfside-staff-eyebrow">Website</p><h1>Manage Website</h1><p class="surfside-staff-muted">Update website-specific content and presentation. Shared configuration now lives in Site Settings.</p></section>
+      <section class="surfside-staff-hero"><p class="surfside-staff-eyebrow">Website</p><h1>Manage Website</h1><p class="surfside-staff-muted">Update website-specific content and presentation. Shared church information and ministries live in Church Settings.</p></section>
       <div class="surfside-staff-grid"><?php foreach($cards as $card): ?><article class="surfside-staff-card"><span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon($card['icon']); ?></span><h2><?php echo esc_html($card['title']); ?></h2><p><?php echo esc_html($card['description']); ?></p><div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_staff_page_url($card['path'])); ?>">Open <?php echo esc_html($card['title']); ?> <span class="surfside-staff-arrow">›</span></a></div></article><?php endforeach; ?></div>
     </div><?php return ob_get_clean();
 }
