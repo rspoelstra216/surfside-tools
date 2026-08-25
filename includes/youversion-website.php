@@ -27,8 +27,17 @@ function surfside_tools_youversion_website_assets() {
         true
     );
 
+    wp_enqueue_script(
+        'surfside-youversion-website-version-picker',
+        SURFSIDE_TOOLS_URL . 'assets/js/youversion-website-version-picker.js',
+        array('surfside-youversion-website'),
+        SURFSIDE_TOOLS_VERSION,
+        true
+    );
+
     wp_localize_script('surfside-youversion-website', 'surfsideBibleWebsite', array(
         'passageEndpoint' => esc_url_raw(rest_url('surfside/v1/bible/passage')),
+        'versionsEndpoint' => esc_url_raw(rest_url('surfside/v1/bible/versions')),
         'defaultVersion' => 'NIV',
     ));
 }
@@ -49,7 +58,15 @@ function surfside_tools_youversion_website_dialog() {
                 <button type="button" class="surfside-scripture-dialog__close" data-scripture-close aria-label="Close Scripture">Close</button>
             </header>
             <div class="surfside-scripture-dialog__body">
-                <div class="surfside-scripture-dialog__version" data-scripture-version>NIV · New International Version</div>
+                <div class="surfside-scripture-dialog__version-row">
+                    <label class="surfside-scripture-dialog__version-picker">
+                        <span class="screen-reader-text">Bible version</span>
+                        <select data-scripture-version-select disabled>
+                            <option value="NIV">NIV — New International Version</option>
+                        </select>
+                    </label>
+                    <div class="surfside-scripture-dialog__version" data-scripture-version>NIV · New International Version</div>
+                </div>
                 <div class="surfside-scripture-dialog__status" data-scripture-status>Loading Scripture…</div>
                 <div class="surfside-scripture-dialog__content" data-scripture-content hidden></div>
                 <div class="surfside-scripture-dialog__attribution" data-scripture-attribution hidden></div>
