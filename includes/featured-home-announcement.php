@@ -55,6 +55,21 @@ add_action('template_redirect', function () {
     update_option('surfside_tools_app_settings', $settings);
 }, 5);
 
+add_filter('surfside_tools_mobile_api_app', function ($payload) {
+    if (!is_array($payload)) return $payload;
+    $featured = surfside_tools_app_featured_announcement();
+    if (!isset($payload['app']) || !is_array($payload['app'])) $payload['app'] = array();
+    $payload['app']['featured_announcement'] = $featured['active'] ? array(
+        'headline' => $featured['headline'],
+        'message' => $featured['message'],
+        'button_label' => $featured['button_label'],
+        'button_url' => $featured['button_url'],
+        'starts_at' => $featured['starts_at'],
+        'ends_at' => $featured['ends_at'],
+    ) : null;
+    return $payload;
+}, 20);
+
 add_filter('do_shortcode_tag', function ($output, $tag) {
     if ($tag !== 'surfside_staff_mobile_app_home' || !is_user_logged_in() || !current_user_can('upload_files')) return $output;
 
