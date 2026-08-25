@@ -21,21 +21,61 @@ function surfside_tools_app_giving_url() {
     return esc_url_raw($settings['giving_url'] ?? '');
 }
 
+function surfside_tools_app_featured_announcement() {
+    $settings = surfside_tools_app_settings();
+    $enabled = !empty($settings['featured_enabled']);
+    $headline = sanitize_text_field((string)($settings['featured_headline'] ?? ''));
+    $message = sanitize_textarea_field((string)($settings['featured_message'] ?? ''));
+    $button_label = sanitize_text_field((string)($settings['featured_button_label'] ?? ''));
+    $button_url = esc_url_raw((string)($settings['featured_button_url'] ?? ''));
+    $starts_at = sanitize_text_field((string)($settings['featured_starts_at'] ?? ''));
+    $ends_at = sanitize_text_field((string)($settings['featured_ends_at'] ?? ''));
+    $timezone = wp_timezone();
+    $now = current_datetime();
+    $start = $starts_at ? DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $starts_at, $timezone) : null;
+    $end = $ends_at ? DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $ends_at, $timezone) : null;
+    $active = $enabled && $headline !== '' && $ends_at !== '' && $end && (!$start || $now >= $start) && $now <= $end;
+    return array(
+        'enabled' => $enabled,
+        'active' => (bool)$active,
+        'headline' => $headline,
+        'message' => $message,
+        'button_label' => $button_label,
+        'button_url' => $button_url,
+        'starts_at' => $start ? $start->format(DATE_ATOM) : '',
+        'ends_at' => $end ? $end->format(DATE_ATOM) : '',
+    );
+}
+
 add_action('admin_init', function () {
     register_setting('surfside_tools_app_settings_group', 'surfside_tools_app_settings', array(
         'type' => 'array',
         'sanitize_callback' => function ($input) {
             $input = is_array($input) ? $input : array();
             $existing = surfside_tools_app_settings();
+            $starts_at = sanitize_text_field((string)($input['featured_starts_at'] ?? ''));
+            $ends_at = sanitize_text_field((string)($input['featured_ends_at'] ?? ''));
+            if ($starts_at && !preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $starts_at)) { $starts_at = ''; }
+            if ($ends_at && !preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $ends_at)) { $ends_at = ''; }
+            if (!empty($input['featured_enabled']) && $ends_at === '') {
+                add_settings_error('surfside_tools_app_settings', 'featured_run_until_required', 'Featured Home Announcement requires a Run Until date and time before it can be enabled.', 'error');
+            }
             return array(
                 'home_hero_image_id' => absint($input['home_hero_image_id'] ?? 0),
                 'giving_url' => esc_url_raw(trim((string)($input['giving_url'] ?? ''))),
+                'featured_enabled' => !empty($input['featured_enabled']) && $ends_at !== '' ? 1 : 0,
+                'featured_headline' => sanitize_text_field((string)($input['featured_headline'] ?? '')),
+                'featured_message' => sanitize_textarea_field((string)($input['featured_message'] ?? '')),
+                'featured_button_label' => sanitize_text_field((string)($input['featured_button_label'] ?? '')),
+                'featured_button_url' => esc_url_raw(trim((string)($input['featured_button_url'] ?? ''))),
+                'featured_starts_at' => $starts_at,
+                'featured_ends_at' => $ends_at,
                 // Preserve any key saved by the initial YouVersion foundation until
                 // Site Settings -> Integrations migrates it to the dedicated option.
                 'youversion_app_key' => sanitize_text_field((string)($existing['youversion_app_key'] ?? '')),
             );
         },
-        'default' => array('home_hero_image_id' => 0, 'giving_url' => '', 'youversion_app_key' => ''),
+        'default' => array('home_hero_image_id' => 0, 'giving_url' => '', 'featured_enabled' => 0, 'featured_headline' => '', 'featured_message' => '', 'featured_button_label' => '', 'featured_button_url' => '', 'featured_starts_at' => '', 'featured_ends_at' => '', 'youversion_app_key' => ''),
     ));
 });
 
@@ -53,6 +93,7 @@ function surfside_tools_admin_app_page() {
     $image_id = absint($settings['home_hero_image_id'] ?? 0);
     $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'large') : '';
     $giving_url = esc_url($settings['giving_url'] ?? '');
+    $featured = surfside_tools_app_featured_announcement();
     ?>
     <div class="wrap surfside-admin-wrap">
         <div class="surfside-admin-hero">
@@ -69,6 +110,22 @@ function surfside_tools_admin_app_page() {
                 <img id="surfside-app-hero-preview" src="<?php echo esc_url($image_url); ?>" alt="" style="<?php echo $image_url ? '' : 'display:none;'; ?>width:100%;max-width:640px;max-height:300px;object-fit:cover;border-radius:12px;margin:8px 0 14px;">
                 <p><button type="button" class="button button-primary" id="surfside-app-select-hero"><?php echo $image_id ? 'Replace Hero Image' : 'Select Hero Image'; ?></button> <button type="button" class="button" id="surfside-app-remove-hero" style="<?php echo $image_id ? '' : 'display:none;'; ?>">Remove</button></p>
                 <p class="description">If no image is selected, the mobile app can fall back to its standard branded hero.</p>
+            </div>
+            <div class="surfside-admin-card" style="max-width:760px;">
+                <h2>Featured Home Announcement</h2>
+                <p class="surfside-admin-muted">Temporarily feature VBS, baptisms, special services, ministry opportunities, or other timely information on the app Home screen. When the announcement is inactive or expires, Home returns to the normal upcoming-event card.</p>
+                <p><label><input type="checkbox" name="surfside_tools_app_settings[featured_enabled]" value="1" <?php checked(!empty($settings['featured_enabled'])); ?>> <strong>Enable featured announcement</strong></label></p>
+                <p><label for="surfside-featured-headline"><strong>Headline</strong></label><br><input type="text" class="regular-text" style="width:100%;max-width:640px;" id="surfside-featured-headline" name="surfside_tools_app_settings[featured_headline]" value="<?php echo esc_attr($settings['featured_headline'] ?? ''); ?>"></p>
+                <p><label for="surfside-featured-message"><strong>Short Message</strong></label><br><textarea class="large-text" rows="3" style="max-width:640px;" id="surfside-featured-message" name="surfside_tools_app_settings[featured_message]"><?php echo esc_textarea($settings['featured_message'] ?? ''); ?></textarea></p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;max-width:640px;">
+                    <p><label for="surfside-featured-start"><strong>Start Showing</strong></label><br><input type="datetime-local" id="surfside-featured-start" name="surfside_tools_app_settings[featured_starts_at]" value="<?php echo esc_attr($settings['featured_starts_at'] ?? ''); ?>"><br><span class="description">Optional. Leave blank to start immediately.</span></p>
+                    <p><label for="surfside-featured-end"><strong>Run Until</strong></label><br><input type="datetime-local" id="surfside-featured-end" name="surfside_tools_app_settings[featured_ends_at]" value="<?php echo esc_attr($settings['featured_ends_at'] ?? ''); ?>" required><br><span class="description">Required when enabled.</span></p>
+                </div>
+                <div style="display:grid;grid-template-columns:minmax(160px,220px) minmax(240px,1fr);gap:16px;max-width:640px;">
+                    <p><label for="surfside-featured-button"><strong>Button Label</strong></label><br><input type="text" class="regular-text" style="width:100%;" id="surfside-featured-button" name="surfside_tools_app_settings[featured_button_label]" value="<?php echo esc_attr($settings['featured_button_label'] ?? ''); ?>" placeholder="Learn More"></p>
+                    <p><label for="surfside-featured-url"><strong>Button Link</strong></label><br><input type="url" class="regular-text" style="width:100%;" id="surfside-featured-url" name="surfside_tools_app_settings[featured_button_url]" value="<?php echo esc_attr($settings['featured_button_url'] ?? ''); ?>" placeholder="https://..."></p>
+                </div>
+                <?php if (!empty($settings['featured_enabled'])) : ?><p class="description"><strong>Status:</strong> <?php echo $featured['active'] ? 'Currently showing in the app API.' : 'Scheduled or expired; not currently active.'; ?></p><?php endif; ?>
             </div>
             <div class="surfside-admin-card" style="max-width:760px;">
                 <h2>Giving</h2>
