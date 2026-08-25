@@ -12,6 +12,7 @@
   const link=dialog.querySelector('[data-scripture-link]');
   let previousFocus=null;
   let controller=null;
+  let activePassage=null;
 
   const books={
     genesis:'GEN',exodus:'EXO',leviticus:'LEV',numbers:'NUM',deuteronomy:'DEU',joshua:'JOS',judges:'JDG',ruth:'RUT',
@@ -37,17 +38,13 @@
     if(controller)controller.abort();
     dialog.hidden=true;
     document.documentElement.classList.remove('surfside-scripture-open');
+    activePassage=null;
     if(previousFocus&&typeof previousFocus.focus==='function')previousFocus.focus();
   }
 
-  async function openPassage(trigger){
-    const parsed=parseReference(trigger.textContent);
-    if(!parsed)return;
-    previousFocus=trigger;
-    dialog.hidden=false;
-    document.documentElement.classList.add('surfside-scripture-open');
-    title.textContent=parsed.display;
-    versionLabel.textContent=parsed.version;
+  async function loadPassage(reference,version,display){
+    if(controller)controller.abort();
+    controller=new AbortController();
     status.hidden=false;
     status.textContent='Loading Scripture…';
     content.hidden=true;
@@ -55,19 +52,17 @@
     attribution.hidden=true;
     attribution.textContent='';
     link.hidden=true;
-    panel.focus();
+    versionLabel.textContent=version;
 
-    if(controller)controller.abort();
-    controller=new AbortController();
     const url=new URL(config.passageEndpoint,window.location.origin);
-    url.searchParams.set('reference',parsed.reference);
-    url.searchParams.set('version',parsed.version);
+    url.searchParams.set('reference',reference);
+    url.searchParams.set('version',version);
 
     try{
       const response=await fetch(url.toString(),{signal:controller.signal,credentials:'same-origin'});
       const data=await response.json();
       if(!response.ok)throw new Error(data&&data.message?data.message:'Passage unavailable');
-      title.textContent=(data.passage&&data.passage.reference)||parsed.display;
+      title.textContent=(data.passage&&data.passage.reference)||display;
       const v=data.version||{};
       versionLabel.textContent=[v.abbreviation,v.title].filter(Boolean).join(' · ');
       content.innerHTML=(data.passage&&data.passage.content)||'';
@@ -82,6 +77,19 @@
     }
   }
 
+  async function openPassage(trigger){
+    const parsed=parseReference(trigger.textContent);
+    if(!parsed)return;
+    previousFocus=trigger;
+    activePassage=parsed;
+    dialog.hidden=false;
+    document.documentElement.classList.add('surfside-scripture-open');
+    title.textContent=parsed.display;
+    panel.focus();
+    document.dispatchEvent(new CustomEvent('surfside:scripture-open',{detail:{version:parsed.version,reference:parsed.reference}}));
+    await loadPassage(parsed.reference,parsed.version,parsed.display);
+  }
+
   function enhance(root){
     (root||document).querySelectorAll('.message-notes-reference').forEach(function(el){
       if(el.dataset.scriptureReady)return;
@@ -94,6 +102,14 @@
       el.addEventListener('keydown',function(event){if(event.key==='Enter'||event.key===' '){event.preventDefault();openPassage(el);}});
     });
   }
+
+  document.addEventListener('surfside:scripture-version-change',function(event){
+    if(!activePassage||dialog.hidden)return;
+    const version=event.detail&&event.detail.version?String(event.detail.version):'';
+    if(!version)return;
+    activePassage.version=version;
+    loadPassage(activePassage.reference,version,activePassage.display);
+  });
 
   dialog.querySelectorAll('[data-scripture-close]').forEach(function(el){el.addEventListener('click',closeDialog);});
   document.addEventListener('keydown',function(event){if(event.key==='Escape'&&!dialog.hidden)closeDialog();});
