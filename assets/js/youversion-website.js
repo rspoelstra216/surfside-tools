@@ -30,7 +30,7 @@
     const start=match[3].replace(/[ab]$/i,'');
     const end=match[4]?match[4].replace(/[ab]$/i,''):'';
     const version=(match[5]||config.defaultVersion||'NIV').toUpperCase();
-    return {reference:book+'.'+chapter+'.'+start+(end?'-'+book+'.'+chapter+'.'+end:''),version:version,display:cleaned.replace(/\s+[A-Za-z0-9]+$/,'')};
+    return {reference:book+'.'+chapter+'.'+start+(end?'-'+end:''),version:version,display:cleaned.replace(/\s+[A-Za-z0-9]+$/,'')};
   }
 
   function closeDialog(){
