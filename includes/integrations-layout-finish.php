@@ -25,7 +25,7 @@ add_filter('do_shortcode_tag', function ($output, $tag) {
         : home_url('/dashboard/site-streaming/');
 
     $streaming = '<details class="surfside-front-settings-card surfside-integration-card surfside-streaming-integration-card">'
-        . '<summary><span>Streaming</span><span class="surfside-integration-summary-action">Configure</span></summary>'
+        . '<summary><span>Streaming</span></summary>'
         . '<div class="surfside-integration-body"><p class="surfside-front-description">Livestream channel, offline announcement media, and shared streaming destinations.</p>'
         . '<p><a class="surfside-front-secondary-button surfside-streaming-settings-link" href="' . esc_url($streaming_url) . '">Open Streaming Settings <span aria-hidden="true">›</span></a></p></div>'
         . '</details>';
@@ -39,9 +39,9 @@ add_filter('do_shortcode_tag', function ($output, $tag) {
 
     $css = '<style>
         .surfside-integration-card{margin:0 0 10px!important;box-sizing:border-box}
-        .surfside-integration-card>summary{display:grid!important;grid-template-columns:minmax(0,1fr) 150px 24px;align-items:center;column-gap:14px;min-height:56px;box-sizing:border-box;padding:14px 18px!important}
+        .surfside-integration-card>summary{display:grid!important;grid-template-columns:minmax(0,1fr) 24px;align-items:center;column-gap:14px;min-height:56px;box-sizing:border-box;padding:14px 18px!important}
         .surfside-integration-card>summary>span:first-child{min-width:0}
-        .surfside-integration-summary-action,.surfside-integration-status,.surfside-youversion-status{margin:0!important;justify-self:center;text-align:center;white-space:nowrap}
+        .surfside-integration-summary-action,.surfside-integration-status,.surfside-youversion-status{display:none!important}
         .surfside-integration-card>summary:after{margin:0!important;justify-self:end}
         .surfside-streaming-integration-card{max-width:1200px;margin-left:auto!important;margin-right:auto!important}
         .surfside-streaming-settings-link{display:inline-flex;align-items:center;gap:8px;width:auto!important;text-decoration:none!important}
@@ -49,7 +49,7 @@ add_filter('do_shortcode_tag', function ($output, $tag) {
         .surfside-visual-css-settings-shell:empty{display:none!important}
         .surfside-youversion-settings-card{margin-top:0!important}
         .surfside-integrations-save-shell{margin-top:0!important;padding-top:6px!important}
-        @media(max-width:720px){.surfside-integration-card>summary{grid-template-columns:minmax(0,1fr) auto 20px;column-gap:9px;padding:13px 14px!important}.surfside-integration-summary-action,.surfside-integration-status,.surfside-youversion-status{font-size:.75rem!important}}
+        @media(max-width:720px){.surfside-integration-card>summary{grid-template-columns:minmax(0,1fr) 20px;column-gap:9px;padding:13px 14px!important}}
     </style>';
 
     $script = '<script>
