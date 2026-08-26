@@ -37,13 +37,13 @@ function surfside_tools_calendar_add_event_group_field($output, $tag) {
 
     $field = '<div class="surfside-calendar-event-group" data-surfside-event-group>'
         . '<label><span>App Event Series</span><select name="event_group" data-surfside-event-group-select>' . $options . '</select></label>'
-        . '<label data-surfside-event-group-new hidden><span>New Series Name</span><input type="text" name="event_group_new" maxlength="80" placeholder="Brazilian Jiu Jitsu"></label>'
+        . '<label data-surfside-event-group-new hidden><input type="text" name="event_group_new" maxlength="80" placeholder="Enter new series name"></label>'
         . '<small>Optional. Use this when separate recurring event schedules represent the same activity in the app. For example, Wednesday and Saturday Brazilian Jiu Jitsu can be shown as one series.</small>'
         . '</div>';
     $updated = preg_replace('~<fieldset class="surfside-calendar-recurrence"~', $field . '<fieldset class="surfside-calendar-recurrence"', $output, 1);
     if (!is_string($updated)) return $output;
 
-    $enhancement = '<style>.surfside-calendar-event-group{display:grid;gap:7px}.surfside-calendar-event-group label{display:grid;gap:7px}.surfside-calendar-event-group label>span{font-weight:700}.surfside-calendar-event-group select,.surfside-calendar-event-group input{width:100%;box-sizing:border-box}.surfside-calendar-event-group small{color:#687480;font-size:.85rem;line-height:1.4}</style>'
+    $enhancement = '<style>.surfside-calendar-event-group{display:grid;gap:7px}.surfside-calendar-event-group label{display:grid;gap:7px}.surfside-calendar-event-group label>span{font-weight:700}.surfside-calendar-event-group select,.surfside-calendar-event-group input{width:100%;box-sizing:border-box}.surfside-calendar-event-group [data-surfside-event-group-new][hidden]{display:none!important}.surfside-calendar-event-group small{color:#687480;font-size:.85rem;line-height:1.4}</style>'
         . '<script>(function(){const root=document.querySelector("[data-surfside-event-group]");if(!root)return;const select=root.querySelector("[data-surfside-event-group-select]");const add=root.querySelector("[data-surfside-event-group-new]");if(!select||!add)return;const sync=()=>{add.hidden=select.value!=="__new__";const input=add.querySelector("input");if(input)input.required=select.value==="__new__";};select.addEventListener("change",sync);sync();})();</script>';
     return $updated . $enhancement;
 }
