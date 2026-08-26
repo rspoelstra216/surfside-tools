@@ -29,16 +29,16 @@ function surfside_tools_calendar_add_event_group_field($output, $tag) {
     $groups = surfside_tools_calendar_existing_event_groups();
     if ($group !== '' && !in_array($group, $groups, true)) { $groups[] = $group; sort($groups, SORT_NATURAL | SORT_FLAG_CASE); }
 
-    $options = '<option value=""' . selected($group, '', false) . '>No group</option>';
+    $options = '<option value=""' . selected($group, '', false) . '>No series</option>';
     foreach ($groups as $existing_group) {
         $options .= '<option value="' . esc_attr($existing_group) . '"' . selected($group, $existing_group, false) . '>' . esc_html($existing_group) . '</option>';
     }
-    $options .= '<option value="__new__">+ Add New Group…</option>';
+    $options .= '<option value="__new__">+ Add New Series…</option>';
 
     $field = '<div class="surfside-calendar-event-group" data-surfside-event-group>'
-        . '<label><span>Event Group</span><select name="event_group" data-surfside-event-group-select>' . $options . '</select></label>'
-        . '<label data-surfside-event-group-new hidden><span>New Group Name</span><input type="text" name="event_group_new" maxlength="80" placeholder="Brazilian Jiu Jitsu"></label>'
-        . '<small>Optional. Use only when separate recurring events should appear together in the app.</small>'
+        . '<label><span>App Event Series</span><select name="event_group" data-surfside-event-group-select>' . $options . '</select></label>'
+        . '<label data-surfside-event-group-new hidden><span>New Series Name</span><input type="text" name="event_group_new" maxlength="80" placeholder="Brazilian Jiu Jitsu"></label>'
+        . '<small>Optional. Use this when separate recurring event schedules represent the same activity in the app. For example, Wednesday and Saturday Brazilian Jiu Jitsu can be shown as one series.</small>'
         . '</div>';
     $updated = preg_replace('~<fieldset class="surfside-calendar-recurrence"~', $field . '<fieldset class="surfside-calendar-recurrence"', $output, 1);
     if (!is_string($updated)) return $output;
