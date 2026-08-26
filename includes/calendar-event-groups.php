@@ -20,3 +20,22 @@ function surfside_tools_calendar_add_event_group_field($output, $tag) {
     return $updated . '<style>.surfside-calendar-event-group{display:grid;gap:7px}.surfside-calendar-event-group>span{font-weight:700}.surfside-calendar-event-group small{color:#687480;font-size:.85rem;line-height:1.4}</style>';
 }
 add_filter('do_shortcode_tag', 'surfside_tools_calendar_add_event_group_field', 30, 2);
+
+/**
+ * Add the optional group label to the existing mobile events payload without
+ * changing recurrence generation or the public website calendar.
+ */
+function surfside_tools_calendar_add_event_groups_to_mobile_api($result, $server, $request) {
+    if ($request->get_route() !== '/surfside/v1/events' || is_wp_error($result)) return $result;
+    $response = rest_ensure_response($result);
+    $data = $response->get_data();
+    if (!is_array($data) || !isset($data['events']) || !is_array($data['events'])) return $result;
+    foreach ($data['events'] as &$event) {
+        $event_id = absint($event['id'] ?? 0);
+        $event['event_group'] = $event_id ? sanitize_text_field((string)get_post_meta($event_id, '_surfside_event_group', true)) : '';
+    }
+    unset($event);
+    $response->set_data($data);
+    return $response;
+}
+add_filter('rest_post_dispatch', 'surfside_tools_calendar_add_event_groups_to_mobile_api', 20, 3);
