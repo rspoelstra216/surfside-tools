@@ -8,10 +8,15 @@ function surfside_tools_push_default_preferences(){
 function surfside_tools_push_devices(){
     $devices=get_option('surfside_tools_push_devices',array());
     if(!is_array($devices))$devices=array();
-    // Migrate the original token-only list without losing already registered devices.
-    foreach(surfside_tools_push_tokens_legacy() as $token){
-        $key=hash('sha256',$token);
-        if(!isset($devices[$key]))$devices[$key]=array('token'=>$token,'preferences'=>surfside_tools_push_default_preferences(),'updated_at'=>time());
+    // Complete the original token-only migration once, then stop resurrecting legacy tokens.
+    if(!get_option('surfside_tools_push_legacy_migrated',false)){
+        foreach(surfside_tools_push_tokens_legacy() as $token){
+            $key=hash('sha256',$token);
+            if(!isset($devices[$key]))$devices[$key]=array('token'=>$token,'preferences'=>surfside_tools_push_default_preferences(),'updated_at'=>time());
+        }
+        update_option('surfside_tools_push_legacy_migrated',1,false);
+        delete_option('surfside_tools_push_tokens');
+        update_option('surfside_tools_push_devices',$devices,false);
     }
     return $devices;
 }
@@ -38,6 +43,13 @@ function surfside_tools_push_audience_counts($devices){
     }
     return $counts;
 }
+function surfside_tools_push_remove_tokens($tokens){
+    $tokens=array_values(array_unique(array_filter(array_map('sanitize_text_field',(array)$tokens))));if(!$tokens)return 0;
+    $devices=surfside_tools_push_devices();$removed=0;
+    foreach($devices as $key=>$device){if(in_array(sanitize_text_field($device['token']??''),$tokens,true)){unset($devices[$key]);$removed++;}}
+    if($removed)update_option('surfside_tools_push_devices',$devices,false);
+    return $removed;
+}
 function surfside_tools_push_register_token(WP_REST_Request $request){
     $params=(array)$request->get_json_params();
     $token=sanitize_text_field($params['token']??'');
@@ -59,7 +71,20 @@ function surfside_tools_push_send($title,$body,$destination='',$audiences=array(
     $tokens=array_values(array_unique($tokens));
     if(!$tokens) return new WP_Error('surfside_push_no_devices','No registered devices match this notification audience.');
     $messages=array();foreach($tokens as $token){$message=array('to'=>$token,'title'=>$title,'body'=>$body,'sound'=>'default');if($destination!=='')$message['data']=array('destination'=>$destination);$messages[]=$message;}
-    $sent=0;$errors=array();foreach(array_chunk($messages,100) as $chunk){$response=wp_remote_post('https://exp.host/--/api/v2/push/send',array('timeout'=>20,'headers'=>array('Accept'=>'application/json','Content-Type'=>'application/json'),'body'=>wp_json_encode($chunk)));if(is_wp_error($response)){$errors[]=$response->get_error_message();continue;}$code=wp_remote_retrieve_response_code($response);if($code<200||$code>=300){$errors[]='Expo Push Service returned HTTP '.$code;continue;}$sent+=count($chunk);}if(!$sent)return new WP_Error('surfside_push_send_failed',implode(' ',$errors)?:'The notification could not be sent.');return array('sent'=>$sent,'errors'=>$errors);
+    $sent=0;$errors=array();$stale_tokens=array();
+    foreach(array_chunk($messages,100) as $chunk){
+        $response=wp_remote_post('https://exp.host/--/api/v2/push/send',array('timeout'=>20,'headers'=>array('Accept'=>'application/json','Content-Type'=>'application/json'),'body'=>wp_json_encode($chunk)));
+        if(is_wp_error($response)){$errors[]=$response->get_error_message();continue;}
+        $code=wp_remote_retrieve_response_code($response);if($code<200||$code>=300){$errors[]='Expo Push Service returned HTTP '.$code;continue;}
+        $payload=json_decode(wp_remote_retrieve_body($response),true);$tickets=is_array($payload['data']??null)?$payload['data']:array();
+        foreach($tickets as $index=>$ticket){
+            if(($ticket['status']??'')==='error'&&($ticket['details']['error']??'')==='DeviceNotRegistered'&&!empty($chunk[$index]['to']))$stale_tokens[]=$chunk[$index]['to'];
+        }
+        $sent+=count($chunk);
+    }
+    if($stale_tokens)surfside_tools_push_remove_tokens($stale_tokens);
+    if(!$sent)return new WP_Error('surfside_push_send_failed',implode(' ',$errors)?:'The notification could not be sent.');
+    return array('sent'=>$sent,'errors'=>$errors,'removed_stale'=>count(array_unique($stale_tokens)));
 }
 
 function surfside_tools_staff_push_notifications_shortcode(){
@@ -70,7 +95,7 @@ function surfside_tools_staff_push_notifications_shortcode(){
         $title=sanitize_text_field(wp_unslash($_POST['push_title']??''));$body=sanitize_textarea_field(wp_unslash($_POST['push_body']??''));$destination=sanitize_key(wp_unslash($_POST['push_destination']??'home'));$audiences=array_map('sanitize_key',(array)($_POST['push_audience']??array()));$allowed=array('home'=>'home','worship'=>'worship','events'=>'events','give'=>'give','connect'=>'connect');if(!isset($allowed[$destination]))$destination='home';
         if($title===''||$body===''){$notice='Title and message are required.';$notice_type='error';}
         elseif(!$audiences){$notice='Choose at least one audience.';$notice_type='error';}
-        else{$result=surfside_tools_push_send($title,$body,$destination,$audiences);if(is_wp_error($result)){$notice=$result->get_error_message();$notice_type='error';}else{$notice='Notification accepted for '.number_format_i18n($result['sent']).' matching device'.($result['sent']===1?'':'s').'.';$title='';$body='';$destination='home';$audiences=array();}}
+        else{$result=surfside_tools_push_send($title,$body,$destination,$audiences);if(is_wp_error($result)){$notice=$result->get_error_message();$notice_type='error';}else{$notice='Notification accepted for '.number_format_i18n($result['sent']).' matching device'.($result['sent']===1?'':'s').'.';if(!empty($result['removed_stale']))$notice.=' Removed '.number_format_i18n($result['removed_stale']).' stale registration'.($result['removed_stale']===1?'.':'s.');$title='';$body='';$destination='home';$audiences=array();}}
     }
     $devices=surfside_tools_push_devices();$count=count($devices);$audience_counts=surfside_tools_push_audience_counts($devices);ob_start();?>
     <div class="surfside-staff-shell surfside-push-manager"><div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('mobile-app'));?>">← Back to Manage Mobile App</a></div><section class="surfside-staff-hero"><p class="surfside-staff-eyebrow">Mobile App</p><h1>Push Notifications</h1><p class="surfside-staff-muted">Send a timely message to people who have allowed notifications from the Surfside app.</p></section>
