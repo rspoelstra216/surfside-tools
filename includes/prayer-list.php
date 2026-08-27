@@ -42,6 +42,17 @@ function surfside_tools_prayer_list_page_url() {
     return add_query_arg('surfside-prayer-review', '1', surfside_tools_staff_page_url());
 }
 
+function surfside_tools_prayer_list_add_email_review_link($args) {
+    $message = isset($args['message']) ? (string) $args['message'] : '';
+    if (strpos($message, 'Prayer Audience: Church Prayer List') === false) return $args;
+
+    $review_url = surfside_tools_prayer_list_page_url();
+    $reminder = "\n\nACTION REQUIRED\nThis request is awaiting review before it can appear in the Surfside app.\nReview Prayer Request: " . $review_url;
+    $args['message'] = $message . $reminder;
+    return $args;
+}
+add_filter('wp_mail', 'surfside_tools_prayer_list_add_email_review_link');
+
 function surfside_tools_prayer_list_handle_review() {
     if (!is_user_logged_in() || !current_user_can('upload_files') || empty($_POST['surfside_prayer_review_nonce'])) return;
     if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['surfside_prayer_review_nonce'])), 'surfside_prayer_review')) return;
