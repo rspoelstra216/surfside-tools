@@ -50,7 +50,7 @@ function surfside_tools_calendar_add_event_group_field($output, $tag) {
 add_filter('do_shortcode_tag', 'surfside_tools_calendar_add_event_group_field', 30, 2);
 
 /**
- * Add the optional group label to the existing mobile events payload without
+ * Add app-presentation metadata to the existing mobile events payload without
  * changing recurrence generation or the public website calendar.
  */
 function surfside_tools_calendar_add_event_groups_to_mobile_api($result, $server, $request) {
@@ -58,9 +58,35 @@ function surfside_tools_calendar_add_event_groups_to_mobile_api($result, $server
     $response = rest_ensure_response($result);
     $data = $response->get_data();
     if (!is_array($data) || !isset($data['events']) || !is_array($data['events'])) return $result;
+
+    $metadata = array();
     foreach ($data['events'] as &$event) {
         $event_id = absint($event['id'] ?? 0);
-        $event['event_group'] = $event_id ? sanitize_text_field((string)get_post_meta($event_id, '_surfside_event_group', true)) : '';
+        if (!$event_id) {
+            $event['event_group'] = '';
+            $event['recurrence_type'] = 'none';
+            $event['recurrence_label'] = '';
+            $event['event_start_date'] = '';
+            continue;
+        }
+
+        if (!isset($metadata[$event_id])) {
+            $source_event = function_exists('surfside_tools_calendar_get_event') ? surfside_tools_calendar_get_event($event_id) : null;
+            $recurrence_type = sanitize_key((string)($source_event['recurrence_type'] ?? 'none')) ?: 'none';
+            $metadata[$event_id] = array(
+                'event_group' => sanitize_text_field((string)get_post_meta($event_id, '_surfside_event_group', true)),
+                'recurrence_type' => $recurrence_type,
+                'recurrence_label' => $recurrence_type !== 'none' && function_exists('surfside_tools_calendar_recurrence_label') && is_array($source_event)
+                    ? sanitize_text_field((string)surfside_tools_calendar_recurrence_label($source_event))
+                    : '',
+                'event_start_date' => sanitize_text_field((string)($source_event['date'] ?? '')),
+            );
+        }
+
+        $event['event_group'] = $metadata[$event_id]['event_group'];
+        $event['recurrence_type'] = $metadata[$event_id]['recurrence_type'];
+        $event['recurrence_label'] = $metadata[$event_id]['recurrence_label'];
+        $event['event_start_date'] = $metadata[$event_id]['event_start_date'];
     }
     unset($event);
     $response->set_data($data);
