@@ -88,6 +88,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities-settings.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/integrations-page-polish.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/integrations-layout-finish.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-intelligence.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/prayer-dashboard-alert.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-recent-activity.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-polish.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';
