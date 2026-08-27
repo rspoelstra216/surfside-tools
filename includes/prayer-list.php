@@ -24,6 +24,39 @@ function surfside_tools_prayer_list_is_active($item) { return ($item['status']??
 function surfside_tools_prayer_list_pending_count() { return count(array_filter(surfside_tools_prayer_list_requests(), function($item){return ($item['status']??'')==='pending';})); }
 function surfside_tools_prayer_list_active_count() { return count(array_filter(surfside_tools_prayer_list_requests(), 'surfside_tools_prayer_list_is_active')); }
 
+function surfside_tools_prayer_list_api_response() {
+    $items = array_values(array_filter(surfside_tools_prayer_list_requests(), 'surfside_tools_prayer_list_is_active'));
+    usort($items, function($a, $b) { return absint($b['approved_at'] ?? 0) <=> absint($a['approved_at'] ?? 0); });
+
+    $public = array_map(function($item) {
+        $anonymous = ($item['name_display'] ?? '') === 'anonymous';
+        return array(
+            'id' => (string) ($item['id'] ?? ''),
+            'display_name' => $anonymous ? 'Anonymous' : sanitize_text_field($item['name'] ?? ''),
+            'anonymous' => $anonymous,
+            'request' => sanitize_textarea_field($item['message'] ?? ''),
+            'published_at' => absint($item['approved_at'] ?? 0),
+            'expires_at' => absint($item['expires_at'] ?? 0),
+        );
+    }, $items);
+
+    return rest_ensure_response(array(
+        'api_version' => 1,
+        'generated_at' => current_datetime()->format(DATE_ATOM),
+        'count' => count($public),
+        'requests' => $public,
+    ));
+}
+
+function surfside_tools_prayer_list_register_api() {
+    register_rest_route('surfside/v1', '/prayer-list', array(
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'surfside_tools_prayer_list_api_response',
+        'permission_callback' => '__return_true',
+    ));
+}
+add_action('rest_api_init', 'surfside_tools_prayer_list_register_api');
+
 function surfside_tools_prayer_list_page_url($section='pending') {
     if (function_exists('surfside_tools_member_engagement_url')) return add_query_arg('section',sanitize_key($section),surfside_tools_member_engagement_url('prayer-requests'));
     return add_query_arg(array('surfside-prayer-review'=>'1','section'=>sanitize_key($section)),surfside_tools_staff_page_url());
