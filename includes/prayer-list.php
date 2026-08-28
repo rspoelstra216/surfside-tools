@@ -70,6 +70,7 @@ function surfside_tools_prayer_list_add_email_review_link($args) {
 }
 add_filter('wp_mail','surfside_tools_prayer_list_add_email_review_link');
 
+/** Send the member-facing push only after staff approves a request for the public prayer list. */
 function surfside_tools_prayer_list_send_published_notification() {
     if (!function_exists('surfside_tools_push_send')) return;
     $result = surfside_tools_push_send(
