@@ -70,23 +70,43 @@ function surfside_tools_prayer_list_add_email_review_link($args) {
 }
 add_filter('wp_mail','surfside_tools_prayer_list_add_email_review_link');
 
+function surfside_tools_prayer_list_send_published_notification() {
+    if (!function_exists('surfside_tools_push_send')) return;
+    $result = surfside_tools_push_send(
+        'New Prayer Request',
+        'A new prayer request has been added to the Church Prayer List.',
+        'prayer-list',
+        array('prayer_requests')
+    );
+    if (is_wp_error($result)) {
+        error_log('Surfside prayer request push notification failed: '.$result->get_error_message());
+    }
+}
+
 function surfside_tools_prayer_list_handle_review() {
     if (!is_user_logged_in()||!current_user_can('upload_files')||empty($_POST['surfside_prayer_review_nonce'])) return;
     if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['surfside_prayer_review_nonce'])),'surfside_prayer_review')) return;
     $id=sanitize_text_field(wp_unslash($_POST['request_id']??''));
     $action=sanitize_key(wp_unslash($_POST['prayer_action']??''));
     if (!$id||!in_array($action,array('approve','private','archive','answered','extend-7','extend-14','extend-30'),true)) return;
-    $items=surfside_tools_prayer_list_requests(); $redirect='pending';
+    $items=surfside_tools_prayer_list_requests(); $redirect='pending'; $send_published_notification=false;
     foreach($items as &$item){
         if(($item['id']??'')!==$id)continue;
-        if($action==='approve'){$days=absint($item['duration_days']??14);$item['status']='published';$item['approved_at']=current_time('timestamp');$item['expires_at']=$item['approved_at']+($days*DAY_IN_SECONDS);$redirect='active';}
+        if($action==='approve'){
+            $was_published=(($item['status']??'')==='published');
+            $days=absint($item['duration_days']??14);$item['status']='published';$item['approved_at']=current_time('timestamp');$item['expires_at']=$item['approved_at']+($days*DAY_IN_SECONDS);$redirect='active';
+            $send_published_notification=!$was_published;
+        }
         elseif($action==='private'){$item['status']='private';$redirect='history';}
         elseif($action==='archive'){$item['status']='archived';$redirect='history';}
         elseif($action==='answered'){$item['status']='answered';$item['answered_at']=current_time('timestamp');$redirect='history';}
         elseif(strpos($action,'extend-')===0){$days=absint(substr($action,7));$base=max(current_time('timestamp'),absint($item['expires_at']??0));$item['status']='published';$item['expires_at']=$base+($days*DAY_IN_SECONDS);$redirect='active';}
         break;
     }
-    unset($item); surfside_tools_prayer_list_save_requests($items); wp_safe_redirect(surfside_tools_prayer_list_page_url($redirect)); exit;
+    unset($item);
+    surfside_tools_prayer_list_save_requests($items);
+    if($send_published_notification)surfside_tools_prayer_list_send_published_notification();
+    wp_safe_redirect(surfside_tools_prayer_list_page_url($redirect)); exit;
 }
 add_action('template_redirect','surfside_tools_prayer_list_handle_review');
 
