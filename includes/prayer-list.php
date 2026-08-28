@@ -105,6 +105,7 @@ function surfside_tools_prayer_list_handle_review() {
     }
     unset($item);
     surfside_tools_prayer_list_save_requests($items);
+    // Notify only for the first publish transition. Extensions, edits, and later management actions stay silent.
     if($send_published_notification)surfside_tools_prayer_list_send_published_notification();
     wp_safe_redirect(surfside_tools_prayer_list_page_url($redirect)); exit;
 }
