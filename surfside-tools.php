@@ -24,6 +24,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/youversion-mobile-api.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/youversion-website.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/contact-management.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/prayer-list.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/prayer-member-status.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/contact-form.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-api.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/push-notifications.php';
