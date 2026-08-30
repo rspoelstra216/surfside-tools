@@ -39,6 +39,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/header.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/footer.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/firebase-staff-auth.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/firebase-staff-login.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/firebase-staff-login-fix.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-dashboard.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-app-dashboard.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-app-home-manager.php';
