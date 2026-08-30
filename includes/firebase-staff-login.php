@@ -7,10 +7,9 @@ if (!defined('ABSPATH')) {
 /**
  * Keep Firebase staff authentication scoped to Surfside Tools.
  *
- * A verified Firebase identity may temporarily inherit the matching WordPress
- * user's existing upload_files capability while MM6 introduces native
- * Firebase UID-based permissions, but Firebase login must never issue a
- * WordPress auth cookie or create a wp-admin session.
+ * MM6 authorization is based on the Firebase UID permission record. A locked
+ * bridge user supplies only the capabilities required by the existing front-end
+ * dashboard modules and never receives a WordPress authentication cookie.
  */
 
 function surfside_tools_firebase_request_is_scoped() {
@@ -48,12 +47,17 @@ add_filter('determine_current_user', function ($user_id) {
     }
 
     $session = surfside_tools_get_firebase_staff_session();
-    $user = surfside_tools_firebase_staff_wp_user($session);
-    if (!$user || !user_can($user, 'upload_files')) {
+    if (!$session || empty($session['uid'])) {
         return $user_id;
     }
 
-    return (int) $user->ID;
+    $permission = surfside_tools_get_permission($session['uid']);
+    if (!$permission || !surfside_tools_permission_role_is_active($permission['role'] ?? '')) {
+        return $user_id;
+    }
+
+    $bridge_user = surfside_tools_get_or_create_bridge_user($permission);
+    return $bridge_user instanceof WP_User ? (int) $bridge_user->ID : $user_id;
 }, 30);
 
 add_filter('show_admin_bar', function ($show) {
@@ -93,7 +97,8 @@ add_filter('login_url', function ($login_url, $redirect, $force_reauth) {
 }, 10, 3);
 
 add_shortcode('surfside_firebase_staff_login', function () {
-    if (surfside_tools_firebase_staff_is_authorized()) {
+    $permission = surfside_tools_current_firebase_permission();
+    if ($permission && surfside_tools_permission_role_is_active($permission['role'] ?? '')) {
         $redirect = isset($_GET['redirect_to']) ? esc_url_raw(wp_unslash($_GET['redirect_to'])) : home_url('/dashboard/');
         return '<div class="surfside-staff-login"><h2>You are signed in</h2><p><a class="wp-block-button__link wp-element-button" href="' . esc_url($redirect) . '">Continue to Surfside Tools</a></p></div>';
     }
