@@ -153,7 +153,7 @@ add_shortcode('surfside_tools_permissions', function () {
         <div class="surfside-staff-hero surfside-staff-panel">
             <p class="surfside-staff-eyebrow">Administration</p>
             <h1>Staff Access</h1>
-            <p class="surfside-staff-muted">Manage each person in one place. Username/password and Google are sign-in sources; Tools access and WordPress site access remain separate permissions.</p>
+            <p class="surfside-staff-muted">Manage each person in one place. WordPress username/password and Google are sign-in sources; Tools access and WordPress site access remain separate permissions.</p>
         </div>
         <?php if ($notice) : ?><div class="surfside-staff-panel"><strong><?php echo esc_html($notice); ?></strong></div><?php endif; ?>
         <div class="surfside-staff-panel">
@@ -165,7 +165,7 @@ add_shortcode('surfside_tools_permissions', function () {
                 <?php foreach ($wp_users as $wp_user) :
                     $linked_uid = surfside_tools_permission_uid_for_wp_user($wp_user->ID);
                     $linked_permission = $linked_uid ? ($permissions[$linked_uid] ?? null) : null;
-                    $source = $linked_permission ? 'Username + Google' : 'Username';
+                    $source = $linked_permission ? 'WordPress + Google' : 'WordPress';
                     $tools_role = surfside_tools_wp_tools_role($wp_user);
                     $wp_role = surfside_tools_wp_primary_role($wp_user);
                 ?>
