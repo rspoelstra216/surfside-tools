@@ -82,7 +82,25 @@ function surfside_tools_current_firebase_permission() {
 
 function surfside_tools_current_user_is_tools_admin() {
     $permission = surfside_tools_current_firebase_permission();
-    return $permission && ($permission['role'] ?? '') === 'admin';
+    if ($permission && ($permission['role'] ?? '') === 'admin') {
+        return true;
+    }
+
+    if (function_exists('surfside_tools_wp_staff_session_user') && function_exists('surfside_tools_wp_tools_role')) {
+        $session_user = surfside_tools_wp_staff_session_user();
+        if ($session_user instanceof WP_User && surfside_tools_wp_tools_role($session_user) === 'admin') {
+            return true;
+        }
+    }
+
+    if (is_user_logged_in() && function_exists('surfside_tools_wp_tools_role')) {
+        $current_user = wp_get_current_user();
+        if ($current_user instanceof WP_User && $current_user->exists() && surfside_tools_wp_tools_role($current_user) === 'admin') {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function surfside_tools_bridge_role_for_permission($role) {
