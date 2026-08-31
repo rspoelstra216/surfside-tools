@@ -119,11 +119,6 @@ function surfside_tools_calendar_suggestion_location_search_fix_assets() {
             color: #5b6f7f;
             font-size: .85rem;
         }
-        .surfside-known-location-empty {
-            padding: .7rem .8rem;
-            color: #5b6f7f;
-            font-weight: 500;
-        }
     </style>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -199,26 +194,24 @@ function surfside_tools_calendar_suggestion_location_search_fix_assets() {
 
                 menu.innerHTML = '';
                 if (!results.length) {
-                    const empty = document.createElement('div');
-                    empty.className = 'surfside-known-location-empty';
-                    empty.textContent = 'No saved match yet. Keep typing to search Google Places.';
-                    menu.appendChild(empty);
-                } else {
-                    results.forEach(function (location) {
-                        const option = document.createElement('button');
-                        option.type = 'button';
-                        option.className = 'surfside-known-location-option';
-                        option.innerHTML = '<strong></strong><span></span>';
-                        option.querySelector('strong').textContent = location.name;
-                        option.querySelector('span').textContent = [location.address, location.source].filter(Boolean).join(' · ');
-                        option.addEventListener('mousedown', function (event) {
-                            event.preventDefault();
-                            applyLocation(card, input, location);
-                            closeMenu();
-                        });
-                        menu.appendChild(option);
-                    });
+                    closeMenu();
+                    return;
                 }
+
+                results.forEach(function (location) {
+                    const option = document.createElement('button');
+                    option.type = 'button';
+                    option.className = 'surfside-known-location-option';
+                    option.innerHTML = '<strong></strong><span></span>';
+                    option.querySelector('strong').textContent = location.name;
+                    option.querySelector('span').textContent = [location.address, location.source].filter(Boolean).join(' · ');
+                    option.addEventListener('mousedown', function (event) {
+                        event.preventDefault();
+                        applyLocation(card, input, location);
+                        closeMenu();
+                    });
+                    menu.appendChild(option);
+                });
                 menu.hidden = false;
                 input.setAttribute('aria-expanded', 'true');
             }
