@@ -47,7 +47,6 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/firebase-permission-seeding.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-access-wordpress.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-access-unified.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/firebase-staff-login.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/firebase-staff-login-fix.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-login-wordpress.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-dashboard.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/direct-dashboard-login.php';
