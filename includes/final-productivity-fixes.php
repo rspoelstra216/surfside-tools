@@ -60,12 +60,7 @@ function surfside_tools_repair_frontend_settings_route() {
 add_action('init', 'surfside_tools_repair_frontend_settings_route', 99);
 
 /**
- * Final UI compatibility fixes for the Productivity milestone.
- *
- * The local saved-place menu was sitting above Google's .pac-container and
- * remained open with an empty-state message. Google Places could be working
- * underneath it while appearing broken. Hide the local menu when it has no
- * real results and ensure Google's suggestion list is always on top.
+ * Remaining UI compatibility fixes for the Productivity milestone.
  */
 function surfside_tools_final_productivity_fix_assets() {
     if (!is_user_logged_in() || !current_user_can('upload_files')) {
@@ -92,44 +87,7 @@ function surfside_tools_final_productivity_fix_assets() {
     </style>
     <script>
     (function () {
-        function hideEmptyLocalMenu(input) {
-            if (!input) return;
-            const box = input.closest('.surfside-calendar-location-required');
-            if (!box) return;
-            const menu = box.querySelector('.surfside-known-location-menu');
-            if (!menu) return;
-
-            const hasSavedResult = !!menu.querySelector('.surfside-known-location-option');
-            if (!hasSavedResult) {
-                menu.hidden = true;
-                input.setAttribute('aria-expanded', 'false');
-            }
-        }
-
-        function repairVenueField(input) {
-            if (!input || input.dataset.surfsideFinalPlacesFix === '1') return;
-            input.dataset.surfsideFinalPlacesFix = '1';
-
-            input.addEventListener('input', function () {
-                window.setTimeout(function () {
-                    hideEmptyLocalMenu(input);
-                }, 0);
-            });
-            input.addEventListener('focus', function () {
-                window.setTimeout(function () {
-                    hideEmptyLocalMenu(input);
-                }, 0);
-            });
-        }
-
         function repairPage() {
-            document.querySelectorAll('.surfside-calendar-required-venue').forEach(repairVenueField);
-            document.querySelectorAll('.surfside-known-location-menu').forEach(function (menu) {
-                if (!menu.querySelector('.surfside-known-location-option')) {
-                    menu.hidden = true;
-                }
-            });
-
             document.querySelectorAll('.surfside-staff-grid a.surfside-staff-button-secondary').forEach(function (button) {
                 button.classList.remove('surfside-staff-button-secondary');
                 button.classList.add('surfside-staff-button');
