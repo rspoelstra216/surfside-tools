@@ -205,13 +205,6 @@ function surfside_tools_calendar_public_meeting_locations() {
         .surfside-calendar-meeting-location-inline {
             font-weight: 700;
         }
-        .surfside-month-calendar-more {
-            margin: 2px 0 0 6px;
-            color: #0b4f9c;
-            font-size: 11px;
-            font-weight: 900;
-            line-height: 1.15;
-        }
     </style>
     <script>
     (function () {
@@ -261,37 +254,10 @@ function surfside_tools_calendar_public_meeting_locations() {
             });
         }
 
-        function limitMonthCalendarEvents() {
-            document.querySelectorAll('.surfside-month-calendar-day-events').forEach(function (container) {
-                var events = Array.prototype.slice.call(container.querySelectorAll(':scope > .surfside-month-calendar-item'));
-                var existingMore = container.querySelector(':scope > .surfside-month-calendar-more');
-
-                if (existingMore) {
-                    existingMore.remove();
-                }
-
-                events.forEach(function (event, index) {
-                    event.hidden = index >= 2;
-                });
-
-                if (events.length > 2) {
-                    var more = document.createElement('div');
-                    more.className = 'surfside-month-calendar-more';
-                    more.textContent = '+' + (events.length - 2) + ' more';
-                    container.appendChild(more);
-                }
-            });
-        }
-
-        function initializeCalendarPolish() {
-            enhanceCalendarLocations();
-            limitMonthCalendarEvents();
-        }
-
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeCalendarPolish);
+            document.addEventListener('DOMContentLoaded', enhanceCalendarLocations);
         } else {
-            initializeCalendarPolish();
+            enhanceCalendarLocations();
         }
     })();
     </script>
