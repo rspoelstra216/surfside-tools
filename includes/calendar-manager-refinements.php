@@ -12,6 +12,11 @@ function surfside_tools_calendar_manager_refinement_assets() {
         return;
     }
 
+    global $post;
+    if (!$post instanceof WP_Post || !has_shortcode((string) $post->post_content, 'surfside_tools_calendar_manager')) {
+        return;
+    }
+
     $today = current_time('Y-m-d');
     $range_end = date('Y-m-d', strtotime($today . ' +5 years'));
     $search = isset($_GET['event_search']) ? strtolower(trim(sanitize_text_field(wp_unslash($_GET['event_search'])))) : '';
