@@ -127,6 +127,19 @@ function surfside_tools_calendar_public_meeting_locations() {
         return;
     }
 
+    $post = get_queried_object();
+    if (!($post instanceof WP_Post)) {
+        return;
+    }
+
+    $content = (string) $post->post_content;
+    if (
+        !has_shortcode($content, 'surfside_month_calendar') &&
+        !has_shortcode($content, 'surfside_public_calendar')
+    ) {
+        return;
+    }
+
     $query = new WP_Query(array(
         'post_type' => 'surfside_event',
         'post_status' => 'publish',
