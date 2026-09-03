@@ -89,7 +89,6 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/final-productivity-fixes.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/location-clarity.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-life-section.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-page-registration-fix.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager-compact.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager-drag-fix.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-carousel-cache-sync.php';
