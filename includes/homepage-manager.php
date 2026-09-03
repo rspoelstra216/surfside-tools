@@ -97,7 +97,7 @@ function surfside_tools_homepage_enqueue_carousel_styles() {
     wp_register_style('surfside-tools-homepage-carousel', false, array(), SURFSIDE_TOOLS_VERSION);
     wp_enqueue_style('surfside-tools-homepage-carousel');
     wp_add_inline_style('surfside-tools-homepage-carousel', '
-        .surfside-scroll-carousel{width:100%;max-width:1100px;margin:0 auto 40px;overflow:hidden}
+        .surfside-scroll-carousel{width:calc(100vw - 32px);max-width:none;margin:0 auto 40px;margin-left:50%;transform:translateX(-50%);overflow:hidden}
         .surfside-scroll-track{display:flex;gap:18px;width:max-content;will-change:transform}
         .surfside-scroll-slide{flex:0 0 420px;height:280px;border-radius:18px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.12);background:#f5f5f8}
         .surfside-scroll-slide img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
