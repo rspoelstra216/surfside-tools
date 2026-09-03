@@ -92,7 +92,6 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-life-section.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager-compact.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager-drag-fix.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-carousel-cache-sync.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-carousel-full-width.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities-settings.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/integrations-page-polish.php';
