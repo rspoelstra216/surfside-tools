@@ -4,29 +4,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-function surfside_tools_mobile_admin_require_admin(WP_REST_Request $request) {
-    $token = function_exists('surfside_tools_mobile_admin_bearer_token')
-        ? surfside_tools_mobile_admin_bearer_token($request)
-        : '';
-
-    if ($token === '') {
-        return new WP_Error('surfside_mobile_auth_required', 'A Firebase sign-in token is required.', array('status' => 401));
-    }
-
-    $claims = surfside_tools_verify_firebase_id_token($token);
-    if (is_wp_error($claims)) {
-        return new WP_Error('surfside_mobile_auth_invalid', 'Your Surfside sign-in could not be verified.', array('status' => 401));
-    }
-
-    $uid = sanitize_text_field($claims['sub'] ?? '');
-    $permission = $uid ? surfside_tools_get_permission($uid) : null;
-    if (!$permission || ($permission['role'] ?? '') !== 'admin') {
-        return new WP_Error('surfside_mobile_admin_required', 'Surfside Tools Admin access is required.', array('status' => 403));
-    }
-
-    return $permission;
-}
-
 function surfside_tools_mobile_admin_prayer_item($item) {
     return array(
         'id' => (string) ($item['id'] ?? ''),
