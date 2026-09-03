@@ -50,25 +50,6 @@ function surfside_tools_set_firebase_wp_link($uid, $wp_user_id) {
     return true;
 }
 
-function surfside_tools_wp_user_for_permission($record) {
-    $uid = sanitize_text_field($record['uid'] ?? '');
-    if (!$uid) {
-        return null;
-    }
-
-    $user_id = surfside_tools_get_linked_wp_user_id($uid);
-    if (!$user_id) {
-        return null;
-    }
-
-    $user = get_user_by('id', $user_id);
-    if (!$user instanceof WP_User || strpos((string) $user->user_login, 'surfside_firebase_') === 0) {
-        return null;
-    }
-
-    return $user;
-}
-
 function surfside_tools_wp_public_roles() {
     $roles = wp_roles()->roles;
     unset($roles['surfside_tools_bridge_staff'], $roles['surfside_tools_bridge_admin']);
