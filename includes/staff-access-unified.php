@@ -67,7 +67,6 @@ function surfside_tools_link_identity_to_wp_user($uid, $wp_user_id) {
     return true;
 }
 
-remove_shortcode('surfside_tools_permissions');
 add_shortcode('surfside_tools_permissions', function () {
     if (!surfside_tools_current_user_is_tools_admin()) {
         return '<div class="surfside-staff-login"><h2>Admin access required</h2><p>You do not have permission to manage Surfside Tools access.</p></div>';
