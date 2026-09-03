@@ -95,24 +95,3 @@ add_filter('login_url', function ($login_url, $redirect, $force_reauth) {
 
     return surfside_tools_firebase_login_page_url($redirect);
 }, 10, 3);
-
-add_action('init', function () {
-    if (get_page_by_path('dashboard/login')) {
-        return;
-    }
-
-    $dashboard = get_page_by_path('dashboard');
-    if (!$dashboard) {
-        return;
-    }
-
-    wp_insert_post(array(
-        'post_title' => 'Staff Login',
-        'post_name' => 'login',
-        'post_status' => 'publish',
-        'post_type' => 'page',
-        'post_parent' => $dashboard->ID,
-        'post_content' => '[surfside_firebase_staff_login]',
-        'comment_status' => 'closed',
-    ));
-}, 86);
