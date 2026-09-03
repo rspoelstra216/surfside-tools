@@ -152,25 +152,6 @@ function surfside_tools_permissions_count_admins($permissions) {
     return $count;
 }
 
-add_action('init', function () {
-    if (get_page_by_path('dashboard/access')) {
-        return;
-    }
-    $dashboard = get_page_by_path('dashboard');
-    if (!$dashboard) {
-        return;
-    }
-    wp_insert_post(array(
-        'post_title' => 'Staff Access',
-        'post_name' => 'access',
-        'post_status' => 'publish',
-        'post_type' => 'page',
-        'post_parent' => $dashboard->ID,
-        'post_content' => '[surfside_tools_permissions]',
-        'comment_status' => 'closed',
-    ));
-}, 87);
-
 add_filter('the_content', function ($content) {
     if (!is_page('dashboard') || !surfside_tools_current_user_is_tools_admin()) {
         return $content;
