@@ -7,10 +7,10 @@ if (!defined('ABSPATH')) {
 /**
  * MM6 Surfside Tools permissions.
  *
- * Firebase remains the identity provider. Surfside Tools now owns authorization
- * by Firebase UID. WordPress roles are used only once to seed existing staff,
- * then a locked bridge user supplies the legacy capabilities that existing
- * dashboard modules still expect during front-end requests.
+ * Firebase remains the identity provider. Surfside Tools owns authorization
+ * by Firebase UID, while locked bridge users supply the legacy WordPress
+ * capabilities that existing dashboard modules still expect during front-end
+ * requests.
  */
 
 function surfside_tools_permissions_option_name() {
@@ -47,29 +47,6 @@ function surfside_tools_save_permission($uid, $record) {
     );
     update_option(surfside_tools_permissions_option_name(), $permissions, false);
     return $permissions[$uid];
-}
-
-function surfside_tools_seed_permission_from_wordpress($uid, $email, $name = '') {
-    $existing = surfside_tools_get_permission($uid);
-    if ($existing) {
-        return $existing;
-    }
-
-    $role = 'pending';
-    $wp_user = $email ? get_user_by('email', $email) : false;
-    if ($wp_user instanceof WP_User) {
-        if (in_array('administrator', (array) $wp_user->roles, true)) {
-            $role = 'admin';
-        } elseif (user_can($wp_user, 'upload_files')) {
-            $role = 'staff';
-        }
-    }
-
-    return surfside_tools_save_permission($uid, array(
-        'email' => $email,
-        'name' => $name ?: ($wp_user instanceof WP_User ? $wp_user->display_name : ''),
-        'role' => $role,
-    ));
 }
 
 function surfside_tools_current_firebase_permission() {
