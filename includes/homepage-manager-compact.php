@@ -21,11 +21,11 @@ function surfside_tools_compact_homepage_manager_styles() {
         .surfside-homepage-upload-label input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
         .surfside-homepage-upload-files{grid-column:1/-1;font-size:13px;color:#4b5872;display:none}
         .surfside-homepage-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0 90px}
-        .surfside-homepage-photo{position:relative;border:1px solid rgba(7,27,58,.14);border-radius:14px;background:#fff;box-shadow:0 5px 16px rgba(7,27,58,.05);overflow:hidden;cursor:grab}
-        .surfside-homepage-photo.dragging{opacity:.45}.surfside-homepage-photo:focus-within{box-shadow:0 0 0 3px rgba(11,79,156,.14)}
+        .surfside-homepage-photo{position:relative;border:1px solid rgba(7,27,58,.14);border-radius:14px;background:#fff;box-shadow:0 5px 16px rgba(7,27,58,.05);overflow:hidden;cursor:default}
+        .surfside-homepage-photo.dragging{opacity:.45;outline:2px dashed #0b4f9c;outline-offset:2px}.surfside-homepage-photo:focus-within{box-shadow:0 0 0 3px rgba(11,79,156,.14)}
         .surfside-homepage-thumb{position:relative}.surfside-homepage-thumb img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;background:#eef2f6}
         .surfside-homepage-number{position:absolute;left:9px;top:9px;padding:4px 8px;border-radius:999px;background:rgba(7,27,58,.82);color:#fff;font-size:12px;font-weight:800}
-        .surfside-homepage-drag{position:absolute;right:9px;top:9px;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.9);color:#26344e;font-size:12px;font-weight:700}
+        .surfside-homepage-drag{position:absolute;right:9px;top:9px;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.9);color:#26344e;font-size:12px;font-weight:700;cursor:grab;user-select:none;-webkit-user-select:none}.surfside-homepage-drag:active{cursor:grabbing}
         .surfside-homepage-edit summary{list-style:none;display:flex;align-items:center;justify-content:center;min-height:40px;padding:8px 12px;color:#0b4f9c;font-weight:800;cursor:pointer;border-top:1px solid rgba(7,27,58,.1)}
         .surfside-homepage-edit summary::-webkit-details-marker{display:none}.surfside-homepage-edit[open] summary{background:#f3f8ff}
         .surfside-homepage-controls{display:grid;gap:11px;padding:13px;border-top:1px solid rgba(7,27,58,.1);font-size:13px}
@@ -91,12 +91,12 @@ function surfside_tools_staff_homepage_compact_shortcode() {
                     <div class="surfside-homepage-empty">No homepage photos are currently selected. Use <strong>Add Photos</strong> above to begin.</div>
                 <?php endif; ?>
                 <?php foreach ($images as $index => $image) : $id = absint($image['id']); ?>
-                    <article class="surfside-homepage-photo" draggable="true" data-image-id="<?php echo esc_attr($id); ?>">
+                    <article class="surfside-homepage-photo" draggable="false" data-image-id="<?php echo esc_attr($id); ?>">
                         <input type="hidden" name="image_order[]" value="<?php echo esc_attr($id); ?>">
                         <div class="surfside-homepage-thumb">
-                            <?php echo wp_get_attachment_image($id, 'medium', false, array('alt' => '')); ?>
+                            <?php echo wp_get_attachment_image($id, 'medium', false, array('alt' => '', 'draggable' => 'false')); ?>
                             <span class="surfside-homepage-number">Photo <?php echo esc_html($index + 1); ?></span>
-                            <span class="surfside-homepage-drag">Drag</span>
+                            <span class="surfside-homepage-drag" draggable="true" role="button" aria-label="Drag to reorder this photo" title="Drag to reorder">Drag</span>
                         </div>
                         <details class="surfside-homepage-edit">
                             <summary>Edit Photo</summary>
@@ -121,9 +121,28 @@ function surfside_tools_staff_homepage_compact_shortcode() {
         var grid=document.querySelector('[data-homepage-sortable]');
         if(grid){
             var dragged=null;
-            grid.addEventListener('dragstart',function(e){var card=e.target.closest('.surfside-homepage-photo');if(!card)return;dragged=card;card.classList.add('dragging');});
-            grid.addEventListener('dragend',function(){if(dragged)dragged.classList.remove('dragging');dragged=null;renumber();});
-            grid.addEventListener('dragover',function(e){e.preventDefault();if(!dragged)return;var cards=[].slice.call(grid.querySelectorAll('.surfside-homepage-photo:not(.dragging)'));var next=cards.find(function(card){var box=card.getBoundingClientRect();return e.clientY<box.top+(box.height/2);});if(next)grid.insertBefore(dragged,next);else grid.appendChild(dragged);});
+            grid.addEventListener('dragstart',function(e){
+                var handle=e.target.closest('.surfside-homepage-drag');
+                if(!handle){e.preventDefault();return;}
+                var card=handle.closest('.surfside-homepage-photo');
+                if(!card){e.preventDefault();return;}
+                dragged=card;
+                card.classList.add('dragging');
+                if(e.dataTransfer){e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',card.getAttribute('data-image-id')||'homepage-photo');}
+            },true);
+            grid.addEventListener('dragover',function(e){
+                if(!dragged)return;
+                e.preventDefault();
+                if(e.dataTransfer)e.dataTransfer.dropEffect='move';
+                var target=e.target.closest('.surfside-homepage-photo');
+                if(!target||target===dragged)return;
+                var box=target.getBoundingClientRect();
+                var after=e.clientY>box.top+(box.height/2);
+                grid.insertBefore(dragged,after?target.nextSibling:target);
+            });
+            grid.addEventListener('drop',function(e){if(!dragged)return;e.preventDefault();finishDrag();});
+            grid.addEventListener('dragend',finishDrag,true);
+            function finishDrag(){if(dragged)dragged.classList.remove('dragging');dragged=null;renumber();}
             function renumber(){[].slice.call(grid.querySelectorAll('.surfside-homepage-photo')).forEach(function(card,index){var number=card.querySelector('.surfside-homepage-number');if(number)number.textContent='Photo '+(index+1);});}
         }
         var input=document.querySelector('[data-homepage-new-images]');
