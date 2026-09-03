@@ -94,7 +94,6 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-carousel-cache-sync.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities-settings.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/integrations-page-polish.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/integrations-layout-finish.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-intelligence.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/member-engagement.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/prayer-dashboard-alert.php';
