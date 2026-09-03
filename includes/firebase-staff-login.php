@@ -96,28 +96,6 @@ add_filter('login_url', function ($login_url, $redirect, $force_reauth) {
     return surfside_tools_firebase_login_page_url($redirect);
 }, 10, 3);
 
-add_shortcode('surfside_firebase_staff_login', function () {
-    $permission = surfside_tools_current_firebase_permission();
-    if ($permission && surfside_tools_permission_role_is_active($permission['role'] ?? '')) {
-        $redirect = isset($_GET['redirect_to']) ? esc_url_raw(wp_unslash($_GET['redirect_to'])) : home_url('/dashboard/');
-        return '<div class="surfside-staff-login"><h2>You are signed in</h2><p><a class="wp-block-button__link wp-element-button" href="' . esc_url($redirect) . '">Continue to Surfside Tools</a></p></div>';
-    }
-
-    if (is_user_logged_in() && current_user_can('upload_files')) {
-        $redirect = isset($_GET['redirect_to']) ? esc_url_raw(wp_unslash($_GET['redirect_to'])) : home_url('/dashboard/');
-        return '<div class="surfside-staff-login"><h2>You are signed in</h2><p><a class="wp-block-button__link wp-element-button" href="' . esc_url($redirect) . '">Continue to Surfside Tools</a></p></div>';
-    }
-
-    $markup = surfside_tools_firebase_staff_login_markup('Sign in with the same Firebase account you use with the Surfside mobile app.');
-    $redirect = isset($_GET['redirect_to']) ? esc_url_raw(wp_unslash($_GET['redirect_to'])) : home_url('/dashboard/');
-
-    return str_replace(
-        'data-redirect="' . esc_attr(get_permalink() ?: home_url('/dashboard/')) . '"',
-        'data-redirect="' . esc_attr($redirect) . '"',
-        $markup
-    );
-});
-
 add_action('init', function () {
     if (get_page_by_path('dashboard/login')) {
         return;
