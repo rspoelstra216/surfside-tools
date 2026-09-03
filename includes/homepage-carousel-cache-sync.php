@@ -57,8 +57,9 @@ add_action(
 );
 
 /**
- * Ensure Surfside Tools owns the public shortcode even while the legacy Code
- * Snippet remains enabled during migration testing.
+ * Keep Surfside Tools authoritative if the legacy Code Snippet is still
+ * enabled. A single late init binding is sufficient; the previous wp hook
+ * repeated the same remove/add operation later in the request.
  */
 function surfside_tools_force_photo_carousel_shortcode() {
     if (!function_exists('surfside_tools_photo_carousel_shortcode')) {
@@ -69,4 +70,3 @@ function surfside_tools_force_photo_carousel_shortcode() {
     add_shortcode('surfside_photo_carousel', 'surfside_tools_photo_carousel_shortcode');
 }
 add_action('init', 'surfside_tools_force_photo_carousel_shortcode', 999);
-add_action('wp', 'surfside_tools_force_photo_carousel_shortcode', 1);
