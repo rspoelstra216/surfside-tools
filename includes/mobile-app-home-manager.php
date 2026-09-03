@@ -57,4 +57,4 @@ function surfside_tools_staff_mobile_app_home_shortcode(){
     <?php return ob_get_clean();
 }
 add_shortcode('surfside_staff_mobile_app_home','surfside_tools_staff_mobile_app_home_shortcode');
-function surfside_tools_ensure_mobile_app_home_page(){if(!function_exists('surfside_tools_ensure_staff_page'))return;$parent=get_page_by_path('dashboard/mobile-app');if(!$parent)$parent=get_page_by_path('mobile-app');if(!$parent)return;surfside_tools_ensure_staff_page('Home Experience','home-experience','[surfside_staff_mobile_app_home]',(int)$parent->ID);}add_action('init','surfside_tools_ensure_mobile_app_home_page',83);
+function surfside_tools_ensure_mobile_app_home_page(){if(!function_exists('surfside_tools_ensure_staff_page'))return;$parent=get_page_by_path('dashboard/mobile-app');if(!$parent)$parent=get_page_by_path('mobile-app');if(!$parent)return;surfside_tools_ensure_staff_page('Home Experience','home-experience','[surfside_staff_mobile_app_home]',(int)$parent->ID);}
