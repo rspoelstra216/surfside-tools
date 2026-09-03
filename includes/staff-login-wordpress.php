@@ -144,7 +144,6 @@ add_action('rest_api_init', function () {
     ));
 });
 
-remove_shortcode('surfside_firebase_staff_login');
 add_shortcode('surfside_firebase_staff_login', function () {
     $redirect = isset($_GET['redirect_to']) ? esc_url_raw(wp_unslash($_GET['redirect_to'])) : home_url('/dashboard/');
     $permission = surfside_tools_current_firebase_permission();
