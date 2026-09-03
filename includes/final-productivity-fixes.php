@@ -5,61 +5,6 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Repair the newly introduced nested Settings page and refresh permalink rules
- * once. This is intentionally independent of the plugin version because the
- * release workflow does not bump the installed option during normal cPanel
- * deployments.
- */
-function surfside_tools_repair_frontend_settings_route() {
-    $dashboard = get_page_by_path('dashboard');
-    if (!$dashboard) {
-        return;
-    }
-
-    $settings = get_page_by_path('dashboard/settings');
-    if (!$settings) {
-        $standalone = get_page_by_path('settings');
-        if ($standalone) {
-            wp_update_post(array(
-                'ID' => $standalone->ID,
-                'post_name' => 'settings',
-                'post_parent' => $dashboard->ID,
-                'post_status' => 'publish',
-                'post_content' => '[surfside_staff_settings]',
-            ));
-            $settings = get_post($standalone->ID);
-        } else {
-            $settings_id = wp_insert_post(array(
-                'post_title' => 'Settings',
-                'post_name' => 'settings',
-                'post_content' => '[surfside_staff_settings]',
-                'post_status' => 'publish',
-                'post_type' => 'page',
-                'post_parent' => $dashboard->ID,
-            ));
-            if ($settings_id && !is_wp_error($settings_id)) {
-                $settings = get_post($settings_id);
-            }
-        }
-    }
-
-    if ($settings && ((int) $settings->post_parent !== (int) $dashboard->ID || $settings->post_name !== 'settings')) {
-        wp_update_post(array(
-            'ID' => $settings->ID,
-            'post_name' => 'settings',
-            'post_parent' => $dashboard->ID,
-            'post_status' => 'publish',
-        ));
-    }
-
-    if (get_option('surfside_tools_settings_route_rewrite_2026_07') !== 'complete') {
-        flush_rewrite_rules(false);
-        update_option('surfside_tools_settings_route_rewrite_2026_07', 'complete', false);
-    }
-}
-add_action('init', 'surfside_tools_repair_frontend_settings_route', 99);
-
-/**
  * Remaining UI compatibility fixes for the Productivity milestone.
  */
 function surfside_tools_final_productivity_fix_assets() {
