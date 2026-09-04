@@ -156,14 +156,6 @@ add_filter('the_content', function ($content) {
     if (!is_page('dashboard') || !surfside_tools_current_user_is_tools_admin()) {
         return $content;
     }
-    $card = '<div class="surfside-staff-shell" style="padding-top:0"><div class="surfside-staff-card" style="min-height:auto"><h2>Staff Access</h2><p>Manage Firebase-based Tools administrators and staff.</p><div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="' . esc_url(surfside_tools_permissions_page_url()) . '">Manage Access <span class="surfside-staff-arrow">→</span></a></div></div></div>';
-    return $content . $card;
-}, 30);
-
-add_filter('the_content', function ($content) {
-    if (!is_page('dashboard') || !surfside_tools_current_user_is_tools_admin()) {
-        return $content;
-    }
 
     wp_add_inline_style('surfside-tools-staff-dashboard', '
         .surfside-staff-shell[style*="padding-top:0"] {
@@ -221,5 +213,6 @@ add_filter('the_content', function ($content) {
         }
     ');
 
-    return $content;
-}, 40);
+    $card = '<div class="surfside-staff-shell" style="padding-top:0"><div class="surfside-staff-card" style="min-height:auto"><h2>Staff Access</h2><p>Manage Firebase-based Tools administrators and staff.</p><div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="' . esc_url(surfside_tools_permissions_page_url()) . '">Manage Access <span class="surfside-staff-arrow">→</span></a></div></div></div>';
+    return $content . $card;
+}, 30);
