@@ -155,6 +155,5 @@ function surfside_tools_staff_homepage_compact_shortcode() {
 }
 
 add_action('init', function () {
-    remove_shortcode('surfside_staff_homepage');
     add_shortcode('surfside_staff_homepage', 'surfside_tools_staff_homepage_compact_shortcode');
 }, 90);
