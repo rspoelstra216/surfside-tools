@@ -87,7 +87,6 @@ function surfside_tools_photo_carousel_shortcode() {
 }
 
 add_action('init', function () {
-    remove_shortcode('surfside_photo_carousel');
     add_shortcode('surfside_photo_carousel', 'surfside_tools_photo_carousel_shortcode');
 }, 30);
 
