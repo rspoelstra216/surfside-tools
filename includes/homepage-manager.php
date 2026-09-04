@@ -6,9 +6,6 @@ if (!defined('ABSPATH')) {
 
 /**
  * Homepage carousel and front-end photo management.
- *
- * The existing [surfside_photo_carousel] shortcode is preserved so the
- * homepage does not need to be rebuilt during migration from ACF.
  */
 
 function surfside_tools_homepage_image_option() {
@@ -33,58 +30,8 @@ function surfside_tools_homepage_normalize_images($images) {
     return array_slice($normalized, 0, 30);
 }
 
-function surfside_tools_homepage_acf_image_id($value) {
-    if (is_array($value)) {
-        return absint($value['ID'] ?? $value['id'] ?? 0);
-    }
-
-    if (is_numeric($value)) {
-        return absint($value);
-    }
-
-    if (is_string($value) && $value !== '') {
-        return absint(attachment_url_to_postid($value));
-    }
-
-    return 0;
-}
-
-function surfside_tools_homepage_maybe_import_acf() {
-    $option_name = surfside_tools_homepage_image_option();
-    $existing = get_option($option_name, null);
-
-    if ($existing !== null) {
-        return surfside_tools_homepage_normalize_images($existing);
-    }
-
-    $imported = array();
-
-    if (function_exists('get_field')) {
-        $page_id = 552;
-        $fields = array('carousel_image');
-        for ($i = 2; $i <= 30; $i++) {
-            $fields[] = 'carousel_image_' . $i;
-        }
-
-        foreach ($fields as $field) {
-            $id = surfside_tools_homepage_acf_image_id(get_field($field, $page_id));
-            if ($id && wp_attachment_is_image($id)) {
-                $imported[] = array(
-                    'id' => $id,
-                    'updated' => absint(get_post_meta($page_id, '_surfside_updated_' . $field, true)),
-                );
-            }
-        }
-    }
-
-    update_option($option_name, $imported, false);
-    update_option('surfside_tools_homepage_acf_import_complete', current_time('mysql'), false);
-
-    return $imported;
-}
-
 function surfside_tools_homepage_get_images() {
-    return surfside_tools_homepage_maybe_import_acf();
+    return surfside_tools_homepage_normalize_images(get_option(surfside_tools_homepage_image_option(), array()));
 }
 
 function surfside_tools_homepage_enqueue_carousel_styles() {
