@@ -49,7 +49,6 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/firebase-staff-login.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-login-wordpress.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-dashboard.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/direct-dashboard-login.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/staff-access-dashboard-compact.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-app-dashboard.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-app-home-manager.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-information-manager.php';
