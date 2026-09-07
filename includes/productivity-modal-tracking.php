@@ -15,6 +15,11 @@ function surfside_tools_productivity_modal_tracking_assets() {
     if (!is_user_logged_in() || !current_user_can('upload_files')) {
         return;
     }
+
+    $post = get_queried_object();
+    if (!($post instanceof WP_Post) || !has_shortcode((string) $post->post_content, 'surfside_weekly_update')) {
+        return;
+    }
     ?>
     <style>
         .pac-container {
