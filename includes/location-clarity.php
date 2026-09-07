@@ -84,6 +84,11 @@ function surfside_tools_calendar_location_status_script() {
     if (!is_user_logged_in()) {
         return;
     }
+
+    $post = get_queried_object();
+    if (!($post instanceof WP_Post) || !has_shortcode((string) $post->post_content, 'surfside_tools_calendar_manager')) {
+        return;
+    }
     ?>
     <script>
     (function () {

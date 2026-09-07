@@ -13,6 +13,11 @@ function surfside_tools_weekly_update_google_predictions_assets() {
     if (!is_user_logged_in() || !current_user_can('upload_files')) {
         return;
     }
+
+    $post = get_queried_object();
+    if (!($post instanceof WP_Post) || !has_shortcode((string) $post->post_content, 'surfside_weekly_update')) {
+        return;
+    }
     ?>
     <style>
         .surfside-google-prediction-menu {

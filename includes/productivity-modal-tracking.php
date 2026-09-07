@@ -5,6 +5,21 @@ if (!defined('ABSPATH')) {
 }
 
 /**
+ * Keep the main Productivity footer payload on the Weekly Update screen only.
+ * This prevents the full calendar event set from being loaded on unrelated
+ * logged-in staff pages before the Productivity UI is rendered.
+ */
+function surfside_tools_scope_productivity_finish_assets() {
+    $post = get_queried_object();
+    if ($post instanceof WP_Post && has_shortcode((string) $post->post_content, 'surfside_weekly_update')) {
+        return;
+    }
+
+    remove_action('wp_footer', 'surfside_tools_productivity_finish_assets', 70);
+}
+add_action('wp', 'surfside_tools_scope_productivity_finish_assets');
+
+/**
  * Include events created through the Calendar Manager review modal in the
  * final Weekly Update publish summary. One-click events are tracked by the
  * main Productivity module because their AJAX response includes the event ID.
@@ -13,6 +28,11 @@ if (!defined('ABSPATH')) {
  */
 function surfside_tools_productivity_modal_tracking_assets() {
     if (!is_user_logged_in() || !current_user_can('upload_files')) {
+        return;
+    }
+
+    $post = get_queried_object();
+    if (!($post instanceof WP_Post) || !has_shortcode((string) $post->post_content, 'surfside_weekly_update')) {
         return;
     }
     ?>
