@@ -8,12 +8,19 @@ if (!defined('ABSPATH')) {
  * Include events created through the Calendar Manager review modal in the
  * final Weekly Update publish summary. One-click events are tracked by the
  * main Productivity module because their AJAX response includes the event ID.
+ *
+ * Also keeps the Google Places suggestion menu above the review modal.
  */
 function surfside_tools_productivity_modal_tracking_assets() {
     if (!is_user_logged_in() || !current_user_can('upload_files')) {
         return;
     }
     ?>
+    <style>
+        .pac-container {
+            z-index: 2147483647 !important;
+        }
+    </style>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         const storageKey = 'surfsideProductivityEvents';
