@@ -9,6 +9,10 @@ if (!defined('ABSPATH')) {
  * one standard event card followed by a second card that opens Day Details.
  */
 function surfside_tools_calendar_simple_overflow_layout() {
+    $post = get_queried_object();
+    if (!($post instanceof WP_Post) || !has_shortcode((string) $post->post_content, 'surfside_month_calendar')) {
+        return;
+    }
     ?>
     <style id="surfside-calendar-simple-overflow-layout">
         .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-day-events {
