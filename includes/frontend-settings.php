@@ -42,64 +42,44 @@ function surfside_tools_frontend_settings_handle_post() {
 
     if ($action === 'delete_saved_place') {
         $place_id = isset($_POST['place_id']) ? absint($_POST['place_id']) : 0;
-        $post = $place_id ? get_post($place_id) : null;
-        if (!$post || $post->post_type !== 'surfside_location') {
-            return surfside_tools_frontend_settings_notice('That saved place could not be found.', 'error');
-        }
-        wp_trash_post($place_id);
-        return surfside_tools_frontend_settings_notice('Saved place removed. Existing calendar events were not changed.');
+        $result = function_exists('surfside_tools_delete_saved_place_record')
+            ? surfside_tools_delete_saved_place_record($place_id)
+            : new WP_Error('surfside_saved_places_unavailable', 'Saved Places support is unavailable.');
+        return surfside_tools_frontend_settings_notice(
+            is_wp_error($result) ? $result->get_error_message() : $result,
+            is_wp_error($result) ? 'error' : 'success'
+        );
     }
 
     if ($action === 'hide_calendar_place') {
         $name = isset($_POST['place_name']) ? sanitize_text_field(wp_unslash($_POST['place_name'])) : '';
-        $normalized = function_exists('surfside_tools_normalize_place_name') ? surfside_tools_normalize_place_name($name) : strtolower(trim($name));
-        if ($normalized === '') {
-            return surfside_tools_frontend_settings_notice('That place name was empty.', 'error');
-        }
-        $hidden = function_exists('surfside_tools_get_hidden_place_names') ? surfside_tools_get_hidden_place_names() : array();
-        if (!in_array($normalized, $hidden, true)) {
-            $hidden[] = $normalized;
-            update_option('surfside_tools_hidden_place_names', array_values($hidden), false);
-        }
-        return surfside_tools_frontend_settings_notice('Place removed from future suggestions. Existing events were not changed.');
+        $result = function_exists('surfside_tools_hide_calendar_place_name')
+            ? surfside_tools_hide_calendar_place_name($name)
+            : new WP_Error('surfside_saved_places_unavailable', 'Saved Places support is unavailable.');
+        return surfside_tools_frontend_settings_notice(
+            is_wp_error($result) ? $result->get_error_message() : $result,
+            is_wp_error($result) ? 'error' : 'success'
+        );
     }
 
     if ($action === 'restore_calendar_place') {
         $name = isset($_POST['place_name']) ? sanitize_text_field(wp_unslash($_POST['place_name'])) : '';
-        $hidden = function_exists('surfside_tools_get_hidden_place_names') ? surfside_tools_get_hidden_place_names() : array();
-        update_option('surfside_tools_hidden_place_names', array_values(array_diff($hidden, array($name))), false);
-        return surfside_tools_frontend_settings_notice('Place restored to location suggestions.');
+        $result = function_exists('surfside_tools_restore_calendar_place_name')
+            ? surfside_tools_restore_calendar_place_name($name)
+            : new WP_Error('surfside_saved_places_unavailable', 'Saved Places support is unavailable.');
+        return surfside_tools_frontend_settings_notice(
+            is_wp_error($result) ? $result->get_error_message() : $result,
+            is_wp_error($result) ? 'error' : 'success'
+        );
     }
 
     return '';
 }
 
 function surfside_tools_frontend_saved_places_data() {
-    $saved = function_exists('surfside_tools_calendar_get_saved_locations') ? surfside_tools_calendar_get_saved_locations() : array();
-    $saved_names = array();
-    foreach ($saved as $place) {
-        $key = function_exists('surfside_tools_normalize_place_name') ? surfside_tools_normalize_place_name($place['name'] ?? '') : strtolower(trim((string) ($place['name'] ?? '')));
-        $saved_names[$key] = true;
-    }
-
-    $calendar_places = array();
-    if (function_exists('surfside_tools_calendar_get_all_events')) {
-        foreach (surfside_tools_calendar_get_all_events() as $event) {
-            $name = trim((string) ($event['location_name'] ?? ''));
-            $key = function_exists('surfside_tools_normalize_place_name') ? surfside_tools_normalize_place_name($name) : strtolower($name);
-            if ($name === '' || isset($saved_names[$key])) {
-                continue;
-            }
-            if (!isset($calendar_places[$key])) {
-                $calendar_places[$key] = array(
-                    'name' => $name,
-                    'address' => trim((string) ($event['location_address'] ?? '')),
-                );
-            }
-        }
-    }
-
-    return array($saved, $calendar_places);
+    return function_exists('surfside_tools_saved_places_data')
+        ? surfside_tools_saved_places_data()
+        : array(array(), array());
 }
 
 function surfside_tools_staff_settings_shortcode() {

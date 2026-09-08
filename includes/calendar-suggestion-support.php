@@ -242,62 +242,9 @@ function surfside_tools_calendar_suggestion_location_search_fix_assets() {
         return;
     }
 
-    $known = array();
-
-    if (function_exists('surfside_tools_calendar_get_saved_locations')) {
-        foreach (surfside_tools_calendar_get_saved_locations() as $location) {
-            $name = trim((string) ($location['name'] ?? ''));
-            if ($name === '') {
-                continue;
-            }
-            $key = strtolower($name);
-            $known[$key] = array(
-                'name' => $name,
-                'address' => trim((string) ($location['address'] ?? '')),
-                'id' => absint($location['id'] ?? 0),
-                'place_id' => '',
-                'lat' => '',
-                'lng' => '',
-                'maps_url' => '',
-                'source' => 'Saved location',
-            );
-        }
-    }
-
-    if (function_exists('surfside_tools_calendar_get_all_events')) {
-        foreach (surfside_tools_calendar_get_all_events() as $event) {
-            $name = trim((string) ($event['location_name'] ?? ($event['location'] ?? '')));
-            if ($name === '') {
-                continue;
-            }
-            $key = strtolower($name);
-            $candidate = array(
-                'name' => $name,
-                'address' => trim((string) ($event['location_address'] ?? '')),
-                'id' => absint($event['location_id'] ?? 0),
-                'place_id' => trim((string) ($event['location_place_id'] ?? '')),
-                'lat' => trim((string) ($event['location_lat'] ?? '')),
-                'lng' => trim((string) ($event['location_lng'] ?? '')),
-                'maps_url' => trim((string) ($event['location_maps_url'] ?? '')),
-                'source' => 'Used on calendar',
-            );
-
-            if (!isset($known[$key])) {
-                $known[$key] = $candidate;
-            } else {
-                foreach (array('address','id','place_id','lat','lng','maps_url') as $field) {
-                    if (empty($known[$key][$field]) && !empty($candidate[$field])) {
-                        $known[$key][$field] = $candidate[$field];
-                    }
-                }
-            }
-        }
-    }
-
-    $known_locations = array_values($known);
-    usort($known_locations, function ($a, $b) {
-        return strcasecmp($a['name'], $b['name']);
-    });
+    $known_locations = function_exists('surfside_tools_saved_place_suggestion_locations')
+        ? surfside_tools_saved_place_suggestion_locations()
+        : array();
     ?>
     <style>
         .surfside-calendar-location-required {
