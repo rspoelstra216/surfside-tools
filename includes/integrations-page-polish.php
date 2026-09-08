@@ -98,20 +98,7 @@ add_filter('do_shortcode_tag', function ($output, $tag) {
 
 // Tighten the Integrations stack and place Streaming with technical settings.
 add_filter('do_shortcode_tag', function ($output, $tag) {
-    if (!is_user_logged_in() || !current_user_can('manage_options')) {
-        return $output;
-    }
-
-    if ($tag === 'surfside_staff_site_settings') {
-        return preg_replace(
-            '~<article class="surfside-staff-card">(?:(?!</article>).)*?<h2>Streaming</h2>(?:(?!</article>).)*?</article>~s',
-            '',
-            $output,
-            1
-        );
-    }
-
-    if ($tag !== 'surfside_staff_settings') {
+    if (!is_user_logged_in() || !current_user_can('manage_options') || $tag !== 'surfside_staff_settings') {
         return $output;
     }
 
