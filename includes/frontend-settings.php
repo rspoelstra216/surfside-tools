@@ -5,9 +5,9 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Front-end staff settings page.
- * Keeps the WordPress admin settings screen as a fallback while allowing normal
- * staff workflows to remain inside /dashboard.
+ * Authoritative front-end Integrations page.
+ * Keeps the WordPress admin settings screen as a fallback while normal staff
+ * workflows remain inside /dashboard.
  */
 function surfside_tools_frontend_settings_notice($message, $type = 'success') {
     return '<div class="surfside-front-settings-notice surfside-front-settings-' . esc_attr($type) . '">' . esc_html($message) . '</div>';
@@ -98,115 +98,215 @@ function surfside_tools_staff_settings_shortcode() {
     }
 
     $notice = surfside_tools_frontend_settings_handle_post();
+    $shared_notice = function_exists('surfside_tools_church_settings_shared_save')
+        ? surfside_tools_church_settings_shared_save()
+        : '';
     $settings = get_option('surfside_tools_settings', array());
     $api_key = (string) ($settings['google_maps_api_key'] ?? '');
     $week_mode = (string) ($settings['this_week_mode'] ?? 'next7');
     $duration = (int) ($settings['default_event_duration'] ?? 60);
     list($saved, $calendar_places) = surfside_tools_frontend_saved_places_data();
     $hidden = function_exists('surfside_tools_get_hidden_place_names') ? surfside_tools_get_hidden_place_names() : array();
+    $church_settings_url = function_exists('surfside_tools_staff_page_url')
+        ? surfside_tools_staff_page_url('site-settings')
+        : home_url('/dashboard/site-settings/');
+    $streaming_url = function_exists('surfside_tools_staff_page_url')
+        ? surfside_tools_staff_page_url('site-streaming')
+        : home_url('/dashboard/site-streaming/');
 
     ob_start();
     ?>
     <div class="surfside-staff-shell surfside-front-settings">
-        <div class="surfside-staff-back"><a href="<?php echo esc_url(function_exists('surfside_tools_staff_page_url') ? surfside_tools_staff_page_url('site-management') : home_url('/dashboard/site-management/')); ?>">← Back to Site Management</a></div>
+        <div class="surfside-staff-back"><a href="<?php echo esc_url($church_settings_url); ?>">← Back to Church Settings</a></div>
         <section class="surfside-staff-hero">
-            <p class="surfside-staff-eyebrow">Settings</p>
-            <h1>Surfside Tools Settings</h1>
-            <p class="surfside-staff-muted">Manage Google Maps, calendar defaults, and saved places without opening WordPress administration.</p>
+            <p class="surfside-staff-eyebrow">Technical Configuration</p>
+            <h1>Integrations</h1>
+            <p class="surfside-staff-muted">External services and connection settings used by Surfside.</p>
         </section>
 
         <?php echo $notice; ?>
+        <?php echo $shared_notice; ?>
+        <?php if (isset($_GET['integrations_saved'])) : ?>
+            <div class="surfside-front-settings-notice surfside-front-settings-success surfside-integrations-save-notice">Integration settings saved.</div>
+        <?php endif; ?>
 
         <form method="post" class="surfside-front-settings-form">
             <?php wp_nonce_field('surfside_front_settings', 'surfside_front_settings_nonce'); ?>
             <input type="hidden" name="surfside_front_settings_action" value="save_settings">
 
-            <section class="surfside-front-settings-card">
-                <h2>Google Maps Integration</h2>
-                <p class="surfside-staff-muted">Used for Google Places search in Calendar Manager and Weekly Update suggestions.</p>
-                <label for="surfside-front-google-key"><strong>Google Maps API Key</strong></label>
-                <div class="surfside-front-key-row">
-                    <input id="surfside-front-google-key" type="password" autocomplete="off" name="google_maps_api_key" value="<?php echo esc_attr($api_key); ?>">
-                    <button type="button" class="surfside-front-secondary-button" id="surfside-front-test-maps">Test Connection</button>
+            <details class="surfside-front-settings-card surfside-integration-card">
+                <summary><span>Google Maps</span></summary>
+                <div class="surfside-integration-body">
+                    <p class="surfside-staff-muted">Used for Google Places search in Calendar Manager and Weekly Update suggestions.</p>
+                    <label for="surfside-front-google-key"><strong>Google Maps API Key</strong></label>
+                    <div class="surfside-front-key-row">
+                        <input id="surfside-front-google-key" type="password" autocomplete="off" name="google_maps_api_key" value="<?php echo esc_attr($api_key); ?>">
+                        <button type="button" class="surfside-front-secondary-button" id="surfside-front-test-maps">Test Connection</button>
+                    </div>
+                    <p class="surfside-front-description">The key should allow Maps JavaScript API and Places API for this website.</p>
+                    <div id="surfside-front-maps-status" aria-live="polite"><?php echo $api_key ? 'Key saved — connection not tested in this browser.' : 'No API key saved.'; ?></div>
                 </div>
-                <p class="surfside-front-description">The key should allow Maps JavaScript API and Places API for this website.</p>
-                <div id="surfside-front-maps-status" aria-live="polite"><?php echo $api_key ? 'Key saved — connection not tested in this browser.' : 'No API key saved.'; ?></div>
-            </section>
+            </details>
 
-            <section class="surfside-front-settings-card">
-                <h2>Calendar Defaults</h2>
-                <fieldset>
-                    <legend><strong>This Week at Surfside</strong></legend>
-                    <label><input type="radio" name="this_week_mode" value="next7" <?php checked($week_mode, 'next7'); ?>> Next 7 days starting today</label>
-                    <label><input type="radio" name="this_week_mode" value="sunday" <?php checked($week_mode, 'sunday'); ?>> Current Sunday–Saturday week</label>
-                </fieldset>
-                <label for="surfside-front-duration"><strong>Default event duration</strong></label>
-                <div><input id="surfside-front-duration" type="number" min="15" max="480" step="15" name="default_event_duration" value="<?php echo esc_attr($duration); ?>"> minutes</div>
-                <p class="surfside-front-description">Used to suggest an end time after a start time is entered.</p>
-            </section>
+            <details class="surfside-front-settings-card surfside-integration-card">
+                <summary><span>Calendar Defaults</span></summary>
+                <div class="surfside-integration-body">
+                    <fieldset>
+                        <legend><strong>This Week at Surfside</strong></legend>
+                        <label><input type="radio" name="this_week_mode" value="next7" <?php checked($week_mode, 'next7'); ?>> Next 7 days starting today</label>
+                        <label><input type="radio" name="this_week_mode" value="sunday" <?php checked($week_mode, 'sunday'); ?>> Current Sunday–Saturday week</label>
+                    </fieldset>
+                    <label for="surfside-front-duration"><strong>Default event duration</strong></label>
+                    <div><input id="surfside-front-duration" type="number" min="15" max="480" step="15" name="default_event_duration" value="<?php echo esc_attr($duration); ?>"> minutes</div>
+                    <p class="surfside-front-description">Used to suggest an end time after a start time is entered.</p>
+                </div>
+            </details>
 
-            <p><button type="submit" class="surfside-front-primary-button">Save Settings</button></p>
+            <p><button type="submit" class="surfside-front-primary-button">Save Map &amp; Calendar Settings</button></p>
         </form>
 
-        <section class="surfside-front-settings-card">
-            <h2>Saved Places</h2>
-            <p class="surfside-staff-muted">Removing a place does not change existing calendar events.</p>
-            <?php if (!$saved && !$calendar_places) : ?>
-                <p>No saved or previously used places were found.</p>
-            <?php else : ?>
-                <div class="surfside-front-place-table">
-                    <div class="surfside-front-place-head"><span>Place</span><span>Address</span><span>Source</span><span>Action</span></div>
-                    <?php foreach ($saved as $place) : ?>
-                        <div class="surfside-front-place-row">
-                            <strong><?php echo esc_html($place['name'] ?? ''); ?></strong>
-                            <span><?php echo esc_html($place['address'] ?? ''); ?></span>
-                            <span>Saved place</span>
-                            <form method="post" onsubmit="return confirm('Remove this saved place? Existing events will keep their current location.');">
-                                <?php wp_nonce_field('surfside_front_settings', 'surfside_front_settings_nonce'); ?>
-                                <input type="hidden" name="surfside_front_settings_action" value="delete_saved_place">
-                                <input type="hidden" name="place_id" value="<?php echo (int) ($place['id'] ?? 0); ?>">
-                                <button type="submit" class="surfside-front-delete-button">Delete</button>
-                            </form>
-                        </div>
-                    <?php endforeach; ?>
-                    <?php foreach ($calendar_places as $key => $place) : if (in_array($key, $hidden, true)) continue; ?>
-                        <div class="surfside-front-place-row">
-                            <strong><?php echo esc_html($place['name']); ?></strong>
-                            <span><?php echo esc_html($place['address']); ?></span>
-                            <span>Previously used</span>
-                            <form method="post">
-                                <?php wp_nonce_field('surfside_front_settings', 'surfside_front_settings_nonce'); ?>
-                                <input type="hidden" name="surfside_front_settings_action" value="hide_calendar_place">
-                                <input type="hidden" name="place_name" value="<?php echo esc_attr($place['name']); ?>">
-                                <button type="submit" class="surfside-front-delete-button">Remove</button>
-                            </form>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-
-            <?php if ($hidden) : ?>
-                <details class="surfside-front-removed"><summary><strong>Removed suggestions (<?php echo count($hidden); ?>)</strong></summary>
-                    <div class="surfside-front-restore-list">
-                        <?php foreach ($hidden as $name) : ?>
-                            <form method="post">
-                                <?php wp_nonce_field('surfside_front_settings', 'surfside_front_settings_nonce'); ?>
-                                <input type="hidden" name="surfside_front_settings_action" value="restore_calendar_place">
-                                <input type="hidden" name="place_name" value="<?php echo esc_attr($name); ?>">
-                                <button type="submit" class="surfside-front-secondary-button">Restore <?php echo esc_html(ucwords($name)); ?></button>
-                            </form>
+        <details class="surfside-front-settings-card surfside-integration-card surfside-saved-places-card">
+            <summary><span>Saved Places</span></summary>
+            <div class="surfside-integration-body">
+                <p class="surfside-staff-muted">Removing a place does not change existing calendar events.</p>
+                <?php if (!$saved && !$calendar_places) : ?>
+                    <p>No saved or previously used places were found.</p>
+                <?php else : ?>
+                    <div class="surfside-front-place-table">
+                        <div class="surfside-front-place-head"><span>Place</span><span>Address</span><span>Source</span><span>Action</span></div>
+                        <?php foreach ($saved as $place) : ?>
+                            <div class="surfside-front-place-row">
+                                <strong><?php echo esc_html($place['name'] ?? ''); ?></strong>
+                                <span><?php echo esc_html($place['address'] ?? ''); ?></span>
+                                <span>Saved place</span>
+                                <form method="post" onsubmit="return confirm('Remove this saved place? Existing events will keep their current location.');">
+                                    <?php wp_nonce_field('surfside_front_settings', 'surfside_front_settings_nonce'); ?>
+                                    <input type="hidden" name="surfside_front_settings_action" value="delete_saved_place">
+                                    <input type="hidden" name="place_id" value="<?php echo (int) ($place['id'] ?? 0); ?>">
+                                    <button type="submit" class="surfside-front-delete-button">Delete</button>
+                                </form>
+                            </div>
+                        <?php endforeach; ?>
+                        <?php foreach ($calendar_places as $key => $place) : if (in_array($key, $hidden, true)) continue; ?>
+                            <div class="surfside-front-place-row">
+                                <strong><?php echo esc_html($place['name']); ?></strong>
+                                <span><?php echo esc_html($place['address']); ?></span>
+                                <span>Previously used</span>
+                                <form method="post">
+                                    <?php wp_nonce_field('surfside_front_settings', 'surfside_front_settings_nonce'); ?>
+                                    <input type="hidden" name="surfside_front_settings_action" value="hide_calendar_place">
+                                    <input type="hidden" name="place_name" value="<?php echo esc_attr($place['name']); ?>">
+                                    <button type="submit" class="surfside-front-delete-button">Remove</button>
+                                </form>
+                            </div>
                         <?php endforeach; ?>
                     </div>
-                </details>
-            <?php endif; ?>
-        </section>
+                <?php endif; ?>
+
+                <?php if ($hidden) : ?>
+                    <details class="surfside-front-removed"><summary><strong>Removed suggestions (<?php echo count($hidden); ?>)</strong></summary>
+                        <div class="surfside-front-restore-list">
+                            <?php foreach ($hidden as $name) : ?>
+                                <form method="post">
+                                    <?php wp_nonce_field('surfside_front_settings', 'surfside_front_settings_nonce'); ?>
+                                    <input type="hidden" name="surfside_front_settings_action" value="restore_calendar_place">
+                                    <input type="hidden" name="place_name" value="<?php echo esc_attr($name); ?>">
+                                    <button type="submit" class="surfside-front-secondary-button">Restore <?php echo esc_html(ucwords($name)); ?></button>
+                                </form>
+                            <?php endforeach; ?>
+                        </div>
+                    </details>
+                <?php endif; ?>
+            </div>
+        </details>
+
+        <?php if (function_exists('surfside_tools_church_settings_shared_integrations_panel')) echo surfside_tools_church_settings_shared_integrations_panel(); ?>
+
+        <details class="surfside-front-settings-card surfside-integration-card surfside-streaming-integration-card">
+            <summary><span>Streaming</span></summary>
+            <div class="surfside-integration-body">
+                <p class="surfside-front-description">Livestream channel, offline announcement media, and shared streaming destinations.</p>
+                <p><a class="surfside-front-secondary-button surfside-streaming-settings-link" href="<?php echo esc_url($streaming_url); ?>">Open Streaming Settings <span aria-hidden="true">›</span></a></p>
+            </div>
+        </details>
+
+        <?php if (function_exists('surfside_tools_visual_css_settings_panel')) echo surfside_tools_visual_css_settings_panel(); ?>
+        <?php if (function_exists('surfside_tools_youversion_settings_panel')) echo surfside_tools_youversion_settings_panel(); ?>
+
+        <div class="surfside-integrations-save-shell">
+            <button type="button" class="surfside-front-primary-button surfside-integrations-save-all" id="surfside-integrations-save-all">Save Integrations</button>
+            <div class="surfside-front-description surfside-integrations-save-status" id="surfside-integrations-save-status" aria-live="polite"></div>
+        </div>
     </div>
 
     <style>
-        .surfside-front-settings-card{background:#fff;border:1px solid rgba(7,27,58,.12);border-radius:18px;box-shadow:0 12px 32px rgba(7,27,58,.07);padding:clamp(20px,4vw,30px);margin-bottom:22px}.surfside-front-settings-card h2{margin-top:0}.surfside-front-settings-form fieldset{border:0;padding:0;margin:18px 0}.surfside-front-settings-form fieldset label{display:block;margin:10px 0}.surfside-front-key-row{display:flex;gap:10px;margin-top:8px}.surfside-front-key-row input{flex:1;min-width:0}.surfside-front-settings input[type=password],.surfside-front-settings input[type=number]{padding:10px 12px;border:1px solid #9aa9b8;border-radius:7px;font:inherit}.surfside-front-description{color:#526279;font-size:.92rem}.surfside-front-primary-button,.surfside-front-secondary-button,.surfside-front-delete-button{border-radius:8px;padding:10px 16px;font:inherit;font-weight:700;cursor:pointer}.surfside-front-primary-button{border:0;background:#0b4f9c;color:#fff}.surfside-front-secondary-button{border:1px solid #0b4f9c;background:#fff;color:#0b4f9c}.surfside-front-delete-button{border:0;background:transparent;color:#b42318;text-decoration:underline;padding:4px}.surfside-front-settings-notice{padding:13px 15px;border-radius:10px;margin-bottom:18px;font-weight:700}.surfside-front-settings-success{background:#edf7ed;color:#245f2a}.surfside-front-settings-error{background:#fdecec;color:#8b2323}.surfside-front-place-table{margin-top:16px;border:1px solid #d8e0e8;border-radius:10px;overflow:hidden}.surfside-front-place-head,.surfside-front-place-row{display:grid;grid-template-columns:1.2fr 1.5fr .8fr 90px;gap:12px;align-items:center;padding:12px 14px}.surfside-front-place-head{background:#edf3f8;font-weight:800}.surfside-front-place-row+ .surfside-front-place-row{border-top:1px solid #e3e8ed}.surfside-front-restore-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}@media(max-width:720px){.surfside-front-key-row{display:block}.surfside-front-key-row button{margin-top:8px}.surfside-front-place-head{display:none}.surfside-front-place-row{grid-template-columns:1fr;gap:5px}}
+        .surfside-front-settings-card{background:#fff;border:1px solid rgba(7,27,58,.12);border-radius:18px;box-shadow:0 12px 32px rgba(7,27,58,.07);box-sizing:border-box}
+        .surfside-front-settings .surfside-integration-card{padding:0;overflow:hidden;margin:0 0 10px;box-shadow:none}
+        .surfside-integration-card>summary{display:grid;grid-template-columns:minmax(0,1fr) 24px;align-items:center;column-gap:14px;min-height:56px;box-sizing:border-box;padding:14px 18px;cursor:pointer;list-style:none;font-size:1.05rem;font-weight:800;color:#071b3a;background:#fff}
+        .surfside-integration-card>summary::-webkit-details-marker{display:none}.surfside-integration-card>summary:after{content:"+";font-size:1.3rem;color:#0b5fa5;margin:0;justify-self:end}.surfside-integration-card[open]>summary:after{content:"−"}
+        .surfside-integration-summary-action,.surfside-integration-status,.surfside-youversion-status{display:none!important}
+        .surfside-integration-body{padding:0 20px 20px;border-top:1px solid #e3e8ed}.surfside-integration-body>p:first-child{margin-top:16px}.surfside-integration-body label{display:block;margin-top:16px}
+        .surfside-integration-body input[type=url],.surfside-integration-body input[type=text],.surfside-integration-body input[type=password]{box-sizing:border-box;width:100%;max-width:720px;margin-top:7px;padding:10px 12px;border:1px solid #9aa9b8;border-radius:7px;font:inherit}
+        .surfside-front-settings-form fieldset{border:0;padding:0;margin:18px 0}.surfside-front-settings-form fieldset label{display:block;margin:10px 0}.surfside-front-key-row{display:flex;gap:10px;margin-top:8px}.surfside-front-key-row input{flex:1;min-width:0}.surfside-front-settings input[type=number]{padding:10px 12px;border:1px solid #9aa9b8;border-radius:7px;font:inherit}
+        .surfside-front-description{color:#526279;font-size:.92rem}.surfside-front-primary-button,.surfside-front-secondary-button,.surfside-front-delete-button{border-radius:8px;padding:10px 16px;font:inherit;font-weight:700;cursor:pointer}.surfside-front-primary-button{border:0;background:#0b4f9c;color:#fff}.surfside-front-secondary-button{border:1px solid #0b4f9c;background:#fff;color:#0b4f9c}.surfside-front-delete-button{border:0;background:transparent;color:#b42318;text-decoration:underline;padding:4px}
+        .surfside-front-settings-notice{padding:13px 15px;border-radius:10px;margin-bottom:18px;font-weight:700}.surfside-front-settings-success{background:#edf7ed;color:#245f2a}.surfside-front-settings-error{background:#fdecec;color:#8b2323}
+        .surfside-front-place-table{margin-top:16px;border:1px solid #d8e0e8;border-radius:10px;overflow:hidden}.surfside-front-place-head,.surfside-front-place-row{display:grid;grid-template-columns:1.2fr 1.5fr .8fr 90px;gap:12px;align-items:center;padding:12px 14px}.surfside-front-place-head{background:#edf3f8;font-weight:800}.surfside-front-place-row+.surfside-front-place-row{border-top:1px solid #e3e8ed}.surfside-front-restore-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+        .surfside-front-settings-form>p,.surfside-shared-integrations-save,.surfside-visual-css-settings-card form>p{display:none!important}.surfside-youversion-row button[name="surfside_youversion_settings_action"][value="save"]{display:none!important}
+        .surfside-shared-integrations-form{margin-top:0}.surfside-streaming-settings-link{display:inline-flex;align-items:center;gap:8px;width:auto!important;text-decoration:none!important}
+        .surfside-integrations-save-shell{padding-top:6px;padding-bottom:28px}.surfside-integrations-save-all{width:auto!important;min-width:190px}.surfside-integrations-save-status{display:inline-block;margin-left:12px}.surfside-integrations-save-notice{margin-top:0}
+        @media(max-width:720px){.surfside-front-key-row{display:block}.surfside-front-key-row button{margin-top:8px}.surfside-front-place-head{display:none}.surfside-front-place-row{grid-template-columns:1fr;gap:5px}.surfside-integration-card>summary{grid-template-columns:minmax(0,1fr) 20px;column-gap:9px;padding:13px 14px}.surfside-integration-body{padding:0 16px 16px}.surfside-integrations-save-all{width:100%!important}.surfside-integrations-save-status{display:block;margin:8px 0 0}}
     </style>
     <script>
-    document.addEventListener('DOMContentLoaded',function(){const button=document.getElementById('surfside-front-test-maps');const input=document.getElementById('surfside-front-google-key');const status=document.getElementById('surfside-front-maps-status');if(!button||!input||!status)return;button.addEventListener('click',function(){const key=input.value.trim();if(!key){status.textContent='Enter an API key first.';return}status.textContent='Testing Google Maps…';const callback='surfsideFrontMapsTest'+Date.now();window[callback]=function(){status.textContent=window.google&&google.maps&&google.maps.places?'Google Maps and Places connected successfully.':'Google Maps loaded, but Places was not available.';delete window[callback];script.remove()};const script=document.createElement('script');script.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(key)+'&libraries=places&callback='+callback;script.onerror=function(){status.textContent='Google Maps could not connect. Check the key and its website restrictions.';delete window[callback];script.remove()};document.head.appendChild(script)})});
+    document.addEventListener('DOMContentLoaded',function(){
+        const mapsButton=document.getElementById('surfside-front-test-maps');
+        const mapsInput=document.getElementById('surfside-front-google-key');
+        const mapsStatus=document.getElementById('surfside-front-maps-status');
+        if(mapsButton&&mapsInput&&mapsStatus){
+            mapsButton.addEventListener('click',function(){
+                const key=mapsInput.value.trim();
+                if(!key){mapsStatus.textContent='Enter an API key first.';return}
+                mapsStatus.textContent='Testing Google Maps…';
+                const callback='surfsideFrontMapsTest'+Date.now();
+                window[callback]=function(){mapsStatus.textContent=window.google&&google.maps&&google.maps.places?'Google Maps and Places connected successfully.':'Google Maps loaded, but Places was not available.';delete window[callback];script.remove()};
+                const script=document.createElement('script');
+                script.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(key)+'&libraries=places&callback='+callback;
+                script.onerror=function(){mapsStatus.textContent='Google Maps could not connect. Check the key and its website restrictions.';delete window[callback];script.remove()};
+                document.head.appendChild(script);
+            });
+        }
+
+        const saveButton=document.getElementById('surfside-integrations-save-all');
+        const saveStatus=document.getElementById('surfside-integrations-save-status');
+        if(!saveButton)return;
+        saveButton.addEventListener('click',async function(){
+            const forms=[
+                document.querySelector('.surfside-front-settings-form'),
+                document.querySelector('.surfside-shared-integrations-form'),
+                document.querySelector('.surfside-visual-css-settings-card form'),
+                document.querySelector('.surfside-youversion-form')
+            ].filter(Boolean);
+            saveButton.disabled=true;
+            saveButton.textContent='Saving…';
+            if(saveStatus)saveStatus.textContent='Saving all integration settings.';
+            try{
+                for(const form of forms){
+                    const data=new FormData(form);
+                    if(form.classList.contains('surfside-youversion-form')) data.set('surfside_youversion_settings_action','save');
+                    const response=await fetch(window.location.href,{method:'POST',body:data,credentials:'same-origin',redirect:'follow'});
+                    if(!response.ok)throw new Error('Save failed');
+                }
+                if(saveStatus)saveStatus.textContent='Saved. Refreshing…';
+                const url=new URL(window.location.href);
+                url.searchParams.set('integrations_saved','1');
+                url.hash='';
+                window.location.href=url.toString();
+            }catch(error){
+                saveButton.disabled=false;
+                saveButton.textContent='Save Integrations';
+                if(saveStatus)saveStatus.textContent='One or more settings could not be saved. Please try again.';
+            }
+        });
+    });
     </script>
     <?php
     return ob_get_clean();
