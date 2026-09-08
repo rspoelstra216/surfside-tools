@@ -4,6 +4,105 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * Parse the visible announcement date and use the latest day in a weekend range.
+ * Examples: "July 11/12, 2026" and "July 12, 2026".
+ */
+function surfside_tools_dashboard_visible_announcement_timestamp($date_text, $fallback = 0) {
+    $date_text = trim((string) $date_text);
+    $timezone = wp_timezone();
+
+    if ($date_text !== '' && preg_match('/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2})(?:\s*\/\s*(\d{1,2}))?,\s*(\d{4})\b/i', $date_text, $matches)) {
+        $month = $matches[1];
+        $day = !empty($matches[3]) ? $matches[3] : $matches[2];
+        try {
+            $date = new DateTimeImmutable($month . ' ' . $day . ', ' . $matches[4] . ' 12:00:00', $timezone);
+            return $date->getTimestamp();
+        } catch (Exception $e) {
+            // Fall through to the saved timestamp.
+        }
+    }
+
+    return absint($fallback);
+}
+
+/**
+ * Apply the current dashboard status rules without the retired Recent Activity layer.
+ */
+function surfside_tools_dashboard_current_evaluation($data) {
+    $evaluation = surfside_tools_dashboard_evaluate_status($data);
+    $statuses = $evaluation['statuses'];
+
+    $now = current_time('timestamp');
+    $weekday = (int) wp_date('N', $now);
+    $monday = strtotime('monday this week 00:00:00', $now);
+    $weekly_timestamp = surfside_tools_dashboard_visible_announcement_timestamp(
+        $data['weekly']['announcement_date'] ?? '',
+        $data['weekly']['published_timestamp'] ?? 0
+    );
+    $weekly_current = $weekly_timestamp && $weekly_timestamp >= $monday;
+
+    if ($weekly_current) {
+        $statuses['weekly'] = array(
+            'level' => 'good',
+            'label' => 'Current',
+            'message' => 'This week’s content has been published.',
+            'url' => surfside_tools_staff_page_url('weekly-update'),
+        );
+    } elseif ($weekday === 1) {
+        $statuses['weekly'] = array(
+            'level' => 'warning',
+            'label' => 'Attention',
+            'message' => 'Weekly content became stale today. Prepare this week’s update.',
+            'url' => surfside_tools_staff_page_url('weekly-update'),
+        );
+    } else {
+        $statuses['weekly'] = array(
+            'level' => 'critical',
+            'label' => 'Action required',
+            'message' => 'Weekly content is still from last week.',
+            'url' => surfside_tools_staff_page_url('weekly-update'),
+        );
+    }
+
+    if (empty($data['calendar']['next'])) {
+        $statuses['calendar'] = array(
+            'level' => 'critical',
+            'label' => 'Action required',
+            'message' => 'The calendar has no future events.',
+            'url' => surfside_tools_staff_page_url('calendar'),
+        );
+    } elseif (empty($data['calendar']['occurrence_count_30'])) {
+        $statuses['calendar'] = array(
+            'level' => 'warning',
+            'label' => 'Attention',
+            'message' => 'There are no events scheduled in the next 30 days.',
+            'url' => surfside_tools_staff_page_url('calendar'),
+        );
+    } else {
+        $statuses['calendar'] = array(
+            'level' => 'good',
+            'label' => 'Healthy',
+            'message' => 'Upcoming events are available.',
+            'url' => surfside_tools_staff_page_url('calendar'),
+        );
+    }
+
+    $alerts = array();
+    foreach ($statuses as $key => $status) {
+        if (($status['level'] ?? 'good') !== 'good') {
+            $alerts[] = array(
+                'key' => $key,
+                'level' => $status['level'],
+                'message' => $status['message'],
+                'url' => $status['url'],
+            );
+        }
+    }
+
+    return array('statuses' => $statuses, 'alerts' => $alerts);
+}
+
 function surfside_tools_dashboard_action_label($key, $status) {
     $needs_attention = in_array($status['level'] ?? 'good', array('warning', 'critical'), true);
 
@@ -21,13 +120,13 @@ function surfside_tools_dashboard_stat_block($number, $label) {
     return '<div class="surfside-dashboard-metric"><strong>' . esc_html($number) . '</strong><span>' . esc_html($label) . '</span></div>';
 }
 
-function surfside_tools_dashboard_polish_styles() {
+function surfside_tools_dashboard_overview_styles() {
     wp_add_inline_style('surfside-tools-staff-dashboard', '
         .surfside-dashboard-status-grid{align-items:stretch}.surfside-dashboard-status-card{min-height:100%;padding:26px}.surfside-dashboard-status-head{justify-content:space-between;align-items:flex-start}.surfside-dashboard-status-title{display:flex;align-items:center;gap:13px}.surfside-dashboard-health{margin:0}.surfside-dashboard-metric{display:flex;align-items:baseline;gap:10px;margin:8px 0 14px}.surfside-dashboard-metric strong{font-size:clamp(42px,6vw,58px);line-height:.9;letter-spacing:-.055em;color:#071b3a}.surfside-dashboard-metric span{max-width:170px;font-size:15px;line-height:1.25;font-weight:750;color:#556178}.surfside-dashboard-status-content{display:flex;flex-direction:column;flex:1}.surfside-dashboard-status-card .surfside-staff-actions{padding-top:20px}.surfside-dashboard-status-card .surfside-staff-button,.surfside-dashboard-status-card .surfside-staff-button-secondary{width:100%;justify-content:center}.surfside-dashboard-summary{position:relative;overflow:hidden}.surfside-dashboard-summary:before{content:"";position:absolute;inset:0 auto 0 0;width:6px;background:currentColor;opacity:.55}.surfside-dashboard-manage{margin-top:34px;padding-top:30px;border-top:1px solid rgba(7,27,58,.12)}.surfside-dashboard-manage-head{margin-bottom:18px}.surfside-dashboard-manage-head h2{margin:0 0 5px;font-size:clamp(22px,3vw,30px);color:#071b3a}.surfside-dashboard-manage-head p{margin:0;color:#556178}.surfside-dashboard-manage-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.surfside-dashboard-manage-card{display:flex;flex-direction:column;min-height:210px;padding:22px;border:1px solid rgba(7,27,58,.12);border-radius:16px;background:#fff;box-shadow:0 8px 22px rgba(7,27,58,.055)}.surfside-dashboard-manage-card .surfside-staff-icon{width:46px;height:46px;margin-bottom:16px}.surfside-dashboard-manage-card .surfside-staff-icon svg{width:24px;height:24px}.surfside-dashboard-manage-card h3{margin:0;font-size:22px;color:#071b3a;letter-spacing:-.02em}.surfside-dashboard-manage-card p{margin:8px 0 18px;color:#556178;line-height:1.45}.surfside-dashboard-manage-card .surfside-staff-actions{margin-top:auto}.surfside-dashboard-manage-card .surfside-staff-button-secondary{width:100%;box-sizing:border-box;justify-content:center}@media(max-width:760px){.surfside-staff-shell{padding-left:14px;padding-right:14px}.surfside-dashboard-greeting{margin-bottom:18px}.surfside-dashboard-summary{padding:20px 20px 20px 22px}.surfside-dashboard-status-card{padding:20px}.surfside-dashboard-status-head{gap:12px}.surfside-dashboard-status-title{align-items:flex-start}.surfside-dashboard-status-head .surfside-staff-icon{width:42px;height:42px}.surfside-dashboard-status-card h3{font-size:21px}.surfside-dashboard-metric{align-items:flex-end}.surfside-dashboard-metric strong{font-size:48px}.surfside-dashboard-metric span{padding-bottom:3px}.surfside-dashboard-detail{font-size:15px}.surfside-dashboard-status-card .surfside-staff-actions a{min-height:48px}.surfside-dashboard-manage{margin-top:28px;padding-top:24px}.surfside-dashboard-manage-grid{grid-template-columns:1fr}.surfside-dashboard-manage-card{min-height:auto}}
     ');
 }
 
-function surfside_tools_dashboard_intelligence_shortcode_v3() {
+function surfside_tools_dashboard_overview_shortcode() {
     if (function_exists('surfside_tools_prevent_cache')) {
         surfside_tools_prevent_cache();
     }
@@ -42,11 +141,10 @@ function surfside_tools_dashboard_intelligence_shortcode_v3() {
     }
 
     surfside_tools_dashboard_intelligence_styles();
-    surfside_tools_dashboard_polish_styles();
+    surfside_tools_dashboard_overview_styles();
 
     $data = surfside_tools_dashboard_status_data();
-    $context = surfside_tools_dashboard_activity_context($data);
-    $evaluation = surfside_tools_dashboard_evaluate_status_v2($data, $context);
+    $evaluation = surfside_tools_dashboard_current_evaluation($data);
     $statuses = $evaluation['statuses'];
     $alerts = $evaluation['alerts'];
     $user = wp_get_current_user();
@@ -68,7 +166,7 @@ function surfside_tools_dashboard_intelligence_shortcode_v3() {
         'calendar' => array(
             'title' => 'Calendar',
             'icon' => 'calendar',
-            'metric' => $context['occurrence_count_30'],
+            'metric' => absint($data['calendar']['occurrence_count_30'] ?? 0),
             'metric_label' => 'events in the next 30 days',
             'details' => array('<strong>Next event:</strong><br>' . esc_html(surfside_tools_dashboard_next_event_text($data['calendar']['next']))),
         ),
@@ -167,5 +265,5 @@ function surfside_tools_dashboard_intelligence_shortcode_v3() {
 
 add_action('init', function () {
     remove_shortcode('surfside_staff_dashboard');
-    add_shortcode('surfside_staff_dashboard', 'surfside_tools_dashboard_intelligence_shortcode_v3');
+    add_shortcode('surfside_staff_dashboard', 'surfside_tools_dashboard_overview_shortcode');
 }, 60);
