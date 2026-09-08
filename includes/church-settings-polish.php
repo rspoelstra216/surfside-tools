@@ -1,5 +1,5 @@
 <?php
-/** Church Settings information-architecture and integrations polish. */
+/** Church Settings information-architecture and shared integration support. */
 if (!defined('ABSPATH')) { exit; }
 
 function surfside_tools_church_settings_back_link($output) {
@@ -44,12 +44,6 @@ function surfside_tools_church_settings_shared_save() {
     return '<div class="surfside-front-settings-notice surfside-front-settings-success">Integration settings saved.</div>';
 }
 
-function surfside_tools_church_settings_compact_card($matches) {
-    $title = trim(wp_strip_all_tags($matches[1]));
-    $body = $matches[2];
-    return '<details class="surfside-front-settings-card surfside-integration-card"><summary><span>' . esc_html($title) . '</span><span class="surfside-integration-summary-action">Configure</span></summary><div class="surfside-integration-body">' . $body . '</div></details>';
-}
-
 function surfside_tools_church_settings_shared_integrations_panel() {
     $app = function_exists('surfside_tools_app_settings') ? surfside_tools_app_settings() : array();
     $giving_url = esc_url($app['giving_url'] ?? '');
@@ -87,7 +81,7 @@ function surfside_tools_church_settings_shared_integrations_panel() {
             </div>
         </details>
 
-        <p class="surfside-shared-integrations-save"><button type="submit" class="surfside-front-primary-button">Save Giving & Turnstile</button></p>
+        <p class="surfside-shared-integrations-save"><button type="submit" class="surfside-front-primary-button">Save Giving &amp; Turnstile</button></p>
     </form>
     <?php
     return ob_get_clean();
@@ -102,48 +96,12 @@ add_filter('do_shortcode_tag', function ($output, $tag) {
         $output = surfside_tools_church_settings_back_link($output);
         $settings = function_exists('surfside_tools_contact_settings') ? surfside_tools_contact_settings() : array();
         $hidden = '<input type="hidden" name="turnstile_site_key" value="' . esc_attr($settings['turnstile_site_key'] ?? '') . '"><input type="hidden" name="turnstile_secret_key" value="">';
-        $output = preg_replace('~<section class="surfside-staff-panel"><h2>Cloudflare Turnstile</h2>.*?</section>~s', $hidden, $output, 1);
-        return $output;
+        return preg_replace('~<section class="surfside-staff-panel"><h2>Cloudflare Turnstile</h2>.*?</section>~s', $hidden, $output, 1);
     }
 
     if ($tag === 'surfside_staff_site_information') {
         return surfside_tools_church_settings_back_link($output);
     }
 
-    if ($tag !== 'surfside_staff_settings') {
-        return $output;
-    }
-
-    $output = surfside_tools_church_settings_back_link($output);
-    $output = str_replace('<p class="surfside-staff-eyebrow">Settings</p>', '<p class="surfside-staff-eyebrow">Technical Configuration</p>', $output);
-    $output = str_replace('<h1>Surfside Tools Settings</h1>', '<h1>Integrations</h1>', $output);
-    $output = str_replace('Manage Google Maps, calendar defaults, and saved places without opening WordPress administration.', 'External services and connection settings used by Surfside.', $output);
-    $output = str_replace('<h2>Google Maps Integration</h2>', '<h2>Google Maps</h2>', $output);
-    $output = str_replace('>Save Settings</button>', '>Save Map & Calendar Settings</button>', $output);
-
-    $output = preg_replace_callback(
-        '~<section class="surfside-front-settings-card">\s*<h2>(.*?)</h2>(.*?)</section>~s',
-        'surfside_tools_church_settings_compact_card',
-        $output
-    );
-
-    $shared_notice = surfside_tools_church_settings_shared_save();
-    $shared_panel = $shared_notice . surfside_tools_church_settings_shared_integrations_panel();
-    $output = preg_replace('~</div>\s*<style>~', $shared_panel . '</div><style>', $output, 1);
-
-    $css = '<style>
-        .surfside-front-settings .surfside-integration-card{padding:0;overflow:hidden;margin-bottom:12px;box-shadow:none}
-        .surfside-integration-card>summary{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px 20px;cursor:pointer;list-style:none;font-size:1.05rem;font-weight:800;color:#071b3a;background:#fff}
-        .surfside-integration-card>summary::-webkit-details-marker{display:none}
-        .surfside-integration-card>summary:after{content:"+";font-size:1.3rem;color:#0b5fa5;margin-left:auto}
-        .surfside-integration-card[open]>summary:after{content:"−"}
-        .surfside-integration-summary-action,.surfside-integration-status{margin-left:auto;color:#61717d;font-size:.82rem;font-weight:700}
-        .surfside-integration-body{padding:0 20px 20px;border-top:1px solid #e3e8ed}
-        .surfside-integration-body>p:first-child{margin-top:16px}
-        .surfside-integration-body label{display:block;margin-top:16px}
-        .surfside-integration-body input[type=url],.surfside-integration-body input[type=text],.surfside-integration-body input[type=password]{box-sizing:border-box;width:100%;max-width:720px;margin-top:7px;padding:10px 12px;border:1px solid #9aa9b8;border-radius:7px;font:inherit}
-        .surfside-shared-integrations-form{margin-top:12px}.surfside-shared-integrations-save{margin:14px 0 24px}.surfside-front-settings-form>p{margin:14px 0 24px}
-        @media(max-width:720px){.surfside-integration-card>summary{padding:15px 16px}.surfside-integration-body{padding:0 16px 16px}}
-    </style>';
-    return $output . $css;
+    return $output;
 }, 40, 2);
