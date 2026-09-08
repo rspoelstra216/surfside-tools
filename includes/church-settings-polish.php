@@ -98,21 +98,6 @@ add_filter('do_shortcode_tag', function ($output, $tag) {
         return $output;
     }
 
-    if ($tag === 'surfside_staff_site_settings') {
-        $output = preg_replace('~<form method="post" class="surfside-site-settings-giving">.*?</form>~s', '', $output, 1);
-        $output = str_replace(
-            'Message recipients and Cloudflare Turnstile protection for website and app contact forms.',
-            'Message recipients for website and app contact forms.',
-            $output
-        );
-        $output = str_replace(
-            'Google Maps, calendar defaults, Saved Places, and other shared integrations.',
-            'External services and technical connections used across Surfside.',
-            $output
-        );
-        return $output;
-    }
-
     if ($tag === 'surfside_staff_contact_management') {
         $output = surfside_tools_church_settings_back_link($output);
         $settings = function_exists('surfside_tools_contact_settings') ? surfside_tools_contact_settings() : array();
