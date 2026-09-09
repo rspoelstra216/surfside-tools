@@ -240,12 +240,12 @@ function surfside_tools_visual_css_settings_panel() {
     $default_css = surfside_tools_visual_default_css_reference();
     ob_start();
     ?>
-    <div class="surfside-staff-shell surfside-visual-css-settings-shell">
-        <?php if (isset($_GET['visual_css_saved'])) : ?>
-            <div class="surfside-front-settings-notice surfside-front-settings-success">Visual CSS saved.</div>
-        <?php endif; ?>
-        <section class="surfside-front-settings-card surfside-visual-css-settings-card">
-            <h2>Reveal &amp; Countdown Styling</h2>
+    <?php if (isset($_GET['visual_css_saved'])) : ?>
+        <div class="surfside-front-settings-notice surfside-front-settings-success">Visual CSS saved.</div>
+    <?php endif; ?>
+    <details class="surfside-front-settings-card surfside-integration-card surfside-visual-css-settings-card">
+        <summary><span>Reveal &amp; Countdown Styling</span><span class="surfside-integration-summary-action">Configure</span></summary>
+        <div class="surfside-integration-body">
             <p class="surfside-staff-muted">Add only the rules you want to change. These overrides load after the built-in Surfside Tools styles. Leave this blank to use the defaults.</p>
             <form method="post">
                 <?php wp_nonce_field('surfside_visual_css_settings', 'surfside_visual_css_nonce'); ?>
@@ -263,19 +263,11 @@ function surfside_tools_visual_css_settings_panel() {
                 </details>
                 <p><button type="submit" class="surfside-front-primary-button">Save Visual CSS</button></p>
             </form>
-        </section>
-    </div>
+        </div>
+    </details>
     <style>
-        .surfside-visual-css-settings-shell{margin-top:0}.surfside-visual-css-settings-card textarea{display:block;width:100%;min-height:300px;margin:10px 0 14px;padding:14px;border:1px solid #9aa9b8;border-radius:9px;background:#101827;color:#e6edf7;font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;tab-size:4}.surfside-visual-css-reference{margin:12px 0 18px}.surfside-visual-css-reference code{display:inline-block;margin:4px 2px;padding:2px 5px;border-radius:4px;background:#edf3f8}.surfside-visual-default-css pre{max-height:520px;overflow:auto;margin:12px 0 0;padding:16px;border-radius:9px;background:#101827;color:#e6edf7;white-space:pre;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.surfside-visual-default-css pre code{display:block;margin:0;padding:0;background:transparent;color:inherit}
+        .surfside-visual-css-settings-card textarea{display:block;width:100%;min-height:260px;margin:10px 0 14px;padding:14px;border:1px solid #9aa9b8;border-radius:9px;background:#101827;color:#e6edf7;font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;tab-size:4}.surfside-visual-css-reference{margin:12px 0 18px}.surfside-visual-css-reference code{display:inline-block;margin:4px 2px;padding:2px 5px;border-radius:4px;background:#edf3f8}.surfside-visual-default-css pre{max-height:520px;overflow:auto;margin:12px 0 0;padding:16px;border-radius:9px;background:#101827;color:#e6edf7;white-space:pre;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.surfside-visual-default-css pre code{display:block;margin:0;padding:0;background:transparent;color:inherit}
     </style>
     <?php
     return ob_get_clean();
 }
-
-add_filter('do_shortcode_tag', function ($output, $tag) {
-    if ($tag !== 'surfside_staff_settings') {
-        return $output;
-    }
-
-    return $output . surfside_tools_visual_css_settings_panel();
-}, 20, 2);
