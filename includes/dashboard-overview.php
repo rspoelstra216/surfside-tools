@@ -27,7 +27,7 @@ function surfside_tools_dashboard_visible_announcement_timestamp($date_text, $fa
 }
 
 /**
- * Apply the current dashboard status rules without the retired Recent Activity layer.
+ * Apply the current dashboard status rules and collect actionable alerts.
  */
 function surfside_tools_dashboard_current_evaluation($data) {
     $evaluation = surfside_tools_dashboard_evaluate_status($data);
@@ -100,6 +100,22 @@ function surfside_tools_dashboard_current_evaluation($data) {
         }
     }
 
+    $pending_prayers = function_exists('surfside_tools_prayer_list_pending_count')
+        ? surfside_tools_prayer_list_pending_count()
+        : 0;
+    if ($pending_prayers > 0) {
+        $alerts[] = array(
+            'key' => 'prayer',
+            'level' => 'warning',
+            'message' => $pending_prayers === 1
+                ? '1 prayer request is awaiting review.'
+                : $pending_prayers . ' prayer requests are awaiting review.',
+            'url' => function_exists('surfside_tools_prayer_list_page_url')
+                ? surfside_tools_prayer_list_page_url('pending')
+                : surfside_tools_member_engagement_url('prayer-requests'),
+        );
+    }
+
     return array('statuses' => $statuses, 'alerts' => $alerts);
 }
 
@@ -138,6 +154,11 @@ function surfside_tools_dashboard_overview_shortcode() {
     }
     if (!current_user_can('upload_files')) {
         return '<div class="surfside-staff-shell"><p>You do not have permission to access Surfside staff tools.</p></div>';
+    }
+
+    $view = isset($_GET['view']) ? sanitize_key(wp_unslash($_GET['view'])) : '';
+    if ($view === 'member-engagement' && function_exists('surfside_tools_staff_member_engagement_view')) {
+        return surfside_tools_staff_member_engagement_view();
     }
 
     surfside_tools_dashboard_intelligence_styles();
