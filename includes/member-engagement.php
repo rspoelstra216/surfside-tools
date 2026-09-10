@@ -7,6 +7,25 @@ function surfside_tools_member_engagement_url($tool = '') {
     return $tool !== '' ? add_query_arg('tool', sanitize_key($tool), $url) : $url;
 }
 
+/** Keep older prayer-review email links working without a dashboard render override. */
+function surfside_tools_member_engagement_legacy_prayer_redirect() {
+    if (empty($_GET['surfside-prayer-review']) || sanitize_key(wp_unslash($_GET['surfside-prayer-review'])) !== '1') {
+        return;
+    }
+    if (!function_exists('surfside_tools_prayer_list_page_url')) {
+        return;
+    }
+
+    $section = isset($_GET['section']) ? sanitize_key(wp_unslash($_GET['section'])) : 'pending';
+    if (!in_array($section, array('pending', 'active', 'history'), true)) {
+        $section = 'pending';
+    }
+
+    wp_safe_redirect(surfside_tools_prayer_list_page_url($section));
+    exit;
+}
+add_action('template_redirect', 'surfside_tools_member_engagement_legacy_prayer_redirect', 5);
+
 function surfside_tools_staff_member_engagement_view() {
     if (function_exists('surfside_tools_prevent_cache')) surfside_tools_prevent_cache();
     if (function_exists('surfside_tools_staff_enqueue_styles')) surfside_tools_staff_enqueue_styles();
