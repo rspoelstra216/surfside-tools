@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Homepage carousel and front-end photo management.
+ * Homepage carousel storage, public rendering, cache synchronization, and staff support.
  */
 
 function surfside_tools_homepage_image_option() {
@@ -189,32 +189,66 @@ function surfside_tools_homepage_handle_post($images) {
     return array($updated, '<div class="surfside-homepage-notice success">Homepage photos updated successfully.</div>');
 }
 
-function surfside_tools_homepage_dashboard_card($html) {
-    if (strpos($html, '<h1>Staff Dashboard</h1>') === false || strpos($html, '<h2>Settings</h2>') === false) {
-        return $html;
+/**
+ * Purge the cached public homepage when carousel data changes.
+ */
+function surfside_tools_purge_homepage_carousel_cache() {
+    $front_page_id = (int) get_option('page_on_front');
+
+    if ($front_page_id) {
+        clean_post_cache($front_page_id);
     }
 
-    $settings_heading = strpos($html, '<h2>Settings</h2>');
-    $insert_at = strrpos(substr($html, 0, $settings_heading), '<article');
-    if ($insert_at === false) {
-        return $html;
+    if (has_action('litespeed_purge_url')) {
+        do_action('litespeed_purge_url', home_url('/'));
     }
 
-    $card = '<article class="surfside-staff-card"><span class="surfside-staff-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="M21 15l-5-5L5 20"/></svg></span><h2>Manage Homepage</h2><p>Update and reorder homepage carousel photos.</p><div class="surfside-staff-actions"><a class="surfside-staff-button" href="' . esc_url(surfside_tools_staff_page_url('homepage')) . '">Manage Homepage <span class="surfside-staff-arrow">›</span></a></div></article>';
+    if ($front_page_id && has_action('litespeed_purge_post')) {
+        do_action('litespeed_purge_post', $front_page_id);
+    }
 
-    return substr($html, 0, $insert_at) . $card . substr($html, $insert_at);
+    if (has_action('rocket_clean_home')) {
+        do_action('rocket_clean_home');
+    }
 }
 
-add_action('init', function () {
-    if (!function_exists('surfside_tools_staff_dashboard_shortcode')) {
+function surfside_tools_homepage_carousel_option_updated($old_value, $new_value, $option_name) {
+    if ($old_value === $new_value) {
         return;
     }
 
-    remove_shortcode('surfside_staff_dashboard');
-    add_shortcode('surfside_staff_dashboard', function () {
-        return surfside_tools_homepage_dashboard_card(surfside_tools_staff_dashboard_shortcode());
-    });
-}, 40);
+    surfside_tools_purge_homepage_carousel_cache();
+}
+add_action(
+    'update_option_surfside_tools_homepage_carousel_images',
+    'surfside_tools_homepage_carousel_option_updated',
+    10,
+    3
+);
+
+function surfside_tools_homepage_carousel_option_added($option_name, $value) {
+    surfside_tools_purge_homepage_carousel_cache();
+}
+add_action(
+    'add_option_surfside_tools_homepage_carousel_images',
+    'surfside_tools_homepage_carousel_option_added',
+    10,
+    2
+);
+
+/**
+ * Keep Surfside Tools authoritative if the legacy photo-carousel Code Snippet
+ * is still enabled during the remaining migration period.
+ */
+function surfside_tools_force_photo_carousel_shortcode() {
+    if (!function_exists('surfside_tools_photo_carousel_shortcode')) {
+        return;
+    }
+
+    remove_shortcode('surfside_photo_carousel');
+    add_shortcode('surfside_photo_carousel', 'surfside_tools_photo_carousel_shortcode');
+}
+add_action('init', 'surfside_tools_force_photo_carousel_shortcode', 999);
 
 function surfside_tools_ensure_homepage_staff_page() {
     if (!is_admin() || !function_exists('surfside_tools_ensure_staff_page')) {

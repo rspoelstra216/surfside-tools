@@ -85,7 +85,6 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/location-clarity.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-life-section.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager-compact.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-carousel-cache-sync.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities-settings.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-intelligence.php';
