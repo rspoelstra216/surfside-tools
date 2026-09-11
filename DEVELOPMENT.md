@@ -8,6 +8,8 @@ This file is the concise entry point for active Surfside Tools development. Dura
 
 The website-management platform is mature through Milestones 1–10. The 3.0.x line added the mobile-app data bridge and app-management plumbing; 3.1.0 completed the shared native Connect/contact service; 3.2.0 added the shared Ministries platform, Calendar Ministry/Bible Study classification, Giving/push plumbing, and a safer runtime architecture.
 
+A repository-wide post-3.2.0 code audit and cleanup was completed and deployed on September 11, 2026. The audit removed dead/orphaned code, superseded renderers, post-render compatibility layers, duplicate calendar/Google Places behavior, and broadly scoped staff/runtime work. There is no standing cleanup backlog from that audit; see the [Code Audit Closeout](docs/CODE-AUDIT-CLOSEOUT.md) for the durable outcomes and ownership rules.
+
 Primary feature development remains in the **Surfside mobile app**. Tools should receive new work when the app needs shared server-side data, management, or integration plumbing, or when a separate website improvement is intentionally scheduled.
 
 ## Architecture boundary
@@ -55,7 +57,7 @@ Website and app features should consume the same centralized content and service
 
 3.2.0 establishes an important operating rule: **do not run page-creation/ensure checks, migrations, broad staff queries, or other staff-only work on every WordPress request.**
 
-Production isolation showed that globally attached page-ensure work could drive sustained CPU/database load. The stable architecture scopes management and migration behavior to the explicit page or save action that needs it. New features should preserve that boundary and Resource Usage should be watched after changes that affect runtime hooks or public requests.
+Production isolation showed that globally attached page-ensure work could drive sustained CPU/database load. The stable architecture scopes management and migration behavior to the explicit page or save action that needs it. The post-3.2.0 audit reinforced this boundary by removing or narrowing remaining compatibility hooks, duplicate query paths, and browser-side repair layers. New features should preserve that boundary and Resource Usage should be watched after changes that affect runtime hooks or public requests.
 
 ## Ministries workflow
 
@@ -68,7 +70,7 @@ Production isolation showed that globally attached page-ensure work could drive 
 
 ## Current direction
 
-Continue mobile-app development from the released 3.2.0 shared-services baseline. Before adding Tools code for an app feature, first determine whether the requirement is truly server-side. Reuse existing website settings or public URLs when appropriate. Add new API fields or management controls only when they create a durable shared source of truth or keep sensitive/integration logic off the device.
+Continue mobile-app development from the released 3.2.0 shared-services baseline. The repository audit is complete; do not continue cleanup for its own sake. Before adding Tools code for an app feature, first determine whether the requirement is truly server-side. Reuse existing website settings or public URLs when appropriate. Add new API fields or management controls only when they create a durable shared source of truth or keep sensitive/integration logic off the device.
 
 ## Milestone history
 
@@ -84,6 +86,7 @@ Continue mobile-app development from the released 3.2.0 shared-services baseline
 | 3.0.1–3.0.2 | Mobile App Data Bridge and integration plumbing |
 | 3.1.0 | Native Connect workflow |
 | 3.2.0 | Shared Ministries, Calendar classification, app-service expansion, runtime stabilization |
+| Post-3.2.0 | Repository code audit, ownership consolidation, dead-code removal, runtime scoping |
 
 The changelog, GitHub Releases, and merged pull requests are the implementation history. Completed PR-by-PR detail should not be duplicated here.
 
@@ -104,5 +107,6 @@ The changelog, GitHub Releases, and merged pull requests are the implementation 
 - `DEVELOPMENT.md` — current baseline, architecture boundary, and active direction
 - `docs/DEVELOPMENT.md` — durable architecture, decisions, and operating guidance
 - `docs/ROADMAP.md` — concise milestone/release roadmap
+- `docs/CODE-AUDIT-CLOSEOUT.md` — completed 2026 repository-audit outcomes and cleanup guardrails
 - `CHANGELOG.md` — concise release-level outcomes
 - GitHub Releases and merged PRs — detailed implementation history and installable artifacts
