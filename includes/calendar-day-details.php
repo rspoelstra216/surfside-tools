@@ -92,7 +92,7 @@ function surfside_tools_calendar_render_month_grid_interactive($events, $month_s
                                         <button type="button" class="surfside-month-calendar-event-button surfside-event-detail-button" aria-haspopup="dialog" aria-controls="<?php echo esc_attr($detail_id); ?>">
                                             <span class="surfside-month-calendar-event-title"><?php echo esc_html($event['title']); ?></span>
                                             <span><?php echo esc_html(surfside_tools_calendar_format_time_range($event)); ?></span>
-                                            <?php if (!empty($event['location'])) : ?><span class="surfside-month-calendar-location">📍 <?php echo esc_html($event['location']); ?></span><?php endif; ?>
+                                            <?php if (!empty($event['location'])) : ?><span class="surfside-month-calendar-location">📍 <?php echo esc_html($event['location']); ?><?php if (!empty($event['location_building_room'])) : ?> · <span class="surfside-calendar-meeting-location-inline"><?php echo esc_html($event['location_building_room']); ?></span><?php endif; ?></span><?php endif; ?>
                                         </button>
                                     </article>
                                 <?php endforeach; ?>
@@ -124,7 +124,7 @@ function surfside_tools_calendar_render_month_grid_interactive($events, $month_s
                                         <button type="button" class="surfside-day-modal-event" data-surfside-day-event aria-haspopup="dialog" aria-controls="<?php echo esc_attr($detail_id); ?>">
                                             <strong><?php echo esc_html($event['title']); ?></strong>
                                             <span><?php echo esc_html(surfside_tools_calendar_format_time_range($event)); ?></span>
-                                            <?php if (!empty($event['location_name']) || !empty($event['location'])) : ?><span>📍 <?php echo esc_html($event['location_name'] ?: $event['location']); ?></span><?php endif; ?>
+                                            <?php if (!empty($event['location_name']) || !empty($event['location'])) : ?><span>📍 <?php echo esc_html($event['location_name'] ?: $event['location']); ?><?php if (!empty($event['location_building_room'])) : ?> · <?php echo esc_html($event['location_building_room']); ?><?php endif; ?></span><?php endif; ?>
                                         </button>
                                     <?php endforeach; ?>
                                 </div>

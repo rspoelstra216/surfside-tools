@@ -79,7 +79,6 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/productivity-finish.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/productivity-modal-tracking.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/frontend-settings.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/church-settings-polish.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/location-clarity.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-life-section.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager-compact.php';

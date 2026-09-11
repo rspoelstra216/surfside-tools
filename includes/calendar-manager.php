@@ -90,6 +90,7 @@ function surfside_tools_calendar_get_event($event_id) {
         'location' => get_post_meta($event_id, '_surfside_event_location_name', true) ?: get_post_meta($event_id, '_surfside_event_location', true),
         'location_name' => get_post_meta($event_id, '_surfside_event_location_name', true) ?: get_post_meta($event_id, '_surfside_event_location', true),
         'location_address' => get_post_meta($event_id, '_surfside_event_location_address', true),
+        'location_building_room' => get_post_meta($event_id, '_surfside_event_location_building_room', true),
         'location_id' => absint(get_post_meta($event_id, '_surfside_event_location_id', true)),
         'location_place_id' => get_post_meta($event_id, '_surfside_event_location_place_id', true),
         'location_lat' => get_post_meta($event_id, '_surfside_event_location_lat', true),
@@ -421,6 +422,7 @@ function surfside_tools_calendar_handle_submission() {
     $end_time = $all_day ? '' : (isset($_POST['event_end_time']) ? surfside_tools_calendar_time_for_input(wp_unslash($_POST['event_end_time'])) : '');
     $location_name = isset($_POST['event_location_name']) ? sanitize_text_field(wp_unslash($_POST['event_location_name'])) : '';
     $location_address = isset($_POST['event_location_address']) ? sanitize_text_field(wp_unslash($_POST['event_location_address'])) : '';
+    $location_building_room = isset($_POST['event_location_building_room']) ? sanitize_text_field(wp_unslash($_POST['event_location_building_room'])) : '';
     $location_id = isset($_POST['event_location_id']) ? absint($_POST['event_location_id']) : 0;
     $location_place_id = isset($_POST['event_location_place_id']) ? sanitize_text_field(wp_unslash($_POST['event_location_place_id'])) : '';
     $location_lat = isset($_POST['event_location_lat']) ? sanitize_text_field(wp_unslash($_POST['event_location_lat'])) : '';
@@ -476,6 +478,7 @@ function surfside_tools_calendar_handle_submission() {
     update_post_meta($saved_id, '_surfside_event_location', $location_name); // Legacy compatibility.
     update_post_meta($saved_id, '_surfside_event_location_name', $location_name);
     update_post_meta($saved_id, '_surfside_event_location_address', $location_address);
+    update_post_meta($saved_id, '_surfside_event_location_building_room', $location_building_room);
     update_post_meta($saved_id, '_surfside_event_location_id', $location_id);
     update_post_meta($saved_id, '_surfside_event_location_place_id', $location_place_id);
     update_post_meta($saved_id, '_surfside_event_location_lat', $location_lat);
@@ -536,6 +539,7 @@ function surfside_tools_calendar_manager_shortcode() {
         'location' => '',
         'location_name' => '',
         'location_address' => '',
+        'location_building_room' => '',
         'location_id' => 0,
         'location_place_id' => '',
         'location_lat' => '',
@@ -613,9 +617,9 @@ function surfside_tools_calendar_manager_shortcode() {
                     <div class="surfside-location-picker surfside-google-location-picker" data-surfside-google-location-picker>
                         <label>
                             <span>Location</span>
-                            <input type="search" class="surfside-location-search" data-surfside-google-place placeholder="Start typing a place, church, restaurant, or address..." autocomplete="off" value="<?php echo esc_attr($form_event['location_name'] ?? $form_event['location']); ?>">
+                            <input type="search" class="surfside-location-search" data-surfside-google-place placeholder="Search for a church, business, or address..." autocomplete="off" value="<?php echo esc_attr($form_event['location_name'] ?? $form_event['location']); ?>">
                         </label>
-                        <p class="surfside-location-help">Choose a Google suggestion to fill the address automatically. For internal locations such as Building 4, enter the details manually below.</p>
+                        <p class="surfside-location-help">Search Google for the event location. If needed, specify the building, room, or meeting location below.</p>
                         <p class="surfside-google-status" data-surfside-google-status aria-live="polite">Loading Google Places…</p>
                         <input type="hidden" name="event_location_id" class="surfside-location-id" value="<?php echo esc_attr($form_event['location_id'] ?? 0); ?>">
                         <input type="hidden" name="event_location_place_id" class="surfside-location-place-id" value="<?php echo esc_attr($form_event['location_place_id'] ?? ''); ?>">
@@ -623,9 +627,10 @@ function surfside_tools_calendar_manager_shortcode() {
                         <input type="hidden" name="event_location_lng" class="surfside-location-lng" value="<?php echo esc_attr($form_event['location_lng'] ?? ''); ?>">
                         <input type="hidden" name="event_location_maps_url" class="surfside-location-maps-url" value="<?php echo esc_attr($form_event['location_maps_url'] ?? ''); ?>">
                         <div class="surfside-calendar-form-row surfside-location-fields">
-                            <label><span>Location Name</span><input type="text" name="event_location_name" class="surfside-location-name" value="<?php echo esc_attr($form_event['location_name'] ?? $form_event['location']); ?>" placeholder="Fellowship Hall, Building 3, Cozy Corner Café, etc."></label>
-                            <label><span>Full Address</span><input type="text" name="event_location_address" class="surfside-location-address" value="<?php echo esc_attr($form_event['location_address'] ?? ''); ?>" placeholder="123 Main St, Cocoa, FL 32922"></label>
+                            <label><span>Venue</span><input type="text" name="event_location_name" class="surfside-location-name" value="<?php echo esc_attr($form_event['location_name'] ?? $form_event['location']); ?>" placeholder="Surfside Community Fellowship, Cozy Corner Café, etc."></label>
+                            <label><span>Street Address</span><input type="text" name="event_location_address" class="surfside-location-address" value="<?php echo esc_attr($form_event['location_address'] ?? ''); ?>" placeholder="123 Main St, Cocoa, FL 32922"></label>
                         </div>
+                        <label class="surfside-location-building-room"><span>Meeting Location <small>(optional)</small></span><input type="text" name="event_location_building_room" class="surfside-location-building-room-input" value="<?php echo esc_attr($form_event['location_building_room'] ?? ''); ?>" placeholder="e.g., Fellowship Hall, Building 4, Room 102"></label>
                         <div class="surfside-location-selected" data-surfside-location-selected <?php echo empty($form_event['location_place_id']) ? 'hidden' : ''; ?>>Google place selected. You can still edit the name or address before saving.</div>
                     </div>
 
@@ -855,6 +860,7 @@ function surfside_tools_calendar_render_event_modal($event, $detail_id) {
                 <p><strong>Date</strong><span><?php echo esc_html(surfside_tools_calendar_format_event_dates($event)); ?></span></p>
                 <p><strong>Time</strong><span><?php echo esc_html(surfside_tools_calendar_format_time_range($event)); ?></span></p>
                 <?php if (!empty($event['location_name']) || !empty($event['location'])) : ?><p><strong>Location</strong><span><?php echo esc_html($event['location_name'] ?: $event['location']); ?></span></p><?php endif; ?>
+                <?php if (!empty($event['location_building_room'])) : ?><p><strong>Meeting Location</strong><span><?php echo esc_html($event['location_building_room']); ?></span></p><?php endif; ?>
                 <?php if (!empty($event['location_address'])) : ?><p><strong>Address</strong><span><?php echo esc_html($event['location_address']); ?><?php $maps_url = surfside_tools_calendar_google_maps_url($event); if ($maps_url) : ?><br><a class="surfside-event-maps-link" href="<?php echo esc_url($maps_url); ?>" target="_blank" rel="noopener noreferrer">Open in Google Maps ↗</a><?php endif; ?></span></p><?php endif; ?>
             </div>
             <?php if (!empty($detail_text)) : ?><div class="surfside-event-modal-description"><?php echo wpautop(wp_kses_post($event['description'])); ?></div><?php endif; ?>
@@ -894,7 +900,7 @@ function surfside_tools_calendar_render_event_cards($events, $show_description =
                         <?php if (!empty($event['featured'])) : ?><span class="surfside-public-calendar-featured-label">Featured Event</span><?php endif; ?>
                         <h3><?php echo esc_html($event['title']); ?></h3>
                         <p class="surfside-public-calendar-meta"><?php echo esc_html(surfside_tools_calendar_format_date($event['date'])); ?> · <?php echo esc_html(surfside_tools_calendar_format_time_range($event)); ?></p>
-                        <?php if (!empty($event['location'])) : ?><p class="surfside-public-calendar-location">📍 <?php echo esc_html($event['location']); ?></p><?php endif; ?>
+                        <?php if (!empty($event['location'])) : ?><p class="surfside-public-calendar-location">📍 <?php echo esc_html($event['location']); ?><?php if (!empty($event['location_building_room'])) : ?> · <span class="surfside-calendar-meeting-location-inline"><?php echo esc_html($event['location_building_room']); ?></span><?php endif; ?></p><?php endif; ?>
                         <?php if ($show_description && !empty($event['description'])) : ?><div class="surfside-public-calendar-description"><?php echo wpautop(wp_kses_post($event['description'])); ?></div><?php endif; ?>
                     </button>
                     <?php echo surfside_tools_calendar_render_event_modal($event, $detail_id); ?>
@@ -1021,7 +1027,7 @@ function surfside_tools_calendar_render_month_grid($events, $month_start, $show_
                                         <button type="button" class="surfside-month-calendar-event-button surfside-event-detail-button" aria-haspopup="dialog" aria-controls="<?php echo esc_attr($detail_id); ?>">
                                             <span class="surfside-month-calendar-event-title"><?php echo esc_html($event['title']); ?></span>
                                             <span><?php echo esc_html(surfside_tools_calendar_format_time_range($event)); ?></span>
-                                            <?php if (!empty($event['location'])) : ?><span class="surfside-month-calendar-location">📍 <?php echo esc_html($event['location']); ?></span><?php endif; ?>
+                                            <?php if (!empty($event['location'])) : ?><span class="surfside-month-calendar-location">📍 <?php echo esc_html($event['location']); ?><?php if (!empty($event['location_building_room'])) : ?> · <span class="surfside-calendar-meeting-location-inline"><?php echo esc_html($event['location_building_room']); ?></span><?php endif; ?></span><?php endif; ?>
                                         </button>
                                         <div id="<?php echo esc_attr($detail_id); ?>" class="surfside-event-modal" role="dialog" aria-modal="true" aria-labelledby="<?php echo esc_attr($detail_id); ?>-title" hidden>
                                             <div class="surfside-event-modal-backdrop" data-surfside-modal-close></div>
@@ -1033,6 +1039,7 @@ function surfside_tools_calendar_render_month_grid($events, $month_start, $show_
                                                     <p><strong>Date</strong><span><?php echo esc_html(surfside_tools_calendar_format_event_dates($event)); ?></span></p>
                                                     <p><strong>Time</strong><span><?php echo esc_html(surfside_tools_calendar_format_time_range($event)); ?></span></p>
                                                     <?php if (!empty($event['location_name']) || !empty($event['location'])) : ?><p><strong>Location</strong><span><?php echo esc_html($event['location_name'] ?: $event['location']); ?></span></p><?php endif; ?>
+                                                    <?php if (!empty($event['location_building_room'])) : ?><p><strong>Meeting Location</strong><span><?php echo esc_html($event['location_building_room']); ?></span></p><?php endif; ?>
                 <?php if (!empty($event['location_address'])) : ?><p><strong>Address</strong><span><?php echo esc_html($event['location_address']); ?><?php $maps_url = surfside_tools_calendar_google_maps_url($event); if ($maps_url) : ?><br><a class="surfside-event-maps-link" href="<?php echo esc_url($maps_url); ?>" target="_blank" rel="noopener noreferrer">Open in Google Maps ↗</a><?php endif; ?></span></p><?php endif; ?>
                                                 </div>
                                                 <?php if (!empty($detail_text)) : ?><div class="surfside-event-modal-description"><?php echo wpautop(wp_kses_post($event['description'])); ?></div><?php endif; ?>
@@ -1186,7 +1193,7 @@ function surfside_tools_calendar_enqueue_google_places() {
             });
 
             picker.dataset.googleReady = '1';
-            setStatus(picker, 'Google Places is ready. Start typing to search.', 'success');
+            setStatus(picker, '🟢 Google Places Connected', 'success');
             return true;
         } catch (error) {
             console.error('Surfside Tools Google Places initialization failed:', error);
@@ -1364,6 +1371,7 @@ function surfside_tools_calendar_enqueue_styles() {
         .surfside-public-calendar-event p { margin:5px 0; }
         .surfside-public-calendar-meta { color:#34425e; font-weight:700; }
         .surfside-public-calendar-location { color:#34425e; }
+        .surfside-calendar-meeting-location-inline { font-weight:700; }
         .surfside-public-calendar-description { margin-top:10px; }
         .surfside-public-calendar-description p:last-child { margin-bottom:0; }
         .surfside-public-calendar-featured { border-color:rgba(11,79,156,.34); box-shadow:0 12px 30px rgba(11,79,156,.10); }
@@ -1473,6 +1481,17 @@ function surfside_tools_calendar_enqueue_styles() {
         .surfside-event-modal-description p:first-child { margin-top:0; }
         .surfside-event-modal-description p:last-child { margin-bottom:0; }
         body.surfside-modal-open { overflow:hidden; }
+        @media (min-width:901px) {
+            .surfside-month-calendar-days { grid-auto-rows:150px; align-items:stretch; }
+            .surfside-month-calendar-day { min-height:0; height:150px; overflow:hidden; padding:8px; }
+            .surfside-month-calendar-date-number { margin-bottom:5px; }
+            .surfside-month-calendar-date-number strong { width:26px; height:26px; font-size:14px; }
+            .surfside-month-calendar-day-events { gap:4px; }
+            .surfside-month-calendar-item { min-height:42px; padding:4px 6px; border-radius:7px; }
+            .surfside-month-calendar-event-title { display:block; margin-bottom:1px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:13px; line-height:1.15; }
+            .surfside-month-calendar-event-button span:not(.surfside-month-calendar-event-title) { font-size:11px; line-height:1.2; }
+            .surfside-month-calendar-location { display:none !important; }
+        }
         @media (max-width:900px) {
             .surfside-month-calendar-nav { grid-template-columns:auto 1fr auto; gap:8px; text-align:center; }
             .surfside-month-calendar-nav-button { padding:8px 10px; font-size:0; }
