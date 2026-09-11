@@ -79,7 +79,10 @@ manager = replace_once(manager, old_location_form, new_location_form, 'render fi
 
 modal_location = "                <?php if (!empty($event['location_name']) || !empty($event['location'])) : ?><p><strong>Location</strong><span><?php echo esc_html($event['location_name'] ?: $event['location']); ?></span></p><?php endif; ?>\n                <?php if (!empty($event['location_address'])) : ?>"
 modal_location_new = "                <?php if (!empty($event['location_name']) || !empty($event['location'])) : ?><p><strong>Location</strong><span><?php echo esc_html($event['location_name'] ?: $event['location']); ?></span></p><?php endif; ?>\n                <?php if (!empty($event['location_building_room'])) : ?><p><strong>Meeting Location</strong><span><?php echo esc_html($event['location_building_room']); ?></span></p><?php endif; ?>\n                <?php if (!empty($event['location_address'])) : ?>"
-manager = replace_once(manager, modal_location, modal_location_new, 'event modal meeting location')
+modal_count = manager.count(modal_location)
+if modal_count != 2:
+    raise RuntimeError(f'event modal meeting location: expected exactly 2 matches, found {modal_count}')
+manager = manager.replace(modal_location, modal_location_new, 1)
 
 manager = replace_once(
     manager,
