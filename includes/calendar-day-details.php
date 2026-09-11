@@ -5,7 +5,10 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Milestone 7: interactive overflow details for the public monthly calendar.
+ * Interactive overflow details for the public monthly calendar.
+ *
+ * This module owns the final crowded-day markup, styling, and day-details
+ * behavior so the rendered calendar does not need a later shortcode filter.
  */
 function surfside_tools_calendar_day_details_assets() {
     static $loaded = false;
@@ -15,14 +18,19 @@ function surfside_tools_calendar_day_details_assets() {
     $loaded = true;
 
     wp_add_inline_style('surfside-tools-calendar-manager', '
-        .surfside-month-calendar-more{display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:30px;border:1px solid rgba(11,79,156,.25);border-radius:9px;padding:6px 8px;background:#fff;color:#0b4f9c;font:inherit;font-size:11px;font-weight:900;line-height:1.15;cursor:pointer;box-sizing:border-box}
-        .surfside-month-calendar-more:hover,.surfside-month-calendar-more:focus-visible{background:#eef6ff;border-color:#0b4f9c}.surfside-month-calendar-more:focus-visible{outline:3px solid rgba(11,79,156,.24);outline-offset:2px}
+        .surfside-month-calendar-day.surfside-month-calendar-has-overflow .surfside-month-calendar-day-events{display:grid!important;gap:7px!important;height:auto!important;min-height:0!important;max-height:none!important;padding:0!important;overflow:visible!important;align-content:start!important}
+        .surfside-month-calendar-more-item{border-left-color:#0b4f9c!important;background:#f7fbff!important}
+        .surfside-month-calendar-more-item .surfside-month-calendar-more{display:block!important;visibility:visible!important;opacity:1!important;width:100%!important;min-width:0!important;min-height:0!important;height:auto!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:inherit!important;text-align:left!important;font:inherit!important;cursor:pointer!important;box-shadow:none!important;overflow:visible!important}
+        .surfside-month-calendar-more-item .surfside-month-calendar-event-title{display:block!important;margin:0 0 3px!important;color:#071b3a!important;font-size:15px!important;font-weight:900!important;line-height:1.18!important}
+        .surfside-month-calendar-more-prompt{display:block!important;margin:0!important;color:#34425e!important;font-size:12px!important;line-height:1.35!important}
+        .surfside-month-calendar-more-item:hover,.surfside-month-calendar-more-item:focus-within{background:#eef6ff!important}
+        .surfside-month-calendar-more-item .surfside-month-calendar-more:focus-visible{outline:3px solid rgba(11,79,156,.24)!important;outline-offset:3px!important;border-radius:4px!important}
         .surfside-day-modal[hidden]{display:none!important}.surfside-day-modal{position:fixed;inset:0;z-index:999998;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;visibility:hidden;transition:opacity 180ms ease,visibility 180ms ease}.surfside-day-modal.is-open{opacity:1;visibility:visible}
         .surfside-day-modal-backdrop{position:absolute;inset:0;background:rgba(7,27,58,.62);backdrop-filter:blur(3px)}.surfside-day-modal-card{position:relative;z-index:1;width:min(680px,100%);max-height:min(760px,calc(100vh - 48px));overflow:auto;border-radius:20px;padding:30px;background:#fff;box-shadow:0 24px 80px rgba(7,27,58,.28);color:#34425e;transform:translateY(10px) scale(.985);transition:transform 180ms ease}.surfside-day-modal.is-open .surfside-day-modal-card{transform:none}
         .surfside-day-modal-card h2{margin:0 44px 6px 0;color:#071b3a;font-size:clamp(1.7rem,4vw,2.35rem);line-height:1.12}.surfside-day-modal-summary{margin:0 0 20px;color:#5b667a}.surfside-day-modal-list{display:grid;gap:12px}
         .surfside-day-modal-event{width:100%;border:1px solid rgba(7,27,58,.12);border-left:4px solid #0b4f9c;border-radius:13px;padding:14px 16px;background:#f8fbff;text-align:left;color:inherit;font:inherit;cursor:pointer}.surfside-day-modal-event:hover,.surfside-day-modal-event:focus-visible{border-color:#0b4f9c;background:#eef6ff}.surfside-day-modal-event:focus-visible{outline:3px solid rgba(11,79,156,.24);outline-offset:2px}.surfside-day-modal-event strong{display:block;margin-bottom:5px;color:#071b3a;font-size:1.05rem}.surfside-day-modal-event span{display:block;color:#46536a;font-size:.92rem;line-height:1.4}
         .surfside-day-modal-close{position:absolute;top:14px;right:16px;width:38px;height:38px;border:0;border-radius:999px;background:#eef6ff;color:#0b4f9c;font-size:28px;line-height:1;cursor:pointer}
-        @media(max-width:900px){.surfside-month-calendar-more{min-height:44px;font-size:14px}.surfside-day-modal{align-items:flex-end;padding:12px}.surfside-day-modal-card{width:100%;max-height:85vh;border-radius:20px 20px 0 0;padding:24px 20px}}
+        @media(max-width:900px){.surfside-month-calendar-more-item{padding:10px 12px!important}.surfside-month-calendar-more-item .surfside-month-calendar-event-title{font-size:17px!important}.surfside-month-calendar-more-prompt{font-size:14px!important}.surfside-day-modal{align-items:flex-end;padding:12px}.surfside-day-modal-card{width:100%;max-height:85vh;border-radius:20px 20px 0 0;padding:24px 20px}}
         @media(prefers-reduced-motion:reduce){.surfside-day-modal,.surfside-day-modal-card{transition:none}}
     ');
 
@@ -88,8 +96,15 @@ function surfside_tools_calendar_render_month_grid_interactive($events, $month_s
                                         </button>
                                     </article>
                                 <?php endforeach; ?>
-                                <?php if ($overflow_count > 0) : ?>
-                                    <button type="button" class="surfside-month-calendar-more" data-surfside-day-open aria-haspopup="dialog" aria-controls="<?php echo esc_attr($day_modal_id); ?>">View <?php echo esc_html($overflow_count); ?> more →</button>
+                                <?php if ($overflow_count > 0) :
+                                    $overflow_title = $overflow_count === 1 ? '1 more event' : $overflow_count . ' more events';
+                                    ?>
+                                    <article class="surfside-month-calendar-item surfside-month-calendar-more-item">
+                                        <button type="button" class="surfside-month-calendar-more surfside-month-calendar-event-button" data-surfside-day-open aria-haspopup="dialog" aria-controls="<?php echo esc_attr($day_modal_id); ?>">
+                                            <span class="surfside-month-calendar-event-title"><?php echo esc_html($overflow_title); ?></span>
+                                            <span class="surfside-month-calendar-more-prompt">Tap to view →</span>
+                                        </button>
+                                    </article>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>
@@ -153,6 +168,5 @@ function surfside_tools_calendar_month_shortcode_interactive($atts = array()) {
 }
 
 add_action('init', function () {
-    remove_shortcode('surfside_month_calendar');
     add_shortcode('surfside_month_calendar', 'surfside_tools_calendar_month_shortcode_interactive');
 }, 60);

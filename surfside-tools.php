@@ -62,7 +62,6 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-event-groups.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-classifications.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/ministry-events.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-day-details.php';
-require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-simple-overflow-layout.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-month-navigation.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-print.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/calendar-integration.php';
