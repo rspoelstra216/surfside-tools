@@ -88,3 +88,4 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-intelligence.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/member-engagement.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-overview.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/staff-page-provisioning.php';
