@@ -1,5 +1,5 @@
 <?php
-/** Current volunteer needs for the Surfside mobile app. */
+/** Current volunteer needs for Surfside member engagement and the mobile app. */
 if (!defined('ABSPATH')) { exit; }
 
 const SURFSIDE_TOOLS_VOLUNTEER_NEEDS_OPTION = 'surfside_tools_volunteer_needs';
@@ -97,14 +97,14 @@ function surfside_tools_staff_volunteer_needs_view() {
 
     $needs = surfside_tools_get_volunteer_needs();
     $ministries = function_exists('surfside_tools_get_published_ministries') ? surfside_tools_get_published_ministries() : array();
-    $back_url = remove_query_arg('view', surfside_tools_staff_page_url('mobile-app'));
+    $back_url = function_exists('surfside_tools_member_engagement_url') ? surfside_tools_member_engagement_url() : surfside_tools_staff_page_url('');
     ob_start(); ?>
     <div class="surfside-staff-shell surfside-volunteer-needs-manager">
-      <div class="surfside-staff-back"><a href="<?php echo esc_url($back_url); ?>">← Back to Manage Mobile App</a></div>
+      <div class="surfside-staff-back"><a href="<?php echo esc_url($back_url); ?>">← Back to Member Engagement</a></div>
       <section class="surfside-staff-hero">
-        <p class="surfside-staff-eyebrow">Mobile App</p>
+        <p class="surfside-staff-eyebrow">Member Engagement</p>
         <h1>Current Volunteer Needs</h1>
-        <p class="surfside-staff-muted">Publish timely serving opportunities in the Surfside app. Keep only current needs active; members will use the app’s existing Connect form to respond.</p>
+        <p class="surfside-staff-muted">Publish timely serving opportunities for the Surfside church community. Active needs appear in the mobile app, where members can use the existing Connect form to respond.</p>
       </section>
       <?php if ($saved): ?><div class="surfside-mobile-notice">Volunteer needs saved.</div><?php endif; ?>
       <form method="post" class="surfside-volunteer-needs-form">

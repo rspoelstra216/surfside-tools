@@ -84,6 +84,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/homepage-manager-compact.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/visual-utilities-settings.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-intelligence.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/volunteer-needs.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/member-engagement.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-overview.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';

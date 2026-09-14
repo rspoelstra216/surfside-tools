@@ -284,7 +284,4 @@ function surfside_tools_dashboard_overview_shortcode() {
     return ob_get_clean();
 }
 
-add_action('init', function () {
-    remove_shortcode('surfside_staff_dashboard');
-    add_shortcode('surfside_staff_dashboard', 'surfside_tools_dashboard_overview_shortcode');
-}, 60);
+add_shortcode('surfside_staff_dashboard', 'surfside_tools_dashboard_overview_shortcode');
