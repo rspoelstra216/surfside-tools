@@ -1,0 +1,37 @@
+name: Apply auth cleanup patch
+
+on:
+  push:
+    branches:
+      - cleanup/auth-session-hardening
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup/auth-session-hardening
+          fetch-depth: 0
+      - name: Apply asserted patch
+        run: python3 scripts/auth_cleanup_patch.py
+      - name: Lint affected PHP
+        run: |
+          php -l includes/firebase-staff-auth.php
+          php -l includes/staff-login-wordpress.php
+          php -l surfside-tools.php
+      - name: Commit production changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add includes/firebase-staff-auth.php includes/staff-login-wordpress.php surfside-tools.php includes/firebase-permission-seeding.php
+          if git diff --cached --quiet; then
+            echo "No production changes to commit."
+            exit 0
+          fi
+          git commit -m "Consolidate and harden staff authentication"
+          git push
