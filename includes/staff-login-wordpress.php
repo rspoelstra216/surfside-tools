@@ -38,6 +38,29 @@ function surfside_tools_set_wp_staff_session($user_id) {
     );
 }
 
+function surfside_tools_clear_wp_staff_session() {
+    setcookie(
+        surfside_tools_wp_staff_session_cookie_name(),
+        '',
+        array(
+            'expires' => time() - HOUR_IN_SECONDS,
+            'path' => COOKIEPATH ?: '/',
+            'domain' => COOKIE_DOMAIN ?: '',
+            'secure' => is_ssl(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        )
+    );
+}
+
+function surfside_tools_clear_custom_staff_sessions() {
+    surfside_tools_clear_wp_staff_session();
+    if (function_exists('surfside_tools_clear_firebase_staff_session')) {
+        surfside_tools_clear_firebase_staff_session();
+    }
+}
+add_action('wp_logout', 'surfside_tools_clear_custom_staff_sessions');
+
 function surfside_tools_get_wp_staff_session() {
     $cookie = $_COOKIE[surfside_tools_wp_staff_session_cookie_name()] ?? '';
     if (!$cookie || substr_count($cookie, '.') !== 1) {
@@ -110,6 +133,30 @@ add_filter('user_has_cap', function ($allcaps, $caps, $args, $user) {
     return $allcaps;
 }, 20, 4);
 
+
+function surfside_tools_wp_login_rate_limit_key($username) {
+    $identity = strtolower(trim((string) $username));
+    return 'surfside_tools_login_' . substr(hash_hmac('sha256', $identity, wp_salt('auth')), 0, 32);
+}
+
+function surfside_tools_wp_login_failed_attempts($username) {
+    return absint(get_transient(surfside_tools_wp_login_rate_limit_key($username)));
+}
+
+function surfside_tools_wp_login_is_rate_limited($username) {
+    return surfside_tools_wp_login_failed_attempts($username) >= 5;
+}
+
+function surfside_tools_wp_login_record_failure($username) {
+    $key = surfside_tools_wp_login_rate_limit_key($username);
+    $attempts = surfside_tools_wp_login_failed_attempts($username) + 1;
+    set_transient($key, $attempts, 15 * MINUTE_IN_SECONDS);
+}
+
+function surfside_tools_wp_login_clear_failures($username) {
+    delete_transient(surfside_tools_wp_login_rate_limit_key($username));
+}
+
 add_action('rest_api_init', function () {
     register_rest_route('surfside-tools/v1', '/staff-auth/wordpress', array(
         'methods' => 'POST',
@@ -122,11 +169,21 @@ add_action('rest_api_init', function () {
                 return new WP_Error('surfside_tools_credentials', 'Enter your username and password.', array('status' => 400));
             }
 
+            if (surfside_tools_wp_login_is_rate_limited($username)) {
+                return new WP_Error(
+                    'surfside_tools_login_rate_limited',
+                    'Too many sign-in attempts. Please wait 15 minutes and try again.',
+                    array('status' => 429)
+                );
+            }
+
             $user = wp_authenticate($username, $password);
             if (is_wp_error($user) || !$user instanceof WP_User) {
+                surfside_tools_wp_login_record_failure($username);
                 return new WP_Error('surfside_tools_credentials', 'The username or password is incorrect.', array('status' => 401));
             }
 
+            surfside_tools_wp_login_clear_failures($username);
             $role = surfside_tools_wp_tools_role($user);
             if (!surfside_tools_permission_role_is_active($role)) {
                 return new WP_Error('surfside_tools_access', 'This account does not have Surfside Tools access.', array('status' => 403));
