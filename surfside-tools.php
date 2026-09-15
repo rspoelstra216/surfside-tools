@@ -19,6 +19,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/app-management.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/featured-home-announcement.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/youversion.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/youversion-settings.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/public-api-protection.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/youversion-mobile-api.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/youversion-website.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/contact-management.php';
