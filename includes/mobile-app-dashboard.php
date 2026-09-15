@@ -1,7 +1,6 @@
 <?php
 /** Front-end Mobile App management hub for the Surfside staff dashboard. */
 if (!defined('ABSPATH')) { exit; }
-require_once SURFSIDE_TOOLS_PATH . 'includes/volunteer-needs.php';
 function surfside_tools_staff_mobile_app_shortcode(){
  surfside_tools_prevent_cache();surfside_tools_staff_enqueue_styles();if(!is_user_logged_in())return surfside_tools_staff_login_box('Please log in to manage the mobile app.');if(!current_user_can('upload_files'))return '<div class="surfside-staff-shell"><p>You do not have permission to manage the mobile app.</p></div>';
  $cards=array(

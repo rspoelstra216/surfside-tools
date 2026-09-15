@@ -37,12 +37,7 @@ function surfside_tools_staff_member_engagement_view() {
         return '<div class="surfside-staff-shell">' . surfside_tools_prayer_list_manager_panel() . '</div>';
     }
     if ($tool === 'volunteer-needs' && function_exists('surfside_tools_staff_volunteer_needs_view')) {
-        $html = surfside_tools_staff_volunteer_needs_view();
-        $back = '<div class="surfside-staff-back"><a href="' . esc_url(surfside_tools_member_engagement_url()) . '">← Back to Member Engagement</a></div>';
-        $html = preg_replace('/<div class="surfside-staff-back"><a href="[^"]+">← Back to Manage Mobile App<\/a><\/div>/', $back, $html, 1);
-        $html = str_replace('<p class="surfside-staff-eyebrow">Mobile App</p>', '<p class="surfside-staff-eyebrow">Member Engagement</p>', $html);
-        $html = str_replace('Publish timely serving opportunities in the Surfside app.', 'Publish timely serving opportunities for the Surfside church community.', $html);
-        return $html;
+        return surfside_tools_staff_volunteer_needs_view();
     }
 
     $pending = function_exists('surfside_tools_prayer_list_pending_count') ? surfside_tools_prayer_list_pending_count() : 0;

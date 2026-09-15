@@ -324,11 +324,3 @@ function surfside_tools_ensure_frontend_settings_page() {
 }
 add_action('admin_init', 'surfside_tools_ensure_frontend_settings_page', 25);
 
-add_filter('do_shortcode_tag', function ($output, $tag) {
-    if ($tag !== 'surfside_staff_dashboard') {
-        return $output;
-    }
-    $admin_url = admin_url('admin.php?page=surfside-tools-settings');
-    $front_url = function_exists('surfside_tools_staff_page_url') ? surfside_tools_staff_page_url('settings') : home_url('/dashboard/settings/');
-    return str_replace(esc_url($admin_url), esc_url($front_url), $output);
-}, 10, 2);
