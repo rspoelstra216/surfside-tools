@@ -2,16 +2,6 @@
 /** Church Settings information-architecture and shared integration support. */
 if (!defined('ABSPATH')) { exit; }
 
-function surfside_tools_church_settings_back_link($output) {
-    $url = function_exists('surfside_tools_staff_page_url') ? surfside_tools_staff_page_url('site-settings') : home_url('/dashboard/site-settings/');
-    return preg_replace(
-        '~<div class="surfside-staff-back"><a href="[^"]+">← Back to Site Management</a></div>~',
-        '<div class="surfside-staff-back"><a href="' . esc_url($url) . '">← Back to Church Settings</a></div>',
-        $output,
-        1
-    );
-}
-
 function surfside_tools_church_settings_shared_save() {
     if (
         ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' ||
@@ -87,21 +77,3 @@ function surfside_tools_church_settings_shared_integrations_panel() {
     return ob_get_clean();
 }
 
-add_filter('do_shortcode_tag', function ($output, $tag) {
-    if (!is_user_logged_in() || !current_user_can('manage_options')) {
-        return $output;
-    }
-
-    if ($tag === 'surfside_staff_contact_management') {
-        $output = surfside_tools_church_settings_back_link($output);
-        $settings = function_exists('surfside_tools_contact_settings') ? surfside_tools_contact_settings() : array();
-        $hidden = '<input type="hidden" name="turnstile_site_key" value="' . esc_attr($settings['turnstile_site_key'] ?? '') . '"><input type="hidden" name="turnstile_secret_key" value="">';
-        return preg_replace('~<section class="surfside-staff-panel"><h2>Cloudflare Turnstile</h2>.*?</section>~s', $hidden, $output, 1);
-    }
-
-    if ($tag === 'surfside_staff_site_information') {
-        return surfside_tools_church_settings_back_link($output);
-    }
-
-    return $output;
-}, 40, 2);
