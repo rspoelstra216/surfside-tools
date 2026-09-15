@@ -237,7 +237,28 @@ function surfside_tools_calendar_get_manage_events($search = '', $page = 1, $per
         }
 
         $occurrences = surfside_tools_calendar_event_occurrences($event, $today, $range_end);
-        $event['next_occurrence_date'] = !empty($occurrences[0]['date']) ? $occurrences[0]['date'] : '';
+        if (empty($occurrences)) {
+            continue;
+        }
+
+        $event['next_occurrence_date'] = $occurrences[0]['date'];
+        $event['manage_range_label'] = '';
+        if (
+            !empty($event['recurrence_end_date']) &&
+            ($event['recurrence_type'] ?? 'none') !== 'none'
+        ) {
+            $start_ts = strtotime(($event['date'] ?? '') . ' 12:00:00');
+            $end_ts = strtotime($event['recurrence_end_date'] . ' 12:00:00');
+            if ($start_ts && $end_ts) {
+                if (date('Y', $start_ts) !== date('Y', $end_ts)) {
+                    $event['manage_range_label'] = date_i18n('F j, Y', $start_ts) . '–' . date_i18n('F j, Y', $end_ts);
+                } elseif (date('m', $start_ts) !== date('m', $end_ts)) {
+                    $event['manage_range_label'] = date_i18n('F j', $start_ts) . '–' . date_i18n('F j, Y', $end_ts);
+                } else {
+                    $event['manage_range_label'] = date_i18n('F j', $start_ts) . '–' . date_i18n('j, Y', $end_ts);
+                }
+            }
+        }
         $rows[] = $event;
     }
 
@@ -564,7 +585,7 @@ function surfside_tools_calendar_manager_shortcode() {
                 <strong>Manage Church Events</strong><br>
                 Add, update, and organize the events that appear on the Surfside website.
             </div>
-            <div class="surfside-calendar-status-pill"><?php echo esc_html($managed_events['total']); ?> event<?php echo $managed_events['total'] === 1 ? '' : 's'; ?></div>
+            <div class="surfside-calendar-status-pill"><?php echo esc_html($managed_events['total']); ?> active event<?php echo $managed_events['total'] === 1 ? '' : 's'; ?></div>
         </div>
 
         <div class="surfside-calendar-layout">
@@ -736,9 +757,8 @@ function surfside_tools_calendar_manager_shortcode() {
                             <article class="surfside-calendar-event">
                                 <div>
                                     <h3><?php echo esc_html($event['title']); ?><?php if (!empty($event['featured'])) : ?> <span class="surfside-calendar-featured-badge">Featured</span><?php endif; ?><?php if (!empty($event['show_on_ministries'])) : ?> <span class="surfside-calendar-featured-badge">Ministries page</span><?php endif; ?></h3>
-                                    <?php $manage_date = !empty($event['next_occurrence_date']) ? $event['next_occurrence_date'] : $event['date']; ?>
-                                    <p><strong><?php echo esc_html(surfside_tools_calendar_format_date($manage_date)); ?></strong> · <?php echo esc_html(surfside_tools_calendar_format_time_range($event)); ?></p>
-                                    <?php if (empty($event['next_occurrence_date'])) : ?><p class="surfside-calendar-recurrence-label">No future occurrences</p><?php endif; ?>
+                                    <?php $manage_date_label = !empty($event['manage_range_label']) ? $event['manage_range_label'] : surfside_tools_calendar_format_date($event['next_occurrence_date']); ?>
+                                    <p><strong><?php echo esc_html($manage_date_label); ?></strong> · <?php echo esc_html(surfside_tools_calendar_format_time_range($event)); ?></p>
                                     <?php if (surfside_tools_calendar_recurrence_label($event)) : ?><p class="surfside-calendar-recurrence-label"><?php echo esc_html(surfside_tools_calendar_recurrence_label($event)); ?></p><?php endif; ?>
                                     <?php if (!empty($event['location'])) : ?><p><?php echo esc_html($event['location']); ?></p><?php endif; ?>
                                 </div>
@@ -1060,6 +1080,9 @@ function surfside_tools_calendar_render_month_grid($events, $month_start, $show_
 
 function surfside_tools_calendar_month_shortcode($atts = array()) {
     surfside_tools_calendar_enqueue_styles();
+    if (function_exists('surfside_tools_month_calendar_navigation_assets')) {
+        surfside_tools_month_calendar_navigation_assets();
+    }
     $atts = shortcode_atts(array(
         'month' => '',
         'show_description' => 'no',
@@ -1079,20 +1102,20 @@ function surfside_tools_calendar_month_shortcode($atts = array()) {
     $prev_month = date('Y-m', strtotime($start . ' -1 month'));
     $next_month = date('Y-m', strtotime($start . ' +1 month'));
     $current_month = current_time('Y-m');
-    $prev_url = esc_url(add_query_arg('surfside_month', $prev_month));
-    $next_url = esc_url(add_query_arg('surfside_month', $next_month));
-    $today_url = esc_url(remove_query_arg('surfside_month'));
+    $prev_url = esc_url(add_query_arg('surfside_month', $prev_month) . '#surfside-month-calendar');
+    $next_url = esc_url(add_query_arg('surfside_month', $next_month) . '#surfside-month-calendar');
+    $today_url = esc_url(remove_query_arg('surfside_month') . '#surfside-month-calendar');
 
     ob_start();
     ?>
-    <div class="surfside-month-calendar" data-month="<?php echo esc_attr($month_value); ?>">
+    <div id="surfside-month-calendar" class="surfside-month-calendar" data-month="<?php echo esc_attr($month_value); ?>" data-surfside-month-navigation><span class="screen-reader-text" data-surfside-month-status aria-live="polite"></span>
         <div class="surfside-month-calendar-nav" aria-label="Calendar navigation">
-            <a class="surfside-month-calendar-nav-button" href="<?php echo $prev_url; ?>">‹ <?php echo esc_html(date_i18n('F', strtotime($prev_month . '-01'))); ?></a>
+            <a class="surfside-month-calendar-nav-button" href="<?php echo $prev_url; ?>" data-surfside-month-link>‹ <?php echo esc_html(date_i18n('F', strtotime($prev_month . '-01'))); ?></a>
             <div class="surfside-month-calendar-nav-title">
                 <h2 class="surfside-month-calendar-title"><?php echo esc_html(date_i18n('F Y', strtotime($start))); ?></h2>
-                <a class="surfside-month-calendar-today" href="<?php echo $today_url; ?>">Today</a>
+                <a class="surfside-month-calendar-today" href="<?php echo $today_url; ?>" data-surfside-month-link>Today</a>
             </div>
-            <a class="surfside-month-calendar-nav-button" href="<?php echo $next_url; ?>"><?php echo esc_html(date_i18n('F', strtotime($next_month . '-01'))); ?> ›</a>
+            <a class="surfside-month-calendar-nav-button" href="<?php echo $next_url; ?>" data-surfside-month-link><?php echo esc_html(date_i18n('F', strtotime($next_month . '-01'))); ?> ›</a>
         </div>
         <?php if (empty($events)) : ?>
             <div class="surfside-public-calendar-empty"><strong>No events this month</strong><p><?php echo esc_html($atts['empty_message']); ?></p></div>

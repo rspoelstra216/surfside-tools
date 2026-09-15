@@ -109,38 +109,3 @@ JS
     );
 }
 
-/**
- * Add enhancement hooks and a no-JavaScript anchor fallback to the shortcode.
- */
-function surfside_tools_month_calendar_navigation_markup($output, $tag) {
-    if ($tag !== 'surfside_month_calendar' || strpos($output, 'surfside-month-calendar') === false) {
-        return $output;
-    }
-
-    surfside_tools_month_calendar_navigation_assets();
-
-    $output = preg_replace(
-        '/<div class="surfside-month-calendar"([^>]*)>/',
-        '<div id="surfside-month-calendar" class="surfside-month-calendar"$1 data-surfside-month-navigation><span class="screen-reader-text" data-surfside-month-status aria-live="polite"></span>',
-        $output,
-        1
-    );
-
-    return preg_replace_callback('/<a\\b[^>]*>/i', function ($matches) {
-        $link = $matches[0];
-        if (
-            strpos($link, 'surfside-month-calendar-nav-button') === false &&
-            strpos($link, 'surfside-month-calendar-today') === false
-        ) {
-            return $link;
-        }
-
-        $link = preg_replace_callback('/href="([^"]*)"/i', function ($href_match) {
-            $href = preg_replace('/#.*$/', '', $href_match[1]);
-            return 'href="' . $href . '#surfside-month-calendar"';
-        }, $link, 1);
-
-        return substr($link, 0, -1) . ' data-surfside-month-link>';
-    }, $output);
-}
-add_filter('do_shortcode_tag', 'surfside_tools_month_calendar_navigation_markup', 30, 2);
