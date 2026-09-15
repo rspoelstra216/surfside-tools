@@ -72,9 +72,21 @@ function surfside_tools_youversion_mobile_api_passage(WP_REST_Request $request) 
         return new WP_Error('surfside_bible_version_invalid', 'The selected Bible version is unavailable.', array('status' => 404));
     }
 
-    $passage = surfside_tools_youversion_request('bibles/' . $version_id . '/passages/' . rawurlencode($reference));
-    if (is_wp_error($passage)) {
-        return surfside_tools_youversion_mobile_api_public_error($passage, 'The requested Bible passage is unavailable.');
+    $passage_cache_key = 'surfside_yv_passage_' . $version_id . '_' . md5($reference);
+    $passage = get_transient($passage_cache_key);
+    if (!is_array($passage)) {
+        $rate = surfside_tools_public_api_rate_limit('youversion_passage', 120, 5 * MINUTE_IN_SECONDS);
+        if (is_wp_error($rate)) {
+            return $rate;
+        }
+
+        $passage = surfside_tools_youversion_request('bibles/' . $version_id . '/passages/' . rawurlencode($reference));
+        if (is_wp_error($passage)) {
+            return surfside_tools_youversion_mobile_api_public_error($passage, 'The requested Bible passage is unavailable.');
+        }
+        if (is_array($passage)) {
+            set_transient($passage_cache_key, $passage, 6 * HOUR_IN_SECONDS);
+        }
     }
 
     $content = (string)($passage['content'] ?? '');
@@ -105,23 +117,45 @@ function surfside_tools_youversion_mobile_api_resolve_version($requested) {
         $requested = 'NIV';
     }
 
+    $cache_key = 'surfside_yv_version_' . md5(strtoupper($requested));
+    $cached = get_transient($cache_key);
+    if (is_array($cached) && !empty($cached['id'])) {
+        return $cached;
+    }
+
     if (ctype_digit($requested)) {
+        $rate = surfside_tools_public_api_rate_limit('youversion_version', 120, 5 * MINUTE_IN_SECONDS);
+        if (is_wp_error($rate)) {
+            return $rate;
+        }
         $id = absint($requested);
         $version = surfside_tools_youversion_request('bibles/' . $id);
         if (is_wp_error($version)) {
             return surfside_tools_youversion_mobile_api_public_error($version, 'The selected Bible version is unavailable.');
         }
-        return is_array($version) ? $version : array();
+        $version = is_array($version) ? $version : array();
+        if (!empty($version['id'])) {
+            set_transient($cache_key, $version, 12 * HOUR_IN_SECONDS);
+        }
+        return $version;
     }
 
     // YouVersion's documented NIV version ID is 111. Resolve the default
     // directly so passage lookup does not depend on collection pagination.
     if (strtoupper($requested) === 'NIV') {
+        $rate = surfside_tools_public_api_rate_limit('youversion_version', 120, 5 * MINUTE_IN_SECONDS);
+        if (is_wp_error($rate)) {
+            return $rate;
+        }
         $version = surfside_tools_youversion_request('bibles/111');
         if (is_wp_error($version)) {
             return surfside_tools_youversion_mobile_api_public_error($version, 'NIV is not available for this Surfside YouVersion integration.');
         }
-        return is_array($version) ? $version : array();
+        $version = is_array($version) ? $version : array();
+        if (!empty($version['id'])) {
+            set_transient($cache_key, $version, 12 * HOUR_IN_SECONDS);
+        }
+        return $version;
     }
 
     $versions = surfside_tools_youversion_mobile_api_get_versions();
@@ -134,6 +168,7 @@ function surfside_tools_youversion_mobile_api_resolve_version($requested) {
         $abbreviation = strtoupper(trim((string)($version['abbreviation'] ?? '')));
         $localized = strtoupper(trim((string)($version['localized_abbreviation'] ?? '')));
         if ($needle === $abbreviation || $needle === $localized) {
+            set_transient($cache_key, $version, 12 * HOUR_IN_SECONDS);
             return $version;
         }
     }
@@ -145,6 +180,11 @@ function surfside_tools_youversion_mobile_api_get_versions() {
     $cached = get_transient('surfside_youversion_mobile_supported_versions');
     if (is_array($cached) && !empty($cached)) {
         return $cached;
+    }
+
+    $rate = surfside_tools_public_api_rate_limit('youversion_versions', 12, HOUR_IN_SECONDS);
+    if (is_wp_error($rate)) {
+        return $rate;
     }
 
     // Surfside intentionally exposes English first, plus the additional
@@ -193,7 +233,7 @@ function surfside_tools_youversion_mobile_api_get_versions() {
             }
             return strcasecmp((string)($a['localized_abbreviation'] ?? $a['abbreviation'] ?? ''), (string)($b['localized_abbreviation'] ?? $b['abbreviation'] ?? ''));
         });
-        set_transient('surfside_youversion_mobile_supported_versions', $versions, HOUR_IN_SECONDS);
+        set_transient('surfside_youversion_mobile_supported_versions', $versions, 6 * HOUR_IN_SECONDS);
     }
 
     return $versions;

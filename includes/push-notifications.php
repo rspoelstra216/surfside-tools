@@ -94,10 +94,26 @@ function surfside_tools_push_register_token(WP_REST_Request $request){
     $params=(array)$request->get_json_params();
     $token=sanitize_text_field($params['token']??'');
     if(!surfside_tools_push_valid_token($token)) return new WP_Error('surfside_push_invalid_token','A valid Expo push token is required.',array('status'=>400));
-    $devices=surfside_tools_push_devices();$key=hash('sha256',$token);$existing=$devices[$key]??array();
+
+    $devices=surfside_tools_push_devices();
+    $key=hash('sha256',$token);
+    $is_existing=isset($devices[$key]);
+    $existing=$is_existing?$devices[$key]:array();
+
+    if(!$is_existing){
+        $rate=surfside_tools_public_api_rate_limit('push_register',120,10*MINUTE_IN_SECONDS);
+        if(is_wp_error($rate)) return $rate;
+        if(count($devices)>=5000){
+            return new WP_Error(
+                'surfside_push_registry_capacity',
+                'Push registration is temporarily unavailable. Please try again later.',
+                array('status'=>503)
+            );
+        }
+    }
+
     $preferences=array_key_exists('preferences',$params)?surfside_tools_push_sanitize_preferences($params['preferences']):surfside_tools_push_sanitize_preferences($existing['preferences']??array());
     $devices[$key]=array('token'=>$token,'preferences'=>$preferences,'platform'=>sanitize_key($params['platform']??($existing['platform']??'')),'updated_at'=>time());
-    if(count($devices)>5000){uasort($devices,function($a,$b){return (int)($a['updated_at']??0)<=>(int)($b['updated_at']??0);});$devices=array_slice($devices,-5000,null,true);}
     update_option('surfside_tools_push_devices',$devices,false);
     return rest_ensure_response(array('success'=>true,'preferences'=>$preferences));
 }
