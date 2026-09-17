@@ -1,6 +1,9 @@
 name: Build WordPress Plugin
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
@@ -10,8 +13,8 @@ permissions:
   contents: read
 
 jobs:
-  build-plugin:
-    name: Build installable plugin ZIP
+  validate-plugin:
+    name: Validate PHP and plugin structure
     runs-on: ubuntu-latest
 
     steps:
@@ -24,6 +27,16 @@ jobs:
           test -d includes
           php -l surfside-tools.php
           find includes -name '*.php' -print0 | xargs -0 -n1 php -l
+
+  build-plugin:
+    name: Build installable plugin ZIP
+    if: github.event_name != 'pull_request'
+    needs: validate-plugin
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
 
       - name: Build WordPress-ready ZIP
         run: |
