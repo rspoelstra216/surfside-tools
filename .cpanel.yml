@@ -2,7 +2,7 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/surfuqnb/public_html/wp-content/plugins/surfside-tools/
-    - /bin/mkdir -p "$DEPLOYPATH"
-    - /bin/cp -R includes "$DEPLOYPATH"
-    - /bin/cp -R assets "$DEPLOYPATH"
+    - /bin/mkdir -p "$DEPLOYPATH/includes" "$DEPLOYPATH/assets"
+    - /usr/bin/rsync -a --delete includes/ "$DEPLOYPATH/includes/"
+    - /usr/bin/rsync -a --delete assets/ "$DEPLOYPATH/assets/"
     - /bin/cp surfside-tools.php "$DEPLOYPATH"
