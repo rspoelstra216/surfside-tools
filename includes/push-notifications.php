@@ -117,8 +117,22 @@ function surfside_tools_push_register_token(WP_REST_Request $request){
     update_option('surfside_tools_push_devices',$devices,false);
     return rest_ensure_response(array('success'=>true,'preferences'=>$preferences));
 }
+function surfside_tools_push_unregister_token(WP_REST_Request $request){
+    $params=(array)$request->get_json_params();
+    $token=sanitize_text_field($params['token']??'');
+    if(!surfside_tools_push_valid_token($token)) return new WP_Error('surfside_push_invalid_token','A valid Expo push token is required.',array('status'=>400));
+
+    $rate=surfside_tools_public_api_rate_limit('push_unregister',120,10*MINUTE_IN_SECONDS);
+    if(is_wp_error($rate)) return $rate;
+
+    surfside_tools_push_remove_tokens(array($token));
+    return rest_ensure_response(array('success'=>true));
+}
 add_action('rest_api_init',function(){
-    register_rest_route('surfside/v1','/push/register',array('methods'=>WP_REST_Server::CREATABLE,'callback'=>'surfside_tools_push_register_token','permission_callback'=>'__return_true'));
+    register_rest_route('surfside/v1','/push/register',array(
+        array('methods'=>WP_REST_Server::CREATABLE,'callback'=>'surfside_tools_push_register_token','permission_callback'=>'__return_true'),
+        array('methods'=>WP_REST_Server::DELETABLE,'callback'=>'surfside_tools_push_unregister_token','permission_callback'=>'__return_true'),
+    ));
 });
 
 function surfside_tools_push_send($title,$body,$destination='',$audiences=array()){
