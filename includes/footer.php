@@ -113,7 +113,7 @@ function surfside_tools_footer_shortcode() {
             </section>
         </div>
         <div class="surfside-site-footer__legal">
-            <p>&copy; <?php echo esc_html(wp_date('Y')); ?> <?php echo esc_html($identity['name'] ?? 'Surfside Community Fellowship'); ?>.</p>
+            <p>&copy; <?php echo esc_html(wp_date('Y')); ?> <?php echo esc_html($identity['name'] ?? 'Surfside Community Fellowship'); ?>. <span aria-hidden="true">&middot;</span> <a href="<?php echo esc_url(home_url('/privacy-policy/')); ?>">Privacy Policy</a></p>
         </div>
     </footer>
     <?php
