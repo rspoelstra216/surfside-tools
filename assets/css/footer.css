@@ -178,6 +178,17 @@
     font-size: var(--surfside-font-size-sm);
 }
 
+.surfside-site-footer__legal a {
+    color: var(--surfside-color-blue-100);
+    font-weight: 700;
+    text-decoration-color: currentColor;
+}
+
+.surfside-site-footer__legal a:hover,
+.surfside-site-footer__legal a:focus-visible {
+    color: var(--surfside-color-white);
+}
+
 .surfside-site-footer a:focus-visible {
     outline: 2px solid var(--surfside-color-blue-600);
     outline-offset: 3px;
