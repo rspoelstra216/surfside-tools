@@ -9,7 +9,7 @@ function surfside_tools_privacy_policy_shortcode(){
     $support_email='support@surfsidefellowship.org';
     $deletion_url=home_url('/account-deletion/');
     ob_start(); ?>
-    <section class="surfside-privacy-policy" aria-label="Surfside privacy policy">
+    <section class="surfside-privacy-policy alignwide" aria-label="Surfside privacy policy">
       <p class="surfside-privacy-policy__eyebrow">Surfside Community Fellowship</p>
       <p class="surfside-privacy-policy__lead">This Privacy Policy explains how Surfside Community Fellowship collects, uses, shares, protects, retains, and deletes information through the Surfside mobile app and surfsidefellowship.org.</p>
       <p><strong>Effective date:</strong> September 21, 2026</p>
@@ -79,7 +79,7 @@ function surfside_tools_privacy_policy_shortcode(){
       <p>Surfside Community Fellowship<br>Email: <a href="mailto:<?php echo esc_attr($support_email); ?>"><?php echo esc_html($support_email); ?></a><br>Phone: <a href="tel:+13216072111">(321) 607-2111</a></p>
     </section>
     <style>
-      .surfside-privacy-policy{width:min(1120px,calc(100vw - 48px));max-width:none;margin-left:50%;transform:translateX(-50%);color:#18212b}.surfside-privacy-policy__eyebrow{margin:0 0 8px;color:#176a9a;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.surfside-privacy-policy__lead{font-size:1.12em;line-height:1.65}.surfside-privacy-policy h2{margin-top:38px}.surfside-privacy-policy h3{margin-top:24px}.surfside-privacy-policy li+li{margin-top:9px}.surfside-privacy-policy__button{display:inline-block;padding:12px 18px;border-radius:9px;background:#176a9a;color:#fff!important;font-weight:700;text-decoration:none}.surfside-privacy-policy__button:hover,.surfside-privacy-policy__button:focus{background:#0f577f;color:#fff!important}@media(max-width:600px){.surfside-privacy-policy{width:calc(100vw - 32px)}}
+      .surfside-privacy-policy{width:100%;max-width:var(--wp--style--global--wide-size,80rem);margin-left:auto!important;margin-right:auto!important;box-sizing:border-box;color:#18212b}.surfside-privacy-policy__eyebrow{margin:0 0 8px;color:#176a9a;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.surfside-privacy-policy__lead{font-size:1.12em;line-height:1.65}.surfside-privacy-policy h2{margin-top:38px}.surfside-privacy-policy h3{margin-top:24px}.surfside-privacy-policy li+li{margin-top:9px}.surfside-privacy-policy__button{display:inline-block;padding:12px 18px;border-radius:9px;background:#176a9a;color:#fff!important;font-weight:700;text-decoration:none}.surfside-privacy-policy__button:hover,.surfside-privacy-policy__button:focus{background:#0f577f;color:#fff!important}
     </style>
     <?php return ob_get_clean();
 }
