@@ -29,6 +29,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/contact-form.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-api.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/push-notifications.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/account-deletion-page.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/privacy-policy-page.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/design-system.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/weekend-services.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/contact-details.php';
