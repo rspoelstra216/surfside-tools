@@ -101,6 +101,7 @@ function surfside_tools_staff_settings_shortcode() {
     $shared_notice = function_exists('surfside_tools_church_settings_shared_save')
         ? surfside_tools_church_settings_shared_save()
         : '';
+    $twitch_notice = surfside_tools_twitch_settings_handle_post();
     $settings = get_option('surfside_tools_settings', array());
     $api_key = (string) ($settings['google_maps_api_key'] ?? '');
     $week_mode = (string) ($settings['this_week_mode'] ?? 'next7');
@@ -126,6 +127,7 @@ function surfside_tools_staff_settings_shortcode() {
 
         <?php echo $notice; ?>
         <?php echo $shared_notice; ?>
+        <?php echo $twitch_notice; ?>
         <?php if (isset($_GET['integrations_saved'])) : ?>
             <div class="surfside-front-settings-notice surfside-front-settings-success surfside-integrations-save-notice">Integration settings saved.</div>
         <?php endif; ?>
@@ -230,6 +232,8 @@ function surfside_tools_staff_settings_shortcode() {
             </div>
         </details>
 
+        <?php echo surfside_tools_twitch_settings_panel(); ?>
+
         <?php if (function_exists('surfside_tools_visual_css_settings_panel')) echo surfside_tools_visual_css_settings_panel(); ?>
         <?php if (function_exists('surfside_tools_youversion_settings_panel')) echo surfside_tools_youversion_settings_panel(); ?>
 
@@ -283,7 +287,8 @@ function surfside_tools_staff_settings_shortcode() {
                 document.querySelector('.surfside-front-settings-form'),
                 document.querySelector('.surfside-shared-integrations-form'),
                 document.querySelector('.surfside-visual-css-settings-card form'),
-                document.querySelector('.surfside-youversion-form')
+                document.querySelector('.surfside-youversion-form'),
+                document.querySelector('.surfside-twitch-form')
             ].filter(Boolean);
             saveButton.disabled=true;
             saveButton.textContent='Saving…';

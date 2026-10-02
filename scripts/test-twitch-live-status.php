@@ -1,7 +1,5 @@
 <?php
 define('ABSPATH', __DIR__);
-define('SURFSIDE_TWITCH_CLIENT_ID', 'testclient');
-define('SURFSIDE_TWITCH_CLIENT_SECRET', 'testsecret');
 class WP_REST_Server { const READABLE = 'GET'; }
 function add_action($name, $callback) {}
 $cache = array(); $options = array(); $responses = array(); $calls = array();
@@ -10,6 +8,7 @@ function set_transient($key,$value,$ttl) { global $cache; $cache[$key]=$value; }
 function delete_transient($key) { global $cache; unset($cache[$key]); }
 function get_option($key,$default=false) { global $options; return $options[$key] ?? $default; }
 function add_option($key,$value,$deprecated='',$autoload=false) { global $options; if(isset($options[$key]))return false; $options[$key]=$value; return true; }
+function update_option($key,$value,$autoload=false) { global $options; $options[$key]=$value; }
 function delete_option($key) { global $options; unset($options[$key]); }
 function surfside_tools_get_site_information() { return array('streaming'=>array('twitch_channel'=>'surfsidecf')); }
 function is_wp_error($value) { return $value instanceof Exception; }
@@ -18,9 +17,24 @@ function wp_remote_retrieve_body($r) { return json_encode($r['body']); }
 function request_mock($url) { global $responses,$calls; $calls[]=$url; if(!$responses)throw new Exception('Unexpected request'); return array_shift($responses); }
 function wp_remote_get($url,$args) { return request_mock($url); }
 function wp_remote_post($url,$args) { return request_mock($url); }
+require __DIR__.'/../includes/twitch-settings.php';
 require __DIR__.'/../includes/twitch-live-status.php';
 function check($condition,$message) { if(!$condition)throw new Exception($message); }
 function reset_case($next) { global $cache,$options,$responses,$calls; $cache=array();$options=array();$responses=$next;$calls=array(); }
+check(surfside_tools_twitch_credentials()===array('client_id'=>'','secret'=>''),'Missing dashboard credentials');
+check(surfside_tools_twitch_save_credentials('dashboardid','dashboardsecret',false),'Save credentials');
+check(surfside_tools_twitch_credentials()['secret']==='dashboardsecret','Dashboard fallback');
+check(surfside_tools_twitch_save_credentials('dashboardid','',false),'Blank secret save');
+check(surfside_tools_twitch_credentials()['secret']==='dashboardsecret','Blank preserves secret');
+check(!surfside_tools_twitch_save_credentials('bad id','replacement',false),'Reject invalid ID');
+check(surfside_tools_twitch_credentials()['secret']==='dashboardsecret','Invalid input writes nothing');
+check(surfside_tools_twitch_save_credentials('dashboardid','',true),'Clear secret');
+check(surfside_tools_twitch_credentials()['secret']==='','Secret removed');
+define('SURFSIDE_TWITCH_CLIENT_ID', 'testclient');
+define('SURFSIDE_TWITCH_CLIENT_SECRET', 'testsecret');
+check(surfside_tools_twitch_credentials()===array('client_id'=>'testclient','secret'=>'testsecret'),'Constants override options');
+check(surfside_tools_twitch_save_credentials('ignored','ignored',true),'Locked save');
+check(surfside_tools_twitch_credentials()['secret']==='testsecret','Constants preserved');
 $token=array('code'=>200,'body'=>array('access_token'=>'testtoken','expires_in'=>3600));
 $valid=array('code'=>200,'body'=>array('client_id'=>'testclient','expires_in'=>3600));
 $live=array('code'=>200,'body'=>array('data'=>array(array('user_login'=>'surfsidecf','type'=>'live','id'=>'123','started_at'=>'2026-10-01T12:00:00Z'))));

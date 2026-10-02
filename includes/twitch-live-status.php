@@ -1,5 +1,5 @@
 <?php
-/** Server-side Twitch live status. Credentials belong in wp-config.php, never the app. */
+/** Server-side Twitch live status. Credentials stay on the server, never the app. */
 if (!defined('ABSPATH')) { exit; }
 
 function surfside_tools_twitch_unknown($channel) {
@@ -47,8 +47,9 @@ function surfside_tools_twitch_live_status() {
     $information = surfside_tools_get_site_information();
     $channel = strtolower(trim((string)($information['streaming']['twitch_channel'] ?? '')));
     $unknown = surfside_tools_twitch_unknown($channel);
-    $client_id = defined('SURFSIDE_TWITCH_CLIENT_ID') ? trim((string)SURFSIDE_TWITCH_CLIENT_ID) : '';
-    $secret = defined('SURFSIDE_TWITCH_CLIENT_SECRET') ? trim((string)SURFSIDE_TWITCH_CLIENT_SECRET) : '';
+    $credentials = surfside_tools_twitch_credentials();
+    $client_id = $credentials['client_id'];
+    $secret = $credentials['secret'];
     if (!preg_match('/^[a-z0-9_]{1,25}$/', $channel) || !preg_match('/^[a-zA-Z0-9]+$/', $client_id) || $secret === '') return $unknown;
 
     // Cache identity changes when credentials or channel change. No secrets appear in keys or responses.
