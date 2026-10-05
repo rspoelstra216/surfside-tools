@@ -35,9 +35,10 @@ function surfside_tools_twitch_settings_handle_post() {
         return surfside_tools_frontend_settings_notice($saved ? 'Twitch settings saved.' : 'Enter a valid Twitch Client ID and Client Secret.', $saved ? 'success' : 'error');
     }
     if ($action === 'test') {
-        $status = surfside_tools_twitch_live_status();
+        $diagnostic = '';
+        $status = surfside_tools_twitch_live_status($diagnostic);
         $ok = in_array($status['status'], array('live', 'offline'), true);
-        return surfside_tools_frontend_settings_notice($ok ? 'Twitch connection successful. Stream is '.$status['status'].'.' : 'Twitch status is unknown. Check the saved credentials, channel, and connection.', $ok ? 'success' : 'error');
+        return surfside_tools_frontend_settings_notice($ok ? 'Twitch connection successful. Stream is '.$status['status'].'.' : ($diagnostic !== '' ? $diagnostic : 'Twitch status is unknown. Wait 30 seconds and test again.'), $ok ? 'success' : 'error');
     }
     status_header(400);
     return surfside_tools_frontend_settings_notice('Unknown Twitch settings action.', 'error');
