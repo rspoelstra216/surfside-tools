@@ -29,7 +29,7 @@ function surfside_tools_twitch_token($client_id, $secret, $key, &$diagnostic = n
     $data = json_decode(wp_remote_retrieve_body($response), true);
     $token = is_array($data) && is_string($data['access_token'] ?? null) ? $data['access_token'] : '';
     $expires = (int)($data['expires_in'] ?? 0);
-    if ($token === '' || $expires <= 60 || preg_match('/[\r\n]/', $token)) return null;
+    if ($token === '' || $expires <= 60 || preg_match('/[\r\n]/', $token)) { $diagnostic = 'Token request: Twitch returned an invalid token response.'; return null; }
     $validation = wp_remote_get('https://id.twitch.tv/oauth2/validate', array(
         'timeout'=>8,'redirection'=>0,'headers'=>array('Authorization'=>'OAuth '.$token),
     ));
