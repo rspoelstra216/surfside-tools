@@ -74,8 +74,8 @@ add_filter('wp_mail','surfside_tools_prayer_list_add_email_review_link');
 function surfside_tools_prayer_list_send_published_notification() {
     if (!function_exists('surfside_tools_push_send')) return;
     $result = surfside_tools_push_send(
-        'New Prayer Request',
-        'A new prayer request has been added to the Church Prayer List.',
+        'New Prayer or Praise',
+        'A new prayer or praise has been added to Church Prayers and Praises.',
         'prayer-list',
         array('prayer_requests')
     );
