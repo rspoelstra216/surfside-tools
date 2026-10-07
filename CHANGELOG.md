@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Route Pastoral Staff Only prayer submissions from both the app and website to the explicitly saved Speak to a Pastor recipient, refusing delivery if it is missing or invalid. Prayer Team and Church Prayer List continue to use the Prayer Request recipient; public-list requests still require staff approval.
+
+
 ## [3.3.0] - 2026-09-17
 
 ### Added

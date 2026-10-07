@@ -18,7 +18,7 @@ function surfside_tools_contact_send($data){
         if(!in_array($display,array('named','anonymous'),true))return new WP_Error('display','Please choose how your name should appear.');
         if(!in_array($duration,array(7,14,30),true))return new WP_Error('duration','Please choose how long your prayer request should remain active.');
     }
-    $to=surfside_tools_contact_recipient($category); if(!$to)return new WP_Error('unavailable','Contact submissions are temporarily unavailable.');
+    $to=surfside_tools_contact_submission_recipient($category,$privacy); if(is_wp_error($to))return $to; if(!$to)return new WP_Error('unavailable','Contact submissions are temporarily unavailable.');
     $subject='Surfside Website: '.$categories[$category];
     $lines=array('Name: '.$name,'Email: '.($email?:'Not provided'),'Phone: '.($phone?:'Not provided'),'Category: '.$categories[$category]);
     if($category==='pastor'&&in_array($preferred,array('email','phone'),true))$lines[]='Preferred Contact: '.ucfirst($preferred);

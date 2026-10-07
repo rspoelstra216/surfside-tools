@@ -31,6 +31,9 @@ jobs:
       - name: Test mobile calendar recurrence metadata
         run: php scripts/test-mobile-calendar-recurrence.php
 
+      - name: Test contact privacy routing
+        run: php scripts/test-contact-privacy-routing.php
+
       - name: Test Twitch live status
         run: php scripts/test-twitch-live-status.php
 
