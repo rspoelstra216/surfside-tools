@@ -59,6 +59,7 @@ function surfside_tools_calendar_add_event_groups_to_mobile_api($result, $server
     $data = $response->get_data();
     if (!is_array($data) || !isset($data['events']) || !is_array($data['events'])) return $result;
 
+    $data['timezone'] = wp_timezone_string();
     $metadata = array();
     foreach ($data['events'] as &$event) {
         $event_id = absint($event['id'] ?? 0);
@@ -67,6 +68,7 @@ function surfside_tools_calendar_add_event_groups_to_mobile_api($result, $server
             $event['recurrence_type'] = 'none';
             $event['recurrence_label'] = '';
             $event['event_start_date'] = '';
+            $event['recurrence'] = null;
             continue;
         }
 
@@ -80,6 +82,7 @@ function surfside_tools_calendar_add_event_groups_to_mobile_api($result, $server
                     ? sanitize_text_field((string)surfside_tools_calendar_recurrence_label($source_event))
                     : '',
                 'event_start_date' => sanitize_text_field((string)($source_event['date'] ?? '')),
+                'recurrence' => is_array($source_event) ? surfside_tools_calendar_mobile_recurrence($source_event) : null,
             );
         }
 
@@ -87,9 +90,43 @@ function surfside_tools_calendar_add_event_groups_to_mobile_api($result, $server
         $event['recurrence_type'] = $metadata[$event_id]['recurrence_type'];
         $event['recurrence_label'] = $metadata[$event_id]['recurrence_label'];
         $event['event_start_date'] = $metadata[$event_id]['event_start_date'];
+        $event['recurrence'] = $metadata[$event_id]['recurrence'];
     }
     unset($event);
     $response->set_data($data);
     return $response;
 }
 add_filter('rest_post_dispatch', 'surfside_tools_calendar_add_event_groups_to_mobile_api', 20, 3);
+
+/** Saved recurrence rules for calendar exports; occurrence dates are not series anchors. */
+function surfside_tools_calendar_mobile_recurrence($event) {
+    $type = sanitize_key((string)($event['recurrence_type'] ?? 'none'));
+    if (!in_array($type, array('daily', 'weekly', 'monthly_date', 'monthly_weekday'), true)) {
+        return null;
+    }
+    $weekdays = array_values(array_unique(array_intersect(
+        array_map('absint', (array)($event['recurrence_weekdays'] ?? array())), range(1, 7)
+    )));
+    sort($weekdays);
+    $date = function($value) {
+        $value = sanitize_text_field((string)$value);
+        if (!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $value)) return '';
+        list($year, $month, $day) = array_map('intval', explode('-', $value));
+        return checkdate($month, $day, $year) ? $value : '';
+    };
+    $exceptions = array_values(array_unique(array_filter(array_map(
+        $date, (array)($event['recurrence_exceptions'] ?? array())
+    ))));
+    sort($exceptions);
+    return array(
+        'type' => $type,
+        'interval' => max(1, absint($event['recurrence_interval'] ?? 1)),
+        'weekdays' => $weekdays,
+        'day_of_month' => min(31, absint($event['recurrence_day_of_month'] ?? 0)),
+        'week_of_month' => min(5, absint($event['recurrence_week_of_month'] ?? 0)),
+        'weekday' => min(7, absint($event['recurrence_weekday'] ?? 0)),
+        'start_date' => $date($event['date'] ?? ''),
+        'end_date' => $date($event['recurrence_end_date'] ?? ''),
+        'exceptions' => $exceptions,
+    );
+}
