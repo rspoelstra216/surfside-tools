@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Prayer approval notifications now say New Prayer or Praise and Church Prayers and Praises, matching the mobile app wording. Notification audience keys and approval behavior are unchanged.
+
 ### Fixed
 
 - Route Pastoral Staff Only prayer submissions from both the app and website to the explicitly saved Speak to a Pastor recipient, refusing delivery if it is missing or invalid. Prayer Team and Church Prayer List continue to use the Prayer Request recipient; public-list requests still require staff approval.
