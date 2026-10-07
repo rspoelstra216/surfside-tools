@@ -34,6 +34,9 @@ jobs:
       - name: Test contact privacy routing
         run: php scripts/test-contact-privacy-routing.php
 
+      - name: Test automatic livestream notifications
+        run: php scripts/test-livestream-notifications.php
+
       - name: Test Twitch live status
         run: php scripts/test-twitch-live-status.php
 

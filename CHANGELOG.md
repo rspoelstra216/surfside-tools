@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- Automatic one-minute Twitch go-live polling sends only to the existing livestream opt-in. Durable stream claims and a two-hour reconnect guard suppress duplicate alerts. Fresh broadcasts only (first ten minutes); no retrospective or ambiguous-failure retry. Requires a reliable host cron runner for timely delivery.
+
+
 ### Fixed
 
 - Renamed the shared Contact category to Prayers and Praises so the website picker, routing settings, and generated contact email category match the app. Stored category and recipient keys remain unchanged.

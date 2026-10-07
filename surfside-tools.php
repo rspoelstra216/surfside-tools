@@ -30,6 +30,8 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-api.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/twitch-settings.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/twitch-live-status.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/push-notifications.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/livestream-notifications.php';
+register_deactivation_hook(__FILE__, 'surfside_tools_live_push_deactivate');
 require_once SURFSIDE_TOOLS_PATH . 'includes/account-deletion-page.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/privacy-policy-page.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/design-system.php';
