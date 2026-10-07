@@ -28,6 +28,9 @@ jobs:
           php -l surfside-tools.php
           find includes -name '*.php' -print0 | xargs -0 -n1 php -l
 
+      - name: Test mobile calendar recurrence metadata
+        run: php scripts/test-mobile-calendar-recurrence.php
+
       - name: Test Twitch live status
         run: php scripts/test-twitch-live-status.php
 
