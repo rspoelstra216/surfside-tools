@@ -10,6 +10,20 @@ function surfside_tools_contact_settings(){
     $recipients=array(); foreach(surfside_tools_contact_categories() as $key=>$label){$recipients[$key]=sanitize_email($saved['recipients'][$key]??'')?:$fallback;}
     return array('recipients'=>$recipients,'turnstile_site_key'=>sanitize_text_field($saved['turnstile_site_key']??''),'turnstile_secret_key'=>sanitize_text_field($saved['turnstile_secret_key']??''));
 }
+/** Resolve prayer privacy before applying ordinary category fallbacks. */
+function surfside_tools_contact_submission_recipient($category, $privacy = '') {
+    if ($category === 'prayer' && $privacy === 'pastoral') {
+        $saved = get_option('surfside_tools_contact_settings', array());
+        $saved = is_array($saved) ? $saved : array();
+        $to = sanitize_email($saved['recipients']['pastor'] ?? '');
+        if (!$to || !is_email($to)) {
+            return new WP_Error('surfside_contact_pastoral_unavailable', 'Pastoral-only submissions are temporarily unavailable. Please contact the pastor directly.', array('status' => 503));
+        }
+        return $to;
+    }
+    return surfside_tools_contact_recipient($category);
+}
+
 function surfside_tools_contact_recipient($category){$settings=surfside_tools_contact_settings();return sanitize_email($settings['recipients'][$category]??'');}
 
 function surfside_tools_staff_contact_management_shortcode(){
@@ -29,7 +43,7 @@ function surfside_tools_staff_contact_management_shortcode(){
       <section class="surfside-staff-hero"><p class="surfside-staff-eyebrow">Connect</p><h1>Manage Contact Routing</h1><p class="surfside-staff-muted">Choose where each website and mobile-app Connect message should be delivered. These addresses stay on the server and are never exposed in the app.</p></section>
       <?php if($saved):?><div style="padding:14px 18px;margin-bottom:20px;border-radius:10px;background:#eaf7ef;color:#126b36;font-weight:700">Contact settings saved.</div><?php endif; ?>
       <form method="post"><?php wp_nonce_field('surfside_contact_save','surfside_contact_nonce'); ?>
-        <section class="surfside-staff-panel"><h2>Message Routing</h2><p class="surfside-staff-muted">Each category can go to a different person or mailbox. Leaving an address blank falls back to the church email configured in Surfside Information.</p>
+        <section class="surfside-staff-panel"><h2>Message Routing</h2><p class="surfside-staff-muted">Each category can go to a different person or mailbox. Leaving an address blank falls back to the church email configured in Surfside Information for ordinary categories. Pastoral Staff Only prayer submissions use the explicitly saved Speak to a Pastor address and never fall back. Prayer Team and Church Prayer List submissions use the Prayer Request address.</p>
         <div style="display:grid;gap:18px;max-width:720px;margin-top:20px">
         <?php foreach(surfside_tools_contact_categories() as $key=>$label):?><label><strong style="display:block;margin-bottom:6px"><?php echo esc_html($label); ?></strong><input type="email" name="recipient_<?php echo esc_attr($key); ?>" value="<?php echo esc_attr($settings['recipients'][$key]??''); ?>" class="regular-text" style="width:100%;max-width:560px" placeholder="church@example.com"></label><?php endforeach; ?>
         </div></section>
