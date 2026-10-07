@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Renamed the shared Contact category to Prayers and Praises so the website picker, routing settings, and generated contact email category match the app. Stored category and recipient keys remain unchanged.
+
+
 ### Changed
 
 - Prayer approval notifications now say New Prayer or Praise and Church Prayers and Praises, matching the mobile app wording. Notification audience keys and approval behavior are unchanged.
