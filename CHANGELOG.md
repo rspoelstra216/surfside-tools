@@ -4,7 +4,7 @@
 
 ### Added
 
-- Automatic one-minute Twitch go-live polling sends only to the existing livestream opt-in. Durable stream claims and a two-hour reconnect guard suppress duplicate alerts. Fresh broadcasts only (first ten minutes); no retrospective or ambiguous-failure retry. Requires a reliable host cron runner for timely delivery.
+- Twitch EventSub replaces repeating go-live polling with signed webhooks and asynchronous push delivery. Integrations provides explicit enable/reconnect and verification status. Existing livestream opt-in, stream deduplication and two-hour reconnect protection remain; a one-shot cron task backs up immediate processing.
 
 
 ### Fixed
