@@ -84,12 +84,11 @@ function surfside_tools_mobile_admin_prayer_action(WP_REST_Request $request) {
 
         $found = true;
         if ($action === 'approve') {
-            $was_published = (($item['status'] ?? '') === 'published');
+            $send_published_notification = surfside_tools_prayer_list_claim_publication($item);
             $days = absint($item['duration_days'] ?? 14);
             $item['status'] = 'published';
             $item['approved_at'] = current_time('timestamp');
             $item['expires_at'] = $item['approved_at'] + ($days * DAY_IN_SECONDS);
-            $send_published_notification = !$was_published;
         } elseif ($action === 'private') {
             $item['status'] = 'private';
         } elseif ($action === 'archive') {
@@ -132,3 +131,4 @@ add_action('rest_api_init', function () {
         'permission_callback' => '__return_true',
     ));
 });
+
