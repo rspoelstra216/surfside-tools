@@ -52,6 +52,10 @@ The detailed audit record and ownership rules live in [Code Audit Closeout](CODE
 
 Implemented: app and website Pastoral Staff Only prayer submissions use the explicitly saved Speak to a Pastor address, with no general-mailbox fallback. Prayer Team and Church Prayer List keep the existing Prayer Request recipient. Deployment and recipient delivery verification remain pending; no mobile rebuild is required.
 
+## Automatic livestream notification implementation
+
+One-minute Twitch polling and existing livestream-audience sending implemented. Fresh stream checks, durable stream claims and a two-hour reconnect guard prevent repeat alerts. Reliable host cron configuration and opt-in/device delivery verification remain required; see [Livestream Notifications](LIVESTREAM_NOTIFICATIONS.md).
+
 ## Current direction
 
 Primary feature development continues in the **Surfside mobile app** from the 3.3.0 clean shared-services baseline.
