@@ -54,7 +54,7 @@ Implemented: app and website Pastoral Staff Only prayer submissions use the expl
 
 ## Automatic livestream notification implementation
 
-One-minute Twitch polling and existing livestream-audience sending implemented. Fresh stream checks, durable stream claims and a two-hour reconnect guard prevent repeat alerts. Reliable host cron configuration and opt-in/device delivery verification remain required; see [Livestream Notifications](LIVESTREAM_NOTIFICATIONS.md).
+Signed Twitch EventSub webhooks replace repeating polling, with explicit staff connection and asynchronous delivery. Existing livestream-audience sending, durable claims and two-hour reconnect guard remain. Deployment, enabled callback verification, loopback delivery and physical-device testing remain required; see [Livestream Notifications](LIVESTREAM_NOTIFICATIONS.md).
 
 ## Current direction
 

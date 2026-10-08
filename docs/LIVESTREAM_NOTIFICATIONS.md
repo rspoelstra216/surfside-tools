@@ -1,25 +1,24 @@
 # Automatic livestream notifications
 
-The plugin schedules a one-minute WordPress cron check of the configured Twitch channel. It uses existing Twitch credentials and the existing livestream opt-in, which defaults off. No public status request sends notifications.
+Twitch EventSub sends a signed stream.online webhook to Surfside when the configured channel starts broadcasting. The former repeating Twitch polling task is removed on the next WordPress request. The public live-status API still supports the app's live cards.
 
-A fresh confirmed live stream (started within ten minutes, status checked within ninety seconds) triggers one delivery attempt. Stream IDs are remembered for thirty days; attempts within two hours are suppressed to cover production reconnects with a new Twitch ID. This applies to broadcasts on any day so rehearsals work; it does not send scheduled pre-service reminders.
+## Setup and verification
+1. Deploy this change.
+2. Save the matching Twitch Client ID / Secret in Integrations → Twitch and confirm the channel in Streaming Settings.
+3. Press **Enable / Reconnect Go-Live Notifications**, then refresh. Status must become **enabled**. Verification pending alone is not success.
+4. Enable Livestream notifications on a physical test phone, with system notification permission allowed.
+5. Start a new broadcast. Confirm the push arrives and tapping opens Worship. A stream already running when connected does not produce a retrospective alert.
 
-Claims are saved before sending. Failed or partially delivered attempts are not retried automatically because a timeout can conceal successful delivery. Existing Expo receipts and stale-device cleanup remain in use. Health is stored in surfside_tools_live_push_health; no tokens or credentials are logged.
+The HTTPS callback uses port 443 and must accept unauthenticated POST requests without login, challenge pages, caching, or redirects. HMAC authentication occurs inside the handler. Do not expose the stored webhook secret. If a firewall blocks the callback or loopback worker, inspect hosting configuration.
 
-## Hosting requirement
+## Delivery and duplicate behavior
+The webhook validates the signature over message ID, timestamp, and raw body, rejects messages older than ten minutes, and checks subscription/channel identity. Verification returns the raw challenge. Revocation status is displayed in Integrations; reconnect explicitly after repairing the cause or changing credentials/channel.
 
-WordPress traffic-driven cron alone can be late when nobody visits. Configure the host to run WordPress due cron every minute, using the site's actual WordPress path:
+The webhook durably queues a job and starts a nonblocking HTTPS loopback worker; it does not wait for Expo push delivery. A one-shot WordPress cron job is a backup if immediate processing fails. This is not Twitch polling. Normal immediate delivery does not require a minute-by-minute cPanel check, but blocked loopbacks require a functioning cron runner for timely backup delivery. Verify actual phone delivery after deployment.
 
-```
-* * * * * /path/to/wp --path=/path/to/wordpress cron event run --due-now --quiet
-```
+Existing livestream opt-in, Worship destination, stream deduplication, and two-hour reconnect guard remain. All new broadcasts qualify, including rehearsals. Claims are stored before sending: ambiguous or partial delivery failures are not retried to prevent duplicate notifications. A delayed job older than ten minutes is discarded. A two-hour restart will not send another alert. “submitted” means handed to the existing Expo sender, not confirmed phone receipt.
 
-Use the host's supported WP-CLI/PHP path. If wp-config disables traffic-driven cron, the host runner is essential. Confirm the scheduled hook surfside_tools_live_push_check is present and its last checked time advances while the site is idle. The repository change does not configure cPanel cron.
+No new app native dependency is introduced. This does not replace the app's periodic screen status refresh. No paid Twitch subscription is required.
 
-## Deployment and verification
-
-Deploy Tools and merge the companion app routing change. Existing app builds still open Worship; the updated development app also supplies section=live to reset/position the player.
-
-Enable Livestream Reminders on a registered test phone and allow OS notifications. Start a short broadcast on the configured Twitch channel, keeping the app backgrounded; confirm one alert and tap into Worship/live. Verify an opted-out device gets no alert, cold-start taps work, and reconnects do not repeat alerts. Restarting within two hours deliberately stays silent. Also test a tap after streaming ends.
-
-This automation sends real notifications to all opted-in installations. Device delivery and host scheduling verification remain pending.
+## Tests
+The PHP fixture tests signed challenge handling, tampering, stale messages, mismatched broadcaster, asynchronous queuing, duplicate streams, reconnect guard, and revocation. Real callback verification and device delivery remain deployment checks.
