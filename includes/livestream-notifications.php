@@ -33,7 +33,7 @@ function surfside_tools_eventsub_error($message) {
     return new WP_Error('surfside_eventsub', $message, array('status'=>400));
 }
 
-/** Explicit staff action only. Reuse the secret so a concurrent challenge remains valid. */
+/** Explicit staff action only; persist a new secret before Twitch can challenge it. */
 function surfside_tools_eventsub_connect() {
     $lock = 'surfside_eventsub_connect_lock';
     if ((int)get_option($lock, 0) < time()-120) delete_option($lock);
@@ -55,7 +55,7 @@ function surfside_tools_eventsub_connect() {
         $user = json_decode(wp_remote_retrieve_body($users), true)['data'][0] ?? array();
         if (strtolower($user['login'] ?? '') !== $channel || !preg_match('/^[0-9]+$/', (string)($user['id'] ?? ''))) return surfside_tools_eventsub_error('Twitch channel was not found.');
         $config = get_option('surfside_eventsub_config', array());
-        $secret = $config['secret'] ?? bin2hex(random_bytes(32));
+        $secret = bin2hex(random_bytes(32));
         // Remove this installation's old subscription before reconnecting. Never touch other subscriptions.
         if (!empty($config['id'])) {
             $deleted = wp_remote_request('https://api.twitch.tv/helix/eventsub/subscriptions?id='.rawurlencode($config['id']), array('method'=>'DELETE','timeout'=>8,'redirection'=>0,'headers'=>$headers));
@@ -169,7 +169,7 @@ function surfside_tools_eventsub_worker($request) {
     if (!is_string($key) || !preg_match('/^[a-f0-9]{64}$/',$key) || !is_string($token)) return new WP_Error('worker_denied','Invalid worker.',array('status'=>403));
     $job = get_option('surfside_eventsub_job_'.$key);
     if (!is_array($job) || !hash_equals($job['token'],$token)) return new WP_Error('worker_denied','Invalid worker.',array('status'=>403));
-    // Another request owns the webhook lock briefly; the one-shot cron is the backup.
+    // The one-shot cron backs up a concurrent worker or blocked loopback.
     surfside_tools_eventsub_deliver($key);
     return new WP_REST_Response(null,204);
 }
