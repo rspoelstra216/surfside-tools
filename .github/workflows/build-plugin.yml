@@ -34,6 +34,9 @@ jobs:
       - name: Test contact privacy routing
         run: php scripts/test-contact-privacy-routing.php
 
+      - name: Test member prayer ownership and lifecycle
+        run: php scripts/test-prayer-member-management.php
+
       - name: Test automatic livestream notifications
         run: php scripts/test-livestream-notifications.php
 
@@ -74,3 +77,4 @@ jobs:
           path: surfside-tools.zip
           if-no-files-found: error
           retention-days: 30
+

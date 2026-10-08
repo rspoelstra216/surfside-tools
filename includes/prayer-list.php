@@ -8,16 +8,19 @@ function surfside_tools_prayer_list_requests() {
 }
 function surfside_tools_prayer_list_save_requests($items) { update_option('surfside_tools_prayer_list_requests', array_values($items), false); }
 
-function surfside_tools_prayer_list_add_pending($data) {
+function surfside_tools_prayer_list_add_pending($data, $verified_owner_uid = '') {
     $duration = absint($data['prayer_duration'] ?? 0);
     if (!in_array($duration, array(7,14,30), true)) $duration = 14;
     $display = sanitize_key($data['prayer_name_display'] ?? 'named');
     if (!in_array($display, array('named','anonymous'), true)) $display = 'named';
     $items = surfside_tools_prayer_list_requests();
+    $id = wp_generate_uuid4();
     $items[] = array(
-        'id'=>wp_generate_uuid4(),'status'=>'pending','name'=>sanitize_text_field($data['name']??''),'email'=>sanitize_email($data['email']??''),'phone'=>sanitize_text_field($data['phone']??''),'message'=>sanitize_textarea_field($data['message']??''),'name_display'=>$display,'duration_days'=>$duration,'submitted_at'=>current_time('timestamp'),'approved_at'=>0,'expires_at'=>0,'answered_at'=>0,
+        'owner_uid'=>(string)$verified_owner_uid,'publication_notified_at'=>0,
+        'id'=>$id,'status'=>'pending','name'=>sanitize_text_field($data['name']??''),'email'=>sanitize_email($data['email']??''),'phone'=>sanitize_text_field($data['phone']??''),'message'=>sanitize_textarea_field($data['message']??''),'name_display'=>$display,'duration_days'=>$duration,'submitted_at'=>current_time('timestamp'),'approved_at'=>0,'expires_at'=>0,'answered_at'=>0,
     );
     surfside_tools_prayer_list_save_requests($items);
+    return $id;
 }
 
 function surfside_tools_prayer_list_is_active($item) { return ($item['status']??'')==='published' && absint($item['expires_at']??0) >= current_time('timestamp'); }
@@ -70,6 +73,13 @@ function surfside_tools_prayer_list_add_email_review_link($args) {
 }
 add_filter('wp_mail','surfside_tools_prayer_list_add_email_review_link');
 
+/** Claim the first publication once. Legacy approved records also stay silent. */
+function surfside_tools_prayer_list_claim_publication(&$item) {
+    if (!empty($item['publication_notified_at']) || !empty($item['approved_at']) || ($item['status'] ?? '') === 'published') return false;
+    $item['publication_notified_at'] = current_time('timestamp');
+    return true;
+}
+
 /** Send the member-facing push only after staff approves a request for the public prayer list. */
 function surfside_tools_prayer_list_send_published_notification() {
     if (!function_exists('surfside_tools_push_send')) return;
@@ -94,9 +104,8 @@ function surfside_tools_prayer_list_handle_review() {
     foreach($items as &$item){
         if(($item['id']??'')!==$id)continue;
         if($action==='approve'){
-            $was_published=(($item['status']??'')==='published');
+            $send_published_notification=surfside_tools_prayer_list_claim_publication($item);
             $days=absint($item['duration_days']??14);$item['status']='published';$item['approved_at']=current_time('timestamp');$item['expires_at']=$item['approved_at']+($days*DAY_IN_SECONDS);$redirect='active';
-            $send_published_notification=!$was_published;
         }
         elseif($action==='private'){$item['status']='private';$redirect='history';}
         elseif($action==='archive'){$item['status']='archived';$redirect='history';}
@@ -161,3 +170,4 @@ function surfside_tools_prayer_list_manager_panel() {
 }
 
 function surfside_tools_prayer_list_review_panel(){return surfside_tools_prayer_list_manager_panel();}
+

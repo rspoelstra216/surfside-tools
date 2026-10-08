@@ -3,7 +3,7 @@
 define('ABSPATH', __DIR__);
 define('HOUR_IN_SECONDS', 3600);
 class WP_Error { public $code; function __construct($code, $message='', $data=array()) { $this->code=$code; } }
-class WP_REST_Request { private $data; function __construct($data){$this->data=$data;} function get_json_params(){return $this->data;} }
+class WP_REST_Request { private $data; function __construct($data){$this->data=$data;} function get_json_params(){return $this->data;} function get_header($key){return '';} }
 function add_action(...$args){}
 function add_shortcode(...$args){}
 function sanitize_text_field($v){return trim((string)$v);}
@@ -22,6 +22,7 @@ function wp_mail($to,...$args){$GLOBALS['mail'][]=$to;return true;}
 function surfside_tools_prayer_list_add_pending($data){$GLOBALS['pending']++;}
 require __DIR__.'/../includes/contact-management.php';
 require __DIR__.'/../includes/contact-form.php';
+require __DIR__.'/../includes/prayer-member-status.php';
 require __DIR__.'/../includes/mobile-api.php';
 function check($condition,$label){if(!$condition)throw new RuntimeException($label);}
 foreach(array('website','app') as $source){
@@ -43,3 +44,4 @@ foreach(array('website','app') as $source){
  }
 }
 echo "Contact privacy routing fixtures passed.\n";
+
