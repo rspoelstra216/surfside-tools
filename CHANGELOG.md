@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added Live Slides controls under Manage Mobile App, with a safe off-by-default app toggle, appearance defaults and a link to the public Cloudflare viewer. The existing mobile `/app` response exposes only non-sensitive viewer configuration; WordPress never relays or polls slides.
 - Twitch EventSub replaces repeating go-live polling with signed webhooks and asynchronous push delivery. Integrations provides explicit enable/reconnect and verification status. Existing livestream opt-in, stream deduplication and two-hour reconnect protection remain; a one-shot cron task backs up immediate processing.
 
 
