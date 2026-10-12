@@ -38,6 +38,12 @@ function surfside_tools_staff_site_settings_shortcode() {
             'icon' => 'settings',
         ),
         array(
+            'title' => 'Streaming Management',
+            'description' => 'Cloudflare live stream, recordings, and Last Service exclusions for all platforms.',
+            'path' => 'site-settings/streaming',
+            'icon' => 'settings',
+        ),
+        array(
             'title' => 'Integrations',
             'description' => 'External services and technical connections used across Surfside.',
             'path' => 'settings',
