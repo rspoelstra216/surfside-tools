@@ -46,6 +46,9 @@ jobs:
       - name: Test Live Slides settings and public configuration
         run: php scripts/test-live-slides-settings.php
 
+      - name: Test Watch Live accordion insertion
+        run: php scripts/test-watch-live-accordion.php
+
   build-plugin:
     name: Build installable plugin ZIP
     if: github.event_name != 'pull_request'
