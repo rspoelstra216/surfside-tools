@@ -5,6 +5,7 @@ function surfside_tools_staff_mobile_app_shortcode(){
  surfside_tools_prevent_cache();surfside_tools_staff_enqueue_styles();if(!is_user_logged_in())return surfside_tools_staff_login_box('Please log in to manage the mobile app.');if(!current_user_can('upload_files'))return '<div class="surfside-staff-shell"><p>You do not have permission to manage the mobile app.</p></div>';
  $cards=array(
   array('title'=>'Home Experience','action'=>'Home Experience','description'=>'Manage the image and crop used on the app Home screen.','path'=>'mobile-app/home-experience','icon'=>'image','enabled'=>true),
+  array('title'=>'Live Slides','action'=>'Live Slides','description'=>'Set live slide availability and default appearance for the mobile app.','path'=>'mobile-app/live-slides','icon'=>'document','enabled'=>true),
   array('title'=>'Featured Announcement','action'=>'Announcement','description'=>'Schedule temporary featured content for the app Home screen.','path'=>'mobile-app/featured-announcement','icon'=>'announcement','enabled'=>true),
   array('title'=>'Push Notifications','action'=>'Push Notifications','description'=>'Send timely updates and service notifications to people using the Surfside app.','path'=>'mobile-app/push-notifications','icon'=>'announcement','enabled'=>true),
  );
