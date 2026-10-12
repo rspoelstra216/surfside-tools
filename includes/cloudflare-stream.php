@@ -24,14 +24,11 @@ function surfside_tools_stream_recordings($refresh = false) {
         $cached = get_transient($key);
         if ($cached !== false) return $cached;
     }
-    $result = surfside_tools_stream_api('', array('type' => 'live', 'limit' => 100));
+    $result = surfside_tools_stream_api('live_inputs/d8fe3de81677a407a70b62f0bb470769/videos');
     if (is_wp_error($result)) return $result;
     $items = array();
     foreach ((array) $result as $video) {
         if (!is_array($video) || empty($video['uid'])) continue;
-        // Cloudflare associates a recording with its live input via input.uid.
-        $input = $video['input']['uid'] ?? ($video['liveInput'] ?? '');
-        if ($input !== 'd8fe3de81677a407a70b62f0bb470769') continue;
         if (($video['status']['state'] ?? '') !== 'ready' || empty($video['readyToStream'])) continue;
         $items[] = array(
             'id' => sanitize_text_field($video['uid']),
@@ -61,7 +58,7 @@ function surfside_tools_stream_public_data() {
     $live = get_transient('surfside_stream_live_v1');
     if ($live === false) {
         $status = surfside_tools_stream_api('live_inputs/d8fe3de81677a407a70b62f0bb470769');
-        $live = is_wp_error($status) ? null : !empty($status['status']['current']['uid']);
+        $live = is_wp_error($status) ? null : in_array(($status['status'] ?? ''), array('connected', 'reconnected'), true);
         if ($live !== null) set_transient('surfside_stream_live_v1', $live ? 'yes' : 'no', 30);
     }
     if ($live === 'yes') $live = true;
