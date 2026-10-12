@@ -31,6 +31,7 @@ Staff Dashboard
 │   └── Homepage media
 ├── Manage Mobile App
 │   ├── Home Experience
+│   ├── Live Slides
 │   ├── Featured Announcement
 │   └── Push Notifications
 ├── Member Engagement
@@ -132,6 +133,7 @@ Featured and Published are separate concepts: **Published** controls whether a m
 - Published Ministry Manager records in manager order with audience, Featured status, schedule/location/description, and resolved contact data.
 - Announcements and formatted message notes.
 - Managed Home hero image, focal position, zoom, and Featured Announcement.
+- Live Slides app visibility and default display preferences (theme, text size, alignment), with only the public Cloudflare viewer/WebSocket URLs exposed through `/surfside/v1/app`. The Mac publishes directly to Cloudflare; WordPress does not proxy viewer connections, poll slides, or store the publisher token.
 - Managed offline Worship media.
 - Push-device registration/server sender with bounded new-device registration and stale-token/receipt cleanup.
 - Public Bible version/passage proxy backed by YouVersion, with server-side caching and protection of uncached upstream work.
