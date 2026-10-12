@@ -81,7 +81,7 @@
 
     function cloudflareEmbed(hlsUrl) {
         if (typeof hlsUrl !== "string") return null;
-        const match = hlsUrl.match(/^https:\/\/(customer-[a-z0-9-]+\\.cloudflarestream\\.com)\/([a-f0-9]{32})\/manifest\/video\\.m3u8$/i);
+        const match = hlsUrl.match(/^https:\/\/(customer-[a-z0-9-]+\.cloudflarestream\.com)\/([a-f0-9]{32})\/manifest\/video\.m3u8$/i);
         if (!match) return null;
         return "https://" + match[1] + "/" + match[2] + "/iframe?preload=auto";
     }
