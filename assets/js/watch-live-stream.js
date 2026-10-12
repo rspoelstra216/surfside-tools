@@ -183,7 +183,26 @@
         });
     }
 
+    function initializeLiveSlides() {
+        const details = document.querySelector("details[data-surfside-live-slides]");
+        if (!details) return;
+        const frame = details.querySelector("[data-live-slides-src]");
+        if (!frame) return;
+
+        // Do not open a Cloudflare connection while this accordion is closed.
+        const syncViewer = () => {
+            if (details.open) {
+                if (!frame.hasAttribute("src")) frame.src = frame.dataset.liveSlidesSrc;
+            } else {
+                frame.removeAttribute("src");
+            }
+        };
+        details.addEventListener("toggle", syncViewer);
+        syncViewer();
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll("[data-surfside-watch-live]").forEach(initialize);
+        initializeLiveSlides();
     });
 })();
