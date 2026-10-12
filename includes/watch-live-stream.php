@@ -166,6 +166,8 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
                 </div>
             </div>
 
+            <p class="surfside-watch-live__replay-intro" data-replay-intro hidden>We’re not live right now, but you can watch our most recent service below.</p>
+
             <div class="surfside-watch-live__status" aria-live="polite">
                 <div>
                     <p class="surfside-watch-live__eyebrow" data-stream-label>Next livestream</p>
@@ -189,3 +191,40 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
     return ob_get_clean();
 }
 add_shortcode('surfside_watch_live', 'surfside_tools_watch_live_shortcode');
+
+/**
+ * Place Live Slides first in the existing Follow Along Gutenberg Details group.
+ *
+ * The Watch Live player shortcode and the accordion are separate page blocks.
+ * Inserting before the Message Notes details block preserves the editor-managed
+ * notes, announcements, and events without adding a duplicate accordion.
+ */
+function surfside_tools_watch_live_prepend_slides_details($block_content, $block) {
+    static $inserted = false;
+
+    if ($inserted || !is_page('watch-live') || ($block['blockName'] ?? '') !== 'core/details') {
+        return $block_content;
+    }
+
+    if (!preg_match('/<summary\\b[^>]*>(.*?)<\\/summary>/is', $block_content, $match) ||
+        strcasecmp(trim(wp_strip_all_tags($match[1])), 'Message Notes') !== 0) {
+        return $block_content;
+    }
+
+    $viewer = surfside_tools_live_slides_public_settings()['viewer_url'];
+
+    $details = '<details class="wp-block-details surfside-watch-live__slides-accordion" data-surfside-live-slides>'
+        . '<summary>Live Slides</summary>'
+        . '<div class="surfside-watch-live__slides-content">'
+        . '<iframe class="surfside-watch-live__slides-frame" title="Surfside Live Slides"'
+        . ' data-live-slides-src="' . esc_url($viewer) . '"'
+        . ' loading="lazy" referrerpolicy="strict-origin-when-cross-origin"'
+        . ' allow="fullscreen" allowfullscreen></iframe>'
+        . '<p>Slides update automatically during the service. '
+        . '<a href="' . esc_url($viewer) . '" target="_blank" rel="noopener noreferrer">Open Live Slides in a new tab ↗</a></p>'
+        . '</div></details>';
+
+    $inserted = true;
+    return $details . $block_content;
+}
+add_filter('render_block', 'surfside_tools_watch_live_prepend_slides_details', 10, 2);
