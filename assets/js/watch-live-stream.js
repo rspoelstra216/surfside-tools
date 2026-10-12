@@ -27,6 +27,8 @@
             element.hidden = element.getAttribute("data-stream-state") !== state;
         });
         block.dataset.streamStatus = state;
+        const replayIntro = block.querySelector("[data-replay-intro]");
+        if (replayIntro) replayIntro.hidden = state !== "replay";
 
         const video = block.querySelector(".surfside-watch-live__offline video");
         if (video) {
