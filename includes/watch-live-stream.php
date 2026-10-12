@@ -166,6 +166,8 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
                 </div>
             </div>
 
+            <p class="surfside-watch-live__replay-intro" data-replay-intro hidden>We’re not live right now, but you can watch our most recent service below.</p>
+
             <div class="surfside-watch-live__status" aria-live="polite">
                 <div>
                     <p class="surfside-watch-live__eyebrow" data-stream-label>Next livestream</p>
