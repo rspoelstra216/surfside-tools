@@ -98,6 +98,7 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
     $facebook_url = surfside_tools_site_information_url($streaming['facebook_url'] ?? 'https://www.facebook.com/SurfsideCommunityFellowship');
     $twitch_url = 'https://www.twitch.tv/' . $channel;
     $next = surfside_tools_watch_live_next_service();
+    $stream_endpoint = rest_url('surfside/v1/stream');
     $heading_id = wp_unique_id('surfside-watch-live-heading-');
     $player_id = wp_unique_id('surfside-twitch-player-');
     $next_timestamp = $next ? $next['date']->format(DATE_ATOM) : '';
@@ -112,6 +113,7 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
         aria-labelledby="<?php echo esc_attr($heading_id); ?>"
         data-surfside-watch-live
         data-channel="<?php echo esc_attr($channel); ?>"
+        data-stream-endpoint="<?php echo esc_url($stream_endpoint); ?>"
         data-player-id="<?php echo esc_attr($player_id); ?>"
         data-next-service="<?php echo esc_attr($next_timestamp); ?>"
     >
@@ -132,6 +134,11 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
                 <div class="surfside-watch-live__player" data-stream-state="live" hidden>
                     <div id="<?php echo esc_attr($player_id); ?>"></div>
                     <span class="surfside-watch-live__badge">Live now</span>
+                </div>
+
+                <div class="surfside-watch-live__player" data-stream-state="replay" hidden>
+                    <div data-cloudflare-replay></div>
+                    <span class="surfside-watch-live__badge surfside-watch-live__badge--announcements">Watch last service</span>
                 </div>
 
                 <div class="surfside-watch-live__offline" data-stream-state="offline" hidden>
@@ -175,7 +182,7 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
                     <a class="surfside-button surfside-button--secondary" href="<?php echo esc_url($twitch_url); ?>" target="_blank" rel="noopener noreferrer">Twitch</a>
                 </nav>
             </div>
-            <p class="surfside-watch-live__note">Twitch provides our most reliable live viewing experience.</p>
+            <p class="surfside-watch-live__note">Watch live or catch the latest service right here. You can also watch on YouTube, Facebook, or Twitch.</p>
         </div>
     </section>
     <?php
