@@ -28,7 +28,7 @@
         });
         block.dataset.streamStatus = state;
 
-        const video = block.querySelector("video");
+        const video = block.querySelector(".surfside-watch-live__offline video");
         if (video) {
             if (state === "offline") {
                 const play = video.play();
@@ -42,11 +42,11 @@
 
         const label = block.querySelector("[data-stream-label]");
         if (label) {
-            label.textContent = state === "live" ? "Live now" : "Next livestream";
+            label.textContent = state === "live" ? "Live now" : state === "replay" ? "Watch last service" : "Next livestream";
         }
 
         block.querySelectorAll(".surfside-watch-live__next, [data-stream-countdown]").forEach((element) => {
-            element.hidden = state === "live";
+            element.hidden = state === "live" || state === "replay";
         });
     }
 
@@ -79,51 +79,106 @@
         window.setInterval(update, 60000);
     }
 
+    function cloudflareEmbed(hlsUrl) {
+        if (typeof hlsUrl !== "string") return null;
+        const match = hlsUrl.match(/^https:\/\/(customer-[a-z0-9-]+\\.cloudflarestream\\.com)\/([a-f0-9]{32})\/manifest\/video\\.m3u8$/i);
+        if (!match) return null;
+        return "https://" + match[1] + "/" + match[2] + "/iframe?preload=auto";
+    }
+
     function initialize(block) {
         const channel = block.dataset.channel;
         const playerId = block.dataset.playerId;
-        let resolved = false;
-        let timeout;
-        let player;
+        const endpoint = block.dataset.streamEndpoint;
+        const liveHost = document.getElementById(playerId);
+        const replayHost = block.querySelector("[data-cloudflare-replay]");
+        let mode = "";
+        let twitchPlayer = null;
+        let twitchStarting = false;
+        let activeFrame = null;
 
-        const resolveState = (state) => {
-            resolved = true;
-            window.clearTimeout(timeout);
+        function clearCloudflare() {
+            if (activeFrame) activeFrame.remove();
+            activeFrame = null;
+        }
+
+        function showCloudflare(state, url) {
+            const embed = cloudflareEmbed(url);
+            if (!embed) { showFallback(); return; }
+            if (mode === state && activeFrame && activeFrame.src === embed) return;
+            clearCloudflare();
+            liveHost.replaceChildren();
+            const host = state === "live" ? liveHost : replayHost;
+            const frame = document.createElement("iframe");
+            frame.src = embed;
+            frame.title = state === "live" ? "Surfside live service" : "Surfside last service";
+            frame.allow = "autoplay; fullscreen; picture-in-picture; encrypted-media";
+            frame.allowFullscreen = true;
+            frame.loading = "eager";
+            frame.referrerPolicy = "strict-origin-when-cross-origin";
+            frame.style.border = "0";
+            host.replaceChildren(frame);
+            activeFrame = frame;
+            mode = state;
             setState(block, state);
+        }
 
-            if (state === "live" && player) {
-                window.requestAnimationFrame(() => {
-                    try {
-                        player.setMuted(false);
-                        player.play();
-                    } catch (error) {
-                        // The visible Twitch controls remain available if a browser blocks autoplay.
-                    }
+        function showFallback() {
+            if (mode === "twitch" || twitchStarting) return;
+            clearCloudflare();
+            replayHost.replaceChildren();
+            mode = "twitch";
+            twitchStarting = true;
+            setState(block, "loading");
+            const timeout = window.setTimeout(() => {
+                if (mode === "twitch") setState(block, "offline");
+            }, 8000);
+            loadTwitch().then(() => {
+                if (mode !== "twitch") return;
+                twitchPlayer = new window.Twitch.Player(playerId, {
+                    channel, width: "100%", height: "100%",
+                    autoplay: true, muted: false, parent: [window.location.hostname]
                 });
+                twitchPlayer.addEventListener(window.Twitch.Player.ONLINE, () => {
+                    if (mode === "twitch") { window.clearTimeout(timeout); setState(block, "live"); }
+                });
+                twitchPlayer.addEventListener(window.Twitch.Player.OFFLINE, () => {
+                    if (mode === "twitch") { window.clearTimeout(timeout); setState(block, "offline"); }
+                });
+            }).catch(() => {
+                window.clearTimeout(timeout);
+                if (mode === "twitch") setState(block, "offline");
+            }).finally(() => { twitchStarting = false; });
+        }
+
+        async function refresh() {
+            try {
+                const response = await fetch(endpoint, {cache: "no-store", credentials: "same-origin"});
+                if (!response.ok) throw new Error("Stream status unavailable");
+                const data = await response.json();
+                if (data.live === true && cloudflareEmbed(data.live_hls_url)) {
+                    showCloudflare("live", data.live_hls_url);
+                } else if (data.last_service && cloudflareEmbed(data.last_service.hls_url)) {
+                    showCloudflare("replay", data.last_service.hls_url);
+                } else if (data.live === null) {
+                    showFallback();
+                } else {
+                    clearCloudflare();
+                    replayHost.replaceChildren();
+                    mode = "offline";
+                    setState(block, "offline");
+                }
+            } catch (error) {
+                showFallback();
             }
-        };
+        }
 
         startCountdown(block);
-
-        timeout = window.setTimeout(() => {
-            if (!resolved) resolveState("offline");
-        }, 8000);
-
-        loadTwitch()
-            .then(() => {
-                player = new window.Twitch.Player(playerId, {
-                    channel,
-                    width: "100%",
-                    height: "100%",
-                    autoplay: true,
-                    muted: false,
-                    parent: [window.location.hostname]
-                });
-
-                player.addEventListener(window.Twitch.Player.ONLINE, () => resolveState("live"));
-                player.addEventListener(window.Twitch.Player.OFFLINE, () => resolveState("offline"));
-            })
-            .catch(() => resolveState("offline"));
+        refresh();
+        window.setInterval(refresh, 60000);
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) refresh();
+        });
     }
 
     document.addEventListener("DOMContentLoaded", () => {
