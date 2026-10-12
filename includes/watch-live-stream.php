@@ -184,6 +184,13 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
                     <a class="surfside-button surfside-button--secondary" href="<?php echo esc_url($twitch_url); ?>" target="_blank" rel="noopener noreferrer">Twitch</a>
                 </nav>
             </div>
+            <section class="surfside-watch-live__slides" aria-labelledby="<?php echo esc_attr($heading_id); ?>-slides">
+                <div>
+                    <h3 id="<?php echo esc_attr($heading_id); ?>-slides">Live Slides</h3>
+                    <p>Follow along with Scripture, sermon notes, and presentation slides during the service.</p>
+                </div>
+                <a class="surfside-button surfside-button--secondary" href="<?php echo esc_url(surfside_tools_live_slides_public_settings()['viewer_url']); ?>" target="_blank" rel="noopener noreferrer">Open Live Slides ↗</a>
+            </section>
             <p class="surfside-watch-live__note">Watch live or catch the latest service right here. You can also watch on YouTube, Facebook, or Twitch.</p>
         </div>
     </section>
