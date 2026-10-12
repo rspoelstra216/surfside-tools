@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-const SURFSIDE_TOOLS_STAFF_PAGES_SCHEMA_VERSION = 1;
+const SURFSIDE_TOOLS_STAFF_PAGES_SCHEMA_VERSION = 2;
 const SURFSIDE_TOOLS_STAFF_PAGES_SCHEMA_OPTION = 'surfside_tools_staff_pages_schema';
 
 /**
@@ -58,6 +58,12 @@ function surfside_tools_staff_page_definitions() {
             'title' => 'Home Experience',
             'slug' => 'home-experience',
             'content' => '[surfside_staff_mobile_app_home]',
+            'parent' => 'mobile-app',
+        ),
+        'mobile-app-live-slides' => array(
+            'title' => 'Live Slides',
+            'slug' => 'live-slides',
+            'content' => '[surfside_staff_live_slides]',
             'parent' => 'mobile-app',
         ),
         'mobile-app-featured' => array(
