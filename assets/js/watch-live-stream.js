@@ -216,6 +216,11 @@
         }
 
         function updateSlide() {
+            if (!connection || connection.readyState !== WebSocket.OPEN) {
+                status.textContent = "Reconnecting to presentation…";
+                return;
+            }
+
             const fresh = publisherOnline && lastSeenAt > 0 &&
                 Date.now() - lastSeenAt < staleAfterMs;
 
@@ -283,6 +288,7 @@
             ws.addEventListener("open", () => {
                 if (connection !== ws) return;
                 reconnectDelay = 1000;
+                status.textContent = "Waiting for slide updates…";
             });
             ws.addEventListener("message", (event) => {
                 if (connection !== ws) return;
