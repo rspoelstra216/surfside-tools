@@ -121,7 +121,10 @@ function surfside_tools_eventsub_receive($request) {
     }
     // Twitch is no longer authoritative for go-live. A valid legacy EventSub
     // message is acknowledged but must not queue or send an Expo push.
-    if ($type === 'notification') return new WP_REST_Response(null, 204);
+    if ($type === 'notification') {
+        if (($config['status'] ?? '') !== 'enabled') return surfside_tools_eventsub_error('Subscription is not enabled.');
+        return new WP_REST_Response(null, 204);
+    }
     return surfside_tools_eventsub_error('Unsupported Twitch event type.');
 }
 
