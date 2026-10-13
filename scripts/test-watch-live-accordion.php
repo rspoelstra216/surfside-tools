@@ -84,6 +84,8 @@ must(strpos($result['innerBlocks'][0]['innerHTML'], 'Live Slides') !== false,
     'Slides are the first item');
 must(strpos($result['innerBlocks'][0]['innerHTML'], 'data-live-slides-src="https://example.workers.dev/viewer"') !== false,
     'Public Cloudflare viewer should be embedded');
+must(strpos($result['innerBlocks'][0]['innerHTML'], 'data-surfside-live-slides hidden') !== false,
+    'Live Slides remains hidden by default until streaming is live');
 must($result['innerBlocks'][1] === $follow_along['innerBlocks'][0],
     'Message Notes and existing children should not be altered');
 must(count(array_filter($result['innerContent'], 'is_null')) === 4,
