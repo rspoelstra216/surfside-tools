@@ -222,6 +222,7 @@
             }
         }
         matchNeighborHeading();
+        window.addEventListener("resize", matchNeighborHeading);
 
         let streamLive = false;
 
