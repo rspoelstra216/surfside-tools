@@ -3,6 +3,7 @@
 
     const twitchScript = "https://player.twitch.tv/js/embed/v1.js";
     let twitchPromise;
+    let liveSlidesController = null;
 
     function loadTwitch() {
         if (window.Twitch && window.Twitch.Player) {
@@ -29,6 +30,7 @@
         block.dataset.streamStatus = state;
         const replayIntro = block.querySelector("[data-replay-intro]");
         if (replayIntro) replayIntro.hidden = state !== "replay";
+        if (liveSlidesController) liveSlidesController.setStreamLive(state === "live");
 
         const video = block.querySelector(".surfside-watch-live__offline video");
         if (video) {
@@ -185,37 +187,53 @@
 
     function initializeLiveSlides() {
         const item = document.querySelector(".wp-block-accordion-item[data-surfside-live-slides]");
-        if (!item) return;
+        if (!item) return null;
 
         const toggle = item.querySelector(".wp-block-accordion-heading__toggle");
         const frame = item.querySelector("iframe[data-live-slides-src]");
-        if (!toggle || !frame) return;
+        if (!toggle || !frame) return null;
 
-        // Core Accordion controls the panel; only connect the Cloudflare
-        // viewer while this item is expanded.
-        function syncViewer() {
-            const open = item.classList.contains("is-open") ||
+        let streamLive = false;
+
+        function expanded() {
+            return item.classList.contains("is-open") ||
                 toggle.getAttribute("aria-expanded") === "true";
+        }
 
-            if (open && !frame.hasAttribute("src")) {
+        function syncViewer() {
+            const active = streamLive && expanded() && !document.hidden;
+            item.hidden = !streamLive;
+
+            // No iframe connection in replay/announcements or while collapsed.
+            if (active && !frame.hasAttribute("src")) {
                 frame.src = frame.dataset.liveSlidesSrc;
-            } else if (!open && frame.hasAttribute("src")) {
+            } else if (!active && frame.hasAttribute("src")) {
                 frame.removeAttribute("src");
             }
         }
 
         const observer = new MutationObserver(syncViewer);
-        observer.observe(item, {
-            attributes: true,
-            attributeFilter: ["class", "aria-expanded"],
-            subtree: true
-        });
+        observer.observe(toggle, { attributes: true, attributeFilter: ["aria-expanded"] });
+        observer.observe(item, { attributes: true, attributeFilter: ["class"] });
         toggle.addEventListener("click", () => window.requestAnimationFrame(syncViewer));
+        document.addEventListener("visibilitychange", syncViewer);
+        window.addEventListener("pagehide", () => frame.removeAttribute("src"));
+
+        // Hide until a real live state is returned by the stream endpoint.
+        item.hidden = true;
         syncViewer();
+
+        return {
+            setStreamLive(live) {
+                if (streamLive === (live === true)) return;
+                streamLive = live === true;
+                syncViewer();
+            }
+        };
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+        liveSlidesController = initializeLiveSlides();
         document.querySelectorAll("[data-surfside-watch-live]").forEach(initialize);
-        initializeLiveSlides();
     });
 })();
