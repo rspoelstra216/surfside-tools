@@ -126,7 +126,10 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
                 <?php endif; ?>
             </header>
 
-            <p class="surfside-watch-live__replay-intro" data-replay-intro hidden>We’re not live right now, but you can watch our most recent service.</p>
+            <div class="surfside-watch-live__replay-intro" data-replay-intro hidden role="status">
+                <span class="surfside-watch-live__replay-icon" aria-hidden="true">▶</span>
+                <p><strong>We’re not live right now.</strong> Watch our most recent service below.</p>
+            </div>
 
             <div class="surfside-watch-live__stage">
                 <div class="surfside-watch-live__loading" data-stream-state="loading" role="status">
@@ -197,7 +200,8 @@ add_shortcode('surfside_watch_live', 'surfside_tools_watch_live_shortcode');
  *
  * Follow Along uses WordPress's native core/accordion blocks, not core/details.
  * Modify parsed blocks before rendering so WordPress supplies its native
- * accordion interactivity, appearance, and accessibility attributes.
+ * accordion interactivity. The slide content uses the existing public read-only
+ * Cloudflare WebSocket, since the separate viewer disallows iframe embedding.
  */
 function surfside_tools_watch_live_inject_slides_accordion($block) {
     static $inserted = false;
@@ -250,9 +254,13 @@ function surfside_tools_watch_live_inject_slides_accordion($block) {
             return $block;
         }
 
-        $viewer_url = esc_url(surfside_tools_live_slides_public_settings()['viewer_url']);
+        $slides_settings = surfside_tools_live_slides_public_settings();
+        $viewer_url = esc_url($slides_settings['viewer_url']);
+        $websocket_url = esc_url($slides_settings['websocket_url']);
+        // Kept hidden until the player confirms an active livestream; no
+        // slides connection is made during replay or announcements.
         $markup = '<!-- wp:accordion-item -->'
-            . '<div class="wp-block-accordion-item surfside-watch-live__slides-accordion" data-surfside-live-slides>'
+            . '<div class="wp-block-accordion-item surfside-watch-live__slides-accordion" data-surfside-live-slides hidden>'
             . '<!-- wp:accordion-heading {"title":"Live Slides"} -->'
             . '<h3 class="wp-block-accordion-heading has-icon has-icon-right">'
             . '<button type="button" class="wp-block-accordion-heading__toggle">'
@@ -262,13 +270,18 @@ function surfside_tools_watch_live_inject_slides_accordion($block) {
             . '<!-- wp:accordion-panel -->'
             . '<div role="region" class="wp-block-accordion-panel">'
             . '<!-- wp:html -->'
-            . '<div class="surfside-watch-live__slides-content">'
-            . '<iframe class="surfside-watch-live__slides-frame" title="Surfside Live Slides"'
-            . ' data-live-slides-src="' . $viewer_url . '"'
-            . ' loading="lazy" referrerpolicy="strict-origin-when-cross-origin"'
-            . ' allow="fullscreen" allowfullscreen></iframe>'
-            . '<p><a href="' . $viewer_url . '" target="_blank" rel="noopener noreferrer">'
-            . 'Open Live Slides in a new tab ↗</a></p>'
+            . '<div class="surfside-watch-live__slides-content"'
+            . ' data-surfside-slides-feed data-slides-socket="' . $websocket_url . '">'
+            . '<p class="surfside-watch-live__slides-state" data-slides-status role="status" aria-live="polite">'
+            . 'Connecting to presentation…</p>'
+            . '<div class="surfside-watch-live__slides-card" aria-label="Current live presentation slide">'
+            . '<p class="surfside-watch-live__slides-presentation" data-slides-presentation hidden></p>'
+            . '<div class="surfside-watch-live__slides-text" data-slides-text aria-live="polite" aria-atomic="true">'
+            . 'Waiting for live slides…</div>'
+            . '</div>'
+            . '<p class="surfside-watch-live__slides-help">Slides advance automatically with the presentation. '
+            . '<a href="' . $viewer_url . '" target="_blank" rel="noopener noreferrer">'
+            . 'Open the full Live Slides viewer ↗</a></p>'
             . '</div><!-- /wp:html -->'
             . '</div><!-- /wp:accordion-panel -->'
             . '</div><!-- /wp:accordion-item -->';
