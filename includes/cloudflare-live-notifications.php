@@ -76,7 +76,10 @@ function surfside_tools_cf_live_receive($request) {
 
         $already_active = !empty($state['active']);
         $state['active'] = true;
-        $state['last_connected_at'] = $event_time;
+        // Retain the first transition's identity if Cloudflare delivers a
+        // second connected event. Otherwise the first queued job could be
+        // incorrectly discarded by the worker.
+        if (!$already_active) $state['last_connected_at'] = $event_time;
         delete_transient('surfside_stream_live_v1');
 
         // Do not alert on duplicate/reconnects or another broadcast within
