@@ -16,6 +16,12 @@ function target() {
     return {
         hidden: false,
         textContent: "",
+        style: {
+            values: {},
+            setProperty(name, value, priority) {
+                this.values[name] = { value, priority };
+            }
+        },
         handlers: {},
         addEventListener(type, fn) { (this.handlers[type] ||= []).push(fn); },
         trigger(type, arg) { for (const fn of this.handlers[type] || []) fn(arg); }
@@ -35,8 +41,33 @@ item.hidden = true;
 item.classList = { contains: key => key === "is-open" && isExpanded };
 const toggle = target();
 toggle.getAttribute = key => key === "aria-expanded" ? String(isExpanded) : null;
+const heading = target();
+const title = target();
+const typographySelectors = [
+    ".wp-block-accordion-heading",
+    ".wp-block-accordion-heading__toggle",
+    ".wp-block-accordion-heading__toggle-title"
+];
+const referenceNodes = Object.fromEntries(typographySelectors.map(selector => {
+    const element = target();
+    element.computedTypography = {
+        "font-family": "Manrope",
+        "font-size": "16px",
+        "font-weight": "600",
+        "line-height": "24px",
+        "letter-spacing": "normal",
+        "text-transform": "none",
+        "color": "rgb(6, 27, 51)"
+    };
+    return [selector, element];
+}));
+item.nextElementSibling = {
+    querySelector(selector) { return referenceNodes[selector] || null; }
+};
 item.querySelector = selector => ({
+    ".wp-block-accordion-heading": heading,
     ".wp-block-accordion-heading__toggle": toggle,
+    ".wp-block-accordion-heading__toggle-title": title,
     "iframe[data-live-slides-src]": frame
 })[selector] || null;
 
@@ -83,6 +114,13 @@ const window = {
     setTimeout() { return 1; },
     clearTimeout() {},
     requestAnimationFrame(cb) { cb(); },
+    getComputedStyle(element) {
+        return {
+            getPropertyValue(prop) {
+                return element.computedTypography[prop] || "";
+            }
+        };
+    },
     addEventListener() {}
 };
 const url = "https://customer-8je7me9ta294mn10.cloudflarestream.com/d8fe3de81677a407a70b62f0bb470769/manifest/video.m3u8";
@@ -102,6 +140,17 @@ async function settle() {
 }
 async function run() {
     for (const listener of listeners.DOMContentLoaded || []) listener();
+
+    for (const element of [heading, toggle, title]) {
+        assert.equal(element.style.values["font-size"].value, "16px",
+            "Live Slides heading should copy the native accordion font size");
+        assert.equal(element.style.values["font-family"].value, "Manrope",
+            "Live Slides heading should copy the native accordion font family");
+        assert.equal(element.style.values["font-weight"].value, "600",
+            "Live Slides heading should copy the native accordion weight");
+        assert.equal(element.style.values["font-size"].priority, "important",
+            "Theme heading styles must not override the matched size");
+    }
 
     assert.equal(item.hidden, true, "Slides start hidden");
     assert.equal(frame.hasAttribute("src"), false, "Do not embed before live state");
