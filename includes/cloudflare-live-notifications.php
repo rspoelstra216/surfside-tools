@@ -74,11 +74,15 @@ function surfside_tools_cf_live_receive($request) {
             return new WP_REST_Response(null, 204);
         }
 
-        $already_active = !empty($state['active']);
+        $previous_connection = (int) ($state['last_connected_at'] ?? 0);
+        // A disconnect alert could be missed during hosting trouble. Treat a
+        // fresh connect >= 2 hours later as a new broadcast, even if the
+        // stored state was still marked active. The 2-hour push guard remains.
+        $already_active = !empty($state['active'])
+            && $previous_connection > 0
+            && $event_time - $previous_connection < 7200;
         $state['active'] = true;
-        // Retain the first transition's identity if Cloudflare delivers a
-        // second connected event. Otherwise the first queued job could be
-        // incorrectly discarded by the worker.
+        // Preserve the pending job's identity on reconnect/duplicate alerts.
         if (!$already_active) $state['last_connected_at'] = $event_time;
         delete_transient('surfside_stream_live_v1');
 
