@@ -12,7 +12,8 @@ function is_page($slug) { return $slug === 'watch-live' && $GLOBALS['surfside_te
 function wp_strip_all_tags($text) { return strip_tags((string) $text); }
 function esc_url($url) { return htmlspecialchars((string) $url, ENT_QUOTES, 'UTF-8'); }
 function surfside_tools_live_slides_public_settings() {
-    return array('viewer_url' => 'https://example.workers.dev/viewer');
+    return array('viewer_url' => 'https://example.workers.dev/viewer',
+        'websocket_url' => 'wss://example.workers.dev/api/live');
 }
 function parse_blocks($markup) {
     // The production site uses WordPress's real parser; the stub records
@@ -82,8 +83,16 @@ must($result['innerBlocks'][0]['blockName'] === 'core/accordion-item',
     'Slides must use native Accordion item');
 must(strpos($result['innerBlocks'][0]['innerHTML'], 'Live Slides') !== false,
     'Slides are the first item');
-must(strpos($result['innerBlocks'][0]['innerHTML'], 'data-live-slides-src="https://example.workers.dev/viewer"') !== false,
-    'Public Cloudflare viewer should be embedded');
+must(strpos($result['innerBlocks'][0]['innerHTML'], 'data-slides-socket="wss://example.workers.dev/api/live"') !== false,
+    'Read-only slide socket must be available for native rendering');
+must(strpos($result['innerBlocks'][0]['innerHTML'], 'data-surfside-live-slides hidden') !== false,
+    'Slides are hidden until live stream status is confirmed');
+must(strpos($result['innerBlocks'][0]['innerHTML'], 'data-slides-text') !== false,
+    'Native slide text region is provided');
+must(strpos($result['innerBlocks'][0]['innerHTML'], '<iframe') === false,
+    'Never embed the CSP-protected Cloudflare viewer');
+must(strpos($result['innerBlocks'][0]['innerHTML'], 'https://example.workers.dev/viewer') !== false,
+    'External viewer remains available as an accessible fallback');
 must($result['innerBlocks'][1] === $follow_along['innerBlocks'][0],
     'Message Notes and existing children should not be altered');
 must(count(array_filter($result['innerContent'], 'is_null')) === 4,
