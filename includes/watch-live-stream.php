@@ -256,7 +256,9 @@ function surfside_tools_watch_live_inject_slides_accordion($block) {
 
         $slides_settings = surfside_tools_live_slides_public_settings();
         $viewer_url = esc_url($slides_settings['viewer_url']);
-        $websocket_url = esc_url($slides_settings['websocket_url']);
+        // WordPress esc_url() may reject the wss: scheme. This value comes
+        // from the plugin's fixed public configuration, not from visitors.
+        $websocket_url = esc_attr($slides_settings['websocket_url']);
         // Kept hidden until the player confirms an active livestream; no
         // slides connection is made during replay or announcements.
         $markup = '<!-- wp:accordion-item -->'
