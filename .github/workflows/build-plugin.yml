@@ -54,6 +54,9 @@ jobs:
           node --check assets/js/watch-live-stream.js
           node scripts/test-watch-live-slides.js
 
+      - name: Test Cloudflare live-input status formats
+        run: php scripts/test-cloudflare-live-status.php
+
   build-plugin:
     name: Build installable plugin ZIP
     if: github.event_name != 'pull_request'
