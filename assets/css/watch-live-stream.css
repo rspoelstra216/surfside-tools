@@ -216,7 +216,13 @@
 .surfside-watch-live__player[hidden], .surfside-watch-live__offline[hidden], .surfside-watch-live__loading[hidden] { display: none !important; }
 .surfside-watch-live__player iframe { display: block; width: 100%; height: 100%; }
 
-.surfside-watch-live__replay-intro { margin: 1rem 0 0; color: var(--surfside-color-ocean-950); text-align: center; font-size: 1.05rem; line-height: 1.5; }
+.surfside-watch-live__replay-intro {
+    margin: 0 0 1.1rem;
+    color: var(--surfside-color-ocean-950);
+    text-align: center;
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    line-height: 1.5;
+}
 .surfside-watch-live__replay-intro[hidden] { display: none !important; }
 
 
@@ -239,4 +245,28 @@
 }
 @media (max-width: 44rem) {
     .surfside-watch-live__slides-frame { height: min(65vh, 510px); min-height: 340px; }
+}
+
+/* The page already has a prominent hero. Keep the shortcode heading available
+   to assistive technologies without displaying the same introduction twice. */
+.surfside-watch-live__intro--visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap;
+    border: 0 !important;
+}
+
+.surfside-watch-live--page {
+    padding-block: clamp(1.25rem, 3vw, 2.25rem) clamp(2rem, 4vw, 3rem);
+}
+
+@media (max-width: 44rem) {
+    .surfside-watch-live--page {
+        padding-block: 1.25rem 2rem;
+    }
 }

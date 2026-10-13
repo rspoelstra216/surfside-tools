@@ -44,11 +44,11 @@
 
         const label = block.querySelector("[data-stream-label]");
         if (label) {
-            label.textContent = state === "live" ? "Live now" : state === "replay" ? "Watch last service" : "Next livestream";
+            label.textContent = state === "live" ? "Live now" : state === "replay" && !block.dataset.nextService ? "Watch last service" : "Next livestream";
         }
 
         block.querySelectorAll(".surfside-watch-live__next, [data-stream-countdown]").forEach((element) => {
-            element.hidden = state === "live" || state === "replay";
+            element.hidden = state === "live";
         });
     }
 
@@ -184,20 +184,33 @@
     }
 
     function initializeLiveSlides() {
-        const details = document.querySelector("details[data-surfside-live-slides]");
-        if (!details) return;
-        const frame = details.querySelector("[data-live-slides-src]");
-        if (!frame) return;
+        const item = document.querySelector(".wp-block-accordion-item[data-surfside-live-slides]");
+        if (!item) return;
 
-        // Do not open a Cloudflare connection while this accordion is closed.
-        const syncViewer = () => {
-            if (details.open) {
-                if (!frame.hasAttribute("src")) frame.src = frame.dataset.liveSlidesSrc;
-            } else {
+        const toggle = item.querySelector(".wp-block-accordion-heading__toggle");
+        const frame = item.querySelector("iframe[data-live-slides-src]");
+        if (!toggle || !frame) return;
+
+        // Core Accordion controls the panel; only connect the Cloudflare
+        // viewer while this item is expanded.
+        function syncViewer() {
+            const open = item.classList.contains("is-open") ||
+                toggle.getAttribute("aria-expanded") === "true";
+
+            if (open && !frame.hasAttribute("src")) {
+                frame.src = frame.dataset.liveSlidesSrc;
+            } else if (!open && frame.hasAttribute("src")) {
                 frame.removeAttribute("src");
             }
-        };
-        details.addEventListener("toggle", syncViewer);
+        }
+
+        const observer = new MutationObserver(syncViewer);
+        observer.observe(item, {
+            attributes: true,
+            attributeFilter: ["class", "aria-expanded"],
+            subtree: true
+        });
+        toggle.addEventListener("click", () => window.requestAnimationFrame(syncViewer));
         syncViewer();
     }
 

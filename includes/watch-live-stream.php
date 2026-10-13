@@ -102,6 +102,7 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
     $heading_id = wp_unique_id('surfside-watch-live-heading-');
     $player_id = wp_unique_id('surfside-twitch-player-');
     $next_timestamp = $next ? $next['date']->format(DATE_ATOM) : '';
+    $dedicated_watch_page = is_page('watch-live');
     $next_label = $next
         ? $next['date']->format('l') . ' at ' . $next['date']->format('g:i A')
         : '';
@@ -109,7 +110,7 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
     ob_start();
     ?>
     <section
-        class="surfside-watch-live surfside-section"
+        class="surfside-watch-live surfside-section<?php echo $dedicated_watch_page ? ' surfside-watch-live--page' : ''; ?>"
         aria-labelledby="<?php echo esc_attr($heading_id); ?>"
         data-surfside-watch-live
         data-channel="<?php echo esc_attr($channel); ?>"
@@ -118,12 +119,14 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
         data-next-service="<?php echo esc_attr($next_timestamp); ?>"
     >
         <div class="surfside-watch-live__inner">
-            <header class="surfside-watch-live__intro">
+            <header class="surfside-watch-live__intro<?php echo $dedicated_watch_page ? ' surfside-watch-live__intro--visually-hidden' : ''; ?>">
                 <h2 id="<?php echo esc_attr($heading_id); ?>"><?php echo esc_html($attributes['title']); ?></h2>
                 <?php if (trim((string) $attributes['intro']) !== '') : ?>
                     <p><?php echo esc_html($attributes['intro']); ?></p>
                 <?php endif; ?>
             </header>
+
+            <p class="surfside-watch-live__replay-intro" data-replay-intro hidden>We’re not live right now, but you can watch our most recent service.</p>
 
             <div class="surfside-watch-live__stage">
                 <div class="surfside-watch-live__loading" data-stream-state="loading" role="status">
@@ -166,8 +169,6 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
                 </div>
             </div>
 
-            <p class="surfside-watch-live__replay-intro" data-replay-intro hidden>We’re not live right now, but you can watch our most recent service below.</p>
-
             <div class="surfside-watch-live__status" aria-live="polite">
                 <div>
                     <p class="surfside-watch-live__eyebrow" data-stream-label>Next livestream</p>
@@ -184,7 +185,6 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
                     <a class="surfside-button surfside-button--secondary" href="<?php echo esc_url($twitch_url); ?>" target="_blank" rel="noopener noreferrer">Twitch</a>
                 </nav>
             </div>
-            <p class="surfside-watch-live__note">Watch live or catch the latest service right here. You can also watch on YouTube, Facebook, or Twitch.</p>
         </div>
     </section>
     <?php
@@ -193,38 +193,98 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
 add_shortcode('surfside_watch_live', 'surfside_tools_watch_live_shortcode');
 
 /**
- * Place Live Slides first in the existing Follow Along Gutenberg Details group.
+ * Insert Live Slides as the first item in the editor-managed Follow Along accordion.
  *
- * The Watch Live player shortcode and the accordion are separate page blocks.
- * Inserting before the Message Notes details block preserves the editor-managed
- * notes, announcements, and events without adding a duplicate accordion.
+ * Follow Along uses WordPress's native core/accordion blocks, not core/details.
+ * Modify parsed blocks before rendering so WordPress supplies its native
+ * accordion interactivity, appearance, and accessibility attributes.
  */
-function surfside_tools_watch_live_prepend_slides_details($block_content, $block) {
+function surfside_tools_watch_live_inject_slides_accordion($block) {
     static $inserted = false;
 
-    if ($inserted || !is_page('watch-live') || ($block['blockName'] ?? '') !== 'core/details') {
-        return $block_content;
+    if ($inserted || !is_page('watch-live') ||
+        ($block['blockName'] ?? '') !== 'core/accordion') {
+        return $block;
     }
 
-    if (!preg_match('/<summary\\b[^>]*>(.*?)<\\/summary>/is', $block_content, $match) ||
-        strcasecmp(trim(wp_strip_all_tags($match[1])), 'Message Notes') !== 0) {
-        return $block_content;
+    foreach (($block['innerBlocks'] ?? array()) as $item_index => $item) {
+        if (($item['blockName'] ?? '') !== 'core/accordion-item') {
+            continue;
+        }
+
+        $is_message_notes = false;
+        foreach (($item['innerBlocks'] ?? array()) as $part) {
+            if (($part['blockName'] ?? '') !== 'core/accordion-heading') {
+                continue;
+            }
+            $heading = (string) ($part['attrs']['title'] ?? '');
+            if ($heading === '') {
+                $heading = (string) ($part['innerHTML'] ?? '');
+            }
+            // The rendered heading may also contain the plus icon.
+            $heading = trim(wp_strip_all_tags(html_entity_decode($heading, ENT_QUOTES, 'UTF-8')));
+            $is_message_notes = (bool) preg_match('/^Message Notes\s*\+?$/i', $heading);
+            if ($is_message_notes) {
+                break;
+            }
+        }
+
+        if (!$is_message_notes) {
+            continue;
+        }
+
+        // innerContent contains a null placeholder for each rendered child.
+        $marker_index = null;
+        $seen = 0;
+        foreach (($block['innerContent'] ?? array()) as $offset => $part) {
+            if ($part !== null) {
+                continue;
+            }
+            if ($seen === $item_index) {
+                $marker_index = $offset;
+                break;
+            }
+            $seen++;
+        }
+        if ($marker_index === null) {
+            return $block;
+        }
+
+        $viewer_url = esc_url(surfside_tools_live_slides_public_settings()['viewer_url']);
+        $markup = '<!-- wp:accordion-item -->'
+            . '<div class="wp-block-accordion-item surfside-watch-live__slides-accordion" data-surfside-live-slides>'
+            . '<!-- wp:accordion-heading {"title":"Live Slides"} -->'
+            . '<h3 class="wp-block-accordion-heading has-icon has-icon-right">'
+            . '<button type="button" class="wp-block-accordion-heading__toggle">'
+            . '<span class="wp-block-accordion-heading__toggle-title">Live Slides</span>'
+            . '<span class="wp-block-accordion-heading__toggle-icon" aria-hidden="true">+</span>'
+            . '</button></h3><!-- /wp:accordion-heading -->'
+            . '<!-- wp:accordion-panel -->'
+            . '<div role="region" class="wp-block-accordion-panel">'
+            . '<!-- wp:html -->'
+            . '<div class="surfside-watch-live__slides-content">'
+            . '<iframe class="surfside-watch-live__slides-frame" title="Surfside Live Slides"'
+            . ' data-live-slides-src="' . $viewer_url . '"'
+            . ' loading="lazy" referrerpolicy="strict-origin-when-cross-origin"'
+            . ' allow="fullscreen" allowfullscreen></iframe>'
+            . '<p><a href="' . $viewer_url . '" target="_blank" rel="noopener noreferrer">'
+            . 'Open Live Slides in a new tab ↗</a></p>'
+            . '</div><!-- /wp:html -->'
+            . '</div><!-- /wp:accordion-panel -->'
+            . '</div><!-- /wp:accordion-item -->';
+
+        $new_blocks = parse_blocks($markup);
+        if (count($new_blocks) !== 1 ||
+            ($new_blocks[0]['blockName'] ?? '') !== 'core/accordion-item') {
+            return $block;
+        }
+
+        array_splice($block['innerBlocks'], $item_index, 0, array($new_blocks[0]));
+        array_splice($block['innerContent'], $marker_index, 0, array(null, "\n"));
+        $inserted = true;
+        break;
     }
 
-    $viewer = surfside_tools_live_slides_public_settings()['viewer_url'];
-
-    $details = '<details class="wp-block-details surfside-watch-live__slides-accordion" data-surfside-live-slides>'
-        . '<summary>Live Slides</summary>'
-        . '<div class="surfside-watch-live__slides-content">'
-        . '<iframe class="surfside-watch-live__slides-frame" title="Surfside Live Slides"'
-        . ' data-live-slides-src="' . esc_url($viewer) . '"'
-        . ' loading="lazy" referrerpolicy="strict-origin-when-cross-origin"'
-        . ' allow="fullscreen" allowfullscreen></iframe>'
-        . '<p>Slides update automatically during the service. '
-        . '<a href="' . esc_url($viewer) . '" target="_blank" rel="noopener noreferrer">Open Live Slides in a new tab ↗</a></p>'
-        . '</div></details>';
-
-    $inserted = true;
-    return $details . $block_content;
+    return $block;
 }
-add_filter('render_block', 'surfside_tools_watch_live_prepend_slides_details', 10, 2);
+add_filter('render_block_data', 'surfside_tools_watch_live_inject_slides_accordion');
