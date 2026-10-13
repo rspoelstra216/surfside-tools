@@ -216,35 +216,127 @@
 .surfside-watch-live__player[hidden], .surfside-watch-live__offline[hidden], .surfside-watch-live__loading[hidden] { display: none !important; }
 .surfside-watch-live__player iframe { display: block; width: 100%; height: 100%; }
 
+/* Make the replay invitation easy to spot without competing with the player. */
 .surfside-watch-live__replay-intro {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
     margin: 0 0 1.1rem;
+    padding: .9rem 1.1rem;
+    border: 1px solid var(--surfside-color-border);
+    border-left: 4px solid var(--surfside-color-blue-700);
+    border-radius: var(--surfside-radius-md);
+    background: var(--surfside-color-blue-50);
     color: var(--surfside-color-ocean-950);
-    text-align: center;
-    font-size: clamp(1rem, 2vw, 1.15rem);
+    font-size: clamp(.95rem, 1.7vw, 1.05rem);
     line-height: 1.5;
 }
-.surfside-watch-live__replay-intro[hidden] { display: none !important; }
+.surfside-watch-live__replay-intro p {
+    margin: 0;
+}
+.surfside-watch-live__replay-intro strong {
+    font-weight: 700;
+}
+.surfside-watch-live__replay-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 50%;
+    background: var(--surfside-color-blue-700);
+    color: #fff;
+    font-size: .7rem;
+}
+.surfside-watch-live__replay-intro[hidden] {
+    display: none !important;
+}
 
-
-/* Live Slides sits inside the existing Follow Along details group. */
+/* Live Slides: native Accordion heading plus a first-party slide presentation.
+   No iframe, because Cloudflare's viewer intentionally blocks framing. */
+.wp-block-accordion-item[data-surfside-live-slides][hidden] {
+    display: none !important;
+}
+.wp-block-accordion-item[data-surfside-live-slides] .wp-block-accordion-heading {
+    margin-block: 0;
+    font-size: 1rem !important;
+    line-height: inherit;
+    font-weight: inherit;
+    font-family: inherit;
+}
+.wp-block-accordion-item[data-surfside-live-slides] .wp-block-accordion-heading__toggle,
+.wp-block-accordion-item[data-surfside-live-slides] .wp-block-accordion-heading__toggle-title {
+    font-family: inherit !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    line-height: 1.5;
+    letter-spacing: normal;
+    text-transform: none;
+    text-decoration: none !important;
+}
+.wp-block-accordion-item[data-surfside-live-slides] .wp-block-accordion-heading__toggle {
+    text-align: left;
+}
 .surfside-watch-live__slides-content {
     padding: 1rem 0 .5rem;
+    font-family: inherit;
 }
-.surfside-watch-live__slides-frame {
-    display: block;
-    width: 100%;
-    height: clamp(360px, 65vh, 680px);
+.surfside-watch-live__slides-state {
+    display: inline-flex;
+    margin: 0 0 .85rem;
+    padding: .4rem .75rem;
+    background: var(--surfside-color-blue-50);
+    border: 1px solid var(--surfside-color-border);
+    border-radius: 2rem;
+    color: var(--surfside-color-ocean-950);
+    font-size: .8rem;
+    font-weight: 650;
+}
+.surfside-watch-live__slides-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: clamp(250px, 40vh, 480px);
+    padding: clamp(1.25rem, 4vw, 3rem);
+    background: #fff;
     border: 1px solid var(--surfside-color-border);
     border-radius: var(--surfside-radius-md);
-    background: #fff;
+    text-align: center;
 }
-.surfside-watch-live__slides-content p {
-    margin: .75rem 0 0;
-    font-size: .925rem;
-    line-height: 1.5;
+.surfside-watch-live__slides-presentation {
+    margin: 0 0 1rem;
+    color: var(--surfside-color-blue-700);
+    font-size: .85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .075em;
+}
+.surfside-watch-live__slides-presentation[hidden] {
+    display: none !important;
+}
+.surfside-watch-live__slides-text {
+    color: var(--surfside-color-ocean-950);
+    font-size: clamp(1.35rem, 3.8vw, 2.5rem);
+    line-height: 1.45;
+    font-weight: 500;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.surfside-watch-live__slides-help {
+    margin: .9rem 0 0;
+    color: var(--surfside-color-muted);
+    font-size: .9rem;
+    line-height: 1.6;
 }
 @media (max-width: 44rem) {
-    .surfside-watch-live__slides-frame { height: min(65vh, 510px); min-height: 340px; }
+    .surfside-watch-live__replay-intro {
+        align-items: flex-start;
+        padding: .85rem;
+        font-size: .95rem;
+    }
+    .surfside-watch-live__slides-card {
+        min-height: 280px;
+    }
 }
 
 /* The page already has a prominent hero. Keep the shortcode heading available
