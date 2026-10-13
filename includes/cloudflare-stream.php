@@ -154,8 +154,5 @@ function surfside_tools_staff_stream_shortcode() {
     <?php return ob_get_clean();
 }
 add_shortcode('surfside_staff_streaming', 'surfside_tools_staff_stream_shortcode');
-add_action('init', function() {
-    if (!function_exists('surfside_tools_ensure_staff_page')) return;
-    $parent = get_page_by_path('dashboard/site-settings');
-    if ($parent) surfside_tools_ensure_staff_page('Streaming Management', 'streaming', '[surfside_staff_streaming]', (int) $parent->ID);
-}, 90);
+// Streaming Management page is provisioned by the versioned, admin-only
+// staff-page migration (staff-page-provisioning.php), not on visitor requests.
