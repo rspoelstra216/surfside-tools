@@ -3,6 +3,7 @@
 
     const twitchScript = "https://player.twitch.tv/js/embed/v1.js";
     let twitchPromise;
+    let liveSlidesController = null;
 
     function loadTwitch() {
         if (window.Twitch && window.Twitch.Player) {
@@ -29,6 +30,7 @@
         block.dataset.streamStatus = state;
         const replayIntro = block.querySelector("[data-replay-intro]");
         if (replayIntro) replayIntro.hidden = state !== "replay";
+        if (liveSlidesController) liveSlidesController.setStreamLive(state === "live");
 
         const video = block.querySelector(".surfside-watch-live__offline video");
         if (video) {
@@ -185,37 +187,172 @@
 
     function initializeLiveSlides() {
         const item = document.querySelector(".wp-block-accordion-item[data-surfside-live-slides]");
-        if (!item) return;
+        if (!item) return null;
 
         const toggle = item.querySelector(".wp-block-accordion-heading__toggle");
-        const frame = item.querySelector("iframe[data-live-slides-src]");
-        if (!toggle || !frame) return;
+        const feed = item.querySelector("[data-surfside-slides-feed]");
+        const text = item.querySelector("[data-slides-text]");
+        const title = item.querySelector("[data-slides-presentation]");
+        const status = item.querySelector("[data-slides-status]");
+        if (!toggle || !feed || !text || !title || !status) return null;
 
-        // Core Accordion controls the panel; only connect the Cloudflare
-        // viewer while this item is expanded.
-        function syncViewer() {
-            const open = item.classList.contains("is-open") ||
+        const socketUrl = feed.dataset.slidesSocket;
+        let streamLive = false;
+        let connection = null;
+        let reconnectTimer = null;
+        let reconnectDelay = 1000;
+        let publisherOnline = false;
+        let lastSeenAt = 0;
+        let staleAfterMs = 60000;
+        let latestSlide = null;
+
+        function expanded() {
+            return item.classList.contains("is-open") ||
                 toggle.getAttribute("aria-expanded") === "true";
+        }
 
-            if (open && !frame.hasAttribute("src")) {
-                frame.src = frame.dataset.liveSlidesSrc;
-            } else if (!open && frame.hasAttribute("src")) {
-                frame.removeAttribute("src");
+        function shouldConnect() {
+            return streamLive && expanded() && !document.hidden;
+        }
+
+        function updateSlide() {
+            const fresh = publisherOnline && lastSeenAt > 0 &&
+                Date.now() - lastSeenAt < staleAfterMs;
+
+            if (!fresh) {
+                status.textContent = "Waiting for the live presentation";
+                text.textContent = "Slides will appear here when the presentation begins.";
+                title.textContent = "";
+                title.hidden = true;
+                return;
+            }
+
+            status.textContent = "Presentation connected";
+            if (!latestSlide || typeof latestSlide.text !== "string") {
+                text.textContent = "Waiting for the next slide…";
+                title.textContent = "";
+                title.hidden = true;
+                return;
+            }
+
+            // Never use innerHTML for user-created presentation material.
+            text.textContent = latestSlide.text || "(Blank slide)";
+            const presentation = typeof latestSlide.presentation === "string"
+                ? latestSlide.presentation : "";
+            title.textContent = presentation;
+            title.hidden = !presentation;
+        }
+
+        function stop() {
+            if (reconnectTimer !== null) {
+                window.clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
+            if (connection) {
+                const old = connection;
+                connection = null;
+                old.close();
+            }
+            publisherOnline = false;
+            lastSeenAt = 0;
+            latestSlide = null;
+            reconnectDelay = 1000;
+        }
+
+        function retry() {
+            if (!shouldConnect() || reconnectTimer !== null) return;
+            reconnectTimer = window.setTimeout(() => {
+                reconnectTimer = null;
+                connect();
+            }, reconnectDelay);
+            reconnectDelay = Math.min(reconnectDelay * 2, 20000);
+        }
+
+        function connect() {
+            if (!shouldConnect() || connection) return;
+            status.textContent = "Connecting to presentation…";
+            let ws;
+            try {
+                ws = new WebSocket(socketUrl);
+            } catch (error) {
+                status.textContent = "Connection unavailable — retrying";
+                retry();
+                return;
+            }
+            connection = ws;
+            ws.addEventListener("open", () => {
+                if (connection !== ws) return;
+                reconnectDelay = 1000;
+            });
+            ws.addEventListener("message", (event) => {
+                if (connection !== ws) return;
+                let packet;
+                try {
+                    packet = JSON.parse(event.data);
+                } catch (error) {
+                    return;
+                }
+                if (!packet || typeof packet !== "object") return;
+                if (packet.type === "snapshot") {
+                    publisherOnline = packet.online === true;
+                    latestSlide = packet.slide;
+                } else if (packet.type === "heartbeat") {
+                    publisherOnline = true;
+                } else {
+                    return;
+                }
+                lastSeenAt = packet.lastSeenAt ? Date.parse(packet.lastSeenAt) : 0;
+                if (!Number.isFinite(lastSeenAt)) lastSeenAt = 0;
+                const ttl = Number(packet.staleAfterMs);
+                staleAfterMs = Number.isFinite(ttl) && ttl > 0 ? ttl : 60000;
+                updateSlide();
+            });
+            ws.addEventListener("close", () => {
+                if (connection !== ws) return;
+                connection = null;
+                status.textContent = "Connection interrupted — retrying";
+                retry();
+            });
+            ws.addEventListener("error", () => {
+                if (connection === ws) ws.close();
+            });
+        }
+
+        function sync() {
+            if (shouldConnect()) {
+                connect();
+            } else {
+                stop();
+                updateSlide();
             }
         }
 
-        const observer = new MutationObserver(syncViewer);
-        observer.observe(item, {
-            attributes: true,
-            attributeFilter: ["class", "aria-expanded"],
-            subtree: true
-        });
-        toggle.addEventListener("click", () => window.requestAnimationFrame(syncViewer));
-        syncViewer();
+        const observer = new MutationObserver(sync);
+        observer.observe(toggle, { attributes: true, attributeFilter: ["aria-expanded"] });
+        observer.observe(item, { attributes: true, attributeFilter: ["class"] });
+        toggle.addEventListener("click", () => window.requestAnimationFrame(sync));
+        document.addEventListener("visibilitychange", sync);
+        window.addEventListener("pagehide", stop);
+        window.setInterval(() => {
+            if (shouldConnect() && connection) updateSlide();
+        }, 5000);
+
+        // No flash of Live Slides while checking stream status.
+        item.hidden = true;
+        sync();
+        return {
+            setStreamLive(live) {
+                const next = live === true;
+                if (streamLive === next) return;
+                streamLive = next;
+                item.hidden = !streamLive;
+                sync();
+            }
+        };
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+        liveSlidesController = initializeLiveSlides();
         document.querySelectorAll("[data-surfside-watch-live]").forEach(initialize);
-        initializeLiveSlides();
     });
 })();
