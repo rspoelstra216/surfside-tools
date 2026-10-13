@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-const SURFSIDE_TOOLS_STAFF_PAGES_SCHEMA_VERSION = 2;
+const SURFSIDE_TOOLS_STAFF_PAGES_SCHEMA_VERSION = 3;
 const SURFSIDE_TOOLS_STAFF_PAGES_SCHEMA_OPTION = 'surfside_tools_staff_pages_schema';
 
 /**
@@ -113,6 +113,12 @@ function surfside_tools_staff_page_definitions() {
             'slug' => 'site-settings',
             'content' => '[surfside_staff_site_settings]',
             'parent' => 'dashboard',
+        ),
+        'streaming-management' => array(
+            'title' => 'Streaming Management',
+            'slug' => 'streaming',
+            'content' => '[surfside_staff_streaming]',
+            'parent' => 'site-settings',
         ),
         'surfside-information' => array(
             'title' => 'Surfside Information',
