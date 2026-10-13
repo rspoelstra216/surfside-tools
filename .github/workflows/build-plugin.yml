@@ -57,6 +57,9 @@ jobs:
       - name: Test Cloudflare live-input status formats
         run: php scripts/test-cloudflare-live-status.php
 
+      - name: Test authenticated Cloudflare go-live webhook delivery
+        run: php scripts/test-cloudflare-live-notifications.php
+
       - name: Test streaming page admin-only provisioning
         run: php scripts/test-streaming-page-provisioning.php
 

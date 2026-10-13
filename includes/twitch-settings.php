@@ -35,8 +35,7 @@ function surfside_tools_twitch_settings_handle_post() {
         return surfside_tools_frontend_settings_notice($saved ? 'Twitch settings saved.' : 'Enter a valid Twitch Client ID and Client Secret.', $saved ? 'success' : 'error');
     }
     if ($action === 'eventsub') {
-        $result = surfside_tools_eventsub_connect();
-        return surfside_tools_frontend_settings_notice(is_wp_error($result) ? $result->get_error_message() : 'Twitch subscription requested. Refresh to see verification status.', is_wp_error($result) ? 'error' : 'success');
+        return surfside_tools_frontend_settings_notice('Go-live notifications now use Cloudflare Stream. Set them up under Church Settings → Streaming Management.', 'error');
     }
     if ($action === 'test') {
         $diagnostic = '';
@@ -76,16 +75,8 @@ function surfside_tools_twitch_settings_panel() {
                 <input type="hidden" name="surfside_twitch_settings_action" value="test">
                 <p><button type="submit" class="surfside-front-secondary-button">Test Connection</button></p>
             </form>
-            <?php $eventsub = get_option('surfside_eventsub_config', array()); $health = get_option('surfside_tools_live_push_health', array()); ?>
             <h3>Automatic go-live notifications</h3>
-            <p>Status: <?php echo esc_html($eventsub['status'] ?? 'not connected'); ?><?php if (!empty($eventsub['channel'])) echo ' — '.esc_html($eventsub['channel']); ?></p>
-            <?php if (!empty($health['outcome'])) : ?><p>Last push result: <?php echo esc_html($health['outcome']); ?> (<?php echo esc_html(gmdate('Y-m-d H:i:s', $health['attempted_at']).' UTC'); ?>)</p><?php endif; ?>
-            <p>Connect after saving credentials and channel settings. Twitch will notify Surfside when a new broadcast starts. Only members who enable livestream notifications receive the alert.</p>
-            <form method="post">
-                <?php wp_nonce_field('surfside_twitch_settings', 'surfside_twitch_settings_nonce'); ?>
-                <input type="hidden" name="surfside_twitch_settings_action" value="eventsub">
-                <button type="submit" class="surfside-front-secondary-button">Enable / Reconnect Go-Live Notifications</button>
-            </form>
+            <p class="surfside-front-description">Go-live notifications are now triggered by Cloudflare Stream, not Twitch. Set them up in <strong>Church Settings → Streaming Management</strong>. Twitch remains an optional viewing fallback.</p>
         </div>
     </details>
     <?php

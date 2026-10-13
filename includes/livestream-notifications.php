@@ -119,49 +119,22 @@ function surfside_tools_eventsub_receive($request) {
         update_option('surfside_eventsub_config',$config,false);
         return new WP_REST_Response(null,204);
     }
-    if ($type !== 'notification' || $config['status'] !== 'enabled') return surfside_tools_eventsub_error('Subscription is not enabled.');
-    $event = $data['event'] ?? array();
-    if (($event['broadcaster_user_id'] ?? '') !== $config['broadcaster_id'] ||
-        strtolower($event['broadcaster_user_login'] ?? '') !== $config['channel'] || ($event['type'] ?? '') !== 'live') return surfside_tools_eventsub_error('Unexpected broadcaster.');
-    $status = array('status'=>'live','is_live'=>true,'channel'=>$config['channel'],'stream_id'=>$event['id'] ?? '',
-        'started_at'=>$event['started_at'] ?? '', 'checked_at'=>$timestamp);
-        $state = get_option('surfside_tools_live_push_state',array());
-        $key = surfside_tools_live_push_candidate($status, is_array($state)?$state:array(), time());
-        if ($key === '') return new WP_REST_Response(null,204);
-        // Store before acknowledgment. A retry schedules the same job, never a second stream claim.
-        $job_key = 'surfside_eventsub_job_'.$key;
-        $job = array('status'=>$status,'created_at'=>time(),'token'=>bin2hex(random_bytes(32)));
-        if (!add_option($job_key,$job,'',false)) $job = get_option($job_key);
-        wp_schedule_single_event(time()+60,'surfside_eventsub_deliver',array($key));
-        wp_remote_post(rest_url('surfside/v1/twitch/deliver'),array('timeout'=>0.01,'blocking'=>false,'redirection'=>0,
-            'headers'=>array('Content-Type'=>'application/json'),'body'=>wp_json_encode(array('key'=>$key,'token'=>$job['token']))));
-        return new WP_REST_Response(null,204);
+    // Twitch is no longer authoritative for go-live. A valid legacy EventSub
+    // message is acknowledged but must not queue or send an Expo push.
+    if ($type === 'notification') {
+        if (($config['status'] ?? '') !== 'enabled') return surfside_tools_eventsub_error('Subscription is not enabled.');
+        return new WP_REST_Response(null, 204);
+    }
+    return surfside_tools_eventsub_error('Unsupported Twitch event type.');
 }
 
 function surfside_tools_eventsub_deliver($key) {
-    if (!preg_match('/^[a-f0-9]{64}$/',(string)$key)) return;
-    $lock = 'surfside_tools_live_push_lock';
-    if ((int)get_option($lock,0)<time()-1800) delete_option($lock);
-    if (!add_option($lock,time(),'',false)) return; // Cron backup retries the queued job.
-    try {
-        $job_key = 'surfside_eventsub_job_'.$key;
-        $job = get_option($job_key);
-        if (!is_array($job)) return;
-        $state = get_option('surfside_tools_live_push_state',array());
-        $state = is_array($state)?$state:array();
-        $candidate = surfside_tools_live_push_candidate($job['status'],$state,time());
-        if ($candidate !== '') {
-            $seen = array_filter($state['seen'] ?? array(),function($at){return (int)$at>=time()-30*DAY_IN_SECONDS;});
-            $seen[$candidate]=time();
-            update_option('surfside_tools_live_push_state',array('seen'=>$seen,'last_attempt'=>time()),false);
-            $result = surfside_tools_push_send('Surfside is live','Join us for worship. Tap to watch the livestream.','worship',array('livestream'));
-            update_option('surfside_tools_live_push_health',array('checked_at'=>time(),'status'=>'live','attempted_at'=>time(),
-                'outcome'=>is_wp_error($result)?$result->get_error_code():'submitted'),false);
-        }
-        delete_option($job_key);
-        wp_clear_scheduled_hook('surfside_eventsub_deliver',array($key));
-    } finally { delete_option($lock); }
+    // Drain any old queued Twitch jobs without generating a notification.
+    if (!is_string($key) || !preg_match('/^[a-f0-9]{64}$/', $key)) return;
+    delete_option('surfside_eventsub_job_' . $key);
+    wp_clear_scheduled_hook('surfside_eventsub_deliver', array($key));
 }
+
 add_action('surfside_eventsub_deliver','surfside_tools_eventsub_deliver');
 
 function surfside_tools_eventsub_worker($request) {
