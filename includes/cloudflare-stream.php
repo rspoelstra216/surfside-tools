@@ -102,6 +102,7 @@ function surfside_tools_staff_stream_shortcode() {
     if (!is_user_logged_in()) return surfside_tools_staff_login_box('Please log in to manage streaming.');
     if (!current_user_can('manage_options')) return '<p>You do not have permission to manage streaming.</p>';
     $notice = '';
+    $new_webhook_secret = '';
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['surfside_stream_action'])) {
         $nonce = sanitize_text_field(wp_unslash($_POST['surfside_stream_nonce'] ?? ''));
         if (!wp_verify_nonce($nonce, 'surfside_stream_manage')) $notice = 'Security check failed. Refresh and retry.';
@@ -125,6 +126,14 @@ function surfside_tools_staff_stream_shortcode() {
                     update_option('surfside_tools_stream_excluded', array_values(array_unique($excluded)), false);
                     $notice = 'Recording preference saved.';
                 }
+            } elseif ($action === 'webhook_secret') {
+                // Only an authorized staff POST may generate/rotate the secret.
+                // Display it on this response exactly once; do not put it in a
+                // page URL, public API, cache, or persistent rendered markup.
+                $new_webhook_secret = bin2hex(random_bytes(32));
+                update_option('surfside_tools_cf_live_push_webhook_secret', $new_webhook_secret, false);
+                update_option('surfside_tools_cf_live_push_state', array(), false);
+                $notice = 'New Cloudflare go-live webhook secret saved. Copy it below now and update the Cloudflare webhook destination.';
             } elseif ($action === 'refresh') {
                 delete_transient('surfside_stream_recordings_v1');
                 delete_transient('surfside_stream_live_v1');
@@ -133,6 +142,10 @@ function surfside_tools_staff_stream_shortcode() {
         }
     }
     $config = surfside_tools_stream_config();
+    $has_webhook_secret = (string) get_option('surfside_tools_cf_live_push_webhook_secret', '') !== '';
+    $webhook_url = rest_url('surfside/v1/cloudflare/live-event');
+    $webhook_health = get_option('surfside_tools_cf_live_push_health', array());
+    if (!is_array($webhook_health)) $webhook_health = array();
     $recordings = surfside_tools_stream_recordings();
     $excluded = get_option('surfside_tools_stream_excluded', array());
     if (!is_array($excluded)) $excluded = array();
@@ -142,6 +155,32 @@ function surfside_tools_staff_stream_shortcode() {
     <?php if ($notice): ?><p role="status"><?php echo esc_html($notice); ?></p><?php endif; ?>
     <h2>Cloudflare connection</h2><p><?php echo !empty($config['token']) ? 'API token saved. Enter a new token only to replace it.' : 'Enter the read-only Stream API token.'; ?></p>
     <form class="surfside-information-form" method="post"><?php wp_nonce_field('surfside_stream_manage', 'surfside_stream_nonce'); ?><input type="hidden" name="surfside_stream_action" value="token"><div class="surfside-information-field surfside-information-field-wide"><label for="stream_token">Cloudflare Stream API token</label><input id="stream_token" type="password" name="stream_token" autocomplete="new-password" placeholder="Leave blank to keep existing token"><p class="surfside-information-help">The existing token is never displayed. Leave this blank to keep it unchanged.</p></div><div><button class="button button-primary" type="submit">Save connection</button></div></form>
+    <section class="surfside-staff-panel">
+      <h2>Automatic go-live notifications</h2>
+      <p>Cloudflare Stream is the authoritative go-live source. When your configured live input connects, Cloudflare sends one authenticated webhook to WordPress, which notifies app users subscribed to Livestream notifications. Twitch does not send go-live alerts.</p>
+      <p><strong>Webhook URL:</strong> <code><?php echo esc_html($webhook_url); ?></code></p>
+      <p><strong>Cloudflare Live Input ID:</strong> <code><?php echo esc_html(SURFSIDE_TOOLS_CF_LIVE_PUSH_INPUT); ?></code></p>
+      <p><strong>Shared secret:</strong> <?php echo $has_webhook_secret ? 'Configured — hidden for security.' : 'Not configured yet.'; ?></p>
+      <?php if ($new_webhook_secret !== '') : ?>
+        <div role="status" class="surfside-information-field surfside-information-field-wide">
+          <label for="cf_new_webhook_secret"><strong>Copy this secret now (shown only once)</strong></label>
+          <input id="cf_new_webhook_secret" type="text" readonly autocomplete="off"
+            value="<?php echo esc_attr($new_webhook_secret); ?>" onclick="this.select()">
+          <p>Enter this exact value in Cloudflare’s generic webhook destination <strong>Secret</strong> field. Don't share it publicly. Regenerating invalidates the previous secret.</p>
+        </div>
+      <?php endif; ?>
+      <form method="post"><?php wp_nonce_field('surfside_stream_manage', 'surfside_stream_nonce'); ?>
+        <input type="hidden" name="surfside_stream_action" value="webhook_secret">
+        <button class="button" type="submit"><?php echo $has_webhook_secret ? 'Rotate webhook secret' : 'Generate webhook secret'; ?></button>
+      </form>
+      <p>In Cloudflare: <strong>Alerts → Destinations → Webhooks → Create</strong>. Choose a generic webhook using the URL and secret above; then create a Stream Live alert for <code>live_input.connected</code>, restricted to this Live Input ID. The Cloudflare “Save and Test” sample should not send a phone notification.</p>
+      <?php if (!empty($webhook_health['outcome'])) : ?>
+        <p><strong>Last push handoff:</strong> <?php echo esc_html($webhook_health['outcome']); ?>
+          <?php if (!empty($webhook_health['accepted'])) : ?> (<?php echo esc_html((int) $webhook_health['accepted']); ?> submitted to Expo)<?php endif; ?>
+          <?php if (!empty($webhook_health['attempted_at'])) : ?> — <?php echo esc_html(gmdate('Y-m-d H:i:s', (int) $webhook_health['attempted_at'])); ?> UTC<?php endif; ?>
+        </p>
+      <?php else : ?><p>No Cloudflare go-live push has been attempted yet.</p><?php endif; ?>
+    </section>
     <h2>Recordings</h2><p>New completed recordings are eligible for Last Service automatically. Exclude funerals, tests, and other recordings here. Excluding does not delete a Cloudflare video or revoke its direct URL.</p>
     <form method="post"><?php wp_nonce_field('surfside_stream_manage', 'surfside_stream_nonce'); ?><input type="hidden" name="surfside_stream_action" value="refresh"><button type="submit">Refresh recordings</button></form>
     <?php if (is_wp_error($recordings)): ?><p role="alert"><?php echo esc_html($recordings->get_error_message()); ?></p>
