@@ -146,6 +146,8 @@ function surfside_tools_staff_stream_shortcode() {
     $webhook_url = rest_url('surfside/v1/cloudflare/live-event');
     $webhook_health = get_option('surfside_tools_cf_live_push_health', array());
     if (!is_array($webhook_health)) $webhook_health = array();
+    $webhook_state = get_option('surfside_tools_cf_live_push_state', array());
+    if (!is_array($webhook_state)) $webhook_state = array();
     $recordings = surfside_tools_stream_recordings();
     $excluded = get_option('surfside_tools_stream_excluded', array());
     if (!is_array($excluded)) $excluded = array();
@@ -174,6 +176,12 @@ function surfside_tools_staff_stream_shortcode() {
         <button class="button" type="submit"><?php echo $has_webhook_secret ? 'Rotate webhook secret' : 'Generate webhook secret'; ?></button>
       </form>
       <p>In Cloudflare: <strong>Alerts → Destinations → Webhooks → Create</strong>. Choose a generic webhook using the URL and secret above; then create a Stream Live alert for <code>live_input.connected</code>, restricted to this Live Input ID. The Cloudflare “Save and Test” sample should not send a phone notification.</p>
+      <?php if (!empty($webhook_state['last_event_at'])) : ?>
+        <p><strong>Last Cloudflare connection event:</strong>
+          <?php echo esc_html(gmdate('Y-m-d H:i:s', (int) $webhook_state['last_event_at'])); ?> UTC
+          (<?php echo !empty($webhook_state['active']) ? 'connected' : 'disconnected'; ?>)
+        </p>
+      <?php else : ?><p>No verified Cloudflare live connection event received yet.</p><?php endif; ?>
       <?php if (!empty($webhook_health['outcome'])) : ?>
         <p><strong>Last push handoff:</strong> <?php echo esc_html($webhook_health['outcome']); ?>
           <?php if (!empty($webhook_health['accepted'])) : ?> (<?php echo esc_html((int) $webhook_health['accepted']); ?> submitted to Expo)<?php endif; ?>
