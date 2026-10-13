@@ -193,6 +193,36 @@
         const frame = item.querySelector("iframe[data-live-slides-src]");
         if (!toggle || !frame) return null;
 
+        // The first accordion item is injected by the plugin, while the next
+        // (Message Notes) comes from the WordPress editor. Mirror the editor's
+        // actual computed typography instead of assuming a global rem scale.
+        // This preserves the site's responsive font choices and avoids a
+        // noticeably smaller heading on desktop and mobile.
+        function matchNeighborHeading() {
+            const neighbor = item.nextElementSibling;
+            if (!neighbor || !window.getComputedStyle) return;
+            const parts = [
+                ".wp-block-accordion-heading",
+                ".wp-block-accordion-heading__toggle",
+                ".wp-block-accordion-heading__toggle-title"
+            ];
+            const properties = [
+                "font-family", "font-size", "font-weight", "line-height",
+                "letter-spacing", "text-transform", "color"
+            ];
+            for (const selector of parts) {
+                const source = neighbor.querySelector(selector);
+                const target = item.querySelector(selector);
+                if (!source || !target) continue;
+                const computed = window.getComputedStyle(source);
+                for (const property of properties) {
+                    const value = computed.getPropertyValue(property);
+                    if (value) target.style.setProperty(property, value, "important");
+                }
+            }
+        }
+        matchNeighborHeading();
+
         let streamLive = false;
 
         function expanded() {
