@@ -77,7 +77,7 @@ const player = {
     }
 };
 
-class FakeSocket extends (class {}) {
+class FakeSocket {
     static OPEN = 1;
     constructor(url) {
         this.url = url;
