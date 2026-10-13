@@ -263,6 +263,7 @@
     line-height: inherit;
     font-weight: inherit;
     font-family: inherit;
+    text-decoration: none !important;
 }
 .wp-block-accordion-item[data-surfside-live-slides] .wp-block-accordion-heading__toggle,
 .wp-block-accordion-item[data-surfside-live-slides] .wp-block-accordion-heading__toggle-title {
