@@ -41,6 +41,26 @@ function surfside_tools_stream_recordings($refresh = false) {
     set_transient($key, $items, 120);
     return $items;
 }
+/**
+ * Cloudflare Stream has returned both a scalar status and an object with
+ * status.current.state. Support both documented/observed response shapes.
+ *
+ * @param array $input Live input result from Cloudflare.
+ * @return bool Whether Cloudflare reports an active source connection.
+ */
+function surfside_tools_stream_is_live($input) {
+    if (!is_array($input)) return false;
+
+    $status = $input['status'] ?? null;
+    if (is_array($status)) {
+        $current = $status['current'] ?? null;
+        $state = is_array($current) ? ($current['state'] ?? '') : '';
+    } else {
+        $state = $status;
+    }
+    return in_array($state, array('connected', 'reconnected'), true);
+}
+
 function surfside_tools_stream_public_data() {
     $recordings = surfside_tools_stream_recordings();
     $excluded = get_option('surfside_tools_stream_excluded', array());
@@ -58,7 +78,7 @@ function surfside_tools_stream_public_data() {
     $live = get_transient('surfside_stream_live_v1');
     if ($live === false) {
         $status = surfside_tools_stream_api('live_inputs/d8fe3de81677a407a70b62f0bb470769');
-        $live = is_wp_error($status) ? null : in_array(($status['status'] ?? ''), array('connected', 'reconnected'), true);
+        $live = is_wp_error($status) ? null : surfside_tools_stream_is_live($status);
         if ($live !== null) set_transient('surfside_stream_live_v1', $live ? 'yes' : 'no', 30);
     }
     if ($live === 'yes') $live = true;
