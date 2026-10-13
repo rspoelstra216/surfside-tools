@@ -11,6 +11,7 @@ function add_shortcode($name, $callback) {}
 function is_page($slug) { return $slug === 'watch-live' && $GLOBALS['surfside_test_watch_page']; }
 function wp_strip_all_tags($text) { return strip_tags((string) $text); }
 function esc_url($url) { return htmlspecialchars((string) $url, ENT_QUOTES, 'UTF-8'); }
+function esc_attr($value) { return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); }
 function surfside_tools_live_slides_public_settings() {
     return array('viewer_url' => 'https://example.workers.dev/viewer',
         'websocket_url' => 'wss://example.workers.dev/api/live');
