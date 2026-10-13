@@ -126,7 +126,10 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
                 <?php endif; ?>
             </header>
 
-            <p class="surfside-watch-live__replay-intro" data-replay-intro hidden>We’re not live right now, but you can watch our most recent service.</p>
+            <div class="surfside-watch-live__replay-intro" data-replay-intro hidden role="status">
+                <span class="surfside-watch-live__replay-icon" aria-hidden="true">▶</span>
+                <p><strong>We’re not live right now.</strong> Watch our most recent service below.</p>
+            </div>
 
             <div class="surfside-watch-live__stage">
                 <div class="surfside-watch-live__loading" data-stream-state="loading" role="status">
@@ -198,6 +201,7 @@ add_shortcode('surfside_watch_live', 'surfside_tools_watch_live_shortcode');
  * Follow Along uses WordPress's native core/accordion blocks, not core/details.
  * Modify parsed blocks before rendering so WordPress supplies its native
  * accordion interactivity, appearance, and accessibility attributes.
+ * The viewer loads only after the livestream is active and the accordion opens.
  */
 function surfside_tools_watch_live_inject_slides_accordion($block) {
     static $inserted = false;
@@ -252,7 +256,7 @@ function surfside_tools_watch_live_inject_slides_accordion($block) {
 
         $viewer_url = esc_url(surfside_tools_live_slides_public_settings()['viewer_url']);
         $markup = '<!-- wp:accordion-item -->'
-            . '<div class="wp-block-accordion-item surfside-watch-live__slides-accordion" data-surfside-live-slides>'
+            . '<div class="wp-block-accordion-item surfside-watch-live__slides-accordion" data-surfside-live-slides hidden>'
             . '<!-- wp:accordion-heading {"title":"Live Slides"} -->'
             . '<h3 class="wp-block-accordion-heading has-icon has-icon-right">'
             . '<button type="button" class="wp-block-accordion-heading__toggle">'
