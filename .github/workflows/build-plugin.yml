@@ -49,6 +49,11 @@ jobs:
       - name: Test Watch Live accordion insertion
         run: php scripts/test-watch-live-accordion.php
 
+      - name: Validate Watch Live JavaScript syntax and stream/slide behavior
+        run: |
+          node --check assets/js/watch-live-stream.js
+          node scripts/test-watch-live-slides.js
+
   build-plugin:
     name: Build installable plugin ZIP
     if: github.event_name != 'pull_request'
