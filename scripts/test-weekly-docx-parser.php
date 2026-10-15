@@ -8,6 +8,7 @@ define('ABSPATH', __DIR__ . '/');
 function add_action(...$args) {}
 function add_filter(...$args) {}
 function add_shortcode(...$args) {}
+function is_wp_error($value) { return $value instanceof WP_Error; }
 
 require dirname(__DIR__) . '/includes/core-weekly-tools.php';
 
