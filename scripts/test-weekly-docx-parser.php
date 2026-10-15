@@ -63,7 +63,7 @@ weekly_check(strpos($parsed['items'][0], 'Fall Festival') !== false, 'Introducto
 weekly_check(strpos($parsed['items'][1], '1.') !== 0, 'Typed numbering removed before <ol>');
 weekly_check(strpos($parsed['items'][1], 'Packing party') !== false, 'Wrapped lines retained');
 weekly_check(strpos($parsed['items'][2], 'Food Drive') === 0, 'Second numbered item distinct');
-weekly_check(strpos($parsed['items'][3], 'Big Red Bus') === 4 || strpos($parsed['items'][3], 'Big Red Bus') === 4, 'Third numbered item retained');
+weekly_check(strpos($parsed['items'][3], 'The Big Red Bus') === 0, 'Third numbered item retained');
 weekly_check(strpos(implode(' ', $parsed['items']), 'October 18, 2026') === false, 'Date excluded from announcement list');
 $auto = surfside_tools_parse_announcement_records(array(
     array('text' => 'A native Word numbered item', 'numbered' => true),
@@ -92,7 +92,7 @@ function weekly_fixture($body) {
         $body . '</w:body></w:document>';
     $path = tempnam(sys_get_temp_dir(), 'surfside-docx-');
     $zip = new ZipArchive();
-    if ($zip->open($path, ZipArchive::OVERWRITE) !== true) {
+    if ($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
         throw new RuntimeException('Unable to create DOCX test ZIP');
     }
     $zip->addFromString('word/document.xml', $xml);
@@ -114,7 +114,7 @@ $sermon_path = weekly_fixture(
 $sermon = surfside_tools_parse_sermon_docx($sermon_path);
 unlink($sermon_path);
 weekly_check(!is_wp_error($sermon), 'Synthetic DOCX sermon parses');
-weekly_check($sermon['title'] === 'Made To Serve', 'DOCX title correctly displayed');
+weekly_check($sermon['title'] === 'Made to Serve', 'DOCX title correctly displayed');
 weekly_check($sermon['series'] === 'Made for More', 'DOCX series correctly displayed');
 weekly_check($sermon['date'] === 'OCTOBER 18, 2026', 'DOCX date extracted');
 weekly_check($sermon['main_heading'] === '3 KEYS TO USING YOUR GIFTS', 'DOCX main heading extracted');
