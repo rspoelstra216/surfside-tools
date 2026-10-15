@@ -1747,8 +1747,6 @@ function surfside_tools_backup_current_message() {
 }
 
 function surfside_tools_save_message($data) {
-    surfside_tools_backup_current_message();
-
     $clean = array(
         'title' => sanitize_text_field(isset($data['title']) ? $data['title'] : ''),
         'series' => sanitize_text_field(isset($data['series']) ? $data['series'] : ''),
@@ -1759,7 +1757,17 @@ function surfside_tools_save_message($data) {
         'timestamp' => current_time('timestamp'),
     );
 
-    update_option('surfside_tools_message_current', $clean, false);
+    // Fail safely before replacing the current message if archival storage is unavailable.
+    $archived = surfside_tools_sermon_archive_on_publish($clean);
+    if (is_wp_error($archived)) {
+        return $archived;
+    }
+
+    surfside_tools_backup_current_message();
+    $saved = update_option('surfside_tools_message_current', $clean, false);
+    if (!$saved && get_option('surfside_tools_message_current') !== $clean) {
+        return new WP_Error('surfside_message_save_failed', 'The current sermon notes could not be updated.');
+    }
 
     surfside_tools_purge_cache();
 
@@ -1853,8 +1861,10 @@ function surfside_sermon_docx_importer_shortcode() {
             'prayer' => isset($_POST['message_prayer']) ? wp_unslash($_POST['message_prayer']) : '',
         );
 
-        surfside_tools_save_message($data);
-        $message = surfside_tools_importer_notice('<strong>Sermon notes published.</strong>', 'success');
+        $saved = surfside_tools_save_message($data);
+        $message = is_wp_error($saved)
+            ? surfside_tools_importer_notice(esc_html($saved->get_error_message()), 'error')
+            : surfside_tools_importer_notice('<strong>Sermon notes published and archived.</strong>', 'success');
 
         $parsed = array(
             'title' => sanitize_text_field($data['title']),
@@ -2009,6 +2019,7 @@ function surfside_tools_weekly_update_shortcode() {
     $sermon = null;
     $announcement_preview_html = '';
     $sermon_preview_html = '';
+    $archive_error = '';
 
     // Publish reviewed content.
     if (isset($_POST['surfside_tools_weekly_publish_nonce']) && wp_verify_nonce($_POST['surfside_tools_weekly_publish_nonce'], 'surfside_tools_weekly_publish')) {
@@ -2046,8 +2057,12 @@ function surfside_tools_weekly_update_shortcode() {
             );
 
             if (trim($sermon['title']) !== '' || trim($sermon['notes']) !== '') {
-                surfside_tools_save_message($sermon);
-                $published[] = 'Sermon Notes';
+                $sermon_result = surfside_tools_save_message($sermon);
+                if (is_wp_error($sermon_result)) {
+                    $archive_error = $sermon_result->get_error_message();
+                } else {
+                    $published[] = 'Sermon Notes (archived)';
+                }
                 $sermon['title'] = sanitize_text_field($sermon['title']);
                 $sermon['series'] = sanitize_text_field($sermon['series']);
                 $sermon['date'] = sanitize_text_field($sermon['date']);
@@ -2060,8 +2075,11 @@ function surfside_tools_weekly_update_shortcode() {
 
         if (!empty($published)) {
             $message = surfside_tools_importer_notice('<strong>Weekly update published.</strong><br>' . esc_html(implode(' and ', $published)) . ' updated.', 'success');
-        } else {
+        } elseif (!$archive_error) {
             $message = surfside_tools_importer_notice('Nothing was selected to publish.', 'error');
+        }
+        if ($archive_error) {
+            $message .= surfside_tools_importer_notice(esc_html($archive_error), 'error');
         }
     }
 
