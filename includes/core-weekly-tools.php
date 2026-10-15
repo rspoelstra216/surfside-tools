@@ -1554,7 +1554,14 @@ function surfside_tools_title_case_if_needed($text) {
 
     // Convert obvious all-caps titles to nicer display title case.
     if (preg_match('/^[A-Z0-9\s\?\!\:\;\,\-’\'"&\.]+$/u', $text)) {
-        return ucwords(strtolower($text));
+        $title = ucwords(strtolower($text));
+        // Keep short connecting words natural in sermon and series names,
+        // e.g. "Made to Serve" and "Made for More".
+        return preg_replace_callback(
+            '/(?<=\S)\s+(and|as|at|by|for|in|of|on|or|the|to|a|an)\b/i',
+            function ($match) { return strtolower($match[0]); },
+            $title
+        );
     }
 
     return $text;
