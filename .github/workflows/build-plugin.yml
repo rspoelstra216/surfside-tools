@@ -31,6 +31,9 @@ jobs:
       - name: Test permanent sermon note archiving
         run: php scripts/test-sermon-archive.php
 
+      - name: Test Weekly Update DOCX parsing
+        run: php scripts/test-weekly-docx-parser.php
+
       - name: Test mobile calendar recurrence metadata
         run: php scripts/test-mobile-calendar-recurrence.php
 
