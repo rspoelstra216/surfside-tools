@@ -84,6 +84,7 @@ See [Code Audit Closeout](CODE-AUDIT-CLOSEOUT.md) for the detailed audit record 
 ### Staff and publishing
 
 - Weekly DOCX announcement and sermon-note publishing.
+- Sermon notes are also preserved permanently as **text-only** records in the `surfside_sermon_archive` WordPress database table, keyed by sermon date and title. Both the unified Weekly Update and standalone sermon importer use the existing save function, and the active notes and rotating backup behave as before. The archive table is created only on an explicit staff publication, never on general requests. The first publication preserves still-available current and previous notes; older overwritten notes are not recoverable from this feature. No public history endpoint or YouTube matching is included yet.
 - Calendar suggestions with date/time/recurrence/location detection, duplicate protection, review, batch creation, and undo.
 - Native one-time, multi-day, and recurring calendar management.
 - Independent Calendar Manager **Ministry** and **Bible Study** classifications.
