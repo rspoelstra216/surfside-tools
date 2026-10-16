@@ -21,9 +21,24 @@ const SURFSIDE_PUBLIC_SERIES_PER_PAGE = 18;
 function surfside_tools_public_messages_sql() {
     $ready = function_exists('surfside_tools_youtube_review_is_ready')
         && surfside_tools_youtube_review_is_ready();
+    // The new column is populated by the next full sync after migration.
+    // Never substitute playlistItems.snippet.publishedAt (playlist-added time).
+    $publication_ready = $ready && (int) get_option(SURFSIDE_YT_SCHEMA_OPTION, 0) >= 2;
+    $sermon = $ready ? 'COALESCE(r.manual_date, v.sermon_date)' : 'v.sermon_date';
+    $fallback = $publication_ready
+        ? "CASE WHEN r.disposition = 'include' THEN v.published_date ELSE NULL END"
+        : 'NULL';
+    $date = $publication_ready ? "COALESCE({$sermon}, {$fallback})" : $sermon;
+    $source = $publication_ready
+        ? "CASE WHEN {$sermon} IS NOT NULL THEN 'sermon'
+                WHEN r.disposition = 'include' AND v.published_date IS NOT NULL THEN 'youtube'
+                ELSE 'unknown' END"
+        : "CASE WHEN {$sermon} IS NOT NULL THEN 'sermon' ELSE 'unknown' END";
     return array(
         'join' => $ready ? ' LEFT JOIN ' . surfside_tools_youtube_review_table() . ' r ON r.video_id = v.video_id' : '',
-        'date' => $ready ? 'COALESCE(r.manual_date, v.sermon_date)' : 'v.sermon_date',
+        'sermon_date' => $sermon,
+        'date' => $date,
+        'source' => $source,
         'visible' => $ready ? "(r.disposition IS NULL OR r.disposition <> 'exclude')" : '(1=1)',
     );
 }
@@ -117,7 +132,7 @@ function surfside_tools_public_messages_list($master, $filters) {
     $page = min($pages, $filters['page']);
     $offset = ($page - 1) * SURFSIDE_PUBLIC_MESSAGES_PER_PAGE;
     $query = "SELECT v.video_id, v.title, v.thumbnail_url,
-        {$sql['date']} AS message_date"
+        {$sql['date']} AS message_date, {$sql['source']} AS date_source"
         . $from . " ORDER BY ({$sql['date']} IS NULL), {$sql['date']} DESC,
         v.uploaded_at DESC, v.video_id ASC LIMIT %d OFFSET %d";
     $rows = $wpdb->get_results($wpdb->prepare(
@@ -134,7 +149,8 @@ function surfside_tools_public_messages_detail($master, $id) {
     $t = surfside_tools_youtube_tables();
     $sql = surfside_tools_public_messages_sql();
     $row = $wpdb->get_row($wpdb->prepare(
-        "SELECT v.video_id, v.title, v.thumbnail_url, {$sql['date']} AS message_date
+        "SELECT v.video_id, v.title, v.thumbnail_url,
+                {$sql['date']} AS message_date, {$sql['source']} AS date_source
          FROM {$t['videos']} v
          INNER JOIN {$t['members']} m ON m.video_id = v.video_id
          {$sql['join']}
@@ -176,6 +192,50 @@ function surfside_tools_public_messages_series($master) {
     }));
 }
 
+/**
+ * The featured message should be the newest known SERMON, never an undated
+ * video that was uploaded after it. Publication dates only organize fallback
+ * video listings, not the church's "Latest message" claim.
+ */
+function surfside_tools_public_messages_latest($master) {
+    global $wpdb;
+    $t = surfside_tools_youtube_tables();
+    $sql = surfside_tools_public_messages_sql();
+    $row = $wpdb->get_row($wpdb->prepare(
+        "SELECT v.video_id, v.title, v.thumbnail_url,
+                {$sql['sermon_date']} AS message_date, 'sermon' AS date_source
+         FROM {$t['videos']} v
+         INNER JOIN {$t['members']} m ON m.video_id = v.video_id
+         {$sql['join']}
+         WHERE m.playlist_id = %s AND {$sql['visible']} AND {$sql['sermon_date']} IS NOT NULL
+         ORDER BY {$sql['sermon_date']} DESC, v.video_id ASC LIMIT 1", $master
+    ), ARRAY_A);
+    return is_array($row) ? $row : null;
+}
+
+/** Only list years that contain at least one publicly visible, dated video. */
+function surfside_tools_public_messages_years($master) {
+    global $wpdb;
+    $t = surfside_tools_youtube_tables();
+    $sql = surfside_tools_public_messages_sql();
+    $values = $wpdb->get_col($wpdb->prepare(
+        "SELECT DISTINCT YEAR({$sql['date']}) AS display_year
+         FROM {$t['videos']} v
+         INNER JOIN {$t['members']} m ON m.video_id = v.video_id
+         {$sql['join']}
+         WHERE m.playlist_id = %s AND {$sql['visible']} AND {$sql['date']} IS NOT NULL
+         ORDER BY display_year DESC LIMIT 150", $master
+    ));
+    if (!is_array($values)) return array();
+    $years = array();
+    foreach ($values as $value) {
+        $year = (int) $value;
+        if ($year >= 1900 && $year <= 2100) $years[$year] = $year;
+    }
+    rsort($years, SORT_NUMERIC);
+    return array_values($years);
+}
+
 function surfside_tools_public_messages_video_series($master, $id, $series_rows) {
     global $wpdb;
     $t = surfside_tools_youtube_tables();
@@ -193,12 +253,18 @@ function surfside_tools_public_messages_video_series($master, $id, $series_rows)
     }));
 }
 
-function surfside_tools_public_messages_date_label($value) {
+/**
+ * Do not present a video's YouTube publication date as the sermon date.
+ * It is a fallback ONLY for videos staff explicitly included.
+ */
+function surfside_tools_public_messages_date_label($value, $source = 'sermon') {
     if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
         return 'Date not available';
     }
     $time = strtotime($value . ' 12:00:00 UTC');
-    return $time ? wp_date('F j, Y', $time, new DateTimeZone('UTC')) : 'Date not available';
+    if (!$time) return 'Date not available';
+    $label = wp_date('F j, Y', $time, new DateTimeZone('UTC'));
+    return $source === 'youtube' ? 'Published on YouTube: ' . $label : $label;
 }
 
 function surfside_tools_public_messages_args($filters) {
@@ -232,8 +298,10 @@ function surfside_tools_public_message_archive_shortcode() {
         && $filters['browse'] === 'messages';
     $list_url = surfside_tools_public_messages_page_url(array_diff_key($args, array('sm_view' => true)));
     $series_url = surfside_tools_public_messages_page_url(array('sm_view' => 'series'));
-    $featured = $list !== null && $is_default && !empty($list['rows'][0])
-        && !empty($list['rows'][0]['message_date']) ? $list['rows'][0] : null;
+    $featured = $list !== null && $is_default
+        ? surfside_tools_public_messages_latest($master) : null;
+    $years = $list !== null && !$invalid_series
+        ? surfside_tools_public_messages_years($master) : array();
     ob_start();
     ?>
     <section class="surfside-public-messages" aria-labelledby="surfside-public-messages-title">
@@ -302,7 +370,7 @@ function surfside_tools_public_message_archive_shortcode() {
                         ?>
                         <p class="surfside-public-messages__eyebrow">Watch a message</p>
                         <h2><?php echo esc_html($detail['title']); ?></h2>
-                        <p class="surfside-public-messages__date"><?php echo esc_html(surfside_tools_public_messages_date_label($detail['message_date'])); ?></p>
+                        <p class="surfside-public-messages__date"><?php echo esc_html(surfside_tools_public_messages_date_label($detail['message_date'], $detail['date_source'] ?? 'sermon')); ?></p>
                         <div class="surfside-public-messages__player">
                             <iframe loading="lazy" title="<?php echo esc_attr('Watch ' . $detail['title']); ?>"
                                 src="<?php echo esc_url('https://www.youtube-nocookie.com/embed/' . $detail['video_id']); ?>"
@@ -329,7 +397,7 @@ function surfside_tools_public_message_archive_shortcode() {
                         <div class="surfside-public-messages__featured-copy">
                             <p class="surfside-public-messages__eyebrow">Latest message</p>
                             <h2><?php echo esc_html($featured['title']); ?></h2>
-                            <p><?php echo esc_html(surfside_tools_public_messages_date_label($featured['message_date'])); ?></p>
+                            <p><?php echo esc_html(surfside_tools_public_messages_date_label($featured['message_date'], $featured['date_source'] ?? 'sermon')); ?></p>
                             <a class="surfside-public-messages__button" href="<?php echo esc_url(
                                 surfside_tools_public_messages_page_url(array('sm_video' => $featured['video_id']))
                             ); ?>">Watch Latest Message <span aria-hidden="true">→</span></a>
@@ -379,8 +447,7 @@ function surfside_tools_public_message_archive_shortcode() {
                             <label for="surfside-message-year">Year</label>
                             <select id="surfside-message-year" name="sm_year">
                                 <option value="">All years</option>
-                                <?php $current_year = (int) wp_date('Y');
-                                for ($yr = $current_year; $yr >= 1990; $yr--) : ?>
+                                <?php foreach ($years as $yr) : ?>
                                     <option value="<?php echo esc_attr((string) $yr); ?>" <?php selected($filters['year'], (string) $yr); ?>>
                                         <?php echo esc_html((string) $yr); ?>
                                     </option>
@@ -430,7 +497,7 @@ function surfside_tools_public_message_archive_shortcode() {
                                     </span>
                                     <span class="surfside-public-messages__video-info">
                                         <strong><?php echo esc_html($row['title']); ?></strong>
-                                        <small><?php echo esc_html(surfside_tools_public_messages_date_label($row['message_date'])); ?></small>
+                                        <small><?php echo esc_html(surfside_tools_public_messages_date_label($row['message_date'], $row['date_source'] ?? 'sermon')); ?></small>
                                     </span>
                                 </a>
                             <?php endforeach; ?>
