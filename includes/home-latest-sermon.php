@@ -102,9 +102,15 @@ function surfside_tools_home_latest_sermon_shortcode() {
         </div>
     </section>
     <style id="surfside-home-sermon-styles">
-        .surfside-home-sermon{--shs-ink:#0b2546;--shs-blue:#0d568e;--shs-muted:#56677b;--shs-border:#dce5ee;color:var(--shs-ink);box-sizing:border-box;padding:clamp(28px,5vw,64px) clamp(16px,3vw,32px);background:#f4f7fa;font-family:inherit}
+        /*
+         * WordPress's Shortcode block may remain inside a constrained content
+         * column even when its surrounding Group is set to "Full width".
+         * Break the section out to the viewport without changing site-wide
+         * block styles; keep the feature content within a readable max width.
+         */
+        .surfside-home-sermon{--shs-ink:#0b2546;--shs-blue:#0d568e;--shs-muted:#56677b;--shs-border:#dce5ee;color:var(--shs-ink);display:block;position:relative;box-sizing:border-box;width:100vw;max-width:none!important;margin-left:calc(50% - 50vw)!important;margin-right:calc(50% - 50vw)!important;padding:clamp(32px,5vw,64px) clamp(16px,3vw,32px);background:#fff;font-family:inherit}
         .surfside-home-sermon *{box-sizing:border-box}
-        .surfside-home-sermon__inner{max-width:1080px;margin:0 auto}
+        .surfside-home-sermon__inner{width:100%;max-width:1160px;margin:0 auto}
         .surfside-home-sermon__intro{text-align:center;max-width:760px;margin:0 auto 28px}
         .surfside-home-sermon__eyebrow{color:#176ca1!important;letter-spacing:.11em;text-transform:uppercase;font-size:12px!important;font-weight:800!important;line-height:1.4;margin:0 0 10px!important}
         .surfside-home-sermon__intro h2{font-size:clamp(30px,4vw,44px)!important;line-height:1.12!important;margin:0 0 12px!important;color:var(--shs-ink)!important;letter-spacing:-.025em}
