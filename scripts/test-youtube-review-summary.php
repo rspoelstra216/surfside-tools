@@ -69,7 +69,7 @@ check(str_contains($markup, 'Excluded videos:</strong> 6'), 'Excluded decisions 
 check(str_contains($markup, 'Dates not recognized in YouTube titles:</strong> 30'), 'Unparsed source titles distinctly labeled');
 check(!str_contains($markup, 'Dates needing review:'), 'Old misleading status label removed');
 check(str_contains($markup, 'archive_status=review'), 'Direct link to filtered Needs Review list');
-check(str_contains($markup, 'includes videos already included, excluded, or given a manual date'),
+check(str_contains($markup, 'include videos already included, excluded, or given a manual date'),
     'Informational count explains reviewed videos remain undated');
 check(count($GLOBALS['wpdb']->queries) === 2, 'Only two simple count queries in Integration panel');
 
