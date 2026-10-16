@@ -52,6 +52,9 @@ jobs:
       - name: Test public YouTube Messages archive
         run: php scripts/test-public-message-archive.php
 
+      - name: Test dynamic homepage Latest Sermon preview
+        run: php scripts/test-home-latest-sermon.php
+
       - name: Test mobile calendar recurrence metadata
         run: php scripts/test-mobile-calendar-recurrence.php
 
