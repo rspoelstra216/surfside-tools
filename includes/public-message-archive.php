@@ -408,7 +408,9 @@ function surfside_tools_public_message_archive_shortcode() {
                         <div class="surfside-public-messages__grid surfside-public-messages__grid--videos">
                             <?php foreach ($list['rows'] as $row) :
                                 if ($featured && $row['video_id'] === $featured['video_id']) continue;
-                                $detail_args = array_diff_key($args, array('archive_page' => true));
+                                // Keep the reader's search, series, year, and page when
+                                // opening a message so Back returns to the same results.
+                                $detail_args = $args;
                                 $detail_args['message'] = $row['video_id'];
                                 ?>
                                 <a class="surfside-public-messages__video" href="<?php echo esc_url(
