@@ -54,6 +54,18 @@ function surfside_tools_youtube_valid_playlist_id($id) {
     return is_string($id) && (bool) preg_match('/^[A-Za-z0-9_-]{10,100}$/', $id);
 }
 
+/** Allow either a playlist ID or the link copied from YouTube. */
+function surfside_tools_youtube_playlist_identifier($input) {
+    $input = trim((string) $input);
+    if ($input === '') return '';
+    if (surfside_tools_youtube_valid_playlist_id($input)) return $input;
+    $parts = wp_parse_url($input);
+    if (!is_array($parts) || !in_array(strtolower((string) ($parts['host'] ?? '')), array('youtube.com', 'www.youtube.com', 'm.youtube.com'), true)) return '';
+    parse_str((string) ($parts['query'] ?? ''), $query);
+    $id = $query['list'] ?? '';
+    return surfside_tools_youtube_valid_playlist_id($id) ? $id : '';
+}
+
 /** Read-only, server-to-server YouTube Data API client. No API key is exposed. */
 function surfside_tools_youtube_request($resource, $parameters) {
     $key = surfside_tools_youtube_api_key();
@@ -90,7 +102,7 @@ function surfside_tools_youtube_request($resource, $parameters) {
 function surfside_tools_youtube_resolve_channel($reference) {
     $reference = surfside_tools_youtube_channel_identifier($reference);
     if ($reference === '') return new WP_Error('surfside_youtube_channel_invalid', 'Enter a YouTube @handle or channel ID.');
-    $filter = str_starts_with($reference, '@') ? 'forHandle' : 'id';
+    $filter = substr($reference, 0, 1) === '@' ? 'forHandle' : 'id';
     $result = surfside_tools_youtube_request('channels', array(
         'part' => 'snippet',
         $filter => $reference,
@@ -340,10 +352,11 @@ function surfside_tools_youtube_process_page(&$state) {
         if ($state['page_token'] === '') {
             // Prune only after a complete playlist scan; partial scans never
             // delete old memberships when an upstream page fails.
-            $wpdb->query($wpdb->prepare(
+            $deleted = $wpdb->query($wpdb->prepare(
                 "DELETE FROM {$tables['members']} WHERE playlist_id = %s AND seen_run != %s",
                 $playlist_id, $run_id
             ));
+            if ($deleted === false) return new WP_Error('surfside_youtube_membership_prune', 'Could not finalize playlist membership.');
             $category = $master ? 'master' : 'other';
             if (!$master) {
                 $count = (int) $wpdb->get_var($wpdb->prepare(
@@ -352,7 +365,9 @@ function surfside_tools_youtube_process_page(&$state) {
                 ));
                 if ($count > 0) $category = 'series';
             }
-            $wpdb->update($tables['playlists'], array('category' => $category), array('playlist_id' => $playlist_id));
+            if ($wpdb->update($tables['playlists'], array('category' => $category), array('playlist_id' => $playlist_id)) === false) {
+                return new WP_Error('surfside_youtube_playlist_finalize', 'Could not finalize the YouTube playlist classification.');
+            }
             if ($master) {
                 $state['phase'] = 'series';
                 $state['message'] = 'Matching public series playlists to Messages.';
