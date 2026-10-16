@@ -24,7 +24,7 @@ class WP_Error {
     public function get_error_message() { return $this->message; }
 }
 function is_wp_error($value) { return $value instanceof WP_Error; }
-function add_action(...$args) {}
+function add_action($hook, $callback, $priority = 10) { $GLOBALS['test_hooks'][$hook] = $callback; }
 function add_shortcode(...$args) {}
 function is_user_logged_in() { return $GLOBALS['test_logged_in']; }
 function current_user_can($cap) { return $cap === 'upload_files' && $GLOBALS['test_staff']; }
@@ -66,9 +66,10 @@ function admin_url($path = '') { return 'https://example.org/wp-admin/' . $path;
 function wp_nonce_field(...$args) {}
 function current_time($type, $gmt = false) { return '2026-10-15 20:00:00'; }
 function dbDelta($sql) { $GLOBALS['test_db']->created++; return array(); }
-function wp_die($message) { throw new RuntimeException($message); }
-function check_admin_referer(...$args) {}
-function wp_safe_redirect($url) { $GLOBALS['test_redirect'] = $url; }
+function wp_die($message, $title = '', $args = array()) { throw new RuntimeException('WP_DIE: ' . $message); }
+function check_admin_referer($name, $field) { if (!($GLOBALS['test_nonce_valid'] ?? true) || $name !== 'surfside_youtube_review' || $field !== 'surfside_youtube_review_nonce') throw new RuntimeException('Bad nonce'); }
+function wp_safe_redirect($url, $status = 302, $by = 'WordPress') { $GLOBALS['test_redirect'] = array('url'=>$url, 'status'=>$status, 'by'=>$by); if ($GLOBALS['test_redirect_blocked'] ?? false) return false; throw new RuntimeException('Redirect sent'); }
+function is_page($slug) { return $slug === 'site-management' && ($GLOBALS['test_site_management_page'] ?? true); }
 
 class YouTubeReviewDB {
     public $prefix = 'wp_';
@@ -204,4 +205,104 @@ check(empty(surfside_tools_youtube_review_excluded_series()[$GLOBALS['test_playl
 check(is_wp_error(surfside_tools_youtube_review_save_series('PLNOTFOUND1234', true)),
     'Unknown playlist cannot be excluded');
 
-echo "YouTube Message Archive manager review checks passed.\n";
+// Regression: both review forms must POST to the staff dashboard, not WP Admin.
+$source = file_get_contents(dirname(__DIR__) . '/includes/youtube-message-manager.php');
+check(strpos($source, "admin_url('admin-post.php')") === false, 'Review forms must not POST through wp-admin/admin-post.php');
+check(substr_count($source, 'action="<?php echo esc_url(surfside_tools_youtube_manager_url()); ?>"') === 2,
+    'Video and series forms both target the front-end manager');
+check(($GLOBALS['test_hooks']['template_redirect'] ?? null) === 'surfside_tools_youtube_review_frontend_post',
+    'Front-end POST handler is registered before template output');
+check(($GLOBALS['test_hooks']['admin_post_surfside_youtube_review'] ?? null) === 'surfside_tools_youtube_review_handle_post',
+    'Legacy admin-post hook is retained for compatibility');
+
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$_GET = array('view'=>'message-archive');
+$_POST = array('action'=>'surfside_youtube_review','review_mode'=>'video',
+    'video_id'=>$GLOBALS['test_video_id'],'disposition'=>'include','manual_date'=>'2026-10-18');
+$reads = $GLOBALS['test_db']->reads;
+surfside_tools_youtube_review_frontend_post();
+check($GLOBALS['test_db']->reads === $reads, 'GET requests never perform review writes');
+
+$_SERVER['REQUEST_METHOD'] = 'POST';
+$_POST['action'] = 'unrelated_action';
+surfside_tools_youtube_review_frontend_post();
+check($GLOBALS['test_db']->reads === $reads, 'Unrelated forms are ignored');
+$_POST['action'] = 'surfside_youtube_review';
+$_GET = array('view'=>'other');
+surfside_tools_youtube_review_frontend_post();
+check($GLOBALS['test_db']->reads === $reads, 'Unrelated dashboard views are ignored');
+$_GET = array('view'=>'message-archive');
+$GLOBALS['test_site_management_page'] = false;
+surfside_tools_youtube_review_frontend_post();
+check($GLOBALS['test_db']->reads === $reads, 'Other page requests are ignored');
+$GLOBALS['test_site_management_page'] = true;
+
+$_POST['disposition'] = 'exclude';
+$_POST['manual_date'] = '';
+try {
+    surfside_tools_youtube_review_frontend_post();
+    throw new RuntimeException('Video review returned without redirect');
+} catch (RuntimeException $e) {
+    check($e->getMessage() === 'Redirect sent', 'Video review must redirect');
+}
+check($GLOBALS['test_db']->overrides[$GLOBALS['test_video_id']]['disposition'] === 'exclude',
+    'Dashboard video exclude action persisted');
+check($GLOBALS['test_redirect']['status'] === 303, 'Review actions use HTTP 303 Post-Redirect-Get');
+check(strpos($GLOBALS['test_redirect']['url'], 'view=message-archive') !== false
+    && strpos($GLOBALS['test_redirect']['url'], 'review_notice=saved') !== false
+    && strpos($GLOBALS['test_redirect']['url'], 'video=abcdEF12_34') !== false,
+    'Video review redirects back to the message detail and shows saved result');
+
+$_POST = array('action'=>'surfside_youtube_review','review_mode'=>'series',
+    'playlist_id'=>$GLOBALS['test_playlist_id'], 'hide_series'=>'1');
+try {
+    surfside_tools_youtube_review_frontend_post();
+    throw new RuntimeException('Series review returned without redirect');
+} catch (RuntimeException $e) {
+    check($e->getMessage() === 'Redirect sent', 'Series review must redirect');
+}
+check(!empty(surfside_tools_youtube_review_excluded_series()[$GLOBALS['test_playlist_id']]),
+    'Dashboard Hide Series action persisted');
+check(strpos($GLOBALS['test_redirect']['url'], 'tab=series') !== false,
+    'Series review redirects to series tab');
+$_POST['hide_series'] = '0';
+try {
+    surfside_tools_youtube_review_frontend_post();
+    throw new RuntimeException('Series restore returned without redirect');
+} catch (RuntimeException $e) {
+    check($e->getMessage() === 'Redirect sent', 'Series restore must redirect');
+}
+check(empty(surfside_tools_youtube_review_excluded_series()[$GLOBALS['test_playlist_id']]),
+    'Dashboard Restore Series action persisted');
+
+$GLOBALS['test_staff'] = false;
+$prior_reads = $GLOBALS['test_db']->reads;
+try {
+    surfside_tools_youtube_review_frontend_post();
+    throw new RuntimeException('Non-staff review unexpectedly processed');
+} catch (RuntimeException $e) {
+    check(strpos($e->getMessage(), 'do not have permission') !== false,
+        'Non-staff review is rejected');
+}
+check($GLOBALS['test_db']->reads === $prior_reads, 'Unauthorized request performs no DB reads');
+$GLOBALS['test_staff'] = true;
+
+$GLOBALS['test_nonce_valid'] = false;
+try {
+    surfside_tools_youtube_review_frontend_post();
+    throw new RuntimeException('Bad nonce unexpectedly accepted');
+} catch (RuntimeException $e) {
+    check($e->getMessage() === 'Bad nonce', 'Review POST still requires CSRF nonce');
+}
+$GLOBALS['test_nonce_valid'] = true;
+
+$GLOBALS['test_redirect_blocked'] = true;
+try {
+    surfside_tools_youtube_review_frontend_post();
+    throw new RuntimeException('Failed redirect silently exited');
+} catch (RuntimeException $e) {
+    check(strpos($e->getMessage(), 'WordPress could not redirect') !== false,
+        'Blocked redirect shows recoverable error instead of blank screen');
+}
+
+echo "YouTube Message Archive manager review and front-end form checks passed.\n";
