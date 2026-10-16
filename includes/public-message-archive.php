@@ -451,7 +451,7 @@ function surfside_tools_public_message_archive_shortcode() {
                                     <option value="<?php echo esc_attr((string) $yr); ?>" <?php selected($filters['year'], (string) $yr); ?>>
                                         <?php echo esc_html((string) $yr); ?>
                                     </option>
-                                <?php endfor; ?>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div>
