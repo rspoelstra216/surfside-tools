@@ -110,18 +110,34 @@ function surfside_tools_youtube_settings_panel() {
     $notice = get_transient($notice_key);
     if (is_array($notice)) delete_transient($notice_key);
 
+    // Use the same pending-review definition as the Message Archive Manager.
+    // A title can still have no parsed date after staff explicitly includes or
+    // excludes the video, so that count must not be labeled "needs review".
     $count = null;
-    $undated = 0;
+    $unparsed_title_dates = null;
+    $pending_review = null;
+    $excluded = null;
     $series = 0;
     if ((int) get_option(SURFSIDE_YT_SCHEMA_OPTION, 0) >= SURFSIDE_YT_SCHEMA_VERSION) {
         global $wpdb;
         $tables = surfside_tools_youtube_tables();
         $master = (string) ($state['master_id'] ?? '');
-        if ($master !== '') {
-            $count = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM {$tables['members']} WHERE playlist_id = %s", $master
-            ));
-            $undated = (int) $wpdb->get_var($wpdb->prepare(
+        if ($master !== '' && surfside_tools_youtube_valid_playlist_id($master)) {
+            if (function_exists('surfside_tools_youtube_review_summary')) {
+                $review = surfside_tools_youtube_review_summary($master);
+                $count = $review['total'];
+                $pending_review = $review['needs_review'];
+                $excluded = $review['excluded'];
+            } else {
+                // Still show imported totals if the optional staff manager is absent.
+                $count = (int) $wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$tables['members']} WHERE playlist_id = %s", $master
+                ));
+            }
+
+            // Raw source-title parsing failures are informational only. Manual
+            // dates and staff decisions do not alter YouTube's original titles.
+            $unparsed_title_dates = (int) $wpdb->get_var($wpdb->prepare(
                 "SELECT COUNT(*) FROM {$tables['members']} m INNER JOIN {$tables['videos']} v ON m.video_id = v.video_id WHERE m.playlist_id = %s AND v.sermon_date IS NULL", $master
             ));
         }
@@ -191,7 +207,20 @@ function surfside_tools_youtube_settings_panel() {
                 <?php if ($count !== null) : ?>
                     <p><strong>Master playlist videos:</strong> <?php echo esc_html(number_format_i18n($count)); ?>
                         · <strong>Series playlists:</strong> <?php echo esc_html(number_format_i18n($series)); ?>
-                        · <strong>Dates needing review:</strong> <?php echo esc_html(number_format_i18n($undated)); ?></p>
+                        <?php if ($pending_review !== null) : ?>
+                            · <strong>Needs Review:</strong> <?php echo esc_html(number_format_i18n($pending_review)); ?>
+                            · <strong>Excluded videos:</strong> <?php echo esc_html(number_format_i18n($excluded)); ?>
+                        <?php endif; ?>
+                    </p>
+                    <?php if ($pending_review !== null && $pending_review > 0) : ?>
+                        <p><a href="<?php echo esc_url(surfside_tools_youtube_manager_url(array('archive_status' => 'review'))); ?>">Review remaining videos →</a></p>
+                    <?php elseif ($pending_review === 0) : ?>
+                        <p>All imported videos have been reviewed or have a recognized date.</p>
+                    <?php endif; ?>
+                    <?php if ($unparsed_title_dates !== null) : ?>
+                        <p class="surfside-front-description"><strong>Dates not recognized in YouTube titles:</strong> <?php echo esc_html(number_format_i18n($unparsed_title_dates)); ?>.
+                            This is informational and can include videos already included, excluded, or given a manual date. It does not indicate outstanding reviews.</p>
+                    <?php endif; ?>
                 <?php endif; ?>
                 <p class="surfside-front-description">Public website and app browsing will be added separately. Background runs depend on WordPress cron activity.</p>
             </div>
