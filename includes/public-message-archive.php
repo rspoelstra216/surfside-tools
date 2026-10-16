@@ -35,26 +35,32 @@ function surfside_tools_public_messages_master_id() {
     return surfside_tools_youtube_valid_playlist_id($master) ? $master : '';
 }
 
+/**
+ * Public URLs deliberately use sm_* names instead of WordPress query vars.
+ * WordPress interprets ?year= (and some taxonomy query vars) as post archives,
+ * which can replace the Messages page with "No posts were found" before this
+ * shortcode runs. Keep every archive control in our own namespace.
+ */
 /** Sanitize and bound every public query parameter. */
 function surfside_tools_public_messages_filters($source = null) {
     $source = is_array($source) ? $source : $_GET;
-    $search = isset($source['q']) && is_string($source['q'])
-        ? sanitize_text_field(wp_unslash($source['q'])) : '';
-    $year = isset($source['year']) && is_string($source['year'])
-        ? trim(wp_unslash($source['year'])) : '';
-    $series = isset($source['series']) && is_string($source['series'])
-        ? trim(wp_unslash($source['series'])) : '';
-    $video = isset($source['message']) && is_string($source['message'])
-        ? trim(wp_unslash($source['message'])) : '';
-    $browse = isset($source['browse']) && is_string($source['browse'])
-        ? sanitize_key(wp_unslash($source['browse'])) : '';
+    $search = isset($source['sm_search']) && is_string($source['sm_search'])
+        ? sanitize_text_field(wp_unslash($source['sm_search'])) : '';
+    $year = isset($source['sm_year']) && is_string($source['sm_year'])
+        ? trim(wp_unslash($source['sm_year'])) : '';
+    $series = isset($source['sm_series']) && is_string($source['sm_series'])
+        ? trim(wp_unslash($source['sm_series'])) : '';
+    $video = isset($source['sm_video']) && is_string($source['sm_video'])
+        ? trim(wp_unslash($source['sm_video'])) : '';
+    $browse = isset($source['sm_view']) && is_string($source['sm_view'])
+        ? sanitize_key(wp_unslash($source['sm_view'])) : '';
     return array(
         'q' => substr(trim($search), 0, 100),
         'year' => preg_match('/^(19|20)\d{2}$/', $year) ? $year : '',
         'series' => surfside_tools_youtube_valid_playlist_id($series) ? $series : '',
         'message' => preg_match('/^[A-Za-z0-9_-]{11}$/', $video) ? $video : '',
         'browse' => $browse === 'series' ? 'series' : 'messages',
-        'page' => isset($source['archive_page']) ? max(1, min(100000, absint($source['archive_page']))) : 1,
+        'page' => isset($source['sm_page']) ? max(1, min(100000, absint($source['sm_page']))) : 1,
     );
 }
 
@@ -197,11 +203,11 @@ function surfside_tools_public_messages_date_label($value) {
 
 function surfside_tools_public_messages_args($filters) {
     $args = array();
-    if ($filters['q'] !== '') $args['q'] = $filters['q'];
-    if ($filters['year'] !== '') $args['year'] = $filters['year'];
-    if ($filters['series'] !== '') $args['series'] = $filters['series'];
-    if ($filters['browse'] === 'series') $args['browse'] = 'series';
-    if ($filters['page'] > 1) $args['archive_page'] = $filters['page'];
+    if ($filters['q'] !== '') $args['sm_search'] = $filters['q'];
+    if ($filters['year'] !== '') $args['sm_year'] = $filters['year'];
+    if ($filters['series'] !== '') $args['sm_series'] = $filters['series'];
+    if ($filters['browse'] === 'series') $args['sm_view'] = 'series';
+    if ($filters['page'] > 1) $args['sm_page'] = $filters['page'];
     return $args;
 }
 
@@ -224,8 +230,8 @@ function surfside_tools_public_message_archive_shortcode() {
     $is_default = $filters['q'] === '' && $filters['year'] === ''
         && $filters['series'] === '' && $filters['page'] === 1
         && $filters['browse'] === 'messages';
-    $list_url = surfside_tools_public_messages_page_url(array_diff_key($args, array('browse' => true)));
-    $series_url = surfside_tools_public_messages_page_url(array('browse' => 'series'));
+    $list_url = surfside_tools_public_messages_page_url(array_diff_key($args, array('sm_view' => true)));
+    $series_url = surfside_tools_public_messages_page_url(array('sm_view' => 'series'));
     $featured = $list !== null && $is_default && !empty($list['rows'][0])
         && !empty($list['rows'][0]['message_date']) ? $list['rows'][0] : null;
     ob_start();
@@ -267,7 +273,7 @@ function surfside_tools_public_message_archive_shortcode() {
                     <?php else : ?>
                         <div class="surfside-public-messages__grid surfside-public-messages__grid--series">
                             <?php foreach ($visible_series as $series) :
-                                $url = surfside_tools_public_messages_page_url(array('series' => $series['playlist_id']));
+                                $url = surfside_tools_public_messages_page_url(array('sm_series' => $series['playlist_id']));
                                 ?>
                                 <a class="surfside-public-messages__series" href="<?php echo esc_url($url); ?>">
                                     <?php if (!empty($series['sample_thumbnail'])) : ?>
@@ -281,7 +287,7 @@ function surfside_tools_public_message_archive_shortcode() {
                             <?php endforeach; ?>
                         </div>
                         <?php surfside_tools_public_messages_pagination($series_page, $series_page_count,
-                            array('browse' => 'series')); ?>
+                            array('sm_view' => 'series')); ?>
                     <?php endif; ?>
                 </section>
             <?php elseif ($filters['message'] !== '') : ?>
@@ -310,7 +316,7 @@ function surfside_tools_public_message_archive_shortcode() {
                                 <h3>Part of a series</h3>
                                 <?php foreach ($related_series as $related) : ?>
                                     <a class="surfside-public-messages__pill" href="<?php echo esc_url(
-                                        surfside_tools_public_messages_page_url(array('series'=>$related['playlist_id']))
+                                        surfside_tools_public_messages_page_url(array('sm_series'=>$related['playlist_id']))
                                     ); ?>"><?php echo esc_html($related['title']); ?> →</a>
                                 <?php endforeach; ?>
                             </div>
@@ -325,11 +331,11 @@ function surfside_tools_public_message_archive_shortcode() {
                             <h2><?php echo esc_html($featured['title']); ?></h2>
                             <p><?php echo esc_html(surfside_tools_public_messages_date_label($featured['message_date'])); ?></p>
                             <a class="surfside-public-messages__button" href="<?php echo esc_url(
-                                surfside_tools_public_messages_page_url(array('message' => $featured['video_id']))
+                                surfside_tools_public_messages_page_url(array('sm_video' => $featured['video_id']))
                             ); ?>">Watch Latest Message <span aria-hidden="true">→</span></a>
                         </div>
                         <a class="surfside-public-messages__featured-art" href="<?php echo esc_url(
-                            surfside_tools_public_messages_page_url(array('message' => $featured['video_id']))
+                            surfside_tools_public_messages_page_url(array('sm_video' => $featured['video_id']))
                         ); ?>" aria-label="<?php echo esc_attr('Watch ' . $featured['title']); ?>">
                             <?php if ($featured['thumbnail_url']) : ?>
                                 <img src="<?php echo esc_url($featured['thumbnail_url']); ?>" alt="">
@@ -348,7 +354,7 @@ function surfside_tools_public_message_archive_shortcode() {
                         <div class="surfside-public-messages__quick-series">
                             <?php foreach (array_slice($series_rows, 0, 6) as $s) : ?>
                                 <a href="<?php echo esc_url(surfside_tools_public_messages_page_url(
-                                    array('series' => $s['playlist_id'])
+                                    array('sm_series' => $s['playlist_id'])
                                 )); ?>"><?php echo esc_html($s['title']); ?> <span aria-hidden="true">→</span></a>
                             <?php endforeach; ?>
                         </div>
@@ -366,12 +372,12 @@ function surfside_tools_public_message_archive_shortcode() {
                         class="surfside-public-messages__filters" role="search">
                         <div class="surfside-public-messages__filter-search">
                             <label for="surfside-message-search">Search messages or series</label>
-                            <input id="surfside-message-search" name="q" type="search"
+                            <input id="surfside-message-search" name="sm_search" type="search"
                                 value="<?php echo esc_attr($filters['q']); ?>" placeholder="Search the archive">
                         </div>
                         <div>
                             <label for="surfside-message-year">Year</label>
-                            <select id="surfside-message-year" name="year">
+                            <select id="surfside-message-year" name="sm_year">
                                 <option value="">All years</option>
                                 <?php $current_year = (int) wp_date('Y');
                                 for ($yr = $current_year; $yr >= 1990; $yr--) : ?>
@@ -383,7 +389,7 @@ function surfside_tools_public_message_archive_shortcode() {
                         </div>
                         <div>
                             <label for="surfside-message-series">Series</label>
-                            <select id="surfside-message-series" name="series">
+                            <select id="surfside-message-series" name="sm_series">
                                 <option value="">All series</option>
                                 <?php foreach ($series_rows as $s) : ?>
                                     <option value="<?php echo esc_attr($s['playlist_id']); ?>" <?php selected($filters['series'], $s['playlist_id']); ?>>
@@ -411,7 +417,7 @@ function surfside_tools_public_message_archive_shortcode() {
                                 // Keep the reader's search, series, year, and page when
                                 // opening a message so Back returns to the same results.
                                 $detail_args = $args;
-                                $detail_args['message'] = $row['video_id'];
+                                $detail_args['sm_video'] = $row['video_id'];
                                 ?>
                                 <a class="surfside-public-messages__video" href="<?php echo esc_url(
                                     surfside_tools_public_messages_page_url($detail_args)
@@ -446,14 +452,14 @@ function surfside_tools_public_messages_pagination($page, $pages, $args) {
     <nav class="surfside-public-messages__pagination" aria-label="Archive pages">
         <?php if ($page > 1) :
             $previous = $args;
-            $previous['archive_page'] = $page - 1;
+            $previous['sm_page'] = $page - 1;
             ?>
             <a href="<?php echo esc_url(surfside_tools_public_messages_page_url($previous)); ?>">← Previous</a>
         <?php else : ?><span></span><?php endif; ?>
         <span>Page <?php echo esc_html(number_format_i18n($page)); ?> of <?php echo esc_html(number_format_i18n($pages)); ?></span>
         <?php if ($page < $pages) :
             $next = $args;
-            $next['archive_page'] = $page + 1;
+            $next['sm_page'] = $page + 1;
             ?>
             <a href="<?php echo esc_url(surfside_tools_public_messages_page_url($next)); ?>">Next →</a>
         <?php else : ?><span></span><?php endif; ?>

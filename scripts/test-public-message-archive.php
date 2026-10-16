@@ -131,9 +131,9 @@ check($GLOBALS['test_inserted_pages'] === array(), 'Module inclusion does not cr
 check(isset($GLOBALS['test_shortcodes']['surfside_message_archive']), 'Shortcode registered');
 check(isset($GLOBALS['test_actions']['admin_init']), 'Draft provisioning registered on admin_init');
 
-$url = surfside_tools_public_messages_page_url(array('series'=>'PLSERIES12345','archive_page'=>2));
+$url = surfside_tools_public_messages_page_url(array('sm_series'=>'PLSERIES12345','sm_page'=>2));
 check(str_contains($url, 'preview=true') && str_contains($url, 'page_id=22') &&
-    str_contains($url, 'series=PLSERIES12345') && str_contains($url, 'archive_page=2'),
+    str_contains($url, 'sm_series=PLSERIES12345') && str_contains($url, 'sm_page=2'),
     'Draft preview links retain original WP preview URL and filters');
 $GLOBALS['test_draft'] = false;
 check(str_starts_with(surfside_tools_public_messages_page_url(), 'https://example.org/messages/'),
@@ -141,13 +141,13 @@ check(str_starts_with(surfside_tools_public_messages_page_url(), 'https://exampl
 $GLOBALS['test_draft'] = true;
 
 $filters = surfside_tools_public_messages_filters(array(
-    'q'=>'Serve%_', 'year'=>'2026', 'series'=>'PLSERIES12345','archive_page'=>'3','message'=>'aaaaaaaaaaa'
+    'sm_search'=>'Serve%_', 'sm_year'=>'2026', 'sm_series'=>'PLSERIES12345','sm_page'=>'3','sm_video'=>'aaaaaaaaaaa'
 ));
 check($filters['q']==='Serve%_' && $filters['page']===3 && $filters['message']==='aaaaaaaaaaa',
     'Search, series, date and video filter values accepted');
 $bad = surfside_tools_public_messages_filters(array(
-    'q'=>str_repeat('x',200),'year'=>'2026<script>','series'=>'invalid!','message'=>'evil',
-    'browse'=>'hacked', 'archive_page'=>'999999999999'
+    'sm_search'=>str_repeat('x',200),'sm_year'=>'2026<script>','sm_series'=>'invalid!','sm_video'=>'evil',
+    'sm_view'=>'hacked', 'sm_page'=>'999999999999'
 ));
 check(strlen($bad['q'])===100 && $bad['year']==='' && $bad['series']==='' &&
     $bad['message']==='' && $bad['browse']==='messages' && $bad['page']<=100000,
@@ -196,21 +196,71 @@ check(str_contains($html, 'Blessed &lt;script&gt;alert(1)&lt;/script&gt;'),
     'Video title is HTML-escaped');
 check(str_contains($html, 'Date not available'), 'Undated included videos remain visible');
 
-$_GET=array('browse'=>'series');
+// WordPress treats ?year= as a native post-archive query variable.
+// All form fields AND generated archive navigation must use unique names.
+check(str_contains($html, 'name="sm_search"') && str_contains($html, 'name="sm_year"')
+    && str_contains($html, 'name="sm_series"'),
+    'Public filter form never submits reserved WordPress year/series variables');
+check(!preg_match('/\bname="(?:q|year|series|s)"\b/', $html),
+    'Search fields cannot overwrite WordPress routing');
+check(str_contains($html, 'sm_video=aaaaaaaaaaa'),
+    'Latest-message detail link uses namespaced URL key');
+$archive_args = surfside_tools_public_messages_args($filters);
+check($archive_args === array(
+    'sm_search'=>'Serve%_', 'sm_year'=>'2026', 'sm_series'=>'PLSERIES12345', 'sm_page'=>3
+), 'All active public filters and page position produce safe namespaced query args');
+check(count(array_intersect(array_keys($archive_args), array(
+    'year','monthnum','pagename','page_id','s','q','series','message','browse','archive_page'
+))) === 0, 'Archive URL keys do not overlap WordPress core query vars');
+
+$GLOBALS['wpdb']->sql = array();
+$_GET=array('sm_search'=>'Serve');
+$search_html=surfside_tools_public_message_archive_shortcode();
+check(str_contains($search_html, 'messages found')
+    && str_contains($search_html, 'value="Serve"'),
+    'Title search stays inside the Messages shortcode rather than WordPress post search');
+check(str_contains(implode("\n", $GLOBALS['wpdb']->sql), "v.title LIKE '%Serve%'"),
+    'Search filter reaches the archive metadata query');
+
+$GLOBALS['wpdb']->sql = array();
+$_GET=array('sm_year'=>'2026');
+$year_html=surfside_tools_public_message_archive_shortcode();
+check(str_contains($year_html, 'messages found')
+    && str_contains(implode("\n", $GLOBALS['wpdb']->sql), 'YEAR(COALESCE(r.manual_date, v.sermon_date)) = 2026'),
+    'Year filter reaches archive metadata without WordPress post archive routing');
+
+$GLOBALS['wpdb']->sql = array();
+$_GET=array('sm_series'=>'PLSERIES12345');
+$series_filter_html=surfside_tools_public_message_archive_shortcode();
+check(str_contains($series_filter_html, 'messages found')
+    && str_contains(implode("\n", $GLOBALS['wpdb']->sql), "selected_m.playlist_id = 'PLSERIES12345'"),
+    'Series filter is handled by the local sermon metadata query');
+
+// A message opened from filtered results should link back with those filters.
+$_GET=array('sm_search'=>'Serve', 'sm_year'=>'2026',
+    'sm_series'=>'PLSERIES12345', 'sm_page'=>'2', 'sm_video'=>'aaaaaaaaaaa');
+$filtered_detail=surfside_tools_public_message_archive_shortcode();
+check(str_contains($filtered_detail, 'sm_search=Serve')
+    && str_contains($filtered_detail, 'sm_year=2026')
+    && str_contains($filtered_detail, 'sm_series=PLSERIES12345')
+    && str_contains($filtered_detail, 'sm_page=2'),
+    'Filtered message detail preserves search, year, series and page when returning');
+
+$_GET=array('sm_view'=>'series');
 $series_html = surfside_tools_public_message_archive_shortcode();
 check(str_contains($series_html, 'Sermon Series') && !str_contains($series_html, 'Hidden Series'),
     'Series tab renders with hidden series excluded');
-$_GET=array('message'=>'aaaaaaaaaaa');
+$_GET=array('sm_video'=>'aaaaaaaaaaa');
 $detail_html=surfside_tools_public_message_archive_shortcode();
 check(str_contains($detail_html,'www.youtube-nocookie.com/embed/aaaaaaaaaaa') &&
     str_contains($detail_html, 'Watch on YouTube'),
     'Single message renders official YouTube embed and playback fallback');
-$_GET=array('message'=>'ccccccccccc');
+$_GET=array('sm_video'=>'ccccccccccc');
 $hidden_html=surfside_tools_public_message_archive_shortcode();
 check(str_contains($hidden_html, 'Message unavailable') &&
     !str_contains($hidden_html, 'youtube-nocookie.com/embed'),
     'Excluded video is not embeddable through direct URL');
-$_GET=array('series'=>'PLHIDDEN123456');
+$_GET=array('sm_series'=>'PLHIDDEN123456');
 $hidden_series=surfside_tools_public_message_archive_shortcode();
 check(str_contains($hidden_series,'No messages match your search'), 'Hidden series cannot be browsed via URL');
 
