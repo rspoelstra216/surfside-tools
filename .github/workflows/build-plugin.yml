@@ -43,6 +43,9 @@ jobs:
       - name: Test YouTube message manager review decisions
         run: php scripts/test-youtube-message-manager.php
 
+      - name: Test YouTube Integrations dashboard POST routing
+        run: php scripts/test-youtube-settings-post.php
+
       - name: Test mobile calendar recurrence metadata
         run: php scripts/test-mobile-calendar-recurrence.php
 
