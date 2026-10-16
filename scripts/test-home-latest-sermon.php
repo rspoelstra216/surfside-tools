@@ -91,6 +91,19 @@ check(str_contains($html, 'object-fit:contain') && str_contains($html, 'aspect-r
     'Preview image keeps original 16:9 composition');
 check(str_contains($html, '@media(max-width:780px)') && str_contains($html, '@media(max-width:480px)'),
     'Preview includes tablet and mobile layout rules');
+check(str_contains($html, 'width:100vw')
+    && str_contains($html, 'max-width:none!important')
+    && str_contains($html, 'margin-left:calc(50% - 50vw)!important')
+    && str_contains($html, 'margin-right:calc(50% - 50vw)!important'),
+    'Shortcode section escapes constrained WordPress Group and content width');
+check(str_contains($html, 'background:#fff;font-family:inherit'),
+    'Section background is white rather than tinted gray');
+check(str_contains($html, '.surfside-home-sermon__inner{width:100%;max-width:1160px;margin:0 auto}'),
+    'Full-width section retains centered, readable inner content');
+check(str_contains($html, '.surfside-home-sermon__feature{display:grid;grid-template-columns:')
+    && str_contains($html, 'background:#fff;border:1px solid var(--shs-border)'),
+    'Existing responsive video preview and neutral card are preserved');
+
 check(!str_contains($html, '<iframe') && !str_contains($html, '<video') &&
     !str_contains($html, 'autoplay') && !str_contains($html, 'manifest/video'),
     'Home preview never embeds or streams the video');
