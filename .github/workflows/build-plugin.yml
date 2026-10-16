@@ -40,6 +40,9 @@ jobs:
       - name: Test YouTube sermon archive integration
         run: php scripts/test-youtube-sermon-archive.php
 
+      - name: Test YouTube message manager review decisions
+        run: php scripts/test-youtube-message-manager.php
+
       - name: Test mobile calendar recurrence metadata
         run: php scripts/test-mobile-calendar-recurrence.php
 
