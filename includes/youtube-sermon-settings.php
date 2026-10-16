@@ -212,8 +212,10 @@ function surfside_tools_youtube_settings_panel() {
                             · <strong>Excluded videos:</strong> <?php echo esc_html(number_format_i18n($excluded)); ?>
                         <?php endif; ?>
                     </p>
-                    <?php if ($pending_review !== null) : ?>
+                    <?php if ($pending_review !== null && $pending_review > 0) : ?>
                         <p><a href="<?php echo esc_url(surfside_tools_youtube_manager_url(array('archive_status' => 'review'))); ?>">Review remaining videos →</a></p>
+                    <?php elseif ($pending_review === 0) : ?>
+                        <p>All imported videos have been reviewed or have a recognized date.</p>
                     <?php endif; ?>
                     <?php if ($unparsed_title_dates !== null) : ?>
                         <p class="surfside-front-description"><strong>Dates not recognized in YouTube titles:</strong> <?php echo esc_html(number_format_i18n($unparsed_title_dates)); ?>.
