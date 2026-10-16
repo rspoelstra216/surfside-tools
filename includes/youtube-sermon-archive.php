@@ -120,11 +120,11 @@ function surfside_tools_youtube_resolve_channel($reference) {
 }
 
 /**
- * Sermon date comes from the title: "04 October 26" => 2026-10-04.
+ * Sermon date comes from the title: "04 October 26" or "4 October, 2026" => 2026-10-04.
  * Never substitute YouTube upload time for sermon time.
  */
 function surfside_tools_youtube_sermon_date($title) {
-    if (!preg_match('/\b([0-3]?\d)\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{2}|\d{4})\b/i', (string) $title, $m)) {
+    if (!preg_match('/\b([0-3]?\d)\s+(January|February|March|April|May|June|July|August|September|October|November|December)(?:\s*,\s*|\s+)(\d{4}|\d{2})\b/i', (string) $title, $m)) {
         return '';
     }
     $year = strlen($m[3]) === 2 ? 2000 + (int) $m[3] : (int) $m[3];
