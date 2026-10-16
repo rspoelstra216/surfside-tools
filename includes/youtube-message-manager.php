@@ -64,8 +64,8 @@ function surfside_tools_youtube_review_disposition($row) {
 
 /** Staff-only URLs; never accept arbitrary redirect destinations from a POST. */
 function surfside_tools_youtube_manager_url($args = array()) {
-    $url = surfside_tools_staff_page_url('site-management/message-archive');
-    return $args ? add_query_arg($args, $url) : $url;
+    return add_query_arg(array_merge(array('view' => 'message-archive'), (array) $args),
+        surfside_tools_staff_page_url('site-management'));
 }
 
 function surfside_tools_youtube_review_excluded_series() {
@@ -495,7 +495,8 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
 
             <?php else : ?>
                 <section class="surfside-yt-panel">
-                    <form class="surfside-yt-filters" method="get" action="<?php echo esc_url(surfside_tools_youtube_manager_url()); ?>">
+                    <form class="surfside-yt-filters" method="get" action="<?php echo esc_url(surfside_tools_staff_page_url('site-management')); ?>">
+                        <input type="hidden" name="view" value="message-archive">
                         <div class="surfside-yt-search">
                             <label for="surfside-yt-q">Search videos or series</label>
                             <input id="surfside-yt-q" type="search" name="archive_q" value="<?php echo esc_attr($filters['search']); ?>" placeholder="Title or series">
