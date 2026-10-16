@@ -173,6 +173,13 @@ check(surfside_tools_youtube_channel_identifier('https://www.youtube.com/@addpas
 check(surfside_tools_youtube_channel_identifier('https://example.com/@other') === '',
     'Unknown website URLs rejected');
 check(surfside_tools_youtube_sermon_date('04 October 26 My Message') === '2026-10-04', 'Sermon date is parsed from title');
+check(surfside_tools_youtube_sermon_date('What We Have Learned – Finish Well – Week 5 – 23 August, 2026') === '2026-08-23', 'Four-digit year preceded by comma is parsed');
+check(surfside_tools_youtube_sermon_date('Finishing the Race Well – Finish Well – Week 4 – 16 August, 2026') === '2026-08-16', 'Real imported message with comma date is parsed');
+check(surfside_tools_youtube_sermon_date('Anchored in the Word – Finish Well – Week 3 – 9 August, 2026') === '2026-08-09', 'One-digit day with comma and long year is parsed');
+check(surfside_tools_youtube_sermon_date('Walking Daily With Jesus – 12 July,2026') === '2026-07-12', 'Comma without trailing space is parsed');
+check(surfside_tools_youtube_sermon_date('23 August 2026') === '2026-08-23', 'Unpunctuated long year remains supported');
+check(surfside_tools_youtube_sermon_date('23 August, 26') === '2026-08-23', 'Comma with two-digit year is parsed');
+check(surfside_tools_youtube_sermon_date('31 February, 2026') === '', 'Impossible dates with comma are rejected');
 check(surfside_tools_youtube_sermon_date('31 February 26') === '', 'Impossible dates are rejected');
 check(surfside_tools_youtube_sermon_date('No date in title') === '', 'No substitution with upload date');
 
