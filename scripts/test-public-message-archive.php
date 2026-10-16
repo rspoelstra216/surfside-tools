@@ -1,0 +1,236 @@
+<?php
+/**
+ * Regression tests for public WordPress Messages archive.
+ * Run: php scripts/test-public-message-archive.php
+ */
+define('ABSPATH', __DIR__ . '/');
+define('ARRAY_A', 'ARRAY_A');
+define('OBJECT', 'OBJECT');
+const SURFSIDE_YT_SCHEMA_OPTION = 'surfside_tools_youtube_schema';
+const SURFSIDE_YT_SCHEMA_VERSION = 1;
+
+$GLOBALS['test_actions'] = array();
+$GLOBALS['test_shortcodes'] = array();
+$GLOBALS['test_options'] = array(SURFSIDE_YT_SCHEMA_OPTION=>1, 'surfside_tools_youtube_review_schema'=>1);
+$GLOBALS['test_is_admin'] = false;
+$GLOBALS['test_draft'] = true;
+$GLOBALS['test_can_edit'] = true;
+$GLOBALS['test_existing_page'] = null;
+$GLOBALS['test_inserted_pages'] = array();
+$GLOBALS['test_api_requests'] = 0;
+
+class WP_Post {
+    public $ID = 22;
+    public $post_content = '';
+    public function __construct($id = 22, $content = '') { $this->ID = $id; $this->post_content = $content; }
+}
+class WP_Error {
+    public function __construct(private $code, private $message) {}
+    public function get_error_message() { return $this->message; }
+}
+function is_wp_error($v) { return $v instanceof WP_Error; }
+function add_action($hook, $func, $priority=10) { $GLOBALS['test_actions'][$hook] = $func; }
+function add_shortcode($name, $callback) { $GLOBALS['test_shortcodes'][$name] = $callback; }
+function is_admin() { return $GLOBALS['test_is_admin']; }
+function current_user_can($permission, $id = null) {
+    return $permission === 'manage_options' || ($permission === 'edit_post' && $GLOBALS['test_can_edit']);
+}
+function surfside_tools_youtube_tables() {
+    return array('videos'=>'wp_surfside_yt_videos','playlists'=>'wp_surfside_yt_playlists','members'=>'wp_surfside_yt_members');
+}
+function surfside_tools_youtube_state() { return array('master_id'=>'PLMESSAGES1234','status'=>'complete'); }
+function surfside_tools_youtube_valid_playlist_id($v) { return is_string($v) && preg_match('/^[A-Za-z0-9_-]{10,100}$/', $v); }
+function surfside_tools_youtube_review_is_ready() {
+    return get_option('surfside_tools_youtube_review_schema', 0) >= 1;
+}
+function surfside_tools_youtube_review_table() { return 'wp_surfside_yt_video_review'; }
+function surfside_tools_youtube_review_excluded_series() { return array('PLHIDDEN123456'=>1); }
+function get_option($name, $default = false) { return $GLOBALS['test_options'][$name] ?? $default; }
+function update_option($name, $value, $autoload = false) { $GLOBALS['test_options'][$name] = $value; return true; }
+function is_stringish($v) { return is_string($v); }
+function sanitize_text_field($v) { return trim(strip_tags((string) $v)); }
+function sanitize_key($v) { return preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $v)); }
+function wp_unslash($v) { return stripslashes($v); }
+function absint($v) { return abs((int)$v); }
+function get_queried_object_id() { return 22; }
+function get_permalink($id) { return 'https://example.org/messages/'; }
+function get_post_status($id) { return $GLOBALS['test_draft'] ? 'draft' : 'publish'; }
+function get_post($id) { return new WP_Post($id); }
+function get_preview_post_link($post) { return 'https://example.org/?page_id=22&preview=true'; }
+function home_url($path = '') { return 'https://example.org' . $path; }
+function add_query_arg($args, $url) {
+    $parts = parse_url($url);
+    parse_str($parts['query'] ?? '', $query);
+    $query = array_merge($query, $args);
+    $base = $parts['scheme'].'://'.$parts['host'].($parts['path'] ?? '/');
+    return $base.'?'.http_build_query($query,'','&',PHP_QUERY_RFC3986);
+}
+function esc_html($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+function esc_attr($v) { return esc_html($v); }
+function esc_url($v) { return esc_html($v); }
+function number_format_i18n($v) { return number_format($v); }
+function selected($value, $match) { echo $value === $match ? ' selected="selected"' : ''; }
+function wp_date($format, $timestamp = null, $timezone = null) {
+    return gmdate($format, $timestamp ?? strtotime('2026-10-16T12:00:00Z'));
+}
+function get_page_by_path($slug, $output, $type) { return $GLOBALS['test_existing_page']; }
+function wp_insert_post($args, $error = false) { $GLOBALS['test_inserted_pages'][] = $args; return 22; }
+
+class PublicMessagesDB {
+    public $sql = array();
+    public $list_rows = array();
+    public function __construct() {
+        $this->list_rows = array(
+            array('video_id'=>'aaaaaaaaaaa','title'=>'Made to Serve 18 October 26','thumbnail_url'=>'https://i.ytimg.com/vi/aaaaaaaaaaa/mqdefault.jpg','message_date'=>'2026-10-18'),
+            array('video_id'=>'bbbbbbbbbbb','title'=>'Blessed <script>alert(1)</script>','thumbnail_url'=>'','message_date'=>null),
+        );
+    }
+    public function esc_like($value) { return addcslashes($value, '_%\\'); }
+    public function prepare($query, ...$params) {
+        if (count($params) === 1 && is_array($params[0])) $params = $params[0];
+        $i = 0;
+        return preg_replace_callback('/%[ds]/', function ($m) use (&$i, $params) {
+            $v = $params[$i++];
+            return $m[0] === '%d' ? (string) (int) $v
+                : "'" . str_replace("'", "''", (string)$v) . "'";
+        }, $query);
+    }
+    public function get_var($sql) {
+        $this->sql[] = $sql;
+        if (str_contains($sql, 'COUNT(*)')) return 2;
+        throw new RuntimeException('Unexpected scalar SQL '.$sql);
+    }
+    public function get_results($sql, $mode = null) {
+        $this->sql[] = $sql;
+        if (str_contains($sql, 'AS message_count')) {
+            return array(
+                array('playlist_id'=>'PLSERIES12345','title'=>'Made for More','message_count'=>2,'newest_date'=>'2026-10-18','sample_thumbnail'=>'https://i.ytimg.com/series.jpg'),
+                array('playlist_id'=>'PLHIDDEN123456','title'=>'Hidden Series','message_count'=>1,'newest_date'=>'2026-09-10','sample_thumbnail'=>''),
+            );
+        }
+        if (str_contains($sql, 'LIMIT 12 OFFSET')) return $this->list_rows;
+        if (str_contains($sql, 'SELECT p.playlist_id, p.title')) return array(
+            array('playlist_id'=>'PLSERIES12345','title'=>'Made for More')
+        );
+        throw new RuntimeException('Unexpected list SQL '.$sql);
+    }
+    public function get_row($sql, $mode = null) {
+        $this->sql[] = $sql;
+        if (str_contains($sql, "'ccccccccccc'")) return null; // excluded video never displayed
+        if (str_contains($sql, "'aaaaaaaaaaa'")) return $this->list_rows[0];
+        return null;
+    }
+}
+$GLOBALS['wpdb'] = new PublicMessagesDB();
+
+require dirname(__DIR__) . '/includes/public-message-archive.php';
+function check($condition, $label) { if (!$condition) throw new RuntimeException($label); }
+
+check($GLOBALS['wpdb']->sql === array(), 'Module inclusion does not query database');
+check($GLOBALS['test_inserted_pages'] === array(), 'Module inclusion does not create pages');
+check(isset($GLOBALS['test_shortcodes']['surfside_message_archive']), 'Shortcode registered');
+check(isset($GLOBALS['test_actions']['admin_init']), 'Draft provisioning registered on admin_init');
+
+$url = surfside_tools_public_messages_page_url(array('series'=>'PLSERIES12345','archive_page'=>2));
+check(str_contains($url, 'preview=true') && str_contains($url, 'page_id=22') &&
+    str_contains($url, 'series=PLSERIES12345') && str_contains($url, 'archive_page=2'),
+    'Draft preview links retain original WP preview URL and filters');
+$GLOBALS['test_draft'] = false;
+check(str_starts_with(surfside_tools_public_messages_page_url(), 'https://example.org/messages/'),
+    'Published archive uses canonical permalink');
+$GLOBALS['test_draft'] = true;
+
+$filters = surfside_tools_public_messages_filters(array(
+    'q'=>'Serve%_', 'year'=>'2026', 'series'=>'PLSERIES12345','archive_page'=>'3','message'=>'aaaaaaaaaaa'
+));
+check($filters['q']==='Serve%_' && $filters['page']===3 && $filters['message']==='aaaaaaaaaaa',
+    'Search, series, date and video filter values accepted');
+$bad = surfside_tools_public_messages_filters(array(
+    'q'=>str_repeat('x',200),'year'=>'2026<script>','series'=>'invalid!','message'=>'evil',
+    'browse'=>'hacked', 'archive_page'=>'999999999999'
+));
+check(strlen($bad['q'])===100 && $bad['year']==='' && $bad['series']==='' &&
+    $bad['message']==='' && $bad['browse']==='messages' && $bad['page']<=100000,
+    'Public inputs sanitized and bounded');
+
+$parts = surfside_tools_public_messages_sql();
+check(str_contains($parts['join'], 'surfside_yt_video_review') &&
+    str_contains($parts['date'], 'COALESCE') && str_contains($parts['visible'], "r.disposition <> 'exclude'"),
+    'Staff exclusion and manual date are authoritative');
+$GLOBALS['test_options']['surfside_tools_youtube_review_schema']=0;
+check(surfside_tools_public_messages_sql()['join']==='', 'No invalid JOIN before review table exists');
+$GLOBALS['test_options']['surfside_tools_youtube_review_schema']=1;
+
+$archive = surfside_tools_public_messages_list('PLMESSAGES1234', $filters);
+check($archive['total']===2 && $archive['page']===1 && count($archive['rows'])===2,
+    'Video list is bounded and paginated');
+$sql_text = implode("\n", $GLOBALS['wpdb']->sql);
+check(str_contains($sql_text, "r.disposition <> 'exclude'"), 'Public list omits excluded videos');
+check(str_contains($sql_text, 'COALESCE(r.manual_date, v.sermon_date)'), 'Public sort and filters use manual dates');
+check(str_contains($sql_text, 'Serve\\%\\_'), 'User search safely escapes SQL LIKE wildcards');
+check(str_contains($sql_text, 'LIMIT 12 OFFSET 0'), 'Only one bounded page of metadata is loaded');
+check(str_contains($sql_text, "playlist_id = 'PLMESSAGES1234'"), 'Only master-playlist sermons are listed');
+
+$GLOBALS['wpdb']->sql = array();
+$series = surfside_tools_public_messages_series('PLMESSAGES1234');
+check(count($series)===1 && $series[0]['title']==='Made for More',
+    'Hidden series removed from public series list');
+check(str_contains(implode("\n", $GLOBALS['wpdb']->sql), "r.disposition <> 'exclude'"),
+    'Series counts exclude hidden videos');
+$detail = surfside_tools_public_messages_detail('PLMESSAGES1234', 'aaaaaaaaaaa');
+check($detail['title']==='Made to Serve 18 October 26', 'Allowed detail fetched');
+check(surfside_tools_public_messages_detail('PLMESSAGES1234', 'ccccccccccc')===null,
+    'Excluded video cannot be opened directly');
+check(surfside_tools_public_messages_detail('PLMESSAGES1234', 'invalid')===null,
+    'Bad video IDs do not reach database');
+
+$_GET = array();
+$html = surfside_tools_public_message_archive_shortcode();
+check(str_contains($html, 'Latest message') && str_contains($html,'Made to Serve'),
+    'Latest dated message appears in featured hero');
+check(substr_count($html, 'class="surfside-public-messages__video"')===1,
+    'Featured video does not repeat in video grid');
+check(!str_contains($html, 'Hidden Series'), 'Hidden series never in public HTML');
+check(str_contains($html, 'Made for More'), 'Public series browsing provided');
+check(str_contains($html, 'Blessed &lt;script&gt;alert(1)&lt;/script&gt;'),
+    'Video title is HTML-escaped');
+check(str_contains($html, 'Date not available'), 'Undated included videos remain visible');
+
+$_GET=array('browse'=>'series');
+$series_html = surfside_tools_public_message_archive_shortcode();
+check(str_contains($series_html, 'Sermon Series') && !str_contains($series_html, 'Hidden Series'),
+    'Series tab renders with hidden series excluded');
+$_GET=array('message'=>'aaaaaaaaaaa');
+$detail_html=surfside_tools_public_message_archive_shortcode();
+check(str_contains($detail_html,'www.youtube-nocookie.com/embed/aaaaaaaaaaa') &&
+    str_contains($detail_html, 'Watch on YouTube'),
+    'Single message renders official YouTube embed and playback fallback');
+$_GET=array('message'=>'ccccccccccc');
+$hidden_html=surfside_tools_public_message_archive_shortcode();
+check(str_contains($hidden_html, 'Message unavailable') &&
+    !str_contains($hidden_html, 'youtube-nocookie.com/embed'),
+    'Excluded video is not embeddable through direct URL');
+$_GET=array('series'=>'PLHIDDEN123456');
+$hidden_series=surfside_tools_public_message_archive_shortcode();
+check(str_contains($hidden_series,'No messages match your search'), 'Hidden series cannot be browsed via URL');
+
+$GLOBALS['test_is_admin']=false;
+surfside_tools_public_messages_provision_page();
+check(count($GLOBALS['test_inserted_pages'])===0,'No draft page creation on public requests');
+$GLOBALS['test_is_admin']=true;
+surfside_tools_public_messages_provision_page();
+check(count($GLOBALS['test_inserted_pages'])===1 &&
+    $GLOBALS['test_inserted_pages'][0]['post_status']==='draft' &&
+    $GLOBALS['test_inserted_pages'][0]['post_content']==='[surfside_message_archive]',
+    'First admin visit creates a DRAFT shortcode page, not a live public page');
+surfside_tools_public_messages_provision_page();
+check(count($GLOBALS['test_inserted_pages'])===1, 'Schema provisioning is one-time');
+unset($GLOBALS['test_options'][SURFSIDE_PUBLIC_MESSAGES_PAGE_OPTION]);
+$GLOBALS['test_existing_page']=new WP_Post(43, 'Existing custom content');
+surfside_tools_public_messages_provision_page();
+check(count($GLOBALS['test_inserted_pages'])===1,
+    'Existing user-authored /messages/ pages are not overwritten');
+
+check($GLOBALS['test_api_requests']===0,
+    'Public browsing does not call YouTube or download media');
+echo "Public YouTube Messages archive and draft provisioning checks passed.\n";

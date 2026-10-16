@@ -49,6 +49,9 @@ jobs:
       - name: Test YouTube import status and review counters
         run: php scripts/test-youtube-review-summary.php
 
+      - name: Test public YouTube Messages archive
+        run: php scripts/test-public-message-archive.php
+
       - name: Test mobile calendar recurrence metadata
         run: php scripts/test-mobile-calendar-recurrence.php
 
