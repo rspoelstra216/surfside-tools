@@ -261,8 +261,10 @@ $GLOBALS['wpdb']->sql = array();
 $_GET=array('sm_year'=>'2026');
 $year_html=surfside_tools_public_message_archive_shortcode();
 check(str_contains($year_html, 'messages found')
-    && str_contains(implode("\n", $GLOBALS['wpdb']->sql), 'YEAR(COALESCE(r.manual_date, v.sermon_date)) = 2026'),
-    'Year filter reaches archive metadata without WordPress post archive routing');
+    && str_contains(implode("\n", $GLOBALS['wpdb']->sql), 'YEAR(COALESCE(')
+    && str_contains(implode("\n", $GLOBALS['wpdb']->sql), "r.disposition = 'include'")
+    && str_contains(implode("\n", $GLOBALS['wpdb']->sql), '= 2026'),
+    'Year filter reaches metadata including staff-included YouTube publication fallback');
 
 $GLOBALS['wpdb']->sql = array();
 $_GET=array('sm_series'=>'PLSERIES12345');
