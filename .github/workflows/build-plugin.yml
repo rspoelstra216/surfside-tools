@@ -37,6 +37,9 @@ jobs:
       - name: Test archived sermon viewer access and queries
         run: php scripts/test-sermon-archive-viewer.php
 
+      - name: Test YouTube sermon archive integration
+        run: php scripts/test-youtube-sermon-archive.php
+
       - name: Test mobile calendar recurrence metadata
         run: php scripts/test-mobile-calendar-recurrence.php
 

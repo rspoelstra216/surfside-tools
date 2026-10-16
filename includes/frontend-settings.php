@@ -232,6 +232,8 @@ function surfside_tools_staff_settings_shortcode() {
             </div>
         </details>
 
+        <?php if (function_exists('surfside_tools_youtube_settings_panel')) echo surfside_tools_youtube_settings_panel(); ?>
+
         <?php echo surfside_tools_twitch_settings_panel(); ?>
 
         <?php if (function_exists('surfside_tools_visual_css_settings_panel')) echo surfside_tools_visual_css_settings_panel(); ?>
