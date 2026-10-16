@@ -220,6 +220,51 @@ function surfside_tools_youtube_review_video_series($video_id) {
     ));
 }
 
+/**
+ * Persist only staff decisions, separate from YouTube's synchronized metadata.
+ * These functions have no effect on the master playlist or YouTube titles.
+ */
+function surfside_tools_youtube_review_save_video($master, $id, $date, $decision) {
+    if (!preg_match('/^[A-Za-z0-9_-]{11}$/', (string) $id)
+        || !in_array($decision, array('include', 'review', 'exclude'), true)
+        || surfside_tools_youtube_review_validate_date($date) === false
+        || !surfside_tools_youtube_review_video($master, $id)) {
+        return new WP_Error('surfside_youtube_review_invalid_video', 'The video or review decision is invalid.');
+    }
+
+    $ready = surfside_tools_youtube_review_ensure_table();
+    if (is_wp_error($ready)) return $ready;
+
+    global $wpdb;
+    $saved = $wpdb->replace(surfside_tools_youtube_review_table(), array(
+        'video_id' => $id,
+        'manual_date' => $date !== '' ? $date : null,
+        'disposition' => $decision,
+        'updated_at' => current_time('mysql', true),
+    ));
+    return $saved !== false ? true : new WP_Error('surfside_youtube_review_write', 'The review could not be saved.');
+}
+
+function surfside_tools_youtube_review_save_series($id, $hide) {
+    if (!surfside_tools_youtube_valid_playlist_id($id)) {
+        return new WP_Error('surfside_youtube_review_invalid_series', 'Invalid playlist.');
+    }
+    global $wpdb;
+    $t = surfside_tools_youtube_tables();
+    $exists = $wpdb->get_var($wpdb->prepare(
+        "SELECT playlist_id FROM {$t['playlists']} WHERE playlist_id = %s AND category = 'series'",
+        $id
+    ));
+    if ($exists !== $id) {
+        return new WP_Error('surfside_youtube_review_unknown_series', 'Playlist is not a discovered sermon series.');
+    }
+    $excluded = surfside_tools_youtube_review_excluded_series();
+    if ($hide) $excluded[$id] = 1;
+    else unset($excluded[$id]);
+    update_option(SURFSIDE_YT_SERIES_EXCLUDED_OPTION, $excluded, false);
+    return true;
+}
+
 /** Save one staff decision, never modifying the imported video data. */
 function surfside_tools_youtube_review_handle_post() {
     if (!current_user_can('upload_files')) {
@@ -245,42 +290,17 @@ function surfside_tools_youtube_review_handle_post() {
 
         if ($date === false) {
             $notice = 'bad_date';
-        } elseif (in_array($decision, array('include', 'review', 'exclude'), true)
-            && surfside_tools_youtube_review_video($master, $id)) {
-            $ready = surfside_tools_youtube_review_ensure_table();
-            if (is_wp_error($ready)) {
-                $notice = 'error';
-            } else {
-                global $wpdb;
-                $saved = $wpdb->replace(surfside_tools_youtube_review_table(), array(
-                    'video_id' => $id,
-                    'manual_date' => $date !== '' ? $date : null,
-                    'disposition' => $decision,
-                    'updated_at' => current_time('mysql', true),
-                ));
-                $notice = $saved !== false ? 'saved' : 'error';
-            }
+        } else {
+            $saved = surfside_tools_youtube_review_save_video($master, $id, $date, $decision);
+            $notice = is_wp_error($saved) ? 'error' : 'saved';
         }
     } elseif ($master !== '' && $mode === 'series') {
         $id = isset($_POST['playlist_id']) && is_string($_POST['playlist_id'])
             ? sanitize_text_field(wp_unslash($_POST['playlist_id'])) : '';
         $hide = !empty($_POST['hide_series']);
         $redirect_args['tab'] = 'series';
-        if (surfside_tools_youtube_valid_playlist_id($id)) {
-            global $wpdb;
-            $t = surfside_tools_youtube_tables();
-            $exists = $wpdb->get_var($wpdb->prepare(
-                "SELECT playlist_id FROM {$t['playlists']} WHERE playlist_id = %s AND category = 'series'",
-                $id
-            ));
-            if ($exists === $id) {
-                $excluded = surfside_tools_youtube_review_excluded_series();
-                if ($hide) $excluded[$id] = 1;
-                else unset($excluded[$id]);
-                update_option(SURFSIDE_YT_SERIES_EXCLUDED_OPTION, $excluded, false);
-                $notice = 'saved';
-            }
-        }
+        $saved = surfside_tools_youtube_review_save_series($id, $hide);
+        $notice = is_wp_error($saved) ? 'invalid' : 'saved';
     }
 
     $redirect_args['review_notice'] = $notice;
