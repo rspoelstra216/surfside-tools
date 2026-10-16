@@ -157,6 +157,114 @@ function surfside_tools_detect_announcement_date_from_text($all_text) {
     return '';
 }
 
+/**
+ * Normalize Word's numbered lists and manually typed "1."/"1)" entries.
+ * DOCX numbering properties are optional: church announcements are often
+ * written as plain text inside Word text boxes.
+ */
+function surfside_tools_announcement_is_numbered($text, $word_numbered = false) {
+    return $word_numbered || (bool) preg_match('/^\s*\d{1,2}[.)]\s+\S/u', $text);
+}
+
+function surfside_tools_announcement_is_heading_or_date($text) {
+    $text = trim($text);
+    if ($text === '') {
+        return true;
+    }
+    if (preg_match('/^(?:weekly\s+)?announcements(?:\s+for\s+.+)?$/i', $text)) {
+        return true;
+    }
+    // The publication date belongs in the date field, not in the list.
+    return surfside_tools_detect_announcement_date_from_text($text) === $text;
+}
+
+/**
+ * Convert ordered Word paragraph records to content items.
+ * Introductory paragraphs before item one remain a separate entry. Word's
+ * renderer supplies <ol> numbering, so handwritten list digits are stripped.
+ */
+function surfside_tools_parse_announcement_records($records) {
+    $items = array();
+    $current = '';
+    $kind = '';
+    $numbered_count = 0;
+    $wrapped = 0;
+    $junk_removed = 0;
+
+    $flush = function () use (&$items, &$current, &$kind) {
+        $value = trim($current);
+        if ($value !== '' && strlen($value) < 1500) {
+            $items[] = $value;
+        }
+        $current = '';
+        $kind = '';
+    };
+
+    foreach ($records as $record) {
+        $text = surfside_tools_clean_announcement_text(isset($record['text']) ? $record['text'] : '');
+        if ($text === '') {
+            // A blank line separates independent introductory messages, but
+            // does not interrupt paragraphs wrapped within a numbered item.
+            if ($kind === 'intro') {
+                $flush();
+            }
+            continue;
+        }
+        if (surfside_tools_is_junk_paragraph($text) || surfside_tools_announcement_is_heading_or_date($text)) {
+            $junk_removed++;
+            continue;
+        }
+
+        $numbered = surfside_tools_announcement_is_numbered($text, !empty($record['numbered']));
+        if ($numbered) {
+            $flush();
+            $current = trim(preg_replace('/^\s*\d{1,2}[.)]\s+/u', '', $text));
+            $kind = 'numbered';
+            $numbered_count++;
+            continue;
+        }
+        if ($current !== '') {
+            $current .= ' ' . $text;
+            $wrapped++;
+        } else {
+            $current = $text;
+            $kind = 'intro';
+        }
+    }
+    $flush();
+
+    // Without numbered markers this is not a trustworthy announcement import.
+    if ($numbered_count === 0) {
+        $items = array();
+    }
+
+    $deduped = array();
+    $seen = array();
+    $duplicates_removed = 0;
+    foreach ($items as $item) {
+        $key = surfside_tools_announcement_normalize_key($item);
+        if ($key === '') {
+            continue;
+        }
+        if (isset($seen[$key])) {
+            $duplicates_removed++;
+            continue;
+        }
+        $seen[$key] = true;
+        $deduped[] = $item;
+    }
+
+    return array(
+        'items' => $deduped,
+        'report' => array(
+            'found' => count($deduped),
+            'wrapped_continuations' => $wrapped,
+            'junk_removed' => $junk_removed,
+            'duplicates_removed' => $duplicates_removed,
+        ),
+    );
+}
+
 function surfside_tools_extract_numbered_announcements_from_docx($file_path) {
     if (!class_exists('ZipArchive')) {
         return new WP_Error('zip_missing', 'The PHP ZipArchive extension is not available on this server.');
@@ -164,7 +272,6 @@ function surfside_tools_extract_numbered_announcements_from_docx($file_path) {
     if (!class_exists('DOMDocument')) {
         return new WP_Error('dom_missing', 'The PHP DOM extension is not available on this server.');
     }
-
     $zip = new ZipArchive();
     if ($zip->open($file_path) !== true) {
         return new WP_Error('zip_open_failed', 'Could not open the DOCX file.');
@@ -186,89 +293,49 @@ function surfside_tools_extract_numbered_announcements_from_docx($file_path) {
 
     $xpath = new DOMXPath($dom);
     $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
-    $paragraphs = $xpath->query('//w:p');
+    $paragraphs = $xpath->query('//w:body//w:p[not(ancestor::w:txbxContent)]');
 
-    $items = array();
-    $current = '';
-    $all_paragraph_text = array();
-    $seen_paragraph_keys = array();
+    $records = array();
+    $all_text = array();
+    $seen_textboxes = array();
     $duplicate_paragraphs_removed = 0;
-    $wrapped_continuations = 0;
-    $junk_removed = 0;
 
     foreach ($paragraphs as $paragraph) {
-        $text = surfside_tools_docx_paragraph_text($paragraph);
+        // A parent paragraph can also contain the complete text of its
+        // anchored boxes. Exclude that content here to avoid double parsing.
+        $text = surfside_tools_clean_announcement_text(surfside_tools_docx_node_text_excluding_textboxes($paragraph));
         if ($text !== '') {
-            $all_paragraph_text[] = $text;
+            $records[] = array('text' => $text, 'numbered' => surfside_tools_docx_paragraph_is_numbered($paragraph, $xpath));
+            $all_text[] = $text;
         }
 
-        if (surfside_tools_is_junk_paragraph($text)) {
-            $junk_removed++;
-            continue;
-        }
-
-        // Some announcement documents contain duplicated hidden/text-box paragraphs.
-        // Skip duplicate paragraph text before it can be appended to the previous item.
-        $paragraph_key = surfside_tools_announcement_normalize_key($text);
-        if ($paragraph_key !== '' && isset($seen_paragraph_keys[$paragraph_key])) {
-            $duplicate_paragraphs_removed++;
-            continue;
-        }
-        if ($paragraph_key !== '') {
-            $seen_paragraph_keys[$paragraph_key] = true;
-        }
-
-        $is_numbered = surfside_tools_docx_paragraph_is_numbered($paragraph, $xpath);
-
-        if ($is_numbered) {
-            if ($current !== '') $items[] = trim($current);
-            $current = $text;
-        } else {
-            // Treat wrapped/non-numbered paragraphs after a numbered item as continuation text.
-            // Use a space, not paragraph breaks, because the secretary's Word docs wrap lines.
-            if ($current !== '') {
-                $current .= ' ' . $text;
-                $wrapped_continuations++;
+        foreach ($xpath->query('.//w:txbxContent', $paragraph) as $textbox) {
+            $box_records = array();
+            $box_texts = array();
+            foreach ($xpath->query('.//w:p', $textbox) as $box_paragraph) {
+                $line = surfside_tools_clean_announcement_text(surfside_tools_docx_paragraph_text($box_paragraph));
+                $box_records[] = array('text' => $line, 'numbered' => surfside_tools_docx_paragraph_is_numbered($box_paragraph, $xpath));
+                $box_texts[] = $line;
+            }
+            $key = surfside_tools_announcement_normalize_key(implode(' ', $box_texts));
+            if ($key === '' || isset($seen_textboxes[$key])) {
+                $duplicate_paragraphs_removed += count($box_records);
+                continue;
+            }
+            $seen_textboxes[$key] = true;
+            foreach ($box_records as $record) {
+                $records[] = $record;
+                if ($record['text'] !== '') {
+                    $all_text[] = $record['text'];
+                }
             }
         }
     }
 
-    if ($current !== '') $items[] = trim($current);
-
-    $items = array_values(array_filter($items, function($item) {
-        return strlen($item) < 1500;
-    }));
-
-    $deduped = array();
-    $seen = array();
-    $duplicates_removed = 0;
-
-    foreach ($items as $item) {
-        $item = surfside_tools_clean_announcement_text($item);
-        $key = surfside_tools_announcement_normalize_key($item);
-        if ($key === '') continue;
-        if (!isset($seen[$key])) {
-            $seen[$key] = true;
-            $deduped[] = $item;
-        } else {
-            $duplicates_removed++;
-        }
-    }
-
-    $all_text = implode(' ', $all_paragraph_text);
-    $detected_date = surfside_tools_detect_announcement_date_from_text($all_text);
-
-    return array(
-        'items' => $deduped,
-        'date'  => $detected_date,
-        'report' => array(
-            'found' => count($deduped),
-            'wrapped_continuations' => $wrapped_continuations,
-            'junk_removed' => $junk_removed,
-            'duplicates_removed' => $duplicates_removed,
-            'duplicate_paragraphs_removed' => $duplicate_paragraphs_removed,
-        )
-    );
+    $parsed = surfside_tools_parse_announcement_records($records);
+    $parsed['date'] = surfside_tools_detect_announcement_date_from_text(implode(' ', $all_text));
+    $parsed['report']['duplicate_paragraphs_removed'] = $duplicate_paragraphs_removed;
+    return $parsed;
 }
 
 function surfside_tools_build_announcements_html($items) {
@@ -788,47 +855,42 @@ function surfside_tools_docx_textbox_lines($textbox_node) {
     return $lines;
 }
 
+/**
+ * Extract the *series name* from a heading, not the episode/week suffix.
+ * Keep compatibility with the two older series which lacked WEEK metadata.
+ */
+function surfside_tools_sermon_series_from_line($line) {
+    $line = trim((string) $line);
+    if (preg_match('/^(.+?)\s+SERIES\s*[-:–]?\s*WEEK\s*\d+\s*$/i', $line, $m)) {
+        return surfside_tools_title_case_if_needed(trim($m[1]));
+    }
+    if (preg_match('/^(CHRIST\s*ABOVE\s*ALL\s*-\s*COLOSSIANS|INSIDE\s*OUT\s*-\s*KNOWING\s*YOUR\s*IDENTITY)$/i', $line)) {
+        return $line;
+    }
+    return '';
+}
+
 function surfside_tools_is_sermon_control_line($line) {
     $line = trim($line);
-
-    if ($line === '' || surfside_tools_is_sermon_date_line($line)) {
-        return true;
-    }
-
-    if (preg_match('/^(CHRIST\s*ABOVE\s*ALL\s*-\s*COLOSSIANS|INSIDE\s*OUT\s*-\s*KNOWING\s*YOUR\s*IDENTITY)$/i', $line)) {
-        return true;
-    }
-
-    if (preg_match('/^CITIZENS OF AN ETERNAL KINGDOM$/i', $line)) {
-        return true;
-    }
-
-    return false;
+    return $line === '' ||
+        surfside_tools_is_sermon_date_line($line) ||
+        surfside_tools_sermon_series_from_line($line) !== '' ||
+        preg_match('/^CITIZENS OF AN ETERNAL KINGDOM$/i', $line);
 }
 
 function surfside_tools_textbox_is_sermon_header($box_lines) {
-    $has_date = false;
-    $has_series = false;
-
-    foreach ((array) $box_lines as $line) {
-        $line = trim($line);
-
-        if ($line === '') {
-            continue;
-        }
-
-        if (surfside_tools_extract_sermon_date_from_line($line) !== '') {
-            $has_date = true;
-        }
-
-        if (preg_match('/^(CHRIST\s*ABOVE\s*ALL\s*-\s*COLOSSIANS|INSIDE\s*OUT\s*-\s*KNOWING\s*YOUR\s*IDENTITY)$/i', $line)) {
-            $has_series = true;
-        }
+    $content = array_values(array_filter(array_map('trim', (array) $box_lines), 'strlen'));
+    if (count($content) < 3) {
+        return false;
     }
-
-    // Pastor Erick's title block is a text box containing title, series, and date.
-    // Do not filter it as a normal gray callout, or the public message loses its header.
-    return $has_date && $has_series;
+    // A title/series/date header is deliberately separate from gray quotation
+    // and prayer text boxes. The series can change without a code deployment.
+    $last = $content[count($content) - 1];
+    $series = $content[count($content) - 2];
+    $title = $content[count($content) - 3];
+    return surfside_tools_is_sermon_date_line($last) &&
+        (surfside_tools_sermon_series_from_line($series) !== '' ||
+            (surfside_tools_is_all_caps_heading($title) && surfside_tools_is_all_caps_heading($series)));
 }
 
 function surfside_tools_extract_docx_paragraphs($file_path) {
@@ -1101,109 +1163,82 @@ function surfside_tools_sermon_remove_artifact_lines($lines) {
 }
 
 function surfside_tools_detect_sermon_header($lines) {
-    $header = array(
-        'title' => '',
-        'series' => '',
-        'date' => '',
-        'date_index' => null,
-    );
+    $header = array('title' => '', 'series' => '', 'date' => '', 'date_index' => null);
 
-    $series_regex = '/(CHRIST\s*ABOVE\s*ALL\s*-\s*COLOSSIANS|INSIDE\s*OUT\s*-\s*KNOWING\s*YOUR\s*IDENTITY)/i';
-
-    // 1) Best case: separate lines: TITLE / SERIES / DATE.
+    // The ordinary Word layout is three consecutive lines inside a bordered
+    // text box: title, series (possibly SERIES-WEEK N), and date.
     foreach ($lines as $i => $line) {
         $date = surfside_tools_extract_sermon_date_from_line($line);
-
-        if ($date !== '' && isset($lines[$i - 1]) && preg_match($series_regex, $lines[$i - 1])) {
-            $header['date'] = $date;
-            $header['series'] = trim($lines[$i - 1]);
-            $header['title'] = isset($lines[$i - 2]) ? surfside_tools_collapse_repeated_title($lines[$i - 2]) : '';
-            $header['date_index'] = $i;
-            return $header;
+        if ($date === '' || !isset($lines[$i - 1], $lines[$i - 2])) {
+            continue;
+        }
+        $preceding = trim($lines[$i - 1]);
+        $title = trim($lines[$i - 2]);
+        $series = surfside_tools_sermon_series_from_line($preceding);
+        if ($series === '' && surfside_tools_is_all_caps_heading($title) &&
+            surfside_tools_is_all_caps_heading($preceding) &&
+            !surfside_tools_is_sermon_point_line($title)) {
+            $series = surfside_tools_title_case_if_needed($preceding);
+        }
+        if ($series !== '') {
+            return array(
+                'title' => surfside_tools_collapse_repeated_title($title),
+                'series' => $series,
+                'date' => $date,
+                'date_index' => $i,
+            );
         }
     }
 
-    // 2) Collapsed Word text box: TITLE + SERIES + DATE in one paragraph.
+    // Fallback for a collapsed title/series/date paragraph from older DOCX
+    // producers. Use a marked series boundary when available.
     foreach ($lines as $i => $line) {
         $date = surfside_tools_extract_sermon_date_from_line($line);
-
         if ($date === '') {
             continue;
         }
+        if (preg_match('/\bSERIES\s*[-:–]?\s*WEEK\s*\d+\b/i', $line, $marker, PREG_OFFSET_CAPTURE)) {
+            $before = substr($line, 0, $marker[0][1]);
+            // Text box paragraphs are normally separated above; keep this
+            // fallback conservative instead of guessing a title boundary.
+            $header['series'] = surfside_tools_title_case_if_needed(trim($before));
+        }
+        $header['date'] = $date;
+        $header['date_index'] = $i;
+        break;
+    }
 
-        if (preg_match($series_regex, $line, $sm, PREG_OFFSET_CAPTURE)) {
-            $series = trim($sm[0][0]);
-            $series_pos = $sm[0][1];
-            $title_part = trim(substr($line, 0, $series_pos));
-
-            // The collapsed header often repeats the title before the series.
-            $title_part = surfside_tools_collapse_repeated_title($title_part);
-
-            $header['date'] = $date;
+    // Scan the beginning for a recognized series heading, then infer a title
+    // from the immediately preceding line when possible.
+    foreach ($lines as $i => $line) {
+        $series = surfside_tools_sermon_series_from_line($line);
+        if ($series !== '') {
             $header['series'] = $series;
-            $header['title'] = $title_part;
-            $header['date_index'] = $i;
-
-            if ($header['title'] !== '') {
-                return $header;
+            if (isset($lines[$i - 1]) && surfside_tools_is_all_caps_heading($lines[$i - 1])) {
+                $header['title'] = surfside_tools_collapse_repeated_title($lines[$i - 1]);
             }
-        }
-    }
-
-    // 3) Fallback: find series anywhere, date anywhere, then infer title from nearby all-caps line.
-    foreach ($lines as $i => $line) {
-        if ($header['series'] === '' && preg_match($series_regex, $line, $m)) {
-            $header['series'] = trim($m[0]);
-        }
-
-        if ($header['date'] === '') {
-            $date = surfside_tools_extract_sermon_date_from_line($line);
-            if ($date !== '') {
-                $header['date'] = $date;
-                $header['date_index'] = $i;
-            }
-        }
-    }
-
-    // Infer title from the first clean all-caps line that is not series/date/main heading.
-    foreach ($lines as $i => $line) {
-        $candidate = trim($line);
-
-        if ($candidate === '') {
-            continue;
-        }
-
-        if (preg_match($series_regex, $candidate) || surfside_tools_is_sermon_date_line($candidate)) {
-            continue;
-        }
-
-        if (surfside_tools_is_sermon_point_line($candidate)) {
             break;
         }
+        if (surfside_tools_is_sermon_point_line($line)) {
+            break;
+        }
+    }
 
-        if (surfside_tools_is_all_caps_heading($candidate)) {
-            // Skip likely main heading if the next real line is point 1.
-            if (isset($lines[$i + 1]) && surfside_tools_is_sermon_point_line($lines[$i + 1])) {
-                continue;
+    if ($header['title'] === '') {
+        foreach ($lines as $candidate) {
+            if (surfside_tools_is_sermon_point_line($candidate)) {
+                break;
             }
-
-            // If the candidate is a collapsed header, trim before series if present.
-            if (preg_match($series_regex, $candidate, $sm, PREG_OFFSET_CAPTURE)) {
-                $candidate = trim(substr($candidate, 0, $sm[0][1]));
-            }
-
-            $candidate = surfside_tools_collapse_repeated_title($candidate);
-
-            if ($candidate !== '') {
-                $header['title'] = $candidate;
+            if (!surfside_tools_is_sermon_date_line($candidate) &&
+                surfside_tools_sermon_series_from_line($candidate) === '' &&
+                surfside_tools_is_all_caps_heading($candidate)) {
+                $header['title'] = surfside_tools_collapse_repeated_title($candidate);
                 break;
             }
         }
     }
-
     return $header;
 }
-
 
 function surfside_tools_is_prayer_stop_line($line, $title = '', $series = '', $main_heading = '') {
     $line = trim($line);
@@ -1268,8 +1303,6 @@ function surfside_tools_find_sermon_main_heading($lines, $first_point_index, $ti
         return '';
     }
 
-    $series_regex = '/(CHRIST\s*ABOVE\s*ALL\s*-\s*COLOSSIANS|INSIDE\s*OUT\s*-\s*KNOWING\s*YOUR\s*IDENTITY)/i';
-
     for ($i = $first_point_index - 1; $i >= 0; $i--) {
         $candidate = trim($lines[$i]);
 
@@ -1289,7 +1322,7 @@ function surfside_tools_find_sermon_main_heading($lines, $first_point_index, $ti
             continue;
         }
 
-        if (surfside_tools_is_sermon_date_line($candidate) || preg_match($series_regex, $candidate)) {
+        if (surfside_tools_is_sermon_date_line($candidate) || surfside_tools_sermon_series_from_line($candidate) !== '') {
             continue;
         }
 
@@ -1306,7 +1339,7 @@ function surfside_tools_find_sermon_main_heading($lines, $first_point_index, $ti
         if (
             $candidate !== '' &&
             !surfside_tools_is_sermon_date_line($candidate) &&
-            !preg_match($series_regex, $candidate) &&
+            !surfside_tools_sermon_series_from_line($candidate) !== '' &&
             surfside_tools_is_all_caps_heading($candidate)
         ) {
             return $candidate;
@@ -1366,8 +1399,6 @@ function surfside_tools_parse_sermon_docx($file_path) {
         }
     }
 
-
-    $series_regex = '/(CHRIST\s*ABOVE\s*ALL\s*-\s*COLOSSIANS|INSIDE\s*OUT\s*-\s*KNOWING\s*YOUR\s*IDENTITY)/i';
 
     // Find first numbered point.
     $first_point_index = null;
@@ -1523,7 +1554,14 @@ function surfside_tools_title_case_if_needed($text) {
 
     // Convert obvious all-caps titles to nicer display title case.
     if (preg_match('/^[A-Z0-9\s\?\!\:\;\,\-’\'"&\.]+$/u', $text)) {
-        return ucwords(strtolower($text));
+        $title = ucwords(strtolower($text));
+        // Keep short connecting words natural in sermon and series names,
+        // e.g. "Made to Serve" and "Made for More".
+        return preg_replace_callback(
+            '/(?<=\S)\s+(and|as|at|by|for|in|of|on|or|the|to|a|an)\b/i',
+            function ($match) { return strtolower($match[0]); },
+            $title
+        );
     }
 
     return $text;
