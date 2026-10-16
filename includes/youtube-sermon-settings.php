@@ -69,10 +69,37 @@ function surfside_tools_youtube_settings_action() {
         surfside_tools_youtube_settings_notice('Unknown YouTube integration action.', 'error');
     }
 
-    wp_safe_redirect($destination);
+    // PRG: prevent the browser from resubmitting a Sync Now POST on refresh.
+    // Never silently exit if a redirect is blocked or headers were sent early.
+    if (!wp_safe_redirect($destination, 303, 'Surfside Tools')) {
+        wp_die(
+            'YouTube action processed, but WordPress could not redirect. ' .
+            '<a href="' . esc_url($destination) . '">Return to YouTube Integrations</a>.',
+            'YouTube Integration',
+            array('response' => 500)
+        );
+    }
     exit;
 }
 add_action('admin_post_surfside_youtube_settings', 'surfside_tools_youtube_settings_action');
+
+/**
+ * The YouTube controls belong to the front-end Staff Dashboard. Process their
+ * POST on the same page, before theme output, rather than sending the browser
+ * through /wp-admin/admin-post.php. This also avoids hosts/security plugins
+ * that treat front-end staff sessions differently on wp-admin requests.
+ */
+function surfside_tools_youtube_settings_frontend_post() {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'
+        || empty($_POST['action'])
+        || !is_string($_POST['action'])
+        || sanitize_key(wp_unslash($_POST['action'])) !== 'surfside_youtube_settings'
+        || !is_page('settings')) {
+        return;
+    }
+    surfside_tools_youtube_settings_action();
+}
+add_action('template_redirect', 'surfside_tools_youtube_settings_frontend_post', 1);
 
 function surfside_tools_youtube_settings_panel() {
     if (!is_user_logged_in() || !current_user_can('manage_options')) return '';
@@ -100,7 +127,7 @@ function surfside_tools_youtube_settings_panel() {
         }
         $series = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$tables['playlists']} WHERE category = 'series'");
     }
-    $form_action = admin_url('admin-post.php');
+    $form_action = surfside_tools_staff_page_url('settings');
 
     ob_start();
     ?>
