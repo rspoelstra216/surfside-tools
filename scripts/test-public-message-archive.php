@@ -39,6 +39,12 @@ function surfside_tools_youtube_tables() {
     return array('videos'=>'wp_surfside_yt_videos','playlists'=>'wp_surfside_yt_playlists','members'=>'wp_surfside_yt_members');
 }
 function surfside_tools_youtube_state() { return array('master_id'=>'PLMESSAGES1234','status'=>'complete'); }
+function surfside_tools_youtube_sermon_date($title) {
+    if (!preg_match('/\\b([0-3]?\\d)\\s+(January|February|March|April|May|June|July|August|September|October|November|December)(?:\\s*,\\s*|\\s+)(\\d{4}|\\d{2})\\b/i', (string) $title, $m)) return '';
+    $year = strlen($m[3]) === 2 ? 2000 + (int)$m[3] : (int)$m[3];
+    $date = DateTimeImmutable::createFromFormat('!j F Y', $m[1] . ' ' . ucfirst(strtolower($m[2])) . ' ' . $year);
+    return $date && (int)$date->format('j') === (int)$m[1] ? $date->format('Y-m-d') : '';
+}
 function surfside_tools_youtube_valid_playlist_id($v) { return is_string($v) && preg_match('/^[A-Za-z0-9_-]{10,100}$/', $v); }
 function surfside_tools_youtube_review_is_ready() {
     return get_option('surfside_tools_youtube_review_schema', 0) >= 1;
