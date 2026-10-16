@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) { exit; }
 const SURFSIDE_YT_REVIEW_SCHEMA_OPTION = 'surfside_tools_youtube_review_schema';
 const SURFSIDE_YT_REVIEW_SCHEMA_VERSION = 1;
 const SURFSIDE_YT_SERIES_EXCLUDED_OPTION = 'surfside_tools_youtube_series_exclusions';
+const SURFSIDE_YT_REVIEW_PAGE_SIZE = 20;
 
 function surfside_tools_youtube_review_table() {
     global $wpdb;
@@ -159,17 +160,21 @@ function surfside_tools_youtube_review_list($master, $filters) {
         {$sql['join']} WHERE " . implode(' AND ', $where);
 
     $count = (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*)' . $base, $params));
-    $per_page = 20;
+    $per_page = SURFSIDE_YT_REVIEW_PAGE_SIZE;
     $pages = max(1, (int) ceil($count / $per_page));
     $page = min(max(1, (int) $filters['page']), $pages);
     $offset = ($page - 1) * $per_page;
 
+    // A review queue must have stable ordering when a staff member corrects
+    // the sermon date: otherwise the next item can unexpectedly move.
+    $order = $filters['status'] === 'review'
+        ? "v.uploaded_at DESC, v.video_id ASC"
+        : "({$sql['date']} IS NULL) ASC, {$sql['date']} DESC, v.uploaded_at DESC, v.video_id ASC";
     $list_sql = "SELECT v.video_id, v.title, v.thumbnail_url, v.uploaded_at, v.sermon_date,
             {$sql['manual']} AS manual_date,
             {$sql['disposition']} AS disposition,
             {$sql['date']} AS effective_date"
-        . $base . " ORDER BY ({$sql['date']} IS NULL) ASC, {$sql['date']} DESC,
-            v.uploaded_at DESC, v.video_id ASC LIMIT %d OFFSET %d";
+        . $base . " ORDER BY {$order} LIMIT %d OFFSET %d";
     $rows = $wpdb->get_results($wpdb->prepare($list_sql, array_merge($params, array($per_page, $offset))), ARRAY_A);
 
     return array('rows' => is_array($rows) ? $rows : array(),
@@ -276,7 +281,12 @@ function surfside_tools_youtube_review_handle_post() {
         ? sanitize_key(wp_unslash($_POST['review_mode'])) : '';
     $master = surfside_tools_youtube_review_master_id();
     $notice = 'invalid';
-    $redirect_args = array();
+    // Return to the same search, status, year, series and page after saving.
+    $filters = surfside_tools_youtube_review_filters($_POST);
+    $redirect_args = surfside_tools_youtube_review_filter_args($filters);
+    $position_raw = $_POST['archive_position'] ?? null;
+    $position = is_string($position_raw) && preg_match('/^\d{1,6}$/', $position_raw)
+        ? min(100000, absint($position_raw)) : null;
 
     if ($master !== '' && $mode === 'video') {
         $id = isset($_POST['video_id']) && is_string($_POST['video_id'])
@@ -287,12 +297,27 @@ function surfside_tools_youtube_review_handle_post() {
             ? sanitize_text_field(wp_unslash($_POST['manual_date'])) : '';
         $date = surfside_tools_youtube_review_validate_date($date_input);
         if (preg_match('/^[A-Za-z0-9_-]{11}$/', $id)) $redirect_args['video'] = $id;
+        if ($position !== null) $redirect_args['archive_position'] = $position;
 
         if ($date === false) {
             $notice = 'bad_date';
         } else {
             $saved = surfside_tools_youtube_review_save_video($master, $id, $date, $decision);
             $notice = is_wp_error($saved) ? 'error' : 'saved';
+            $after = isset($_POST['review_after']) && is_string($_POST['review_after'])
+                ? sanitize_key(wp_unslash($_POST['review_after'])) : 'stay';
+            if ($notice === 'saved' && $after === 'next' && $position !== null && $filters['status'] === 'review') {
+                $next = surfside_tools_youtube_review_next_in_queue($master, $filters, $position, $id);
+                if ($next) {
+                    $redirect_args['video'] = $next['video'];
+                    $redirect_args['archive_position'] = $next['position'];
+                    if ($next['page'] > 1) $redirect_args['archive_page'] = $next['page'];
+                    else unset($redirect_args['archive_page']);
+                } else {
+                    unset($redirect_args['video'], $redirect_args['archive_position']);
+                    $notice = 'end_of_queue';
+                }
+            }
         }
     } elseif ($master !== '' && $mode === 'series') {
         $id = isset($_POST['playlist_id']) && is_string($_POST['playlist_id'])
@@ -339,22 +364,68 @@ function surfside_tools_youtube_review_frontend_post() {
 }
 add_action('template_redirect', 'surfside_tools_youtube_review_frontend_post', 1);
 
-function surfside_tools_youtube_review_filters() {
-    $search = isset($_GET['archive_q']) && is_string($_GET['archive_q'])
-        ? sanitize_text_field(wp_unslash($_GET['archive_q'])) : '';
-    $status = isset($_GET['archive_status']) && is_string($_GET['archive_status'])
-        ? sanitize_key(wp_unslash($_GET['archive_status'])) : 'all';
-    $year = isset($_GET['archive_year']) && is_string($_GET['archive_year'])
-        ? sanitize_text_field(wp_unslash($_GET['archive_year'])) : '';
-    $series = isset($_GET['archive_series']) && is_string($_GET['archive_series'])
-        ? sanitize_text_field(wp_unslash($_GET['archive_series'])) : '';
+/**
+ * Share the same allowlisted filter parsing across list links and the save
+ * handler. The POST may only preserve supported fields, never a redirect URL.
+ */
+function surfside_tools_youtube_review_filters($source = null) {
+    $source = is_array($source) ? $source : $_GET;
+    $search = isset($source['archive_q']) && is_string($source['archive_q'])
+        ? sanitize_text_field(wp_unslash($source['archive_q'])) : '';
+    $status = isset($source['archive_status']) && is_string($source['archive_status'])
+        ? sanitize_key(wp_unslash($source['archive_status'])) : 'all';
+    $year = isset($source['archive_year']) && is_string($source['archive_year'])
+        ? sanitize_text_field(wp_unslash($source['archive_year'])) : '';
+    $series = isset($source['archive_series']) && is_string($source['archive_series'])
+        ? sanitize_text_field(wp_unslash($source['archive_series'])) : '';
     return array(
         'search' => substr(trim($search), 0, 90),
         'status' => in_array($status, array('all', 'review', 'include', 'exclude', 'undated'), true) ? $status : 'all',
         'year' => preg_match('/^(19|20)\d{2}$/', $year) ? $year : '',
         'series' => surfside_tools_youtube_valid_playlist_id($series) ? $series : '',
-        'page' => isset($_GET['archive_page']) ? max(1, absint($_GET['archive_page'])) : 1,
+        'page' => isset($source['archive_page']) ? max(1, min(100000, absint($source['archive_page']))) : 1,
     );
+}
+
+/** Round-trip filters and pagination through video links and review saves. */
+function surfside_tools_youtube_review_filter_args($filters) {
+    $args = array();
+    if ($filters['search'] !== '') $args['archive_q'] = $filters['search'];
+    if ($filters['status'] !== 'all') $args['archive_status'] = $filters['status'];
+    if ($filters['year'] !== '') $args['archive_year'] = $filters['year'];
+    if ($filters['series'] !== '') $args['archive_series'] = $filters['series'];
+    if ($filters['page'] > 1) $args['archive_page'] = $filters['page'];
+    return $args;
+}
+
+/**
+ * Continue after the saved item in the same Needs Review queue.
+ * When inclusion/exclusion removes the current item, the next one slides into
+ * its old position; if it remains under review, advance one position instead.
+ */
+function surfside_tools_youtube_review_next_in_queue($master, $filters, $position, $current_id) {
+    if ($filters['status'] !== 'review' || $position < 0 || $position > 100000) return null;
+
+    $page_size = SURFSIDE_YT_REVIEW_PAGE_SIZE;
+    $filters['page'] = intdiv($position, $page_size) + 1;
+    $list = surfside_tools_youtube_review_list($master, $filters);
+    if ($position >= $list['count']) return null;
+
+    $slot = $position % $page_size;
+    if (($list['rows'][$slot]['video_id'] ?? '') === $current_id) {
+        $position++;
+        if ($position >= $list['count']) return null;
+        $next_page = intdiv($position, $page_size) + 1;
+        if ($next_page !== $filters['page']) {
+            $filters['page'] = $next_page;
+            $list = surfside_tools_youtube_review_list($master, $filters);
+        }
+        $slot = $position % $page_size;
+    }
+    $next_id = (string) ($list['rows'][$slot]['video_id'] ?? '');
+    return preg_match('/^[A-Za-z0-9_-]{11}$/', $next_id)
+        ? array('video' => $next_id, 'position' => $position, 'page' => $filters['page'])
+        : null;
 }
 
 function surfside_tools_youtube_review_ui_styles() {
@@ -393,6 +464,8 @@ function surfside_tools_youtube_review_ui_styles() {
 .surfside-yt-preview{width:100%;aspect-ratio:16/9;border:0;background:#071b3a;border-radius:12px;max-width:880px;display:block;margin:14px 0}
 .surfside-yt-edit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:800px}
 .surfside-yt-edit .surfside-yt-full{grid-column:1/-1}
+.surfside-yt-save-actions{display:flex;gap:12px;flex-wrap:wrap}
+.surfside-yt-manager .surfside-yt-button-secondary{background:#fff;color:#0b4f9c;border:1px solid #0b4f9c}
 .surfside-yt-series-item{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:15px 0;border-top:1px solid #e2e8f0}
 .surfside-yt-series-item form{flex-shrink:0}
 .surfside-yt-series-item button{background:#fff;border:1px solid #0b4f9c;color:#0b4f9c}
@@ -431,16 +504,16 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
     $summary = $base_ready ? surfside_tools_youtube_review_summary($master) : array('total'=>0,'needs_review'=>0,'excluded'=>0,'undated'=>0);
     $list = $base_ready && $tab === 'videos' && $requested_video === ''
         ? surfside_tools_youtube_review_list($master, $filters) : null;
-    $list_args = array();
-    if ($filters['search'] !== '') $list_args['archive_q'] = $filters['search'];
-    if ($filters['status'] !== 'all') $list_args['archive_status'] = $filters['status'];
-    if ($filters['year'] !== '') $list_args['archive_year'] = $filters['year'];
-    if ($filters['series'] !== '') $list_args['archive_series'] = $filters['series'];
+    $list_args = surfside_tools_youtube_review_filter_args($filters);
+    $position_get = $_GET['archive_position'] ?? null;
+    $review_position = is_string($position_get) && preg_match('/^\d{1,6}$/', $position_get)
+        ? min(100000, absint($position_get)) : null;
 
     $notice_code = isset($_GET['review_notice']) && is_string($_GET['review_notice'])
         ? sanitize_key(wp_unslash($_GET['review_notice'])) : '';
     $notice_text = array(
         'saved' => 'Review decision saved. Future YouTube syncs will not overwrite it.',
+        'end_of_queue' => 'Saved. You have reached the end of this filtered review list.',
         'bad_date' => 'Please enter a valid sermon date or leave it blank.',
         'error' => 'The review change could not be saved. Please try again.',
         'invalid' => 'The selected message or playlist could not be found.',
@@ -456,7 +529,7 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
         </section>
 
         <?php if (isset($notice_text[$notice_code])) : ?>
-            <div class="surfside-yt-notice<?php echo $notice_code !== 'saved' ? ' error' : ''; ?>"><?php echo esc_html($notice_text[$notice_code]); ?></div>
+            <div class="surfside-yt-notice<?php echo !in_array($notice_code, array('saved','end_of_queue'), true) ? ' error' : ''; ?>"><?php echo esc_html($notice_text[$notice_code]); ?></div>
         <?php endif; ?>
 
         <?php if (!$base_ready) : ?>
@@ -501,7 +574,7 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
 
             <?php elseif ($requested_video !== '') : ?>
                 <section class="surfside-yt-panel">
-                    <p><a class="surfside-yt-link" href="<?php echo esc_url(surfside_tools_youtube_manager_url($list_args)); ?>">← Back to video library</a></p>
+                    <p><a class="surfside-yt-link" href="<?php echo esc_url(surfside_tools_youtube_manager_url($list_args)); ?>">← <?php echo $list_args ? 'Back to filtered videos' : 'Back to video library'; ?></a></p>
                     <?php if (!$video) : ?><p>This video was not found in the master Messages playlist.</p>
                     <?php else :
                         $decision = surfside_tools_youtube_review_disposition($video);
@@ -522,6 +595,12 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
                             <input type="hidden" name="action" value="surfside_youtube_review">
                             <input type="hidden" name="review_mode" value="video">
                             <input type="hidden" name="video_id" value="<?php echo esc_attr($video['video_id']); ?>">
+                            <?php foreach ($list_args as $name => $value) : ?>
+                                <input type="hidden" name="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($value); ?>">
+                            <?php endforeach; ?>
+                            <?php if ($review_position !== null) : ?>
+                                <input type="hidden" name="archive_position" value="<?php echo esc_attr($review_position); ?>">
+                            <?php endif; ?>
                             <?php wp_nonce_field('surfside_youtube_review', 'surfside_youtube_review_nonce'); ?>
                             <div>
                                 <label for="surfside-yt-manual-date">Sermon date override</label>
@@ -538,7 +617,14 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
                                 </select>
                                 <p class="surfside-yt-muted">Needs Review still appears publicly by default; Exclude is the only hidden status.</p>
                             </div>
-                            <div class="surfside-yt-full"><button type="submit">Save Review Decision</button></div>
+                            <div class="surfside-yt-full surfside-yt-save-actions">
+                                <?php if ($filters['status'] === 'review' && $review_position !== null) : ?>
+                                    <button type="submit" name="review_after" value="next">Save &amp; Next Review</button>
+                                    <button type="submit" name="review_after" value="stay" class="surfside-yt-button-secondary">Save Only</button>
+                                <?php else : ?>
+                                    <button type="submit" name="review_after" value="stay">Save Review Decision</button>
+                                <?php endif; ?>
+                            </div>
                         </form>
                     <?php endif; ?>
                 </section>
@@ -583,8 +669,9 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
                 <section class="surfside-yt-panel">
                     <?php if (!$list['rows']) : ?><p>No messages match these filters.</p>
                     <?php else : ?><ul class="surfside-yt-list">
-                        <?php foreach ($list['rows'] as $row) :
+                        <?php foreach ($list['rows'] as $item_index => $row) :
                             $decision = surfside_tools_youtube_review_disposition($row);
+                            $absolute_position = ($list['page'] - 1) * SURFSIDE_YT_REVIEW_PAGE_SIZE + (int) $item_index;
                             ?>
                             <li><div class="surfside-yt-item">
                                 <?php if (!empty($row['thumbnail_url'])) : ?>
@@ -594,7 +681,7 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
                                     <strong><?php echo esc_html($row['title']); ?></strong>
                                     <p class="surfside-yt-muted"><?php echo esc_html($row['effective_date'] ?: 'Sermon date not assigned'); ?>
                                         <?php if (!empty($row['manual_date'])) : ?> · Corrected manually<?php endif; ?></p>
-                                    <p><a class="surfside-yt-link" href="<?php echo esc_url(surfside_tools_youtube_manager_url(array_merge($list_args, array('video'=>$row['video_id'])))); ?>">Review Video ›</a></p>
+                                    <p><a class="surfside-yt-link" href="<?php echo esc_url(surfside_tools_youtube_manager_url(array_merge($list_args, array('video'=>$row['video_id'], 'archive_position'=>$absolute_position)))); ?>">Review Video ›</a></p>
                                 </div>
                                 <span class="surfside-yt-chip <?php echo esc_attr($decision); ?>"><?php echo esc_html($decision === 'review' ? 'Needs Review' : ($decision === 'exclude' ? 'Excluded' : 'Included')); ?></span>
                             </div></li>

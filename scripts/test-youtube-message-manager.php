@@ -103,7 +103,9 @@ class YouTubeReviewDB {
         if (strpos($sql, 'category = \'series\'') !== false && strpos($sql, 'SELECT playlist_id') !== false) {
             return strpos($sql, "'" . $GLOBALS['test_playlist_id'] . "'") !== false ? $GLOBALS['test_playlist_id'] : null;
         }
-        if (strpos($sql, 'SELECT COUNT(*)') !== false) return 1;
+        if (strpos($sql, 'SELECT COUNT(*)') !== false) {
+            return !empty($GLOBALS['test_queue_mode']) ? count($GLOBALS['test_queue_items']) : 1;
+        }
         throw new RuntimeException('Unexpected scalar SQL: ' . $sql);
     }
     public function get_row($sql, $mode = null) {
@@ -123,6 +125,12 @@ class YouTubeReviewDB {
     }
     public function get_results($sql, $mode = null) {
         $this->reads++;
+        if (!empty($GLOBALS['test_queue_mode']) && strpos($sql, ' LIMIT ') !== false) {
+            if (!preg_match('/LIMIT (\d+) OFFSET (\d+)/', $sql, $m)) {
+                throw new RuntimeException('Expected a bounded review queue query');
+            }
+            return array_slice($GLOBALS['test_queue_items'], (int) $m[2], (int) $m[1]);
+        }
         if (strpos($sql, 'category = \'series\'') !== false && strpos($sql, 'GROUP BY') !== false) {
             return array(array('playlist_id'=>$GLOBALS['test_playlist_id'], 'title'=>'Made for More', 'video_count'=>1));
         }
@@ -305,4 +313,153 @@ try {
         'Blocked redirect shows recoverable error instead of blank screen');
 }
 
-echo "YouTube Message Archive manager review and front-end form checks passed.\n";
+// Review navigation: preserve all list filters and pagination.
+$context = surfside_tools_youtube_review_filters(array(
+    'archive_q' => 'Serve & share',
+    'archive_status' => 'review',
+    'archive_year' => '2026',
+    'archive_series' => $GLOBALS['test_playlist_id'],
+    'archive_page' => '2',
+    'redirect_to' => 'https://attacker.invalid/', // never trusted or echoed
+));
+$args = surfside_tools_youtube_review_filter_args($context);
+check($args === array(
+    'archive_q'=>'Serve & share',
+    'archive_status'=>'review',
+    'archive_year'=>'2026',
+    'archive_series'=>$GLOBALS['test_playlist_id'],
+    'archive_page'=>2,
+), 'List state round-trips through the review form, without arbitrary redirect URLs');
+
+$bad = surfside_tools_youtube_review_filters(array(
+    'archive_status'=>'malicious',
+    'archive_year'=>'not-year',
+    'archive_series'=>'bad!',
+    'archive_page'=>'-20',
+));
+check($bad['status'] === 'all' && $bad['year'] === '' && $bad['series'] === '' && $bad['page'] >= 1,
+    'Malformed filter values cannot become redirect parameters');
+
+$_GET = array(
+    'view'=>'message-archive',
+    'archive_q'=>'Serve & share',
+    'archive_status'=>'review',
+    'archive_year'=>'2026',
+    'archive_series'=>$GLOBALS['test_playlist_id'],
+    'archive_page'=>'2',
+    'archive_position'=>'21',
+    'video'=>$GLOBALS['test_video_id'],
+);
+$GLOBALS['test_redirect_blocked'] = false;
+$detail = surfside_tools_staff_youtube_message_manager_shortcode();
+check(strpos($detail, 'Back to filtered videos') !== false, 'Detail shows a filter-preserving Back link');
+check(strpos($detail, 'archive_status=review') !== false && strpos($detail, 'archive_page=2') !== false,
+    'Detail Back link retains status and page');
+check(strpos($detail, 'name="archive_status" value="review"') !== false,
+    'Review form preserves the Needs Review filter');
+check(strpos($detail, 'name="archive_page" value="2"') !== false,
+    'Review form preserves result pagination');
+check(strpos($detail, 'name="archive_position" value="21"') !== false,
+    'Review form preserves the current queue position');
+check(strpos($detail, 'Save &amp; Next Review') !== false,
+    'Queue action available when arriving from Needs Review list');
+
+// Simulated saved queue, after original entry is excluded: next entry slides to index 0.
+$GLOBALS['test_queue_mode'] = true;
+$GLOBALS['test_queue_items'] = array(
+    array('video_id'=>'abcdEF12_35'),
+    array('video_id'=>'abcdEF12_36'),
+);
+$queue_filters = surfside_tools_youtube_review_filters(array('archive_status'=>'review'));
+$next = surfside_tools_youtube_review_next_in_queue($GLOBALS['test_master'], $queue_filters, 0, $GLOBALS['test_video_id']);
+check($next['video'] === 'abcdEF12_35' && $next['position'] === 0 && $next['page'] === 1,
+    'Excluding an item does not skip the next Needs Review message');
+
+// If current item remains Needs Review, skip over that current entry.
+$GLOBALS['test_queue_items'] = array(
+    array('video_id'=>$GLOBALS['test_video_id']),
+    array('video_id'=>'abcdEF12_35'),
+);
+$next = surfside_tools_youtube_review_next_in_queue($GLOBALS['test_master'], $queue_filters, 0, $GLOBALS['test_video_id']);
+check($next['video'] === 'abcdEF12_35' && $next['position'] === 1,
+    'Save & Next moves past unchanged Needs Review item');
+
+// Page boundary: next review moves from index 19 to index 20 on page two.
+$GLOBALS['test_queue_items'] = array();
+for ($i = 0; $i < 21; $i++) {
+    $GLOBALS['test_queue_items'][] = array('video_id'=>sprintf('vid%08d', $i));
+}
+$next = surfside_tools_youtube_review_next_in_queue($GLOBALS['test_master'], $queue_filters, 19, 'vid00000019');
+check($next['video'] === 'vid00000020' && $next['position'] === 20 && $next['page'] === 2,
+    'Queue navigation crosses 20-item pagination boundary');
+check(surfside_tools_youtube_review_next_in_queue($GLOBALS['test_master'], $queue_filters, 20, 'vid00000020') === null,
+    'Queue navigation ends cleanly at final entry');
+
+// End-to-end save-and-next: validated POST context survives redirect.
+$GLOBALS['test_queue_items'] = array(array('video_id'=>'abcdEF12_35'));
+$_SERVER['REQUEST_METHOD'] = 'POST';
+$_GET = array('view'=>'message-archive');
+$_POST = array(
+    'action'=>'surfside_youtube_review',
+    'review_mode'=>'video',
+    'video_id'=>$GLOBALS['test_video_id'],
+    'disposition'=>'exclude',
+    'manual_date'=>'',
+    'archive_status'=>'review',
+    'archive_q'=>'Serve & share',
+    'archive_year'=>'2026',
+    'archive_series'=>$GLOBALS['test_playlist_id'],
+    'archive_page'=>'1',
+    'archive_position'=>'0',
+    'review_after'=>'next',
+);
+try {
+    surfside_tools_youtube_review_frontend_post();
+    throw new RuntimeException('Save & Next did not redirect');
+} catch (RuntimeException $e) {
+    check($e->getMessage() === 'Redirect sent', 'Save & Next redirects after success');
+}
+$url = $GLOBALS['test_redirect']['url'];
+check(strpos($url, 'archive_status=review') !== false
+    && strpos($url, 'archive_q=Serve%20%26%20share') !== false
+    && strpos($url, 'archive_year=2026') !== false
+    && strpos($url, 'archive_series=PLSERIES123456') !== false,
+    'Save & Next retains search, status, year and series');
+check(strpos($url, 'video=abcdEF12_35') !== false
+    && strpos($url, 'archive_position=0') !== false,
+    'Save & Next opens the next eligible video in the same filtered queue');
+check($GLOBALS['test_redirect']['status'] === 303, 'Save & Next keeps POST-redirect-GET');
+
+$_POST['review_after'] = 'stay';
+$_POST['archive_page'] = '2';
+$_POST['archive_position'] = '21';
+try {
+    surfside_tools_youtube_review_frontend_post();
+    throw new RuntimeException('Save Only did not redirect');
+} catch (RuntimeException $e) {
+    check($e->getMessage() === 'Redirect sent', 'Save Only redirects after success');
+}
+$url = $GLOBALS['test_redirect']['url'];
+check(strpos($url, 'video=abcdEF12_34') !== false
+    && strpos($url, 'archive_status=review') !== false
+    && strpos($url, 'archive_page=2') !== false
+    && strpos($url, 'archive_position=21') !== false,
+    'Save Only retains the full list context and current detail');
+
+$GLOBALS['test_queue_items'] = array();
+$_POST['review_after'] = 'next';
+$_POST['archive_page'] = '1';
+$_POST['archive_position'] = '0';
+try {
+    surfside_tools_youtube_review_frontend_post();
+    throw new RuntimeException('Empty queue did not redirect');
+} catch (RuntimeException $e) {
+    check($e->getMessage() === 'Redirect sent', 'Empty queue returns to filtered library');
+}
+$url = $GLOBALS['test_redirect']['url'];
+check(strpos($url, 'review_notice=end_of_queue') !== false
+    && strpos($url, 'video=') === false
+    && strpos($url, 'archive_status=review') !== false,
+    'End of queue shows a non-error success notice and keeps filters');
+
+echo "YouTube Message Archive manager review, queue and front-end form checks passed.\n";
