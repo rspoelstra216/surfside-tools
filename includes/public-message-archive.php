@@ -41,11 +41,11 @@ function surfside_tools_public_messages_filters($source = null) {
     $search = isset($source['q']) && is_string($source['q'])
         ? sanitize_text_field(wp_unslash($source['q'])) : '';
     $year = isset($source['year']) && is_string($source['year'])
-        ? sanitize_text_field(wp_unslash($source['year'])) : '';
+        ? trim(wp_unslash($source['year'])) : '';
     $series = isset($source['series']) && is_string($source['series'])
-        ? sanitize_text_field(wp_unslash($source['series'])) : '';
+        ? trim(wp_unslash($source['series'])) : '';
     $video = isset($source['message']) && is_string($source['message'])
-        ? sanitize_text_field(wp_unslash($source['message'])) : '';
+        ? trim(wp_unslash($source['message'])) : '';
     $browse = isset($source['browse']) && is_string($source['browse'])
         ? sanitize_key(wp_unslash($source['browse'])) : '';
     return array(
