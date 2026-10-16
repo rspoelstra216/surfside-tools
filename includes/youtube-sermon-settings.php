@@ -27,12 +27,12 @@ function surfside_tools_youtube_settings_action() {
             ? sanitize_text_field(wp_unslash($_POST['youtube_channel'])) : '';
         $channel = surfside_tools_youtube_channel_identifier($channel_input);
         $master = isset($_POST['youtube_master']) && is_string($_POST['youtube_master'])
-            ? trim(sanitize_text_field(wp_unslash($_POST['youtube_master']))) : '';
+            ? surfside_tools_youtube_playlist_identifier(sanitize_text_field(wp_unslash($_POST['youtube_master']))) : '';
         $key = isset($_POST['youtube_api_key']) && is_string($_POST['youtube_api_key'])
             ? trim(sanitize_text_field(wp_unslash($_POST['youtube_api_key']))) : '';
         $clear = !empty($_POST['youtube_clear_key']);
 
-        if ($channel === '' || ($master !== '' && !surfside_tools_youtube_valid_playlist_id($master))) {
+        if ($channel === '' || (!empty($_POST['youtube_master']) && $master === '')) {
             surfside_tools_youtube_settings_notice('Enter a valid channel @handle or ID and, if supplied, a valid master playlist ID.', 'error');
         } elseif ($key !== '' && !preg_match('/^[A-Za-z0-9_-]{20,200}$/', $key)) {
             surfside_tools_youtube_settings_notice('The YouTube API key format looks invalid.', 'error');
@@ -127,8 +127,8 @@ function surfside_tools_youtube_settings_panel() {
                 <p class="surfside-front-description">Accepts @handle, channel ID, or a youtube.com/@handle/playlists URL.</p>
 
                 <label for="surfside-youtube-master"><strong>Master Messages playlist ID</strong> (optional)</label>
-                <input id="surfside-youtube-master" type="text" name="youtube_master" value="<?php echo esc_attr($config['master_playlist_id']); ?>" placeholder="Auto-detect playlist named Messages">
-                <p class="surfside-front-description">If blank, find one public playlist named exactly “Messages.” Enter its playlist ID if its name differs or multiple matches exist.</p>
+                <input id="surfside-youtube-master" type="text" name="youtube_master" value="<?php echo esc_attr($config['master_playlist_id']); ?>" placeholder="Auto-detect Messages, or paste playlist URL / ID">
+                <p class="surfside-front-description">If blank, find one public playlist named exactly “Messages.” Paste its playlist link or ID if its name differs or multiple matches exist.</p>
 
                 <?php if (!defined('SURFSIDE_YOUTUBE_API_KEY') && surfside_tools_youtube_api_key() !== '') : ?>
                     <p><label><input type="checkbox" name="youtube_clear_key" value="1"> Remove stored API key on Save</label></p>
