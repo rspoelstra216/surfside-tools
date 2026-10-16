@@ -304,10 +304,40 @@ function surfside_tools_youtube_review_handle_post() {
     }
 
     $redirect_args['review_notice'] = $notice;
-    wp_safe_redirect(surfside_tools_youtube_manager_url($redirect_args));
+    $destination = surfside_tools_youtube_manager_url($redirect_args);
+    // Use POST/Redirect/GET so refreshing does not resubmit a decision.
+    // A failed redirect must not silently leave staff on an empty response.
+    if (!wp_safe_redirect($destination, 303, 'Surfside Tools')) {
+        wp_die(
+            'The review action was processed, but WordPress could not redirect. ' .
+            '<a href="' . esc_url($destination) . '">Return to Message Archive</a>.',
+            'Message Archive',
+            array('response' => 500)
+        );
+    }
     exit;
 }
 add_action('admin_post_surfside_youtube_review', 'surfside_tools_youtube_review_handle_post');
+
+/**
+ * Review forms are part of the front-end staff portal, not WP Admin.
+ * Handle only Message Archive POSTs before the theme outputs page content.
+ * Retain the admin-post hook above as compatibility for old/previous forms.
+ */
+function surfside_tools_youtube_review_frontend_post() {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'
+        || !is_page('site-management')
+        || !isset($_GET['view'])
+        || !is_string($_GET['view'])
+        || sanitize_key(wp_unslash($_GET['view'])) !== 'message-archive'
+        || !isset($_POST['action'])
+        || !is_string($_POST['action'])
+        || sanitize_key(wp_unslash($_POST['action'])) !== 'surfside_youtube_review') {
+        return;
+    }
+    surfside_tools_youtube_review_handle_post();
+}
+add_action('template_redirect', 'surfside_tools_youtube_review_frontend_post', 1);
 
 function surfside_tools_youtube_review_filters() {
     $search = isset($_GET['archive_q']) && is_string($_GET['archive_q'])
@@ -457,7 +487,7 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
                             <div><strong><?php echo esc_html($row['title']); ?></strong>
                                 <p class="surfside-yt-muted"><?php echo esc_html(number_format_i18n((int) $row['video_count'])); ?> matching messages · <?php echo $hidden ? 'Series excluded from public browsing' : 'Series included'; ?></p>
                             </div>
-                            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                            <form method="post" action="<?php echo esc_url(surfside_tools_youtube_manager_url()); ?>">
                                 <input type="hidden" name="action" value="surfside_youtube_review">
                                 <input type="hidden" name="review_mode" value="series">
                                 <input type="hidden" name="playlist_id" value="<?php echo esc_attr($id); ?>">
@@ -488,7 +518,7 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
                             <strong>Effective sermon date:</strong> <?php echo esc_html($video['effective_date'] ?: 'Not assigned'); ?><br>
                             <strong>YouTube upload timestamp (reference only):</strong> <?php echo esc_html($video['uploaded_at'] ?: 'Unavailable'); ?><br>
                             <strong>Series:</strong> <?php echo esc_html($series ? implode(' · ', $series) : 'No matching sermon series'); ?></p>
-                        <form class="surfside-yt-edit" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                        <form class="surfside-yt-edit" method="post" action="<?php echo esc_url(surfside_tools_youtube_manager_url()); ?>">
                             <input type="hidden" name="action" value="surfside_youtube_review">
                             <input type="hidden" name="review_mode" value="video">
                             <input type="hidden" name="video_id" value="<?php echo esc_attr($video['video_id']); ?>">
