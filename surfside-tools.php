@@ -99,6 +99,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-intelligence.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/volunteer-needs.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/member-engagement.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/sermon-archive-viewer.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/youtube-message-manager.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-overview.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-page-provisioning.php';
