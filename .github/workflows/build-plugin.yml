@@ -46,6 +46,9 @@ jobs:
       - name: Test YouTube Integrations dashboard POST routing
         run: php scripts/test-youtube-settings-post.php
 
+      - name: Test YouTube import status and review counters
+        run: php scripts/test-youtube-review-summary.php
+
       - name: Test mobile calendar recurrence metadata
         run: php scripts/test-mobile-calendar-recurrence.php
 
