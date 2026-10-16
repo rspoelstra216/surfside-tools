@@ -62,6 +62,15 @@ function surfside_tools_public_messages_page_url($args = array()) {
     $page_id = get_queried_object_id();
     $permalink = $page_id ? get_permalink($page_id) : '';
     $base = is_string($permalink) && $permalink !== '' ? $permalink : home_url('/messages/');
+    // Draft previews must keep WordPress's preview URL; otherwise clicking a
+    // sermon or series would navigate to the unpublished page and return 404.
+    if ($page_id && get_post_status($page_id) !== 'publish' && current_user_can('edit_post', $page_id)) {
+        $post = get_post($page_id);
+        if ($post instanceof WP_Post) {
+            $preview = get_preview_post_link($post);
+            if (is_string($preview) && $preview !== '') $base = $preview;
+        }
+    }
     return $args ? add_query_arg($args, $base) : $base;
 }
 
