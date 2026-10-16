@@ -71,7 +71,11 @@ function wp_remote_get($url, $args) {
             return array('snippet' => array('resourceId' => array('videoId' => $id),
                 'title' => $title,
                 'thumbnails' => array('medium' => array('url' => 'https://i.ytimg.com/' . $id . '.jpg')),
-                'publishedAt' => '2026-10-20T00:00:00Z',
+                'publishedAt' => '2026-10-20T00:00:00Z', // added to playlist, not video publication
+            ), 'contentDetails' => array(
+                'videoId' => $id,
+                'videoPublishedAt' => $id === 'abcdEF12_35'
+                    ? '2014-05-12T09:30:00Z' : '2026-10-19T15:00:00Z',
             ));
         };
         $items = match ($q['playlistId']) {
@@ -182,6 +186,18 @@ check(surfside_tools_youtube_sermon_date('23 August, 26') === '2026-08-23', 'Com
 check(surfside_tools_youtube_sermon_date('31 February, 2026') === '', 'Impossible dates with comma are rejected');
 check(surfside_tools_youtube_sermon_date('31 February 26') === '', 'Impossible dates are rejected');
 check(surfside_tools_youtube_sermon_date('No date in title') === '', 'No substitution with upload date');
+check(surfside_tools_youtube_video_published_date(array('contentDetails'=>array(
+    'videoPublishedAt'=>'2014-05-12T09:30:00Z'))) === '2014-05-12',
+    'Extracts video publication date rather than playlist-added date');
+check(surfside_tools_youtube_video_published_date(array('contentDetails'=>array(
+    'videoPublishedAt'=>'2014-02-30T09:30:00Z'))) === '',
+    'Rejects impossible publication dates');
+check(surfside_tools_youtube_video_published_date(array('snippet'=>array(
+    'publishedAt'=>'2026-10-20T00:00:00Z'))) === '',
+    'Never silently uses playlist-added date if video publication is missing');
+check(surfside_tools_youtube_video_published_date(array('contentDetails'=>array(
+    'videoPublishedAt'=>'2014-05-12T09:30:00.000Z'))) === '2014-05-12',
+    'Accepts standard ISO 8601 fractional seconds');
 
 update_option('surfside_tools_youtube_api_key', $GLOBALS['youtube_key']);
 update_option(SURFSIDE_YT_CONFIG_OPTION, array('channel_ref' => '@addpastor', 'master_playlist_id' => ''));
@@ -200,6 +216,12 @@ check($state['master_id'] === 'PLMESSAGES1234', 'Exact-title Messages playlist d
 check(count($GLOBALS['wpdb']->videos) === 2, 'Master imports videos once, unrelated music excluded');
 check($GLOBALS['wpdb']->videos['abcdEF12_34']['sermon_date'] === '2026-10-18', 'Recorded sermon date matches title');
 check($GLOBALS['wpdb']->videos['abcdEF12_35']['sermon_date'] === null, 'Missing sermon date flagged, never replaced by upload time');
+check($GLOBALS['wpdb']->videos['abcdEF12_35']['published_date'] === '2014-05-12',
+    'Undated video separately retains actual YouTube publication date');
+check($GLOBALS['wpdb']->videos['abcdEF12_35']['uploaded_at'] === '2026-10-20T00:00:00Z',
+    'Playlist-added field cannot be mistaken for the actual video publication date');
+check($GLOBALS['wpdb']->videos['abcdEF12_34']['published_date'] === '2026-10-19',
+    'Title-based sermon date and video publication date are independently retained');
 check(count($GLOBALS['wpdb']->members) === 3, 'Two master memberships and one series membership only');
 check($GLOBALS['wpdb']->playlists['PLSERIES123456']['category'] === 'series', 'Playlist overlapping Messages marked series');
 check($GLOBALS['wpdb']->playlists['PLMUSIC123456']['category'] === 'other', 'Unrelated playlist excluded from series');

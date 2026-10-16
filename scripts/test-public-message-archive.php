@@ -11,7 +11,7 @@ const SURFSIDE_YT_SCHEMA_VERSION = 1;
 
 $GLOBALS['test_actions'] = array();
 $GLOBALS['test_shortcodes'] = array();
-$GLOBALS['test_options'] = array(SURFSIDE_YT_SCHEMA_OPTION=>1, 'surfside_tools_youtube_review_schema'=>1);
+$GLOBALS['test_options'] = array(SURFSIDE_YT_SCHEMA_OPTION=>2, 'surfside_tools_youtube_review_schema'=>1);
 $GLOBALS['test_is_admin'] = false;
 $GLOBALS['test_draft'] = true;
 $GLOBALS['test_can_edit'] = true;
@@ -81,8 +81,11 @@ class PublicMessagesDB {
     public $list_rows = array();
     public function __construct() {
         $this->list_rows = array(
-            array('video_id'=>'aaaaaaaaaaa','title'=>'Made to Serve 18 October 26','thumbnail_url'=>'https://i.ytimg.com/vi/aaaaaaaaaaa/mqdefault.jpg','message_date'=>'2026-10-18'),
-            array('video_id'=>'bbbbbbbbbbb','title'=>'Blessed <script>alert(1)</script>','thumbnail_url'=>'','message_date'=>null),
+            array('video_id'=>'aaaaaaaaaaa','title'=>'Made to Serve 18 October 26',
+                'thumbnail_url'=>'https://i.ytimg.com/vi/aaaaaaaaaaa/mqdefault.jpg',
+                'message_date'=>'2026-10-18','date_source'=>'sermon'),
+            array('video_id'=>'bbbbbbbbbbb','title'=>'Blessed <script>alert(1)</script>',
+                'thumbnail_url'=>'', 'message_date'=>'2014-05-12','date_source'=>'youtube'),
         );
     }
     public function esc_like($value) { return addcslashes($value, '_%\\'); }
@@ -118,7 +121,16 @@ class PublicMessagesDB {
         $this->sql[] = $sql;
         if (str_contains($sql, "'ccccccccccc'")) return null; // excluded video never displayed
         if (str_contains($sql, "'aaaaaaaaaaa'")) return $this->list_rows[0];
+        if (str_contains($sql, "'bbbbbbbbbbb'")) return $this->list_rows[1];
+        if (str_contains($sql, "'sermon' AS date_source")) return $this->list_rows[0];
         return null;
+    }
+    public function get_col($sql) {
+        $this->sql[] = $sql;
+        if (str_contains($sql, 'SELECT DISTINCT YEAR(')) {
+            return array('2026','2014');
+        }
+        throw new RuntimeException('Unexpected year query '. $sql);
     }
 }
 $GLOBALS['wpdb'] = new PublicMessagesDB();
@@ -157,6 +169,16 @@ $parts = surfside_tools_public_messages_sql();
 check(str_contains($parts['join'], 'surfside_yt_video_review') &&
     str_contains($parts['date'], 'COALESCE') && str_contains($parts['visible'], "r.disposition <> 'exclude'"),
     'Staff exclusion and manual date are authoritative');
+check(str_contains($parts['date'], "r.disposition = 'include'") &&
+    str_contains($parts['date'], 'v.published_date') &&
+    str_contains($parts['source'], "'youtube'"),
+    'True YouTube publication date is fallback only for explicitly included undated videos');
+check(!str_contains($parts['sermon_date'], 'published_date'),
+    'Actual sermon date stays separate from YouTube publication fallback');
+$GLOBALS['test_options'][SURFSIDE_YT_SCHEMA_OPTION] = 1;
+check(!str_contains(surfside_tools_public_messages_sql()['date'], 'published_date'),
+    'Old importer schemas never reuse playlist-added dates as publication fallbacks');
+$GLOBALS['test_options'][SURFSIDE_YT_SCHEMA_OPTION] = 2;
 $GLOBALS['test_options']['surfside_tools_youtube_review_schema']=0;
 check(surfside_tools_public_messages_sql()['join']==='', 'No invalid JOIN before review table exists');
 $GLOBALS['test_options']['surfside_tools_youtube_review_schema']=1;
@@ -194,7 +216,20 @@ check(!str_contains($html, 'Hidden Series'), 'Hidden series never in public HTML
 check(str_contains($html, 'Made for More'), 'Public series browsing provided');
 check(str_contains($html, 'Blessed &lt;script&gt;alert(1)&lt;/script&gt;'),
     'Video title is HTML-escaped');
-check(str_contains($html, 'Date not available'), 'Undated included videos remain visible');
+check(str_contains($html, 'Published on YouTube: May 12, 2014'),
+    'Staff-included undated videos show labeled YouTube publication date');
+check(surfside_tools_public_messages_date_label(null) === 'Date not available',
+    'Undated and unreviewed videos still show Date not available');
+
+$year_sql = implode("\n", $GLOBALS['wpdb']->sql);
+check(str_contains($html, 'value="2014"') && str_contains($html, 'value="2026"'),
+    'Year dropdown includes actual public archive years');
+check(!str_contains($html, 'value="1990"') && !str_contains($html, 'value="1995"'),
+    'Year dropdown omits empty years rather than showing 1990 to current');
+check(str_contains($year_sql, 'SELECT DISTINCT YEAR(') &&
+    str_contains($year_sql, 'v.published_date') &&
+    str_contains($year_sql, "r.disposition <> 'exclude'"),
+    'Available-year query uses visible effective dates including staff publication fallback');
 
 // WordPress treats ?year= as a native post-archive query variable.
 // All form fields AND generated archive navigation must use unique names.
@@ -226,8 +261,10 @@ $GLOBALS['wpdb']->sql = array();
 $_GET=array('sm_year'=>'2026');
 $year_html=surfside_tools_public_message_archive_shortcode();
 check(str_contains($year_html, 'messages found')
-    && str_contains(implode("\n", $GLOBALS['wpdb']->sql), 'YEAR(COALESCE(r.manual_date, v.sermon_date)) = 2026'),
-    'Year filter reaches archive metadata without WordPress post archive routing');
+    && str_contains(implode("\n", $GLOBALS['wpdb']->sql), 'YEAR(COALESCE(')
+    && str_contains(implode("\n", $GLOBALS['wpdb']->sql), "r.disposition = 'include'")
+    && str_contains(implode("\n", $GLOBALS['wpdb']->sql), '= 2026'),
+    'Year filter reaches metadata including staff-included YouTube publication fallback');
 
 $GLOBALS['wpdb']->sql = array();
 $_GET=array('sm_series'=>'PLSERIES12345');

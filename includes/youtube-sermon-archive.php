@@ -8,7 +8,7 @@
  */
 if (!defined('ABSPATH')) { exit; }
 
-const SURFSIDE_YT_SCHEMA_VERSION = 1;
+const SURFSIDE_YT_SCHEMA_VERSION = 2;
 const SURFSIDE_YT_SCHEMA_OPTION = 'surfside_tools_youtube_schema';
 const SURFSIDE_YT_CONFIG_OPTION = 'surfside_tools_youtube_config';
 const SURFSIDE_YT_STATE_OPTION = 'surfside_tools_youtube_sync_state';
@@ -132,6 +132,20 @@ function surfside_tools_youtube_sermon_date($title) {
     return $date && (int) $date->format('j') === (int) $m[1] ? $date->format('Y-m-d') : '';
 }
 
+/**
+ * videoPublishedAt belongs to the VIDEO (not the playlist membership).
+ * playlistItems.snippet.publishedAt is when the video was added to that
+ * playlist and MUST NOT be presented as the video publication date.
+ */
+function surfside_tools_youtube_video_published_date($item) {
+    $value = (string) ($item['contentDetails']['videoPublishedAt'] ?? '');
+    if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/', $value, $parts)) {
+        return '';
+    }
+    return checkdate((int) $parts[2], (int) $parts[3], (int) $parts[1])
+        ? $parts[1] . '-' . $parts[2] . '-' . $parts[3] : '';
+}
+
 function surfside_tools_youtube_install_schema() {
     if ((int) get_option(SURFSIDE_YT_SCHEMA_OPTION, 0) >= SURFSIDE_YT_SCHEMA_VERSION) return true;
     global $wpdb;
@@ -142,6 +156,7 @@ function surfside_tools_youtube_install_schema() {
         video_id varchar(32) NOT NULL,
         title text NOT NULL,
         sermon_date date DEFAULT NULL,
+        published_date date DEFAULT NULL,
         thumbnail_url text NOT NULL,
         uploaded_at varchar(40) NOT NULL DEFAULT '',
         updated_at datetime NOT NULL,
@@ -255,7 +270,9 @@ function surfside_tools_youtube_import_items($response, $playlist_id, $is_master
                 'thumbnail_url' => esc_url_raw($thumb, array('https')),
                 'uploaded_at' => sanitize_text_field($snippet['publishedAt'] ?? ''),
                 'updated_at' => $now,
-            ));
+            ) + ((int) get_option(SURFSIDE_YT_SCHEMA_OPTION, 0) >= 2
+                ? array('published_date' => surfside_tools_youtube_video_published_date($item) ?: null)
+                : array()));
             if ($written === false) return new WP_Error('surfside_youtube_video_write', 'Could not store YouTube video metadata.');
         }
         $written = $wpdb->replace($t['members'], array(
