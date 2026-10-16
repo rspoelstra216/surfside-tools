@@ -267,6 +267,34 @@ function surfside_tools_public_messages_date_label($value, $source = 'sermon') {
     return $source === 'youtube' ? 'Published on YouTube: ' . $label : $label;
 }
 
+/**
+ * The YouTube title is preserved in the library and message detail.
+ * Only the prominent landing-page hero may shorten the predictable format:
+ * "Message Title – Series – Week N – DD Month YYYY".
+ * Other titles, including those containing meaningful dashes, are unchanged.
+ */
+function surfside_tools_public_messages_featured_heading($title) {
+    $original = trim((string) $title);
+    $result = array('heading' => $original, 'context' => '');
+    $parts = preg_split('/\s+[–—]\s+|\s+-\s+/u', $original);
+    if (!is_array($parts) || count($parts) < 3
+        || !function_exists('surfside_tools_youtube_sermon_date')) {
+        return $result;
+    }
+
+    $date_part = trim($parts[count($parts) - 1]);
+    $week_part = trim($parts[count($parts) - 2]);
+    if (surfside_tools_youtube_sermon_date($date_part) === ''
+        || !preg_match('/^week\s+\d+(?:\s+of\s+\d+)?$/i', $week_part)) {
+        return $result;
+    }
+    $heading = trim($parts[0]);
+    $context_parts = array_map('trim', array_slice($parts, 1, -1));
+    $context_parts = array_filter($context_parts, static function ($part) { return $part !== ''; });
+    if ($heading === '' || !$context_parts) return $result;
+    return array('heading' => $heading, 'context' => implode(' · ', $context_parts));
+}
+
 function surfside_tools_public_messages_args($filters) {
     $args = array();
     if ($filters['q'] !== '') $args['sm_search'] = $filters['q'];
@@ -300,6 +328,8 @@ function surfside_tools_public_message_archive_shortcode() {
     $series_url = surfside_tools_public_messages_page_url(array('sm_view' => 'series'));
     $featured = $list !== null && $is_default
         ? surfside_tools_public_messages_latest($master) : null;
+    $featured_heading = $featured
+        ? surfside_tools_public_messages_featured_heading($featured['title']) : null;
     $years = $list !== null && !$invalid_series
         ? surfside_tools_public_messages_years($master) : array();
     ob_start();
@@ -396,8 +426,11 @@ function surfside_tools_public_message_archive_shortcode() {
                     <section class="surfside-public-messages__featured" aria-label="Latest message">
                         <div class="surfside-public-messages__featured-copy">
                             <p class="surfside-public-messages__eyebrow">Latest message</p>
-                            <h2><?php echo esc_html($featured['title']); ?></h2>
-                            <p><?php echo esc_html(surfside_tools_public_messages_date_label($featured['message_date'], $featured['date_source'] ?? 'sermon')); ?></p>
+                            <h2 title="<?php echo esc_attr($featured['title']); ?>"><?php echo esc_html($featured_heading['heading']); ?></h2>
+                            <?php if ($featured_heading['context'] !== '') : ?>
+                                <p class="surfside-public-messages__featured-context"><?php echo esc_html($featured_heading['context']); ?></p>
+                            <?php endif; ?>
+                            <p class="surfside-public-messages__featured-date"><?php echo esc_html(surfside_tools_public_messages_date_label($featured['message_date'], $featured['date_source'] ?? 'sermon')); ?></p>
                             <a class="surfside-public-messages__button" href="<?php echo esc_url(
                                 surfside_tools_public_messages_page_url(array('sm_video' => $featured['video_id']))
                             ); ?>">Watch Latest Message <span aria-hidden="true">→</span></a>
@@ -419,11 +452,21 @@ function surfside_tools_public_message_archive_shortcode() {
                             <h2 id="surfside-series-preview">Explore by Series</h2>
                             <a href="<?php echo esc_url($series_url); ?>">View all series →</a>
                         </div>
-                        <div class="surfside-public-messages__quick-series">
-                            <?php foreach (array_slice($series_rows, 0, 6) as $s) : ?>
-                                <a href="<?php echo esc_url(surfside_tools_public_messages_page_url(
-                                    array('sm_series' => $s['playlist_id'])
-                                )); ?>"><?php echo esc_html($s['title']); ?> <span aria-hidden="true">→</span></a>
+                        <div class="surfside-public-messages__grid surfside-public-messages__grid--series surfside-public-messages__grid--series-preview">
+                            <?php foreach (array_slice($series_rows, 0, 3) as $s) : ?>
+                                <a class="surfside-public-messages__series" href="<?php echo esc_url(
+                                    surfside_tools_public_messages_page_url(array('sm_series' => $s['playlist_id']))
+                                ); ?>">
+                                    <?php if (!empty($s['sample_thumbnail'])) : ?>
+                                        <img loading="lazy" src="<?php echo esc_url($s['sample_thumbnail']); ?>" alt="">
+                                    <?php else : ?>
+                                        <span class="surfside-public-messages__thumb-placeholder" aria-hidden="true">▶</span>
+                                    <?php endif; ?>
+                                    <span class="surfside-public-messages__series-info">
+                                        <strong><?php echo esc_html($s['title']); ?></strong>
+                                        <small><?php echo esc_html(number_format_i18n((int) $s['message_count'])); ?> message<?php echo (int) $s['message_count'] === 1 ? '' : 's'; ?></small>
+                                    </span>
+                                </a>
                             <?php endforeach; ?>
                         </div>
                     </section>
@@ -544,31 +587,32 @@ function surfside_tools_public_messages_styles() {
     .surfside-public-messages{--s-blue:#0d447c;--s-navy:#0b2546;--s-muted:#526579;--s-border:#dce6ef;max-width:1200px;margin:0 auto;padding:clamp(18px,4vw,48px);color:var(--s-navy);box-sizing:border-box;font-family:inherit}
     .surfside-public-messages *{box-sizing:border-box}
     .surfside-public-messages h1,.surfside-public-messages h2,.surfside-public-messages h3,.surfside-public-messages p{overflow-wrap:anywhere}
-    .surfside-public-messages__intro{text-align:center;max-width:790px;margin:0 auto 32px}
+    .surfside-public-messages__intro{text-align:center;max-width:790px;margin:0 auto 28px}
     .surfside-public-messages__eyebrow{font-size:12px!important;font-weight:800!important;color:#176ca1!important;letter-spacing:.11em;text-transform:uppercase;margin:0 0 9px!important}
     .surfside-public-messages__intro h1{font-size:clamp(36px,5.2vw,64px)!important;line-height:1.08!important;color:var(--s-navy)!important;letter-spacing:-.03em;margin:0 0 15px!important}
     .surfside-public-messages__intro>p:last-child{font-size:clamp(16px,1.6vw,20px);line-height:1.6;color:var(--s-muted);margin:0}
     .surfside-public-messages__tabs{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:0 0 30px}
     .surfside-public-messages__tabs a{padding:11px 19px;text-decoration:none!important;color:var(--s-blue)!important;background:#f1f6fa;border-radius:999px;border:1px solid var(--s-border);font-weight:750}
     .surfside-public-messages__tabs a[aria-current="page"]{background:var(--s-blue);color:#fff!important;border-color:var(--s-blue)}
-    .surfside-public-messages__featured{display:grid;grid-template-columns:1fr 1.1fr;background:#eef5fa;border-radius:22px;overflow:hidden;min-height:310px;margin:12px 0 42px;border:1px solid var(--s-border)}
-    .surfside-public-messages__featured-copy{padding:clamp(26px,4vw,48px);display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
-    .surfside-public-messages__featured-copy h2{font-size:clamp(27px,3vw,39px)!important;line-height:1.17!important;margin:2px 0 11px!important;color:var(--s-navy)!important}
-    .surfside-public-messages__featured-copy>p:not(.surfside-public-messages__eyebrow){color:var(--s-muted);margin:0 0 22px}
+    .surfside-public-messages__featured{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);align-items:center;background:#eef5fa;border-radius:20px;overflow:hidden;margin:10px 0 36px;border:1px solid var(--s-border)}
+    .surfside-public-messages__featured-copy{min-width:0;padding:clamp(24px,3.2vw,40px);display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
+    .surfside-public-messages__featured-copy h2{font-size:clamp(26px,2.8vw,38px)!important;line-height:1.16!important;letter-spacing:-.018em;margin:3px 0 12px!important;color:var(--s-navy)!important}
+    .surfside-public-messages__featured-copy .surfside-public-messages__featured-context{font-size:14px;line-height:1.45;color:#455c75;margin:0 0 12px}
+    .surfside-public-messages__featured-copy .surfside-public-messages__featured-date{font-size:14px;color:var(--s-muted);margin:0 0 22px}
     .surfside-public-messages__button{display:inline-flex;align-items:center;gap:8px;padding:13px 19px;background:var(--s-blue);color:#fff!important;text-decoration:none!important;border-radius:9px;font-weight:750;border:1px solid var(--s-blue)}
     .surfside-public-messages__button:hover,.surfside-public-messages__button:focus{background:#07325d;color:#fff!important}
     .surfside-public-messages__button--outline{background:#fff;color:var(--s-blue)!important}
     .surfside-public-messages__featured-art,.surfside-public-messages__video-art{display:block;position:relative;aspect-ratio:16/9;overflow:hidden;background:#112b4a}
-    .surfside-public-messages__featured-art{height:100%;min-height:300px}
+    .surfside-public-messages__featured-art{width:100%;height:auto;min-height:0;aspect-ratio:16/9;align-self:center}
     .surfside-public-messages__featured-art img,.surfside-public-messages__video-art img,.surfside-public-messages__series>img{width:100%;height:100%;object-fit:cover;display:block}
+    .surfside-public-messages__featured-art img{object-fit:contain}
     .surfside-public-messages__play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:999px;background:rgba(4,28,55,.8);color:#fff;font-size:20px;display:grid;place-items:center;width:54px;height:54px;border:1px solid rgba(255,255,255,.65)}
     .surfside-public-messages__section{margin:24px 0 40px}
     .surfside-public-messages__section-heading{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:14px;margin:0 0 18px}
     .surfside-public-messages__section-heading h2{font-size:clamp(25px,2.5vw,34px)!important;margin:0!important;color:var(--s-navy)!important;line-height:1.2}
     .surfside-public-messages__section-heading>a,.surfside-public-messages__filter-reset a,.surfside-public-messages__back{color:var(--s-blue)!important;font-weight:750;text-decoration:none}
-    .surfside-public-messages__quick-series{display:flex;gap:9px;flex-wrap:wrap}
-    .surfside-public-messages__quick-series>a,.surfside-public-messages__pill{display:inline-flex;align-items:center;gap:6px;padding:11px 14px;border-radius:9px;background:#f2f7fb;border:1px solid var(--s-border);color:var(--s-blue)!important;text-decoration:none!important;font-weight:700}
-    .surfside-public-messages__quick-series>a:hover,.surfside-public-messages__pill:hover{background:#e3f0fb}
+    .surfside-public-messages__pill{display:inline-flex;align-items:center;gap:6px;padding:11px 14px;border-radius:9px;background:#f2f7fb;border:1px solid var(--s-border);color:var(--s-blue)!important;text-decoration:none!important;font-weight:700}
+    .surfside-public-messages__pill:hover{background:#e3f0fb}
     .surfside-public-messages__filters{display:grid;grid-template-columns:minmax(220px,2fr) minmax(105px,.7fr) minmax(155px,1.2fr) auto;gap:12px;align-items:end;background:#f5f8fb;border:1px solid var(--s-border);padding:18px;border-radius:14px}
     .surfside-public-messages__filters label{display:block;font-size:14px;font-weight:750;margin:0 0 7px;color:var(--s-navy)}
     .surfside-public-messages__filters input,.surfside-public-messages__filters select{width:100%;max-width:100%;height:45px;border:1px solid #b7c9d9;background:#fff;border-radius:8px;padding:9px 11px;font:inherit;color:var(--s-navy)}
@@ -599,8 +643,8 @@ function surfside_tools_public_messages_styles() {
     .surfside-public-messages__empty h2{margin-top:0}
     .surfside-public-messages__pagination{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:28px 0 10px;color:var(--s-muted);font-size:14px}
     .surfside-public-messages__pagination a{color:var(--s-blue)!important;font-weight:750;text-decoration:none}
-    @media(max-width:900px){.surfside-public-messages__featured{grid-template-columns:1fr}.surfside-public-messages__featured-art{min-height:unset;aspect-ratio:16/9}.surfside-public-messages__filters{grid-template-columns:repeat(2,minmax(0,1fr))}.surfside-public-messages__grid--videos,.surfside-public-messages__grid--series{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media(max-width:550px){.surfside-public-messages{padding:18px 8px}.surfside-public-messages__intro{margin-bottom:22px}.surfside-public-messages__tabs a{flex:1;text-align:center}.surfside-public-messages__featured{margin-bottom:28px}.surfside-public-messages__featured-copy{padding:25px 19px}.surfside-public-messages__filters{grid-template-columns:1fr}.surfside-public-messages__grid--videos,.surfside-public-messages__grid--series{grid-template-columns:1fr}.surfside-public-messages__grid{gap:14px}.surfside-public-messages__section{margin:22px 0}.surfside-public-messages__series-info,.surfside-public-messages__video-info{padding:13px 15px}}
+    @media(max-width:900px){.surfside-public-messages__featured{grid-template-columns:minmax(0,1fr)}.surfside-public-messages__featured-art{width:100%;aspect-ratio:16/9}.surfside-public-messages__filters{grid-template-columns:repeat(2,minmax(0,1fr))}.surfside-public-messages__grid--videos,.surfside-public-messages__grid--series{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:550px){.surfside-public-messages{padding:18px 8px}.surfside-public-messages__intro{margin-bottom:22px}.surfside-public-messages__tabs a{flex:1;text-align:center}.surfside-public-messages__featured{margin-bottom:26px}.surfside-public-messages__featured-copy{padding:24px 20px}.surfside-public-messages__featured-copy h2{font-size:clamp(25px,7vw,31px)!important}.surfside-public-messages__filters{grid-template-columns:1fr}.surfside-public-messages__grid--videos,.surfside-public-messages__grid--series{grid-template-columns:1fr}.surfside-public-messages__grid{gap:14px}.surfside-public-messages__section{margin:22px 0}.surfside-public-messages__series-info,.surfside-public-messages__video-info{padding:13px 15px}}
     </style>
     <?php
 }
