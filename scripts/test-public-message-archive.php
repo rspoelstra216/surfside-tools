@@ -39,6 +39,12 @@ function surfside_tools_youtube_tables() {
     return array('videos'=>'wp_surfside_yt_videos','playlists'=>'wp_surfside_yt_playlists','members'=>'wp_surfside_yt_members');
 }
 function surfside_tools_youtube_state() { return array('master_id'=>'PLMESSAGES1234','status'=>'complete'); }
+function surfside_tools_youtube_sermon_date($title) {
+    if (!preg_match('/\\b([0-3]?\\d)\\s+(January|February|March|April|May|June|July|August|September|October|November|December)(?:\\s*,\\s*|\\s+)(\\d{4}|\\d{2})\\b/i', (string) $title, $m)) return '';
+    $year = strlen($m[3]) === 2 ? 2000 + (int)$m[3] : (int)$m[3];
+    $date = DateTimeImmutable::createFromFormat('!j F Y', $m[1] . ' ' . ucfirst(strtolower($m[2])) . ' ' . $year);
+    return $date && (int)$date->format('j') === (int)$m[1] ? $date->format('Y-m-d') : '';
+}
 function surfside_tools_youtube_valid_playlist_id($v) { return is_string($v) && preg_match('/^[A-Za-z0-9_-]{10,100}$/', $v); }
 function surfside_tools_youtube_review_is_ready() {
     return get_option('surfside_tools_youtube_review_schema', 0) >= 1;
@@ -138,6 +144,26 @@ $GLOBALS['wpdb'] = new PublicMessagesDB();
 require dirname(__DIR__) . '/includes/public-message-archive.php';
 function check($condition, $label) { if (!$condition) throw new RuntimeException($label); }
 
+// Homepage text can be visually concise without mutating the YouTube title.
+$featured_title = "Discovering God's Calling for Your Life – Made for More Series – Week 2 – 20 September 2026";
+$short = surfside_tools_public_messages_featured_heading($featured_title);
+check($short['heading'] === "Discovering God's Calling for Your Life"
+    && $short['context'] === 'Made for More Series · Week 2',
+    'Featured hero separates a long series/week/date title into a readable headline and context');
+$comma_title = 'What We Have Learned – Finish Well – Week 5 – 23 August, 2026';
+$short_comma = surfside_tools_public_messages_featured_heading($comma_title);
+check($short_comma['heading'] === 'What We Have Learned'
+    && $short_comma['context'] === 'Finish Well · Week 5',
+    'Featured hero supports comma-separated YouTube sermon dates');
+$plain_title = 'Words – Death and Life';
+check(surfside_tools_public_messages_featured_heading($plain_title) ===
+    array('heading'=>$plain_title,'context'=>''),
+    'Meaningful dashes in a normal title are not truncated');
+$no_week = 'Made for More – 20 September 2026';
+check(surfside_tools_public_messages_featured_heading($no_week) ===
+    array('heading'=>$no_week,'context'=>''),
+    'A date alone is not sufficient to strip a YouTube title');
+
 check($GLOBALS['wpdb']->sql === array(), 'Module inclusion does not query database');
 check($GLOBALS['test_inserted_pages'] === array(), 'Module inclusion does not create pages');
 check(isset($GLOBALS['test_shortcodes']['surfside_message_archive']), 'Shortcode registered');
@@ -214,6 +240,24 @@ check(substr_count($html, 'class="surfside-public-messages__video"')===1,
     'Featured video does not repeat in video grid');
 check(!str_contains($html, 'Hidden Series'), 'Hidden series never in public HTML');
 check(str_contains($html, 'Made for More'), 'Public series browsing provided');
+check(str_contains($html, 'surfside-public-messages__grid--series-preview')
+    && str_contains($html, 'class="surfside-public-messages__series"')
+    && str_contains($html, 'https://i.ytimg.com/series.jpg'),
+    'Homepage uses series artwork cards instead of text-only quick links');
+check(!str_contains($html, 'surfside-public-messages__quick-series'),
+    'Obsolete pill-only homepage series preview removed');
+check(str_contains($html, '.surfside-public-messages__featured-art img{object-fit:contain}')
+    && str_contains($html, 'height:auto;min-height:0;aspect-ratio:16/9'),
+    'Featured thumbnail keeps its full 16:9 contents instead of cropping to a tall hero');
+
+$GLOBALS['wpdb']->list_rows[0]['title'] = 'Made to Serve – Made for More Series – Week 2 – 18 October 26';
+$condensed_home = surfside_tools_public_message_archive_shortcode();
+check(str_contains($condensed_home, '<h2 title="Made to Serve – Made for More Series – Week 2 – 18 October 26">Made to Serve</h2>')
+    && str_contains($condensed_home, 'Made for More Series · Week 2'),
+    'Homepage renders concise hero heading with full original preserved in title attribute');
+check(str_contains($condensed_home, 'aria-label="Watch Made to Serve – Made for More Series – Week 2 – 18 October 26"'),
+    'Featured video link remains accessible by its complete YouTube title');
+$GLOBALS['wpdb']->list_rows[0]['title'] = 'Made to Serve 18 October 26';
 check(str_contains($html, 'Blessed &lt;script&gt;alert(1)&lt;/script&gt;'),
     'Video title is HTML-escaped');
 check(str_contains($html, 'Published on YouTube: May 12, 2014'),
@@ -287,6 +331,9 @@ $_GET=array('sm_view'=>'series');
 $series_html = surfside_tools_public_message_archive_shortcode();
 check(str_contains($series_html, 'Sermon Series') && !str_contains($series_html, 'Hidden Series'),
     'Series tab renders with hidden series excluded');
+check(str_contains($series_html, 'surfside-public-messages__grid--series')
+    && str_contains($series_html, 'https://i.ytimg.com/series.jpg'),
+    'Full Browse by Series layout and thumbnails are unchanged');
 $_GET=array('sm_video'=>'aaaaaaaaaaa');
 $detail_html=surfside_tools_public_message_archive_shortcode();
 check(str_contains($detail_html,'www.youtube-nocookie.com/embed/aaaaaaaaaaa') &&
