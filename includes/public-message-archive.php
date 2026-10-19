@@ -95,8 +95,20 @@ function surfside_tools_public_messages_page_url($args = array()) {
     return $args ? add_query_arg($args, $base) : $base;
 }
 
+/** Optional verified-R2 join used ONLY by the Roku catalog. Regular website/mobile
+ * archive queries keep their existing behavior and show canonical YouTube videos.
+ * The explicit object-key check prevents serving a mismatched registered object.
+ */
+function surfside_tools_public_messages_r2_join($r2_only = false) {
+    if (!$r2_only) return '';
+    $table = surfside_tools_r2_sermon_table();
+    return " INNER JOIN {$table} r2 ON r2.video_id = v.video_id
+        AND r2.status = 'ready'
+        AND r2.object_key = CONCAT('sermons/', v.video_id, '.mp4') ";
+}
+
 /** One row per master-playlist video, regardless of number of series. */
-function surfside_tools_public_messages_list($master, $filters) {
+function surfside_tools_public_messages_list($master, $filters, $r2_only = false) {
     global $wpdb;
     $tables = surfside_tools_youtube_tables();
     $sql = surfside_tools_public_messages_sql();
@@ -126,6 +138,7 @@ function surfside_tools_public_messages_list($master, $filters) {
     }
     $from = " FROM {$tables['videos']} v
         INNER JOIN {$tables['members']} master ON master.video_id = v.video_id
+        " . surfside_tools_public_messages_r2_join($r2_only) . "
         {$sql['join']} WHERE " . implode(' AND ', $where);
     $count = (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*)' . $from, $params));
     $pages = max(1, (int) ceil($count / SURFSIDE_PUBLIC_MESSAGES_PER_PAGE));
@@ -143,7 +156,7 @@ function surfside_tools_public_messages_list($master, $filters) {
 }
 
 /** Detail access is filtered independently; excluded videos cannot bypass the list. */
-function surfside_tools_public_messages_detail($master, $id) {
+function surfside_tools_public_messages_detail($master, $id, $r2_only = false) {
     if (!preg_match('/^[A-Za-z0-9_-]{11}$/', (string) $id)) return null;
     global $wpdb;
     $t = surfside_tools_youtube_tables();
@@ -153,6 +166,7 @@ function surfside_tools_public_messages_detail($master, $id) {
                 {$sql['date']} AS message_date, {$sql['source']} AS date_source
          FROM {$t['videos']} v
          INNER JOIN {$t['members']} m ON m.video_id = v.video_id
+         " . surfside_tools_public_messages_r2_join($r2_only) . "
          {$sql['join']}
          WHERE m.playlist_id = %s AND v.video_id = %s AND {$sql['visible']} LIMIT 1",
         $master, $id
@@ -165,7 +179,7 @@ function surfside_tools_public_messages_detail($master, $id) {
  * Excluded series are omitted, as are series with no publicly visible
  * sermons. Series hiding never hides the same sermon from All Messages.
  */
-function surfside_tools_public_messages_series($master) {
+function surfside_tools_public_messages_series($master, $r2_only = false) {
     global $wpdb;
     $t = surfside_tools_youtube_tables();
     $sql = surfside_tools_public_messages_sql();
@@ -178,6 +192,7 @@ function surfside_tools_public_messages_series($master) {
          INNER JOIN {$t['members']} master_m ON master_m.video_id = series_m.video_id
               AND master_m.playlist_id = %s
          INNER JOIN {$t['videos']} v ON v.video_id = series_m.video_id
+         " . surfside_tools_public_messages_r2_join($r2_only) . "
          {$sql['join']}
          WHERE p.category = 'series' AND {$sql['visible']}
          GROUP BY p.playlist_id, p.title

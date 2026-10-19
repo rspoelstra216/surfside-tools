@@ -35,6 +35,7 @@ function is_admin() { return $GLOBALS['test_is_admin']; }
 function current_user_can($permission, $id = null) {
     return $permission === 'manage_options' || ($permission === 'edit_post' && $GLOBALS['test_can_edit']);
 }
+function surfside_tools_r2_sermon_table() { return 'wp_surfside_r2_sermons'; }
 function surfside_tools_youtube_tables() {
     return array('videos'=>'wp_surfside_yt_videos','playlists'=>'wp_surfside_yt_playlists','members'=>'wp_surfside_yt_members');
 }
@@ -364,6 +365,32 @@ $GLOBALS['test_existing_page']=new WP_Post(43, 'Existing custom content');
 surfside_tools_public_messages_provision_page();
 check(count($GLOBALS['test_inserted_pages'])===1,
     'Existing user-authored /messages/ pages are not overwritten');
+
+
+// Roku opts into a JOIN that filters verified R2 copies BEFORE pagination.
+// The existing website/mobile queries must remain untouched by default.
+$GLOBALS['wpdb']->sql = array();
+$roku_filters = array('q'=>'', 'year'=>'', 'series'=>'', 'page'=>1);
+surfside_tools_public_messages_list('PLMESSAGES1234', $roku_filters, true);
+surfside_tools_public_messages_detail('PLMESSAGES1234', 'aaaaaaaaaaa', true);
+surfside_tools_public_messages_series('PLMESSAGES1234', true);
+$roku_queries = $GLOBALS['wpdb']->sql;
+check(count($roku_queries) === 4, 'Roku SQL uses bounded count/list/detail/series database queries');
+foreach ($roku_queries as $query) {
+    check(str_contains($query, 'INNER JOIN wp_surfside_r2_sermons r2')
+        && str_contains($query, "r2.status = 'ready'")
+        && str_contains($query, "r2.object_key = CONCAT('sermons/', v.video_id, '.mp4')")
+        && str_contains($query, "r.disposition <> 'exclude'"),
+        'All Roku queries require ready canonical MP4 object key and honor staff exclusions');
+}
+$GLOBALS['wpdb']->sql = array();
+surfside_tools_public_messages_list('PLMESSAGES1234', $roku_filters);
+surfside_tools_public_messages_detail('PLMESSAGES1234', 'aaaaaaaaaaa');
+surfside_tools_public_messages_series('PLMESSAGES1234');
+foreach ($GLOBALS['wpdb']->sql as $query) {
+    check(!str_contains($query, 'wp_surfside_r2_sermons'),
+        'Existing website queries still include YouTube-only messages');
+}
 
 check($GLOBALS['test_api_requests']===0,
     'Public browsing does not call YouTube or download media');
