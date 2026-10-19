@@ -38,9 +38,26 @@ Surfside Tools stores verified object ID, key, size, ETag and status, without du
 
 4. First synchronize the YouTube master Messages playlist in Church Settings → Integrations. Then visit **Manage Website → Message Archive → Roku Copies**. This initializes its small status table on a staff-only visit, not on public WordPress requests.
 
+## Fast YouTube refresh from the Roku Copies manager
+
+The ordinary YouTube sync runs on a roughly daily schedule and discovers channel playlists, imports all master Messages videos, and matches series. Roku staff no longer need to wait for it.
+
+**Recommended after each weekly YouTube upload:**
+
+1. Add the published video to the public master **Messages** playlist on YouTube.
+2. Open **Manage Website → Message Archive → Roku Copies**.
+3. Paste the YouTube watch/share link into **Find This YouTube Message**. This issues exactly one YouTube Data API playlistItems.list request with BOTH playlistId and videoId. The result is accepted only if the matching ID is actually in Messages. The new metadata and membership are written to the existing tables without triggering a full scan or pruning other records.
+4. The new video is selected in the upload dropdown. Choose the prepared MP4 and upload directly to R2.
+
+If you don't have a video link, **Refresh All Messages (No Series Scan)** does a complete master playlist scan (up to 50 videos per request), without rescanning channel and series playlists. That refresh uses the existing bounded WP-Cron page worker, so return to **Check progress** to see when it finishes. It will only finalize/prune master playlist membership after a complete scan; it never deletes series memberships. On a master-only completion, the separate last_master_refresh timestamp is recorded and the last complete full-sync timestamp remains unchanged.
+
+An active synchronization disables new manual refreshes to prevent overlapping imports. An initial full sync is required before either fast option. Neither fast action modifies staff review decisions or the YouTube videos. The regular full sync is still needed to discover new series, reconcile renamed playlists and remove stale series memberships; its daily schedule remains intact.
+
+YouTube's documented filter and quota: https://developers.google.com/youtube/data/reference/rest/v3/playlistItems/list
+
 ## Weekly workflow
 
-1. Publish the weekly video to YouTube normally, ensure it is in the master Messages playlist, and sync its metadata to Tools.
+1. Publish the weekly video to YouTube normally, ensure it is in the master Messages playlist, and paste its link into **Find This YouTube Message** for an immediate one-request sync. Alternatively, let the daily sync run.
 2. Prepare the Roku copy: MP4 container, H.264/AVC video, AAC-LC stereo audio, and fast-start MP4 index (moov atom before media). An MP4 extension alone does not guarantee Roku-compatible codecs.
 3. From Message Archive → Roku Copies choose the YouTube video and the local MP4 and press **Upload to R2**.
 4. The browser uses a scoped, expiring presigned PUT to upload straight to R2; the media does NOT pass through WordPress. After upload, Tools checks R2 via HEAD and confirms expected size and Content-Type video/mp4 before marking the ID ready.

@@ -317,6 +317,89 @@ function surfside_tools_r2_export_post() {
 add_action('admin_post_surfside_r2_export', 'surfside_tools_r2_export_post');
 
 /**
+ * Staff can paste either the 11-character ID or a real YouTube video URL.
+ * Reject arbitrary hosts (including lookalike domains).
+ */
+function surfside_tools_r2_youtube_id_from_input($input) {
+    if (!is_string($input)) return '';
+    $input = trim($input);
+    if (surfside_tools_r2_video_id($input)) return $input;
+    $parts = wp_parse_url($input);
+    if (!is_array($parts) || !in_array(strtolower((string) ($parts['scheme'] ?? '')), array('http', 'https'), true)) return '';
+    $host = strtolower((string) ($parts['host'] ?? ''));
+    $path = (string) ($parts['path'] ?? '');
+    $candidate = '';
+    if ($host === 'youtu.be' || $host === 'www.youtu.be') {
+        $candidate = trim($path, '/');
+    } elseif (in_array($host, array('youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com'), true)) {
+        if ($path === '/watch') {
+            parse_str((string) ($parts['query'] ?? ''), $query);
+            $candidate = $query['v'] ?? '';
+        } elseif (preg_match('~^/(?:live|shorts|embed)/([A-Za-z0-9_-]{11})/?$~D', $path, $matches)) {
+            $candidate = $matches[1];
+        }
+    }
+    return surfside_tools_r2_video_id($candidate) ? $candidate : '';
+}
+
+/**
+ * Explicit on-demand refresh from the Roku manager. Staff can either import a
+ * single video using one API call or queue a master-only playlist refresh.
+ */
+function surfside_tools_r2_youtube_refresh_post() {
+    if (!is_user_logged_in() || !current_user_can('upload_files')) {
+        wp_die('You do not have permission to refresh messages.', '', array('response' => 403));
+    }
+    check_admin_referer('surfside_r2_youtube_refresh', 'surfside_r2_youtube_nonce');
+    $mode = isset($_POST['refresh_mode']) && is_string($_POST['refresh_mode'])
+        ? sanitize_key(wp_unslash($_POST['refresh_mode'])) : '';
+    $highlight = '';
+    $notice_key = 'surfside_r2_notice_' . get_current_user_id();
+    $rate_key = 'surfside_r2_youtube_refresh_throttle_' . get_current_user_id();
+    if (get_transient($rate_key)) {
+        $result = new WP_Error('surfside_youtube_rate', 'Please allow a few seconds between YouTube refresh requests.');
+    } elseif ($mode === 'video') {
+        $raw = isset($_POST['youtube_url']) && is_string($_POST['youtube_url'])
+            ? wp_unslash($_POST['youtube_url']) : '';
+        $id = surfside_tools_r2_youtube_id_from_input($raw);
+        $result = $id !== '' ? surfside_tools_youtube_quick_import_video($id)
+            : new WP_Error('surfside_youtube_invalid_video', 'Paste a valid YouTube video link or 11-character ID.');
+        if (!is_wp_error($result)) $highlight = $id;
+    } elseif ($mode === 'playlist') {
+        $result = surfside_tools_youtube_start_master_refresh();
+    } else {
+        $result = new WP_Error('surfside_youtube_invalid_action', 'Unknown YouTube refresh action.');
+    }
+    if (!is_wp_error($result)) {
+        set_transient($rate_key, 1, 12);
+    }
+    $message = is_wp_error($result) ? $result->get_error_message()
+        : ($mode === 'video'
+            ? 'YouTube message added or updated. It is now available for an R2 upload.'
+            : 'Master-only YouTube refresh queued. Use Check progress until it completes.');
+    set_transient($notice_key, array('text' => $message, 'error' => is_wp_error($result)), 120);
+    $destination = surfside_tools_r2_manager_url($highlight !== '' ? array('highlight' => $highlight) : array());
+    if (!wp_safe_redirect($destination, 303, 'Surfside Tools')) {
+        wp_die('Refresh processed. <a href="' . esc_url($destination) . '">Return to Roku Copies</a>.',
+            'YouTube Refresh', array('response' => 500));
+    }
+    exit;
+}
+add_action('admin_post_surfside_r2_youtube_refresh', 'surfside_tools_r2_youtube_refresh_post');
+
+/** Handle front-end Staff Dashboard forms without requiring wp-admin access. */
+function surfside_tools_r2_youtube_refresh_frontend_post() {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'
+        || !is_page('site-management')
+        || !isset($_GET['view']) || !is_string($_GET['view'])
+        || sanitize_key(wp_unslash($_GET['view'])) !== 'roku-media'
+        || !isset($_POST['action']) || !is_string($_POST['action'])
+        || sanitize_key(wp_unslash($_POST['action'])) !== 'surfside_r2_youtube_refresh') return;
+    surfside_tools_r2_youtube_refresh_post();
+}
+add_action('template_redirect', 'surfside_tools_r2_youtube_refresh_frontend_post', 1);
+
+/**
  * Ready-only URL helper for a FUTURE Roku API. No public route in this PR.
  * Never treat the key alone as proof of a playable media object.
  */
@@ -339,6 +422,11 @@ function surfside_tools_staff_r2_sermons_shortcode() {
     $schema = surfside_tools_r2_ensure_table();
     $cfg = surfside_tools_r2_config();
     $master = surfside_tools_r2_master_id();
+    $youtube_state = surfside_tools_youtube_state();
+    $youtube_running = ($youtube_state['status'] ?? '') === 'running';
+    $highlight = isset($_GET['highlight']) && is_string($_GET['highlight'])
+        ? sanitize_text_field(wp_unslash($_GET['highlight'])) : '';
+    if (!surfside_tools_r2_video_id($highlight)) $highlight = '';
     $rows = array();
     if (!is_wp_error($schema) && $master !== '') {
         global $wpdb;
@@ -383,13 +471,41 @@ function surfside_tools_staff_r2_sermons_shortcode() {
           </form>
           <p class="surfside-yt-muted">For historic files: fill in source_path in the CSV, run the local CLI uploader, then Reconcile. For weekly messages: use the form below.</p>
         </section>
+        <section class="surfside-yt-panel">
+          <h2>Refresh YouTube Messages</h2>
+          <p class="surfside-yt-muted">YouTube is the catalog. After publishing a sermon, paste its YouTube link to import it in one API request, rather than waiting for the daily full sync.</p>
+          <form method="post" action="<?php echo esc_url(surfside_tools_r2_manager_url()); ?>">
+            <input type="hidden" name="action" value="surfside_r2_youtube_refresh">
+            <input type="hidden" name="refresh_mode" value="video">
+            <?php wp_nonce_field('surfside_r2_youtube_refresh', 'surfside_r2_youtube_nonce'); ?>
+            <label for="surfside-r2-youtube-url" style="display:block">YouTube video link or ID</label>
+            <input id="surfside-r2-youtube-url" name="youtube_url" type="text" required
+              placeholder="https://www.youtube.com/watch?v=…" style="width:100%;max-width:580px;padding:10px">
+            <button type="submit" <?php disabled($youtube_running); ?>>Find This YouTube Message</button>
+          </form>
+          <p class="surfside-yt-muted">Video must already be public and in the master Messages playlist. The lookup will not change your existing review decisions or scan other playlists.</p>
+          <form method="post" action="<?php echo esc_url(surfside_tools_r2_manager_url()); ?>" style="margin-top:12px">
+            <input type="hidden" name="action" value="surfside_r2_youtube_refresh">
+            <input type="hidden" name="refresh_mode" value="playlist">
+            <?php wp_nonce_field('surfside_r2_youtube_refresh', 'surfside_r2_youtube_nonce'); ?>
+            <button type="submit" <?php disabled($youtube_running); ?>>Refresh All Messages (No Series Scan)</button>
+          </form>
+          <p class="surfside-yt-muted">This scans only the master playlist (up to 50 videos per API request). Full channel and series syncing continues automatically.</p>
+          <?php if ($youtube_running) : ?>
+            <p role="status"><strong>YouTube sync running:</strong> <?php echo esc_html((string) ($youtube_state['message'] ?? 'Processing')); ?>
+              (<?php echo esc_html(number_format_i18n((int) ($youtube_state['requests'] ?? 0))); ?> API pages so far)</p>
+            <p><a href="<?php echo esc_url(surfside_tools_r2_manager_url()); ?>">Check progress / refresh this page</a></p>
+          <?php elseif (!empty($youtube_state['last_master_refresh'])) : ?>
+            <p class="surfside-yt-muted">Last master-only refresh: <?php echo esc_html(wp_date('F j, Y g:i A', (int) $youtube_state['last_master_refresh'])); ?></p>
+          <?php endif; ?>
+        </section>
         <section class="surfside-yt-panel"><h2>Upload this week's MP4</h2>
           <form id="surfside-r2-upload-form">
             <label for="surfside-r2-id">YouTube message</label>
             <select id="surfside-r2-id" required>
               <option value="">Choose a YouTube video</option>
               <?php foreach ($rows as $row) : ?>
-                <option value="<?php echo esc_attr($row['video_id']); ?>" <?php disabled(($row['status'] ?? '') === 'ready'); ?>><?php echo esc_html((($row['status'] ?? '') === 'ready' ? '✓ ' : '') . $row['title'] . ' (' . $row['video_id'] . ')'); ?></option>
+                <option value="<?php echo esc_attr($row['video_id']); ?>" <?php if ($highlight === $row['video_id']) echo 'selected'; ?> <?php disabled(($row['status'] ?? '') === 'ready'); ?>><?php echo esc_html((($row['status'] ?? '') === 'ready' ? '✓ ' : '') . $row['title'] . ' (' . $row['video_id'] . ')'); ?></option>
               <?php endforeach; ?>
             </select>
             <label for="surfside-r2-file" style="display:block;margin-top:12px">Roku-ready MP4 (H.264/AAC, faststart)</label>

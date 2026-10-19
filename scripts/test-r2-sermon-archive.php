@@ -40,6 +40,7 @@ function wp_remote_retrieve_response_code($response) { return $response['status'
 function wp_remote_retrieve_header($response, $key) { return $response['headers'][$key] ?? ''; }
 function rest_ensure_response($value) { return $value; }
 function trailingslashit($v) { return rtrim($v, '/') . '/'; }
+function wp_parse_url($url) { return parse_url($url); }
 class R2TestDB {
     public $prefix = 'wp_';
     public $saved = array();
@@ -62,6 +63,21 @@ require_once dirname(__DIR__) . '/includes/r2-sermon-archive.php';
 $id = 'abcdefghijk';
 $GLOBALS['known_id'] = $id;
 assert_r2(surfside_tools_r2_video_id($id), 'valid YouTube ID');
+assert_r2(surfside_tools_r2_youtube_id_from_input('https://www.youtube.com/watch?v=' . $id . '&list=PLabc') === $id,
+    'YouTube watch URL parsed safely');
+assert_r2(surfside_tools_r2_youtube_id_from_input('https://youtu.be/' . $id . '?si=foo') === $id,
+    'Short YouTube URL parsed');
+assert_r2(surfside_tools_r2_youtube_id_from_input('https://www.youtube.com/live/' . $id) === $id,
+    'YouTube live URL parsed');
+assert_r2(surfside_tools_r2_youtube_id_from_input('https://www.youtube.com/shorts/' . $id) === $id,
+    'YouTube shorts URL parsed');
+assert_r2(surfside_tools_r2_youtube_id_from_input('https://youtube.com.evil.example/watch?v=' . $id) === '',
+    'Lookalike YouTube host rejected');
+assert_r2(surfside_tools_r2_youtube_id_from_input('https://example.org/watch?v=' . $id) === '',
+    'External host rejected');
+assert_r2(surfside_tools_r2_youtube_id_from_input('../' . $id) === '',
+    'Unexpected relative path rejected');
+
 assert_r2(!surfside_tools_r2_video_id('../traversal'), 'invalid YouTube ID rejected');
 assert_r2(surfside_tools_r2_sermon_key($id) === 'sermons/abcdefghijk.mp4', 'deterministic key');
 $url = surfside_tools_r2_presign('PUT', surfside_tools_r2_sermon_key($id), array(), 3600, 'video/mp4');
