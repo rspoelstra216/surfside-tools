@@ -32,6 +32,20 @@ function check($ok, $message) { if (!$ok) throw new RuntimeException($message); 
 
 require_once __DIR__ . '/../includes/youtube-owner-file-matching.php';
 
+$callback = 'https://surfsidefellowship.org/dashboard/site-management/?view=roku-media&owner_oauth=callback';
+$auth_url = surfside_yt_owner_authorization_url('TEST_CLIENT', $callback, 'TEST_STATE');
+parse_str((string) parse_url($auth_url, PHP_URL_QUERY), $authorization_params);
+check(($authorization_params['redirect_uri'] ?? '') === $callback,
+    'OAuth redirect URI must preserve BOTH WordPress query parameters');
+check(!isset($authorization_params['owner_oauth']),
+    'OAuth callback indicator must not leak into Google authorization query');
+check(strpos($auth_url, 'redirect_uri=https%3A%2F%2F') !== false
+    && strpos($auth_url, '%26owner_oauth%3Dcallback') !== false,
+    'Nested redirect URI must be RFC3986-encoded');
+check(($authorization_params['scope'] ?? '') === 'https://www.googleapis.com/auth/youtube.readonly',
+    'OAuth scope preserved');
+check(($authorization_params['state'] ?? '') === 'TEST_STATE', 'OAuth CSRF state preserved');
+
 foreach (array('../bad.mp4', '/absolute.mp4', 'C:\\bad.mp4', '2024//bad.mp4', '2024/./bad.mp4',
     '2024/../bad.mp4', "line\nbreak.mp4", '2024/movie.mkv') as $bad) {
     check(!surfside_yt_owner_valid_source_path($bad), 'Rejected unsafe path: ' . $bad);

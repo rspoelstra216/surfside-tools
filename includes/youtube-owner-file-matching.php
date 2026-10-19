@@ -99,6 +99,21 @@ function surfside_yt_owner_master_rows() {
     ), ARRAY_A);
 }
 
+/**
+ * Encode OAuth parameters as an actual query string. WordPress add_query_arg()
+ * does not encode newly provided values: a raw ampersand inside redirect_uri
+ * would be interpreted as a separate Google authorization parameter.
+ */
+function surfside_yt_owner_authorization_url($client_id, $redirect, $nonce) {
+    $params = array(
+        'client_id' => $client_id, 'redirect_uri' => $redirect,
+        'response_type' => 'code', 'scope' => 'https://www.googleapis.com/auth/youtube.readonly',
+        'access_type' => 'offline', 'prompt' => 'consent', 'state' => $nonce,
+    );
+    return 'https://accounts.google.com/o/oauth2/v2/auth?' .
+        http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+}
+
 function surfside_yt_owner_connect() {
     $client = surfside_yt_owner_client();
     $redirect = surfside_yt_owner_callback_url();
@@ -112,11 +127,7 @@ function surfside_yt_owner_connect() {
     $nonce = bin2hex(random_bytes(24));
     set_transient('surfside_yt_owner_state_' . get_current_user_id(),
         array('state' => $nonce, 'channel_id' => $sync['channel_id']), 10 * MINUTE_IN_SECONDS);
-    $url = add_query_arg(array(
-        'client_id' => $client['id'], 'redirect_uri' => $redirect,
-        'response_type' => 'code', 'scope' => 'https://www.googleapis.com/auth/youtube.readonly',
-        'access_type' => 'offline', 'prompt' => 'consent', 'state' => $nonce,
-    ), 'https://accounts.google.com/o/oauth2/v2/auth');
+    $url = surfside_yt_owner_authorization_url($client['id'], $redirect, $nonce);
     wp_redirect($url, 302, 'Surfside Tools'); // Google is intentionally external.
     exit;
 }
