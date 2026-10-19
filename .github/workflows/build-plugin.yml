@@ -43,6 +43,12 @@ jobs:
       - name: Test YouTube message manager review decisions
         run: php scripts/test-youtube-message-manager.php
 
+      - name: Test R2 sermon copy management and uploader syntax
+        run: |
+          php scripts/test-r2-sermon-archive.php
+          python3 -m py_compile scripts/upload-r2-sermons.py
+          node --check assets/js/r2-sermon-upload.js
+
       - name: Test YouTube Integrations dashboard POST routing
         run: php scripts/test-youtube-settings-post.php
 

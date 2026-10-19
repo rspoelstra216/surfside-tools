@@ -79,11 +79,19 @@ function wp_remote_get($url, $args) {
             ));
         };
         $items = match ($q['playlistId']) {
-            'PLMESSAGES1234' => array($entry('abcdEF12_34', 'Made to Serve 18 October 26'), $entry('abcdEF12_35', 'Sermon with no date')),
+            'PLMESSAGES1234' => array_merge(
+                array($entry('abcdEF12_34', 'Made to Serve 18 October 26'), $entry('abcdEF12_35', 'Sermon with no date')),
+                !empty($GLOBALS['new_sermon_visible'])
+                    ? array($entry('abcdEF12_36', 'Our New Message 25 October 26')) : array()
+            ),
             'PLSERIES123456' => array($entry('abcdEF12_34', 'Made to Serve 18 October 26'), $entry('music987654', 'Unrelated music')),
             'PLMUSIC123456' => array($entry('music987654', 'Unrelated music')),
             default => throw new RuntimeException('Wrong playlist selected'),
         };
+        if (isset($q['videoId'])) {
+            $items = array_values(array_filter($items, fn($item) =>
+                ($item['contentDetails']['videoId'] ?? '') === $q['videoId']));
+        }
         return array('code' => 200, 'body' => array('items' => $items));
     }
     throw new RuntimeException('Unexpected resource');
@@ -232,4 +240,53 @@ check(count($GLOBALS['api_calls']) === 5, 'Bounded API calls: channel, playlists
 check(count(array_filter($GLOBALS['api_calls'], fn($x) => $x['args']['timeout'] === 12 && $x['args']['redirection'] === 0)) === 5,
     'YouTube requests have bounded timeouts and no redirects');
 
-echo "YouTube sermon archive metadata regression checks passed.\n";
+// A single videoId + playlistId request imports a newly uploaded sermon in place.
+$GLOBALS['new_sermon_visible'] = true;
+$before_calls = count($GLOBALS['api_calls']);
+$previous_last_full = surfside_tools_youtube_state()['last_success'];
+$original_series = array_filter($GLOBALS['wpdb']->members, fn($row) => $row['playlist_id'] === 'PLSERIES123456');
+check(surfside_tools_youtube_quick_import_video('abcdEF12_36') === true, 'Single-message quick import succeeded');
+check(count($GLOBALS['api_calls']) === $before_calls + 1, 'Single-message sync uses one upstream request');
+$call = end($GLOBALS['api_calls'])['q'];
+check($call['playlistId'] === 'PLMESSAGES1234' && $call['videoId'] === 'abcdEF12_36'
+    && $call['maxResults'] === '1', 'Video filter is scoped to the canonical master playlist');
+check(isset($GLOBALS['wpdb']->videos['abcdEF12_36']), 'Quick import updates the ordinary YouTube metadata table');
+check(isset($GLOBALS['wpdb']->members['PLMESSAGES1234/abcdEF12_36']), 'Quick import records master membership');
+check(count(array_filter($GLOBALS['wpdb']->members, fn($row) => $row['playlist_id'] === 'PLSERIES123456'))
+    === count($original_series), 'Quick import never prunes existing series');
+check(surfside_tools_youtube_state()['last_success'] === $previous_last_full,
+    'Single-message lookup does not change full-sync timestamp');
+
+$missing_before = count($GLOBALS['wpdb']->members);
+$before_calls = count($GLOBALS['api_calls']);
+check(is_wp_error(surfside_tools_youtube_quick_import_video('nonmatch987')),
+    'Video missing from the master playlist is rejected');
+check(count($GLOBALS['wpdb']->members) === $missing_before, 'Failed lookup cannot change any memberships');
+check(count($GLOBALS['api_calls']) === $before_calls + 1, 'Missing video checked with one request');
+check(is_wp_error(surfside_tools_youtube_quick_import_video('not-valid-id')),
+    'Malformed video ID rejected before contacting YouTube');
+check(count($GLOBALS['api_calls']) === $before_calls + 1, 'Malformed ID consumes no API requests');
+
+check(surfside_tools_youtube_start_master_refresh() === true, 'Master-only refresh queued');
+$state = surfside_tools_youtube_state();
+check($state['status'] === 'running' && $state['phase'] === 'master'
+    && $state['mode'] === 'master_only', 'Master-only mode skips discovery');
+check(is_wp_error(surfside_tools_youtube_quick_import_video('abcdEF12_36')),
+    'Single-message refresh does not interrupt an active scheduled refresh');
+check(is_wp_error(surfside_tools_youtube_start_master_refresh()),
+    'Master-only refresh cannot restart while a sync is running');
+$before_calls = count($GLOBALS['api_calls']);
+for ($i = 0; $i < 8 && $state['status'] === 'running'; $i++) {
+    $result = surfside_tools_youtube_process_page($state);
+    check(!is_wp_error($result), 'Master-only playlist page succeeds');
+}
+check($state['status'] === 'complete' && $state['phase'] === 'complete', 'Master-only refresh finishes');
+check(count($GLOBALS['api_calls']) === $before_calls + 1, 'Master-only sync reads no channel or series pages in fixture');
+check($state['last_success'] === $previous_last_full && !empty($state['last_master_refresh']),
+    'Master-only refresh preserves previous full-success timestamp and records its own date');
+check(isset($GLOBALS['wpdb']->members['PLMESSAGES1234/abcdEF12_36']),
+    'Master-only refresh retains newly added message');
+check(count(array_filter($GLOBALS['wpdb']->members, fn($row) => $row['playlist_id'] === 'PLSERIES123456'))
+    === count($original_series), 'Master-only refresh retains series memberships');
+
+echo "YouTube sermon archive + targeted/master-only refresh regression checks passed.\n";

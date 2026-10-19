@@ -545,6 +545,7 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
             <nav class="surfside-yt-tabs" aria-label="Message Archive sections">
                 <a href="<?php echo esc_url(surfside_tools_youtube_manager_url()); ?>" <?php echo $tab === 'videos' ? 'aria-current="page"' : ''; ?>>Videos</a>
                 <a href="<?php echo esc_url(surfside_tools_youtube_manager_url(array('tab'=>'series'))); ?>" <?php echo $tab === 'series' ? 'aria-current="page"' : ''; ?>>Series (<?php echo esc_html(number_format_i18n(count($series_rows))); ?>)</a>
+                <?php if (function_exists('surfside_tools_r2_manager_url')) : ?><a href="<?php echo esc_url(surfside_tools_r2_manager_url()); ?>">Roku Copies</a><?php endif; ?>
             </nav>
 
             <?php if ($tab === 'series') : ?>

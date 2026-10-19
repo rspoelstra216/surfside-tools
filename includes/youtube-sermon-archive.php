@@ -220,11 +220,101 @@ function surfside_tools_youtube_start_sync() {
         'requests' => 0,
         'started_at' => time(),
         'last_success' => (int) (surfside_tools_youtube_state()['last_success'] ?? 0),
+        'last_master_refresh' => (int) (surfside_tools_youtube_state()['last_master_refresh'] ?? 0),
         'message' => 'Discovering public playlists.',
     );
     update_option(SURFSIDE_YT_STATE_OPTION, $state, false);
     wp_clear_scheduled_hook(SURFSIDE_YT_TICK);
     surfside_tools_youtube_queue_tick(20);
+    return true;
+}
+
+/**
+ * Refresh only the master Messages playlist, avoiding channel/series discovery.
+ * A full daily sync still updates series membership and reconciles all playlists.
+ * Never interrupt an active sync or pretend this was a successful full sync.
+ */
+function surfside_tools_youtube_start_master_refresh() {
+    $previous = surfside_tools_youtube_state();
+    $master = (string) ($previous['master_id'] ?? '');
+    if (($previous['status'] ?? '') === 'running') {
+        return new WP_Error('surfside_youtube_busy', 'A YouTube synchronization is already running. Check its progress before starting another.');
+    }
+    if ((int) get_option(SURFSIDE_YT_SCHEMA_OPTION, 0) < SURFSIDE_YT_SCHEMA_VERSION
+        || !surfside_tools_youtube_valid_playlist_id($master)
+        || (int) ($previous['last_success'] ?? 0) <= 0) {
+        return new WP_Error('surfside_youtube_initial_sync', 'Complete the initial full YouTube synchronization in Integrations first.');
+    }
+    if (surfside_tools_youtube_api_key() === '') {
+        return new WP_Error('surfside_youtube_missing_key', 'Configure the YouTube API key in Integrations first.');
+    }
+    $configured = (string) (surfside_tools_youtube_config()['master_playlist_id'] ?? '');
+    if ($configured !== '' && $configured !== $master) {
+        return new WP_Error('surfside_youtube_changed_master', 'The configured Messages playlist changed. Run a full sync in Integrations.');
+    }
+    $state = $previous;
+    $state['status'] = 'running';
+    $state['phase'] = 'master';
+    $state['mode'] = 'master_only';
+    $state['run_id'] = wp_generate_uuid4();
+    $state['page_token'] = '';
+    $state['requests'] = 0;
+    $state['started_at'] = time();
+    $state['message'] = 'Refreshing the master Messages playlist (without scanning series).';
+    update_option(SURFSIDE_YT_STATE_OPTION, $state, false);
+    wp_clear_scheduled_hook(SURFSIDE_YT_TICK);
+    surfside_tools_youtube_queue_tick(20);
+    return true;
+}
+
+/**
+ * One API request, scoped by playlistId AND videoId, for the sermon just uploaded.
+ * No playlist pruning or series lookup. Existing staff decisions are unaffected.
+ */
+function surfside_tools_youtube_quick_import_video($id) {
+    if (!is_string($id) || !preg_match('/^[A-Za-z0-9_-]{11}$/D', $id)) {
+        return new WP_Error('surfside_youtube_invalid_video', 'Enter a valid YouTube video link or 11-character ID.');
+    }
+    $state = surfside_tools_youtube_state();
+    if (($state['status'] ?? '') === 'running') {
+        return new WP_Error('surfside_youtube_busy', 'A YouTube synchronization is already running. Check its progress before starting another.');
+    }
+    $master = (string) ($state['master_id'] ?? '');
+    if ((int) get_option(SURFSIDE_YT_SCHEMA_OPTION, 0) < SURFSIDE_YT_SCHEMA_VERSION
+        || !surfside_tools_youtube_valid_playlist_id($master)
+        || (int) ($state['last_success'] ?? 0) <= 0) {
+        return new WP_Error('surfside_youtube_initial_sync', 'Complete the initial full YouTube synchronization in Integrations first.');
+    }
+    if (surfside_tools_youtube_api_key() === '') {
+        return new WP_Error('surfside_youtube_missing_key', 'Configure the YouTube API key in Integrations first.');
+    }
+    $configured = (string) (surfside_tools_youtube_config()['master_playlist_id'] ?? '');
+    if ($configured !== '' && $configured !== $master) {
+        return new WP_Error('surfside_youtube_changed_master', 'The configured Messages playlist changed. Run a full sync in Integrations.');
+    }
+    $response = surfside_tools_youtube_request('playlistItems', array(
+        'part' => 'snippet,contentDetails',
+        'playlistId' => $master,
+        'videoId' => $id,
+        'maxResults' => 1,
+    ));
+    if (is_wp_error($response)) return $response;
+    $matching = array();
+    foreach ((array) ($response['items'] ?? array()) as $item) {
+        if (!is_array($item)) continue;
+        $found_id = (string) ($item['contentDetails']['videoId'] ?? $item['snippet']['resourceId']['videoId'] ?? '');
+        if ($found_id === $id) $matching[] = $item;
+    }
+    if (!$matching) {
+        return new WP_Error('surfside_youtube_not_in_messages',
+            'This video is not available in the public Messages playlist yet. Add it to that playlist and retry.');
+    }
+    $result = surfside_tools_youtube_import_items(
+        array('items' => $matching), $master, true,
+        array('run_id' => wp_generate_uuid4(), 'master_id' => $master)
+    );
+    if (is_wp_error($result)) return $result;
+    // Do not move last_success: an individual lookup is NOT a full sync.
     return true;
 }
 
@@ -385,7 +475,13 @@ function surfside_tools_youtube_process_page(&$state) {
             if ($wpdb->update($tables['playlists'], array('category' => $category), array('playlist_id' => $playlist_id)) === false) {
                 return new WP_Error('surfside_youtube_playlist_finalize', 'Could not finalize the YouTube playlist classification.');
             }
-            if ($master) {
+            if ($master && ($state['mode'] ?? '') === 'master_only') {
+                $state['phase'] = 'complete';
+                $state['status'] = 'complete';
+                $state['last_master_refresh'] = time();
+                $state['message'] = 'Master Messages playlist refreshed. Series are maintained by the regular full sync.';
+                $state['page_token'] = '';
+            } elseif ($master) {
                 $state['phase'] = 'series';
                 $state['message'] = 'Matching public series playlists to Messages.';
             } else {

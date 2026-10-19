@@ -100,6 +100,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/volunteer-needs.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/member-engagement.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/sermon-archive-viewer.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/youtube-message-manager.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/r2-sermon-archive.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/public-message-archive.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-message-archive-api.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/home-latest-sermon.php';

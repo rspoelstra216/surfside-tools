@@ -14,6 +14,12 @@ function surfside_tools_staff_site_management_shortcode() {
         return surfside_tools_staff_youtube_message_manager_shortcode();
     }
 
+    if (isset($_GET['view']) && is_string($_GET['view'])
+        && sanitize_key(wp_unslash($_GET['view'])) === 'roku-media'
+        && function_exists('surfside_tools_staff_r2_sermons_shortcode')) {
+        return surfside_tools_staff_r2_sermons_shortcode();
+    }
+
     $can_configure=current_user_can('manage_options');
     $cards=array();
     if($can_configure){
