@@ -22,7 +22,7 @@ Click **Connect YouTube owner**, sign in, and select the Surfside channel / Bran
 
 ## Retrieve video filenames
 
-Click **Retrieve original filenames from YouTube**. The background worker requests only videos.list with fileDetails and processingDetails for up to 50 video IDs from the synchronized master Messages playlist. It uses one bounded 50-ID request per scheduled tick. Reload **Check progress** until Complete. On a 403/quota failure the worker stops and shows an error; it does not keep retrying. Metadata is stored in a non-autoloaded, server-side WordPress option, keyed by YouTube ID.
+Click **Retrieve original filenames from YouTube**. The background worker requests only videos.list with fileDetails and processingDetails for up to 50 video IDs from the synchronized master Messages playlist. It uses one bounded 50-ID request per scheduled tick. Reload **Check progress** until Complete. If YouTube reports an ownership-forbidden video, the worker divides only the affected batch into smaller requests to identify and flag inaccessible IDs for manual review. If quota is exhausted or a transient error occurs, scanning pauses with its cursor and all completed filename records retained. Use **Resume filename retrieval (keep saved results)** after resolving the limit/authorization; this also resumes scans stopped by the earlier implementation. Do not click a fresh retrieval when you only need to resume an interrupted scan. Metadata is stored in a non-autoloaded, server-side WordPress option, keyed by YouTube ID.
 
 Some older YouTube videos may lack fileDetails. Those rows remain explicitly unmatched; they are never assigned a local file by date guessing.
 

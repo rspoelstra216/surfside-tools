@@ -80,9 +80,24 @@ function surfside_yt_owner_get($resource, $params, $token) {
     $status = wp_remote_retrieve_response_code($response);
     $result = json_decode(wp_remote_retrieve_body($response), true);
     if ($status !== 200 || !is_array($result)) {
+        // Do not expose upstream response bodies or bearer tokens. The documented
+        // machine-readable reason safely distinguishes ownership from quota.
+        $reason = is_array($result) ? (string) ($result['error']['errors'][0]['reason'] ?? '') : '';
+        if ($status === 403 && in_array($reason, array('quotaExceeded', 'dailyLimitExceeded',
+            'rateLimitExceeded', 'userRateLimitExceeded'), true)) {
+            return new WP_Error('surfside_yt_owner_quota',
+                'YouTube API quota or rate limit reached. Resume this scan after the limit resets; saved filenames are retained.');
+        }
+        if ($status === 403 && $reason === 'forbidden') {
+            return new WP_Error('surfside_yt_owner_forbidden',
+                'YouTube denied file details for one or more videos. Only the uploader can read original file details.');
+        }
+        if ($status === 404 && $reason === 'videoNotFound') {
+            return new WP_Error('surfside_yt_owner_not_found', 'A requested YouTube video is no longer accessible.');
+        }
         return new WP_Error('surfside_yt_owner_http',
-            $status === 403 ? 'YouTube denied owner metadata or quota was exceeded. Verify channel authorization and quota.'
-                : 'YouTube owner metadata request failed (HTTP ' . absint($status) . ').');
+            'YouTube owner metadata request failed (HTTP ' . absint($status) .
+            ($reason === '' ? '' : ', reason: ' . sanitize_key($reason)) . ').');
     }
     return $result;
 }
@@ -199,15 +214,43 @@ function surfside_yt_owner_start_scan() {
     return true;
 }
 
-/** One bounded videos.list call per WP-Cron execution (50 IDs, 1 quota unit). */
+/**
+ * Resume the existing scan without clearing any of the completed filename data.
+ * Also upgrades a legacy status=error state created by the original worker.
+ */
+function surfside_yt_owner_resume_scan() {
+    $state = get_option(SURFSIDE_YT_OWNER_STATE_OPTION, array());
+    if (!is_array($state) || !in_array(($state['status'] ?? ''), array('error', 'paused'), true)
+        || empty($state['ids']) || (int) ($state['cursor'] ?? 0) >= (int) ($state['total'] ?? 0)) {
+        return new WP_Error('surfside_yt_owner_resume', 'There is no interrupted filename scan to resume.');
+    }
+    $token = surfside_yt_owner_access_token();
+    if (is_wp_error($token)) return $token;
+    $state['status'] = 'running';
+    $state['message'] = 'Resuming at ' . (int) $state['cursor'] . ' of ' . (int) $state['total'] . '.';
+    update_option(SURFSIDE_YT_OWNER_STATE_OPTION, $state, false);
+    wp_clear_scheduled_hook(SURFSIDE_YT_OWNER_TICK);
+    surfside_yt_owner_schedule(5);
+    return true;
+}
+
+/** One bounded videos.list API request per WP-Cron execution. */
 function surfside_yt_owner_scan_tick() {
     $state = get_option(SURFSIDE_YT_OWNER_STATE_OPTION, array());
     if (!is_array($state) || ($state['status'] ?? '') !== 'running') return;
-    $ids = array_slice($state['ids'] ?? array(), (int) ($state['cursor'] ?? 0), 50);
+    // On a mixed-ownership batch, recursively isolate the inaccessible video.
+    // Keep the queue in the existing non-autoloaded scan state so a pause/resume
+    // never discards work already fetched or replays the first 350 entries.
+    if (!isset($state['retry_batches']) || !is_array($state['retry_batches'])) {
+        $state['retry_batches'] = array();
+    }
+    $from_queue = !empty($state['retry_batches']);
+    $ids = $from_queue ? array_shift($state['retry_batches'])
+        : array_slice($state['ids'] ?? array(), (int) ($state['cursor'] ?? 0), 50);
     if (!$ids) {
         $state['status'] = 'complete';
-        $state['message'] = 'Scan complete.';
-        unset($state['ids']);
+        $state['message'] = 'Filename scan complete. Unavailable videos require manual matching.';
+        unset($state['ids'], $state['retry_batches']);
         update_option(SURFSIDE_YT_OWNER_STATE_OPTION, $state, false);
         return;
     }
@@ -217,8 +260,39 @@ function surfside_yt_owner_scan_tick() {
         'id' => implode(',', $ids),
     ), $token);
     if (is_wp_error($response)) {
-        $state['status'] = 'error';
-        $state['message'] = $response->get_error_message();
+        $code = $response->get_error_code();
+        if (in_array($code, array('surfside_yt_owner_forbidden', 'surfside_yt_owner_not_found'), true)) {
+            if (count($ids) > 1) {
+                $split = intdiv(count($ids), 2);
+                array_unshift($state['retry_batches'],
+                    array_slice($ids, 0, $split), array_slice($ids, $split));
+                $state['message'] = 'Isolating an inaccessible video without losing previous results.';
+            } else {
+                // Only one specific inaccessible ID is skipped; never guess its
+                // filename or treat it as a successful automatic association.
+                $files = get_option(SURFSIDE_YT_OWNER_FILES_OPTION, array());
+                if (!is_array($files)) $files = array();
+                $files[$ids[0]] = array('file_name' => '', 'size_bytes' => '');
+                update_option(SURFSIDE_YT_OWNER_FILES_OPTION, $files, false);
+                $state['missing'] = (int) ($state['missing'] ?? 0) + 1;
+                $state['skipped_unauthorized'] = (int) ($state['skipped_unauthorized'] ?? 0) + 1;
+                $state['cursor'] = (int) ($state['cursor'] ?? 0) + 1;
+                $state['message'] = 'One inaccessible video flagged for manual review.';
+            }
+            if ($state['cursor'] >= $state['total'] && !$state['retry_batches']) {
+                $state['status'] = 'complete';
+                $state['message'] = 'Filename scan complete. Inaccessible videos require manual matching.';
+                unset($state['ids'], $state['retry_batches']);
+            } else {
+                surfside_yt_owner_schedule(15);
+            }
+        } else {
+            // Quota, expired connection or transient failure: keep all metadata,
+            // original ID order, cursor and unresolved retry queue intact.
+            if ($from_queue) array_unshift($state['retry_batches'], $ids);
+            $state['status'] = 'paused';
+            $state['message'] = $response->get_error_message();
+        }
         update_option(SURFSIDE_YT_OWNER_STATE_OPTION, $state, false);
         return;
     }
@@ -226,28 +300,27 @@ function surfside_yt_owner_scan_tick() {
     $files = get_option(SURFSIDE_YT_OWNER_FILES_OPTION, array());
     if (!is_array($files)) $files = array();
     foreach ($ids as $id) $files[$id] = array('file_name' => '', 'size_bytes' => '');
+    $seen = array();
     foreach (($response['items'] ?? array()) as $item) {
         $id = (string) ($item['id'] ?? '');
-        if (!isset($known[$id])) continue;
+        if (!isset($known[$id]) || isset($seen[$id])) continue;
+        $seen[$id] = true;
         $name = (string) ($item['fileDetails']['fileName'] ?? '');
         $name = trim(sanitize_text_field(basename(str_replace('\\', '/', $name))));
         $size = (string) ($item['fileDetails']['fileSize'] ?? '');
         if ($name !== '' && preg_match('/^[0-9]+$/D', $size) && (float) $size > 0) {
             $files[$id] = array('file_name' => $name, 'size_bytes' => $size);
-            $state['available']++;
+            $state['available'] = (int) ($state['available'] ?? 0) + 1;
         } else {
-            $state['missing']++;
+            $state['missing'] = (int) ($state['missing'] ?? 0) + 1;
         }
     }
-    // Items not returned by YouTube still need explicit review.
-    $state['missing'] += count($ids) - count(array_filter($response['items'] ?? array(), function ($item) use ($known) {
-        return isset($known[$item['id'] ?? '']);
-    }));
-    $state['cursor'] = (int) $state['cursor'] + count($ids);
-    if ($state['cursor'] >= $state['total']) {
+    $state['missing'] = (int) ($state['missing'] ?? 0) + count($ids) - count($seen);
+    $state['cursor'] = (int) ($state['cursor'] ?? 0) + count($ids);
+    if ($state['cursor'] >= $state['total'] && !$state['retry_batches']) {
         $state['status'] = 'complete';
-        $state['message'] = 'Filename scan complete.';
-        unset($state['ids']);
+        $state['message'] = 'Filename scan complete. Unavailable videos require manual matching.';
+        unset($state['ids'], $state['retry_batches']);
     } else {
         $state['message'] = 'Scanning owner filenames…';
         surfside_yt_owner_schedule(15);
@@ -375,6 +448,9 @@ function surfside_yt_owner_handle_post() {
     } elseif ($action === 'scan') {
         $result = surfside_yt_owner_start_scan();
         surfside_yt_owner_notice(is_wp_error($result) ? $result->get_error_message() : 'Owner filename scan queued. Return here to check progress.', is_wp_error($result));
+    } elseif ($action === 'resume') {
+        $result = surfside_yt_owner_resume_scan();
+        surfside_yt_owner_notice(is_wp_error($result) ? $result->get_error_message() : 'Filename scan resumed from saved progress.', is_wp_error($result));
     } elseif ($action !== 'export') {
         surfside_yt_owner_notice('Unknown owner action.', true);
     }
@@ -430,13 +506,16 @@ function surfside_yt_owner_panel() {
       <?php if ($connected) : ?>
         <form method="post" action="<?php echo esc_url($action_url); ?>" style="margin-top:12px">
           <input type="hidden" name="action" value="surfside_yt_owner_files">
-          <input type="hidden" name="owner_action" value="scan">
+          <?php $can_resume = in_array(($state['status'] ?? ''), array('paused', 'error'), true)
+              && !empty($state['ids']) && (int) ($state['cursor'] ?? 0) < (int) ($state['total'] ?? 0); ?>
+          <input type="hidden" name="owner_action" value="<?php echo $can_resume ? 'resume' : 'scan'; ?>">
           <?php wp_nonce_field('surfside_yt_owner_files', 'surfside_yt_owner_nonce'); ?>
-          <button type="submit" <?php disabled(($state['status'] ?? '') === 'running'); ?>>Retrieve original filenames from YouTube</button>
+          <button type="submit" <?php disabled(($state['status'] ?? '') === 'running'); ?>><?php echo $can_resume ? 'Resume filename retrieval (keep saved results)' : 'Retrieve original filenames from YouTube'; ?></button>
         </form>
         <p class="surfside-yt-muted">Scan: <?php echo esc_html((string) ($state['status'] ?? 'not started')); ?>;
           <?php echo esc_html((int) ($state['cursor'] ?? 0)); ?> / <?php echo esc_html((int) ($state['total'] ?? 0)); ?> checked;
-          <?php echo esc_html((int) ($state['available'] ?? 0)); ?> with usable filenames.
+          <?php echo esc_html((int) ($state['available'] ?? 0)); ?> with usable filenames;
+          <?php echo esc_html((int) ($state['missing'] ?? 0)); ?> unavailable or missing (<?php echo esc_html((int) ($state['skipped_unauthorized'] ?? 0)); ?> inaccessible).
           <?php echo esc_html((string) ($state['message'] ?? '')); ?></p>
         <?php if (($state['status'] ?? '') === 'running') : ?>
           <p><a href="<?php echo esc_url($action_url . '#surfside-owner-file-matching'); ?>">Check progress</a></p>

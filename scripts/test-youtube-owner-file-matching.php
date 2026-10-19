@@ -4,8 +4,10 @@ define('ABSPATH', __DIR__ . '/');
 define('MINUTE_IN_SECONDS', 60);
 class WP_Error {
     private $message;
-    public function __construct($code, $message) { $this->message = $message; }
+    private $code;
+    public function __construct($code, $message) { $this->code = $code; $this->message = $message; }
     public function get_error_message() { return $this->message; }
+    public function get_error_code() { return $this->code; }
 }
 function is_wp_error($value) { return $value instanceof WP_Error; }
 function add_action() {}
@@ -16,6 +18,16 @@ function add_query_arg($params, $url) { return $url . '?' . http_build_query($pa
 function wp_remote_get($url, $options) {
     $GLOBALS['requested_url'] = $url;
     $GLOBALS['requested_headers'] = $options['headers'] ?? array();
+    parse_str((string) parse_url($url, PHP_URL_QUERY), $params);
+    $ids = explode(',', $params['id'] ?? '');
+    if (!empty($GLOBALS['fixture_quota'])) {
+        return array('status' => 403, 'body' => json_encode(array('error' => array(
+            'errors' => array(array('reason' => 'quotaExceeded'))))));
+    }
+    if (!empty($GLOBALS['fixture_denied_id']) && in_array($GLOBALS['fixture_denied_id'], $ids, true)) {
+        return array('status' => 403, 'body' => json_encode(array('error' => array(
+            'errors' => array(array('reason' => 'forbidden'))))));
+    }
     return array('status' => 200, 'body' => json_encode(array(
         'items' => array(
             array('id' => 'AAAAAAAAAAA', 'fileDetails' => array('fileName' => 'capture - 09 February 2025.mp4', 'fileSize' => '1234')),
@@ -28,6 +40,7 @@ function wp_remote_retrieve_response_code($response) { return $response['status'
 function wp_remote_retrieve_body($response) { return $response['body']; }
 function wp_next_scheduled() { return false; }
 function wp_schedule_single_event() {}
+function wp_clear_scheduled_hook() {}
 function check($ok, $message) { if (!$ok) throw new RuntimeException($message); }
 
 require_once __DIR__ . '/../includes/youtube-owner-file-matching.php';
@@ -83,4 +96,55 @@ check(!isset($files['INVALIDXXXX']), 'Never imports unrequested ID');
 check(strpos($GLOBALS['requested_url'], 'maxResults') === false, 'No unsupported videos.list parameter');
 check(strpos($GLOBALS['requested_url'], 'fileDetails') !== false, 'Owner fileDetails requested');
 check($GLOBALS['requested_headers']['Authorization'] === 'Bearer TEST_ONLY_TOKEN', 'Uses OAuth bearer token');
+
+/** Simulate an already-failed legacy 350/372 scan without clearing its files. */
+$GLOBALS['fixture_denied_id'] = 'ZZZZZZZZZZZ';
+$GLOBALS['options'][SURFSIDE_YT_OWNER_FILES_OPTION] = array(
+    'AAAAAAAAAAA' => array('file_name' => 'capture - 09 February 2025.mp4', 'size_bytes' => '1234'),
+);
+$GLOBALS['options'][SURFSIDE_YT_OWNER_STATE_OPTION] = array(
+    'status' => 'error',
+    'ids' => array('AAAAAAAAAAA', 'ZZZZZZZZZZZ', 'BBBBBBBBBBB', 'CCCCCCCCCCC'),
+    'cursor' => 1, 'total' => 4, 'available' => 1, 'missing' => 0,
+);
+check(surfside_yt_owner_resume_scan() === true, 'Legacy interrupted scan resumes');
+for ($attempt = 0; $attempt < 15; $attempt++) {
+    if (($GLOBALS['options'][SURFSIDE_YT_OWNER_STATE_OPTION]['status'] ?? '') === 'complete') break;
+    surfside_yt_owner_scan_tick();
+}
+$state = $GLOBALS['options'][SURFSIDE_YT_OWNER_STATE_OPTION];
+$files = $GLOBALS['options'][SURFSIDE_YT_OWNER_FILES_OPTION];
+check($state['status'] === 'complete' && $state['cursor'] === 4,
+    'Denied video isolated while processing remaining IDs');
+check($state['available'] === 1 && $state['missing'] === 3,
+    'Missing details and forbidden video accurately counted');
+check($state['skipped_unauthorized'] === 1,
+    'Only the actual inaccessible video is skipped');
+check($files['AAAAAAAAAAA']['size_bytes'] === '1234',
+    'Earlier successful filename remains unchanged');
+check($files['BBBBBBBBBBB']['file_name'] === '' && $files['ZZZZZZZZZZZ']['file_name'] === '',
+    'Inaccessible videos remain unmatched');
+unset($GLOBALS['fixture_denied_id']);
+
+/** Quota limit pauses without skipping or resetting already-successful IDs. */
+$GLOBALS['fixture_quota'] = true;
+$GLOBALS['options'][SURFSIDE_YT_OWNER_STATE_OPTION] = array(
+    'status' => 'running', 'ids' => array('AAAAAAAAAAA', 'BBBBBBBBBBB'),
+    'cursor' => 1, 'total' => 2, 'available' => 1, 'missing' => 0,
+);
+surfside_yt_owner_scan_tick();
+$state = $GLOBALS['options'][SURFSIDE_YT_OWNER_STATE_OPTION];
+check($state['status'] === 'paused' && $state['cursor'] === 1,
+    'Quota temporarily pauses scan at the prior cursor');
+check($GLOBALS['options'][SURFSIDE_YT_OWNER_FILES_OPTION]['AAAAAAAAAAA']['size_bytes'] === '1234',
+    'Quota does not remove saved filename');
+unset($GLOBALS['fixture_quota']);
+check(surfside_yt_owner_resume_scan() === true, 'Paused quota scan resumes');
+surfside_yt_owner_scan_tick();
+$state = $GLOBALS['options'][SURFSIDE_YT_OWNER_STATE_OPTION];
+check($state['status'] === 'complete' && $state['cursor'] === 2,
+    'Quota resume completes only outstanding video');
+check($GLOBALS['options'][SURFSIDE_YT_OWNER_FILES_OPTION]['AAAAAAAAAAA']['size_bytes'] === '1234',
+    'Resume preserved earlier successful filename');
+
 echo "YouTube owner filename matching tests passed.\n";
