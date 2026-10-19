@@ -211,6 +211,59 @@ add_action('rest_api_init', function () {
     ));
 });
 
+/**
+ * Front-end staff upload authorization.
+ *
+ * The staff dashboard's WordPress login works on this page, but its REST
+ * cookie nonce can be rejected by the site's auth/security layers. Reuse
+ * WordPress's regular authenticated page POST flow (as the YouTube manager
+ * already does), with its own action nonce and capability check. This
+ * request contains ONLY a video ID and byte count: the MP4 still goes
+ * directly from the browser to R2 via a presigned PUT.
+ */
+function surfside_tools_r2_browser_upload_dispatch($data) {
+    if (!is_user_logged_in() || !current_user_can('upload_files')) {
+        return new WP_Error('r2_forbidden', 'Sign in with an authorized staff account to upload sermons.', array('status' => 403));
+    }
+    $nonce = isset($data['r2_nonce']) && is_string($data['r2_nonce']) ? $data['r2_nonce'] : '';
+    if ($nonce === '' || !wp_verify_nonce($nonce, 'surfside_r2_browser_upload')) {
+        return new WP_Error('r2_bad_nonce', 'Upload authorization expired. Reload the Roku Copies page and try again.', array('status' => 403));
+    }
+    $mode = isset($data['mode']) && is_string($data['mode']) ? sanitize_key($data['mode']) : '';
+    if (!in_array($mode, array('ticket', 'complete'), true)) {
+        return new WP_Error('r2_bad_mode', 'Unknown R2 upload operation.', array('status' => 400));
+    }
+    $request = new WP_REST_Request('POST', '/surfside/v1/r2/sermons/' . $mode);
+    $request->set_param('video_id', $data['video_id'] ?? null);
+    if ($mode === 'ticket') $request->set_param('size', $data['size'] ?? null);
+    $result = $mode === 'ticket'
+        ? surfside_tools_r2_upload_ticket($request)
+        : surfside_tools_r2_upload_complete($request);
+    // On real WordPress rest_ensure_response wraps arrays in WP_REST_Response.
+    return is_object($result) && method_exists($result, 'get_data') ? $result->get_data() : $result;
+}
+
+function surfside_tools_r2_browser_upload_frontend_post() {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'
+        || !is_page('site-management')
+        || !isset($_GET['view']) || !is_string($_GET['view'])
+        || sanitize_key(wp_unslash($_GET['view'])) !== 'roku-media'
+        || !isset($_POST['action']) || !is_string($_POST['action'])
+        || sanitize_key(wp_unslash($_POST['action'])) !== 'surfside_r2_browser_upload') {
+        return;
+    }
+    // No response body or credential may be cached by intermediaries.
+    nocache_headers();
+    $result = surfside_tools_r2_browser_upload_dispatch(wp_unslash($_POST));
+    if (is_wp_error($result)) {
+        $details = $result->get_error_data();
+        $status = is_array($details) && isset($details['status']) ? (int) $details['status'] : 400;
+        wp_send_json_error(array('message' => $result->get_error_message()), $status);
+    }
+    wp_send_json_success($result);
+}
+add_action('template_redirect', 'surfside_tools_r2_browser_upload_frontend_post', 1);
+
 /** R2 ListObjectsV2; bounded and explicit, never performed during page views. */
 function surfside_tools_r2_list_objects() {
     $items = array();
@@ -444,7 +497,7 @@ function surfside_tools_staff_r2_sermons_shortcode() {
     delete_transient('surfside_r2_notice_' . get_current_user_id());
     wp_enqueue_script('surfside-r2-sermon-upload', SURFSIDE_TOOLS_URL . 'assets/js/r2-sermon-upload.js', array(), SURFSIDE_TOOLS_VERSION, true);
     wp_add_inline_script('surfside-r2-sermon-upload', 'window.SurfsideR2Upload = ' . wp_json_encode(array(
-        'base' => rest_url('surfside/v1/r2/sermons/'), 'nonce' => wp_create_nonce('wp_rest'),
+        'endpoint' => surfside_tools_r2_manager_url(), 'nonce' => wp_create_nonce('surfside_r2_browser_upload'),
     )) . ';', 'before');
     ob_start(); ?>
     <div class="surfside-staff-shell surfside-yt-manager" id="surfside-r2-sermons">

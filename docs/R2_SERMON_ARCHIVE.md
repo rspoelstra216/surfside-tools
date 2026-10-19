@@ -60,7 +60,7 @@ YouTube's documented filter and quota: https://developers.google.com/youtube/dat
 1. Publish the weekly video to YouTube normally, ensure it is in the master Messages playlist, and paste its link into **Find This YouTube Message** for an immediate one-request sync. Alternatively, let the daily sync run.
 2. Prepare the Roku copy: MP4 container, H.264/AVC video, AAC-LC stereo audio, and fast-start MP4 index (moov atom before media). An MP4 extension alone does not guarantee Roku-compatible codecs.
 3. From Message Archive → Roku Copies choose the YouTube video and the local MP4 and press **Upload to R2**.
-4. The browser uses a scoped, expiring presigned PUT to upload straight to R2; the media does NOT pass through WordPress. After upload, Tools checks R2 via HEAD and confirms expected size and Content-Type video/mp4 before marking the ID ready.
+4. The logged-in staff page first authorizes the upload through an ordinary same-origin authenticated WordPress POST (staff upload capability plus an action-specific nonce, without depending on REST cookie authentication). Only the YouTube video ID and file byte count are submitted to WordPress. The browser then uses a scoped, expiring presigned PUT to upload the MP4 **directly to R2**; media bytes never pass through WordPress. After upload, Tools checks R2 via HEAD and confirms expected size and Content-Type video/mp4 before marking the ID ready.
 5. Reload to see the refreshed status. Existing R2 objects cannot be overwritten by the browser uploader.
 
 **Large-file reliability tradeoff:** The first dashboard uploader uses one PUT, which supports up to 5 GiB but is not resumable. An interrupted ~2 GB upload restarts from zero. On slow/unreliable Internet, use the local AWS CLI multipart importer below for the weekly MP4 as well. Cloudflare recommends multipart for large objects.
@@ -94,6 +94,12 @@ Need conversion? For 1080p Roku-targeted playback, adjust quality to fit your ne
     ffmpeg -i original.mp4 -map 0:v:0 -map 0:a:0? -c:v libx264 -preset medium -crf 21 -pix_fmt yuv420p -c:a aac -b:a 160k -ac 2 -movflags +faststart prepared.mp4
 
 Protect original recordings and test several old/new converted recordings on an actual Roku before mass publication. Reconciliation checks uploaded object names and sizes, NOT actual codecs or playable stream content.
+
+## Upload authorization on the front-end staff dashboard
+
+The Roku Copies browser uploader submits only a video ID, file size, operation (ticket/complete), and action-specific WordPress nonce to the **same-origin** staff management page. It is handled before normal page rendering by a targeted `template_redirect` POST handler. This matches the proven YouTube staff refresh route and avoids an observed `rest_cookie_invalid_nonce` / “Cookie check failed” when the host processes REST cookie authentication. It does not disable or bypass WordPress login checks: both a logged-in WordPress session and `upload_files` capability are required, with a nonce verified on each request. The existing REST routes remain protected for compatibility but are no longer used by this page's uploader.
+
+The request does **not** contain the MP4. The browser uploads media directly to R2 over an expiring signed S3 PUT, then uses the same staff POST path to request WordPress's existing HEAD verification and record the finished object. A failed authorization does not issue an R2 upload ticket. Test against a real logged-in staff session to confirm the host passes the page POST correctly.
 
 ## Security and deployment tests
 
