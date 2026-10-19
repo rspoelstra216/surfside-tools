@@ -10,7 +10,13 @@ define('SURFSIDE_R2_PUBLIC_BASE_URL', 'https://sermons.example.org');
 
 class WP_Error {
     public $code;
-    public function __construct($code, $message, $data = null) { $this->code = $code; }
+    private $message;
+    private $data;
+    public function __construct($code, $message, $data = null) {
+        $this->code = $code; $this->message = $message; $this->data = $data;
+    }
+    public function get_error_message() { return $this->message; }
+    public function get_error_data() { return $this->data; }
 }
 function is_wp_error($x) { return $x instanceof WP_Error; }
 function add_action(...$args) {}
@@ -26,6 +32,11 @@ function get_current_user_id() { return 42; }
 function current_time($what, $gmt = false) { return '2026-10-18 20:00:00'; }
 function is_user_logged_in() { return $GLOBALS['logged_in'] ?? true; }
 function current_user_can($cap) { return $GLOBALS['allowed'] ?? true; }
+function wp_verify_nonce($nonce, $action) {
+    return $nonce === 'test_valid_staff_nonce' && $action === 'surfside_r2_browser_upload' ? 1 : false;
+}
+function sanitize_key($value) { return strtolower(preg_replace('/[^a-z0-9_\\-]/i', '', (string) $value)); }
+
 function surfside_tools_youtube_review_master_id() { return 'PLtestMaster123'; }
 function surfside_tools_youtube_tables() { return array('members' => 'wp_surfside_yt_members'); }
 function wp_remote_head($url, $args) {
@@ -52,6 +63,12 @@ $wpdb = new R2TestDB();
 class R2TestRequest {
     private $data;
     public function __construct($data) { $this->data = $data; }
+    public function get_param($key) { return $this->data[$key] ?? null; }
+}
+class WP_REST_Request {
+    private $data = array();
+    public function __construct($method, $route) {}
+    public function set_param($key, $value) { $this->data[$key] = $value; }
     public function get_param($key) { return $this->data[$key] ?? null; }
 }
 function assert_r2($pass, $message) {
@@ -102,4 +119,44 @@ assert_r2(get_transient('surfside_r2_upload_42_'.$id) === false, 'ticket invalid
 assert_r2(is_wp_error(surfside_tools_r2_upload_ticket(new R2TestRequest(array('video_id'=>$id,'size'=>2000000)))), 'existing R2 file blocks overwrite');
 $GLOBALS['logged_in'] = false;
 assert_r2(!surfside_tools_r2_rest_permission(), 'signed-out blocked');
-echo "PASS: R2 IDs, signatures, permissions, upload verification and no-overwrite\n";
+
+// The browser upload now authorizes via staff-page POST, not a REST cookie nonce.
+$GLOBALS['head_status'] = 404;
+$GLOBALS['allowed'] = true;
+$payload = array('mode' => 'ticket', 'r2_nonce' => 'test_valid_staff_nonce',
+    'video_id' => $id, 'size' => '2000000');
+assert_r2(is_wp_error(surfside_tools_r2_browser_upload_dispatch($payload)),
+    'signed-out staff-page upload authorization refused');
+$GLOBALS['logged_in'] = true;
+$GLOBALS['allowed'] = false;
+assert_r2(is_wp_error(surfside_tools_r2_browser_upload_dispatch($payload)),
+    'logged-in user without upload capability refused');
+$GLOBALS['allowed'] = true;
+assert_r2(is_wp_error(surfside_tools_r2_browser_upload_dispatch(array_merge($payload, array('r2_nonce' => 'bad')))),
+    'incorrect upload nonce refused');
+assert_r2(is_wp_error(surfside_tools_r2_browser_upload_dispatch(array_merge($payload, array('mode' => 'delete')))),
+    'unrecognized upload action refused');
+assert_r2(is_wp_error(surfside_tools_r2_browser_upload_dispatch(array_merge($payload, array('video_id' => 'bad')))),
+    'staff-page ticket must still enforce known master video ID');
+assert_r2(is_wp_error(surfside_tools_r2_browser_upload_dispatch(array_merge($payload, array('size' => '0')))),
+    'staff-page ticket must still enforce file size');
+$authorized = surfside_tools_r2_browser_upload_dispatch($payload);
+assert_r2(is_array($authorized) && $authorized['video_id'] === $id
+    && strpos($authorized['upload_url'], 'X-Amz-Signature=') !== false,
+    'authorized staff-page ticket returns one scoped R2 presigned URL');
+assert_r2(get_transient('surfside_r2_upload_42_'.$id) === 2000000,
+    'staff-page upload reuses the existing server-side pending size');
+$GLOBALS['head_status'] = 200;
+$GLOBALS['head_size'] = 5;
+assert_r2(is_wp_error(surfside_tools_r2_browser_upload_dispatch(array(
+    'mode' => 'complete', 'r2_nonce' => 'test_valid_staff_nonce', 'video_id' => $id
+))), 'staff-page completion rejects an incorrect R2 object size');
+$GLOBALS['head_size'] = 2000000;
+$complete = surfside_tools_r2_browser_upload_dispatch(array(
+    'mode' => 'complete', 'r2_nonce' => 'test_valid_staff_nonce', 'video_id' => $id
+));
+assert_r2(is_array($complete) && $complete['verified'],
+    'staff-page completion reuses the existing R2 HEAD verification');
+assert_r2(get_transient('surfside_r2_upload_42_'.$id) === false,
+    'pending staff-page session consumed only after successful completion');
+echo "PASS: R2 IDs, signing, permissions, staff-page upload authorization and verification\n";

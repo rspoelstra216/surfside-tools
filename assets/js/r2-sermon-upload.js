@@ -16,15 +16,32 @@
 
   const message = (text) => { status.textContent = text; };
   const request = async (route, payload) => {
-    const response = await fetch(config.base + route, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json", "X-WP-Nonce": config.nonce },
-      body: JSON.stringify(payload)
+    // The same-origin staff page processes these tiny authorization requests.
+    // Only the actual MP4 is sent directly to R2 (see xhr.send below).
+    const params = new URLSearchParams({
+      action: "surfside_r2_browser_upload",
+      r2_nonce: config.nonce,
+      mode: route,
+      ...payload
     });
+    let response;
+    try {
+      response = await fetch(config.endpoint, {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+        redirect: "error",
+        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+        body: params.toString()
+      });
+    } catch (_) {
+      throw new Error("WordPress authorization request failed. Check your login and connection, then retry.");
+    }
     const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(body.message || "WordPress request failed (" + response.status + ")");
-    return body;
+    if (!response.ok || body.success !== true) {
+      throw new Error(body.data?.message || "WordPress authorization failed (HTTP " + response.status + ").");
+    }
+    return body.data;
   };
 
   cancel.addEventListener("click", () => {
