@@ -49,6 +49,11 @@ jobs:
           python3 -m py_compile scripts/upload-r2-sermons.py
           node --check assets/js/r2-sermon-upload.js
 
+      - name: Test YouTube owner filename matching and inventory utility
+        run: |
+          php scripts/test-youtube-owner-file-matching.php
+          python3 -m py_compile scripts/inventory-sermon-files.py
+
       - name: Test YouTube Integrations dashboard POST routing
         run: php scripts/test-youtube-settings-post.php
 

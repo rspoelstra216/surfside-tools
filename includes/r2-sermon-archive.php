@@ -524,6 +524,7 @@ function surfside_tools_staff_r2_sermons_shortcode() {
           </form>
           <p class="surfside-yt-muted">For historic files: fill in source_path in the CSV, run the local CLI uploader, then Reconcile. For weekly messages: use the form below.</p>
         </section>
+        <?php echo surfside_yt_owner_panel(); ?>
         <section class="surfside-yt-panel">
           <h2>Refresh YouTube Messages</h2>
           <p class="surfside-yt-muted">YouTube is the catalog. After publishing a sermon, paste its YouTube link to import it in one API request, rather than waiting for the daily full sync.</p>
