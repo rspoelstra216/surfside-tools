@@ -204,7 +204,6 @@ function surfside_yt_owner_scan_tick() {
     $response = is_wp_error($token) ? $token : surfside_yt_owner_get('videos', array(
         'part' => 'fileDetails,processingDetails',
         'id' => implode(',', $ids),
-        'maxResults' => 50,
     ), $token);
     if (is_wp_error($response)) {
         $state['status'] = 'error';
