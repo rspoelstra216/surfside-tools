@@ -52,6 +52,7 @@ jobs:
       - name: Test YouTube owner filename matching and inventory utility
         run: |
           php scripts/test-youtube-owner-file-matching.php
+          php scripts/test-youtube-owner-manual-size-override.php
           python3 -m py_compile scripts/inventory-sermon-files.py
 
       - name: Test YouTube Integrations dashboard POST routing
