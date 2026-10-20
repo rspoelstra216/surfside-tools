@@ -47,6 +47,19 @@ Upload the small inventory CSV into the Historical import section. Surfside Tool
 
 **Do not fill ambiguous entries from an inferred date alone.** Manually confirm the actual MP4 recording and YouTube video before adding any source_path.
 
+## Manual matching without renaming NAS recordings
+
+A completed owner scan now includes **Manually match orphaned sermons** beneath the manifest download form. It is restricted to WordPress administrators.
+
+1. Upload the current NAS inventory CSV and click **Download matched R2 manifest** once. The export also stores a lightweight copy of valid inventory paths and byte sizes inside WordPress for manual review. Return to the Roku Copies page to see unmatched YouTube messages.
+2. Each unmatched video displays its YouTube ID, title, original uploaded filename, and a link to watch it. When precisely one *unused* NAS path has the expected byte size, that path is suggested—not silently associated. Other paths can be selected using the NAS path autocomplete.
+3. **Verify the actual recording** (do not rely on a date or file-size match alone), check the confirmation checkbox, and click **Save match**. This saves a YouTube ID → relative NAS file path association. **No NAS filenames or local files are changed.** Saved associations can be updated or removed.
+4. For every subsequent manifest export, select the **latest NAS inventory CSV** again. Only paths that still exist in that uploaded inventory can populate source_path. A saved association with a missing path or changed size exports a blank path with manual_path_missing or manual_size_mismatch for review.
+
+Automatic original-filename + byte-size matches always take priority. Valid manually associated rows export as **manually_matched**, or **manual_unverified_youtube_size** when owner file size is unavailable and staff explicitly verified the content. The exporter never assigns the same source path to two video IDs in one manifest; a conflict yields review_duplicate_source_path with an empty path. A manual path is also restricted to one saved video ID.
+
+The upload CLI still sees only video_id and source_path; diagnostic statuses do not change the uploader or the R2 key format (sermons/<YouTube-ID>.mp4). A manual match is **not** an upload. Continue to dry-run and verify compatibility before bulk uploads.
+
 ## Dry run, import and reconcile
 
 The matched CSV is compatible with the existing scripts/upload-r2-sermons.py importer, which ignores extra diagnostic columns. Follow docs/R2_SERMON_ARCHIVE.md for the exact command, beginning without --upload. Inspect entries and run a subset first before a large migration.
