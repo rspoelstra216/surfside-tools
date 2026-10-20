@@ -7,6 +7,7 @@ if (!defined('ABSPATH')) { exit; }
 
 const SURFSIDE_YT_OWNER_INVENTORY_OPTION = 'surfside_yt_owner_nas_inventory';
 const SURFSIDE_YT_OWNER_MANUAL_OPTION = 'surfside_yt_owner_manual_paths';
+const SURFSIDE_YT_OWNER_SIZE_OVERRIDE_OPTION = 'surfside_yt_owner_manual_size_overrides';
 
 /** Remember the most recent valid inventory used to generate a manifest. */
 function surfside_yt_owner_manual_save_inventory($index) {
@@ -33,6 +34,30 @@ function surfside_yt_owner_manual_saved() {
     return is_array($value) ? $value : array();
 }
 
+/** Separate manual-review notices appear beside matching controls, not the OAuth panel above. */
+function surfside_yt_owner_manual_notice($message, $error = false) {
+    set_transient('surfside_yt_owner_manual_notice_' . get_current_user_id(),
+        array('text' => sanitize_text_field($message), 'error' => (bool) $error), 180);
+}
+
+/**
+ * A size override is an explicitly approved association to a specific file and
+ * byte count, not blanket permission to ignore future NAS or YouTube changes.
+ */
+function surfside_yt_owner_manual_overrides() {
+    $value = get_option(SURFSIDE_YT_OWNER_SIZE_OVERRIDE_OPTION, array());
+    return is_array($value) ? $value : array();
+}
+
+function surfside_yt_owner_manual_override_valid($id, $path, $local_size, $youtube_size) {
+    $overrides = surfside_yt_owner_manual_overrides();
+    $saved = $overrides[$id] ?? null;
+    if (!is_array($saved)) return false;
+    return ($saved['path'] ?? '') === $path
+        && ($saved['local_size_bytes'] ?? '') === (string) $local_size
+        && ($saved['youtube_size_bytes'] ?? '') === (string) $youtube_size;
+}
+
 /** Validate the chosen path against the freshly uploaded CSV on every export. */
 function surfside_yt_owner_manual_apply($video_id, $automatic, $index, $detail) {
     if (($automatic['status'] ?? '') === 'matched') return $automatic;
@@ -47,7 +72,11 @@ function surfside_yt_owner_manual_apply($video_id, $automatic, $index, $detail) 
     $expected = (string) ($detail['size_bytes'] ?? '');
     if (preg_match('/^[0-9]+$/D', $expected)
         && ltrim($expected, '0') !== ltrim((string) $found['size_bytes'], '0')) {
-        return array('status' => 'manual_size_mismatch', 'source_path' => '');
+        if (!surfside_yt_owner_manual_override_valid(
+            $video_id, $path, (string) $found['size_bytes'], $expected)) {
+            return array('status' => 'manual_size_mismatch', 'source_path' => '');
+        }
+        return array('status' => 'manually_matched_size_override', 'source_path' => $path);
     }
     return array('status' => preg_match('/^[0-9]+$/D', $expected)
         ? 'manually_matched' : 'manual_unverified_youtube_size', 'source_path' => $path);
@@ -72,12 +101,14 @@ function surfside_yt_owner_manual_handle_post() {
         }
     }
     if (!$valid) {
-        surfside_yt_owner_notice('Invalid YouTube ID or video no longer in the master Messages playlist.', true);
+        surfside_yt_owner_manual_notice('Invalid YouTube ID or video no longer in the master Messages playlist.', true);
     } elseif ($operation === 'remove') {
         $saved = surfside_yt_owner_manual_saved();
-        unset($saved[$id]);
+        $overrides = surfside_yt_owner_manual_overrides();
+        unset($saved[$id], $overrides[$id]);
         update_option(SURFSIDE_YT_OWNER_MANUAL_OPTION, $saved, false);
-        surfside_yt_owner_notice('Removed the manual file association.');
+        update_option(SURFSIDE_YT_OWNER_SIZE_OVERRIDE_OPTION, $overrides, false);
+        surfside_yt_owner_manual_notice('Removed the manual file association.');
     } elseif ($operation === 'save') {
         $path = isset($_POST['source_path']) && is_string($_POST['source_path'])
             ? trim(wp_unslash($_POST['source_path'])) : '';
@@ -86,22 +117,43 @@ function surfside_yt_owner_manual_handle_post() {
         $size = $inventory['paths'][$path] ?? null;
         $details = get_option(SURFSIDE_YT_OWNER_FILES_OPTION, array());
         $expected = is_array($details) ? (string) ($details[$id]['size_bytes'] ?? '') : '';
+        $mismatch = $size !== null && preg_match('/^[0-9]+$/D', $expected)
+            && ltrim($expected, '0') !== ltrim((string) $size, '0');
+        $size_confirmed = isset($_POST['allow_size_mismatch']) && (string) $_POST['allow_size_mismatch'] === '1';
         if (!isset($_POST['confirmed']) || (string) $_POST['confirmed'] !== '1') {
-            surfside_yt_owner_notice('Confirm that you reviewed the actual recording before saving.', true);
+            surfside_yt_owner_manual_notice('Confirm that you reviewed the actual recording before saving.', true);
         } elseif (!surfside_yt_owner_valid_source_path($path) || $size === null) {
-            surfside_yt_owner_notice('Select an existing MP4 path from the latest imported inventory.', true);
-        } elseif (preg_match('/^[0-9]+$/D', $expected)
-            && ltrim($expected, '0') !== ltrim((string) $size, '0')) {
-            surfside_yt_owner_notice('File size differs from the YouTube original; association was not saved.', true);
+            surfside_yt_owner_manual_notice('Select an existing MP4 path from the latest imported inventory.', true);
+        } elseif ($mismatch && !$size_confirmed) {
+            surfside_yt_owner_manual_notice(
+                'Size differs: NAS ' . number_format((float) $size) . ' bytes; YouTube '
+                . number_format((float) $expected)
+                . ' bytes. Verify the actual recording, then check the size-difference confirmation to save.',
+                true
+            );
         } elseif (in_array($path, array_diff_key($saved, array($id => true)), true)) {
-            surfside_yt_owner_notice('That NAS path is already assigned to another YouTube ID.', true);
+            surfside_yt_owner_manual_notice('That NAS path is already assigned to another YouTube ID.', true);
         } else {
             $saved[$id] = $path;
+            $overrides = surfside_yt_owner_manual_overrides();
+            if ($mismatch) {
+                $overrides[$id] = array(
+                    'path' => $path,
+                    'local_size_bytes' => (string) $size,
+                    'youtube_size_bytes' => $expected,
+                );
+            } else {
+                unset($overrides[$id]);
+            }
             update_option(SURFSIDE_YT_OWNER_MANUAL_OPTION, $saved, false);
-            surfside_yt_owner_notice('Saved manual NAS association for YouTube ID ' . $id . '.');
+            update_option(SURFSIDE_YT_OWNER_SIZE_OVERRIDE_OPTION, $overrides, false);
+            surfside_yt_owner_manual_notice(
+                'Saved manual NAS association for YouTube ID ' . $id
+                . ($mismatch ? ' with an explicitly verified size difference.' : '.')
+            );
         }
     } else {
-        surfside_yt_owner_notice('Unknown manual matching action.', true);
+        surfside_yt_owner_manual_notice('Unknown manual matching action.', true);
     }
     wp_safe_redirect(surfside_tools_r2_manager_url(array('matching' => 'manual')) . '#surfside-owner-manual-matching', 303);
     exit;
@@ -129,6 +181,9 @@ function surfside_yt_owner_manual_panel() {
     $details = get_option(SURFSIDE_YT_OWNER_FILES_OPTION, array());
     if (!is_array($details)) $details = array();
     $saved = surfside_yt_owner_manual_saved();
+    $notice_key = 'surfside_yt_owner_manual_notice_' . get_current_user_id();
+    $notice = get_transient($notice_key);
+    delete_transient($notice_key);
     $index = array();
     foreach ($paths as $path => $size) {
         $index[basename($path)][] = array('source_path' => $path, 'size_bytes' => $size);
@@ -165,7 +220,8 @@ function surfside_yt_owner_manual_panel() {
         $saved_result = $manual_path !== '' ? surfside_yt_owner_manual_apply($id,
             array('status' => $item['status'], 'source_path' => ''), $index, $details[$id] ?? array()) : array();
         $saved_status = (string) ($saved_result['status'] ?? '');
-        $valid_saved = in_array($saved_status, array('manually_matched', 'manual_unverified_youtube_size'), true);
+        $valid_saved = in_array($saved_status,
+            array('manually_matched', 'manual_unverified_youtube_size', 'manually_matched_size_override'), true);
         $group = $manual_path !== '' ? 'saved' : ($suggestion !== '' ? 'suggested' : 'review');
         ++$counts[$group];
         if ($valid_saved) ++$counts['valid_saved'];
@@ -179,6 +235,7 @@ function surfside_yt_owner_manual_panel() {
             'current_path' => $manual_path !== '' ? $manual_path : $suggestion,
             'saved_status' => $saved_status,
             'valid_saved' => $valid_saved,
+            'size_override' => $saved_status === 'manually_matched_size_override',
             'youtube_name' => (string) ($details[$id]['file_name'] ?? ''),
         );
     }
@@ -232,6 +289,9 @@ function surfside_yt_owner_manual_panel() {
         #surfside-owner-manual-matching .som-body .som-remove { margin-top:7px; }
         #surfside-owner-manual-matching .som-empty { padding:14px 12px; }
         #surfside-owner-manual-matching .som-results { margin:10px 0; }
+        #surfside-owner-manual-matching .som-notice { padding:10px 12px; border:1px solid #a5b6c9; border-radius:6px; margin:12px 0; }
+        #surfside-owner-manual-matching .som-notice[role="alert"] { border-color:#cf5b4a; background:#fff2f0; color:#7f2216; }
+        #surfside-owner-manual-matching .som-notice[role="status"] { border-color:#6b9b74; background:#eff8f0; color:#1b5529; }
         @media (max-width:720px) {
           #surfside-owner-manual-matching .som-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
           #surfside-owner-manual-matching .som-heading { display:none; }
@@ -242,6 +302,9 @@ function surfside_yt_owner_manual_panel() {
         }
       </style>
       <h3>Manually match orphaned sermons</h3>
+      <?php if (is_array($notice)) : ?>
+        <p class="som-notice" role="<?php echo !empty($notice['error']) ? 'alert' : 'status'; ?>"><?php echo esc_html((string) ($notice['text'] ?? '')); ?></p>
+      <?php endif; ?>
       <p class="surfside-yt-muted">Keep your NAS filenames unchanged. Same-size suggestions are <strong>not confirmed matches</strong>: verify the actual recording before saving. Saved paths are rechecked against the latest inventory whenever you download a manifest.</p>
       <?php if (!$paths) : ?>
         <p><strong>No saved NAS inventory yet.</strong> Select your current inventory CSV above and click <em>Download matched R2 manifest</em> once. Return here to review orphaned recordings.</p>
@@ -283,7 +346,8 @@ function surfside_yt_owner_manual_panel() {
               $id = $row['id'];
               $group = $row['group'];
               $status_label = $group === 'saved'
-                ? ($row['valid_saved'] ? 'Saved match' : 'Saved · needs review')
+                ? ($row['size_override'] ? 'Saved · verified size difference'
+                    : ($row['valid_saved'] ? 'Saved match' : 'Saved · needs review'))
                 : ($group === 'suggested' ? 'Same-size suggestion' : 'No suggestion');
               $search_text = implode(' ', array(
                 (string) $message['title'], (string) ($message['sermon_date'] ?? ''),
@@ -320,6 +384,10 @@ function surfside_yt_owner_manual_panel() {
                     <label class="som-confirm">
                       <input type="checkbox" name="confirmed" value="1" required>
                       I verified that this NAS recording is the correct YouTube sermon.
+                    </label>
+                    <label class="som-confirm">
+                      <input type="checkbox" name="allow_size_mismatch" value="1" <?php echo $row['size_override'] ? 'checked' : ''; ?>>
+                      If file sizes differ, I also verified the recording's content and approve using this NAS MP4 despite the size difference.
                     </label>
                     <button type="submit"><?php echo $row['manual_path'] !== '' ? 'Update match' : 'Save match'; ?></button>
                   </form>
