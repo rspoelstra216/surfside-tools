@@ -72,6 +72,11 @@ function surfside_tools_public_messages_series($master, $r2_only = false) {
     return array(array('playlist_id'=>'PLSERIES12345','title'=>'Made for More',
         'message_count'=>1,'sample_thumbnail'=>'https://i.ytimg.com/series.jpg'));
 }
+function surfside_tools_public_messages_years($master, $r2_only = false) {
+    $GLOBALS['roku_calls'][] = array('years',$master,$r2_only);
+    if (!$r2_only) throw new RuntimeException('Roku year facets must use R2-ready SQL');
+    return array(2026, 2025, 2024);
+}
 function surfside_tools_public_messages_detail($master, $id, $r2_only = false) {
     $GLOBALS['roku_calls'][] = array('detail',$master,$id,$r2_only);
     if (!$r2_only) throw new RuntimeException('Roku detail must use R2-ready SQL');
@@ -111,6 +116,8 @@ $list = surfside_tools_roku_messages_list(new WP_REST_Request());
 check($list['available'] === true && $list['api_version'] === 1, 'Ready catalog available');
 check(count($list['items']) === 1 && $list['pagination']['total'] === 1,
     'List contains only one ready video and has accurate total');
+check($list['years'] === array(2026, 2025, 2024),
+    'List exposes only R2-ready archive years');
 check($list['items'][0]['id'] === 'OTt1dfYhlDY'
     && $list['items'][0]['playback'] === array(
         'url'=>'https://video.surfsidesermons.com/sermons/OTt1dfYhlDY.mp4',
@@ -123,8 +130,17 @@ check(!isset($list['items'][0]['r2_access_key']) && !isset($list['items'][0]['se
 $filtered = surfside_tools_roku_messages_list(new WP_REST_Request(
     array('search'=>'Serve','year'=>'2026','series'=>'PLSERIES12345','page'=>'2')));
 check($filtered['latest'] === null, 'Filtered page never claims to be homepage latest');
-$last = end($GLOBALS['roku_calls']);
-check($last[0] === 'list' && $last[3] === true && $last[2]['series'] === 'PLSERIES12345',
+$lastList = null;
+for ($i = count($GLOBALS['roku_calls']) - 1; $i >= 0; $i--) {
+    if (($GLOBALS['roku_calls'][$i][0] ?? '') === 'list') {
+        $lastList = $GLOBALS['roku_calls'][$i];
+        break;
+    }
+}
+check($lastList !== null && $lastList[3] === true
+    && $lastList[2]['series'] === 'PLSERIES12345'
+    && $lastList[2]['year'] === '2026'
+    && $lastList[2]['page'] === 2,
     'Filtering sent to SQL before pagination');
 $hidden = surfside_tools_roku_messages_list(new WP_REST_Request(array('series'=>'PLHIDDEN12345')));
 check(is_wp_error($hidden) && $hidden->get_error_data()['status'] === 404,
@@ -159,7 +175,8 @@ $GLOBALS['roku_base'] = 'https://video.surfsidesermons.com';
 $GLOBALS['roku_table_ready'] = false;
 $GLOBALS['roku_calls'] = array();
 $empty = surfside_tools_roku_messages_list(new WP_REST_Request());
-check(!$empty['available'] && $empty['items'] === array() && $empty['pagination']['total'] === 0,
+check(!$empty['available'] && $empty['years'] === array()
+    && $empty['items'] === array() && $empty['pagination']['total'] === 0,
     'Missing table yields empty catalog without DB reads');
 check(!surfside_tools_roku_messages_series(new WP_REST_Request())['available'],
     'Missing R2 schema makes series unavailable');
