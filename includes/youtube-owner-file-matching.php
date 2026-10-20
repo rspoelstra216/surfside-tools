@@ -399,6 +399,8 @@ function surfside_yt_owner_export_matches() {
         $index[$name][] = array('source_path' => $path, 'size_bytes' => $size);
     }
     fclose($handle);
+    // Keep this inventory for staff review; each future export still revalidates paths.
+    surfside_yt_owner_manual_save_inventory($index);
     $messages = surfside_yt_owner_master_rows();
     if (is_wp_error($messages)) return $messages;
     $details = get_option(SURFSIDE_YT_OWNER_FILES_OPTION, array());
@@ -410,11 +412,19 @@ function surfside_yt_owner_export_matches() {
     $out = fopen('php://output', 'w');
     fputcsv($out, array('video_id', 'title', 'sermon_date', 'source_path',
         'match_status', 'youtube_file_name', 'youtube_size_bytes'));
+    $used_paths = array();
     foreach ($messages as $message) {
         $id = (string) $message['video_id'];
         $detail = $details[$id] ?? array();
         $match = surfside_yt_owner_match_file($detail, $index);
+        $match = surfside_yt_owner_manual_apply($id, $match, $index, $detail);
         $source = $match['source_path'];
+        if ($source !== '' && isset($used_paths[$source])) {
+            $source = '';
+            $match['status'] = 'review_duplicate_source_path';
+        } elseif ($source !== '') {
+            $used_paths[$source] = true;
+        }
         // Avoid formula injection without corrupting a runnable local path.
         if (preg_match('/^\s*[=+@-]/', $source)) {
             $source = '';
@@ -520,7 +530,7 @@ function surfside_yt_owner_panel() {
         <?php if (($state['status'] ?? '') === 'running') : ?>
           <p><a href="<?php echo esc_url($action_url . '#surfside-owner-file-matching'); ?>">Check progress</a></p>
         <?php elseif (($state['status'] ?? '') === 'complete') : ?>
-          <p>Generate an inventory on your NAS or Mac with <code>scripts/inventory-sermon-files.py</code>, then upload that small CSV to download a matched manifest. Only unique filename AND byte-size matches populate <code>source_path</code>; all other rows require review.</p>
+          <p>Generate an inventory on your NAS or Mac with <code>scripts/inventory-sermon-files.py</code>, then upload that small CSV to download a matched manifest. Exact filename and size matches are automatic; saved manual YouTube ID associations are checked against this inventory before being included.</p>
           <form method="post" enctype="multipart/form-data" action="<?php echo esc_url($action_url); ?>">
             <input type="hidden" name="action" value="surfside_yt_owner_files">
             <input type="hidden" name="owner_action" value="export">
@@ -529,6 +539,7 @@ function surfside_yt_owner_panel() {
             <input id="surfside-owner-inventory" type="file" name="inventory" accept=".csv,text/csv" required>
             <button type="submit">Download matched R2 manifest</button>
           </form>
+          <?php echo surfside_yt_owner_manual_panel(); ?>
         <?php endif; ?>
       <?php endif; ?>
     </section>
