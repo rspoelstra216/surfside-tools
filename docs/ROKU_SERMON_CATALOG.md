@@ -27,7 +27,9 @@ endpoints safely return available:false and no videos. Detail returns 404.
 | GET /wp-json/surfside/v1/roku/messages/<youtube-id> | One playable sermon and visible series |
 
 Search/year/series/page filters use the existing mobile Message Archive's
-strict validation and staff series visibility rules.
+strict validation and staff series visibility rules. The message-list response
+also includes a descending `years` array containing only years that have at
+least one verified Roku-ready R2 recording.
 
 Each item includes the canonical YouTube video ID, title, short display
 heading, date/source, YouTube thumbnail and watch URL, plus a playback object.
@@ -65,7 +67,7 @@ Actual media bytes flow from R2 to the Roku device, never through WordPress.
 ## Live test after merging
 
 1. GET /wp-json/surfside/v1/roku/messages should report available:true,
-   pagination.total:1 if only one R2 sermon is ready, and a playback URL.
+   the dynamic R2-ready `years` array, pagination totals, and playback URLs.
 2. GET /wp-json/surfside/v1/roku/series should omit YouTube-only series.
 3. GET /wp-json/surfside/v1/roku/messages/OTt1dfYhlDY should return a
    playable MP4 URL and appropriate visible series.
