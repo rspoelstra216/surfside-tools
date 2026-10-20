@@ -229,7 +229,7 @@ function surfside_tools_public_messages_latest($master) {
 }
 
 /** Only list years that contain at least one publicly visible, dated video. */
-function surfside_tools_public_messages_years($master) {
+function surfside_tools_public_messages_years($master, $r2_only = false) {
     global $wpdb;
     $t = surfside_tools_youtube_tables();
     $sql = surfside_tools_public_messages_sql();
@@ -237,6 +237,7 @@ function surfside_tools_public_messages_years($master) {
         "SELECT DISTINCT YEAR({$sql['date']}) AS display_year
          FROM {$t['videos']} v
          INNER JOIN {$t['members']} m ON m.video_id = v.video_id
+         " . surfside_tools_public_messages_r2_join($r2_only) . "
          {$sql['join']}
          WHERE m.playlist_id = %s AND {$sql['visible']} AND {$sql['date']} IS NOT NULL
          ORDER BY display_year DESC LIMIT 150", $master
