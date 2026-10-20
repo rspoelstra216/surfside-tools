@@ -64,7 +64,7 @@ function surfside_tools_roku_messages_list(WP_REST_Request $request) {
     if (!surfside_tools_roku_catalog_ready()) {
         return rest_ensure_response(array(
             'api_version' => 1, 'available' => false, 'latest' => null,
-            'items' => array(), 'pagination' => array(
+            'years' => array(), 'items' => array(), 'pagination' => array(
                 'page' => 1, 'page_size' => SURFSIDE_PUBLIC_MESSAGES_PER_PAGE,
                 'total' => 0, 'total_pages' => 1, 'has_more' => false,
             ),
@@ -91,6 +91,7 @@ function surfside_tools_roku_messages_list(WP_REST_Request $request) {
     return rest_ensure_response(array(
         'api_version' => 1, 'available' => true,
         'latest' => $home && $items ? $items[0] : null,
+        'years' => surfside_tools_public_messages_years($master, true),
         'items' => $items,
         'pagination' => array(
             'page' => (int) $list['page'],
