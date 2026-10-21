@@ -63,6 +63,8 @@ function surfside_tools_public_messages_filters($source = null) {
         ? sanitize_text_field(wp_unslash($source['sm_search'])) : '';
     $year = isset($source['sm_year']) && is_string($source['sm_year'])
         ? trim(wp_unslash($source['sm_year'])) : '';
+    $month = isset($source['sm_month']) && is_string($source['sm_month'])
+        ? trim(wp_unslash($source['sm_month'])) : '';
     $series = isset($source['sm_series']) && is_string($source['sm_series'])
         ? trim(wp_unslash($source['sm_series'])) : '';
     $video = isset($source['sm_video']) && is_string($source['sm_video'])
@@ -72,6 +74,7 @@ function surfside_tools_public_messages_filters($source = null) {
     return array(
         'q' => substr(trim($search), 0, 100),
         'year' => preg_match('/^(19|20)\d{2}$/', $year) ? $year : '',
+        'month' => preg_match('/^(?:0?[1-9]|1[0-2])$/', $month) ? (string) ((int) $month) : '',
         'series' => surfside_tools_youtube_valid_playlist_id($series) ? $series : '',
         'message' => preg_match('/^[A-Za-z0-9_-]{11}$/', $video) ? $video : '',
         'browse' => $browse === 'series' ? 'series' : 'messages',
@@ -128,6 +131,10 @@ function surfside_tools_public_messages_list($master, $filters, $r2_only = false
     if ($filters['year'] !== '') {
         $where[] = "YEAR({$sql['date']}) = %d";
         $params[] = (int) $filters['year'];
+    }
+    if ($filters['month'] !== '') {
+        $where[] = "MONTH({$sql['date']}) = %d";
+        $params[] = (int) $filters['month'];
     }
     if ($filters['series'] !== '') {
         $where[] = "EXISTS (
@@ -252,6 +259,37 @@ function surfside_tools_public_messages_years($master, $r2_only = false) {
     return array_values($years);
 }
 
+/** Only list months that contain at least one visible message in the selected year. */
+function surfside_tools_public_messages_months($master, $year, $r2_only = false) {
+    $year = (int) $year;
+    if ($year < 1900 || $year > 2100) return array();
+
+    global $wpdb;
+    $t = surfside_tools_youtube_tables();
+    $sql = surfside_tools_public_messages_sql();
+    $values = $wpdb->get_col($wpdb->prepare(
+        "SELECT DISTINCT MONTH({$sql['date']}) AS display_month
+         FROM {$t['videos']} v
+         INNER JOIN {$t['members']} m ON m.video_id = v.video_id
+         " . surfside_tools_public_messages_r2_join($r2_only) . "
+         {$sql['join']}
+         WHERE m.playlist_id = %s AND {$sql['visible']}
+           AND {$sql['date']} IS NOT NULL
+           AND YEAR({$sql['date']}) = %d
+         ORDER BY display_month ASC LIMIT 12",
+        $master, $year
+    ));
+    if (!is_array($values)) return array();
+
+    $months = array();
+    foreach ($values as $value) {
+        $month = (int) $value;
+        if ($month >= 1 && $month <= 12) $months[$month] = $month;
+    }
+    ksort($months, SORT_NUMERIC);
+    return array_values($months);
+}
+
 function surfside_tools_public_messages_video_series($master, $id, $series_rows) {
     global $wpdb;
     $t = surfside_tools_youtube_tables();
@@ -315,6 +353,7 @@ function surfside_tools_public_messages_args($filters) {
     $args = array();
     if ($filters['q'] !== '') $args['sm_search'] = $filters['q'];
     if ($filters['year'] !== '') $args['sm_year'] = $filters['year'];
+    if ($filters['month'] !== '') $args['sm_month'] = $filters['month'];
     if ($filters['series'] !== '') $args['sm_series'] = $filters['series'];
     if ($filters['browse'] === 'series') $args['sm_view'] = 'series';
     if ($filters['page'] > 1) $args['sm_page'] = $filters['page'];
@@ -337,7 +376,7 @@ function surfside_tools_public_message_archive_shortcode() {
     } elseif ($master !== '' && !$invalid_series && $filters['browse'] !== 'series') {
         $list = surfside_tools_public_messages_list($master, $filters);
     }
-    $is_default = $filters['q'] === '' && $filters['year'] === ''
+    $is_default = $filters['q'] === '' && $filters['year'] === '' && $filters['month'] === ''
         && $filters['series'] === '' && $filters['page'] === 1
         && $filters['browse'] === 'messages';
     $list_url = surfside_tools_public_messages_page_url(array_diff_key($args, array('sm_view' => true)));
