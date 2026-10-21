@@ -180,15 +180,18 @@ check(str_starts_with(surfside_tools_public_messages_page_url(), 'https://exampl
 $GLOBALS['test_draft'] = true;
 
 $filters = surfside_tools_public_messages_filters(array(
-    'sm_search'=>'Serve%_', 'sm_year'=>'2026', 'sm_series'=>'PLSERIES12345','sm_page'=>'3','sm_video'=>'aaaaaaaaaaa'
+    'sm_search'=>'Serve%_', 'sm_year'=>'2026', 'sm_month'=>'10',
+    'sm_series'=>'PLSERIES12345','sm_page'=>'3','sm_video'=>'aaaaaaaaaaa'
 ));
-check($filters['q']==='Serve%_' && $filters['page']===3 && $filters['message']==='aaaaaaaaaaa',
-    'Search, series, date and video filter values accepted');
+check($filters['q']==='Serve%_' && $filters['year']==='2026' && $filters['month']==='10'
+    && $filters['page']===3 && $filters['message']==='aaaaaaaaaaa',
+    'Search, year, month, series and video filter values accepted');
 $bad = surfside_tools_public_messages_filters(array(
-    'sm_search'=>str_repeat('x',200),'sm_year'=>'2026<script>','sm_series'=>'invalid!','sm_video'=>'evil',
+    'sm_search'=>str_repeat('x',200),'sm_year'=>'2026<script>','sm_month'=>'13',
+    'sm_series'=>'invalid!','sm_video'=>'evil',
     'sm_view'=>'hacked', 'sm_page'=>'999999999999'
 ));
-check(strlen($bad['q'])===100 && $bad['year']==='' && $bad['series']==='' &&
+check(strlen($bad['q'])===100 && $bad['year']==='' && $bad['month']==='' && $bad['series']==='' &&
     $bad['message']==='' && $bad['browse']==='messages' && $bad['page']<=100000,
     'Public inputs sanitized and bounded');
 
@@ -287,7 +290,8 @@ check(str_contains($html, 'sm_video=aaaaaaaaaaa'),
     'Latest-message detail link uses namespaced URL key');
 $archive_args = surfside_tools_public_messages_args($filters);
 check($archive_args === array(
-    'sm_search'=>'Serve%_', 'sm_year'=>'2026', 'sm_series'=>'PLSERIES12345', 'sm_page'=>3
+    'sm_search'=>'Serve%_', 'sm_year'=>'2026', 'sm_month'=>'10',
+    'sm_series'=>'PLSERIES12345', 'sm_page'=>3
 ), 'All active public filters and page position produce safe namespaced query args');
 check(count(array_intersect(array_keys($archive_args), array(
     'year','monthnum','pagename','page_id','s','q','series','message','browse','archive_page'
@@ -370,7 +374,7 @@ check(count($GLOBALS['test_inserted_pages'])===1,
 // Roku opts into a JOIN that filters verified R2 copies BEFORE pagination.
 // The existing website/mobile queries must remain untouched by default.
 $GLOBALS['wpdb']->sql = array();
-$roku_filters = array('q'=>'', 'year'=>'', 'series'=>'', 'page'=>1);
+$roku_filters = array('q'=>'', 'year'=>'', 'month'=>'', 'series'=>'', 'page'=>1);
 surfside_tools_public_messages_list('PLMESSAGES1234', $roku_filters, true);
 surfside_tools_public_messages_detail('PLMESSAGES1234', 'aaaaaaaaaaa', true);
 surfside_tools_public_messages_series('PLMESSAGES1234', true);
