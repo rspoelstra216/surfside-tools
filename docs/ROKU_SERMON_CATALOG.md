@@ -23,13 +23,18 @@ endpoints safely return available:false and no videos. Detail returns 404.
 | --- | --- |
 | GET /wp-json/surfside/v1/roku/messages | Recent playable sermons, 12 per page |
 | GET /wp-json/surfside/v1/roku/messages?page=2&series=PL... | Paginated or series-filtered sermons |
+| GET /wp-json/surfside/v1/roku/messages?year=2025&month=2 | February 2025 playable sermons |
 | GET /wp-json/surfside/v1/roku/series | Series with one or more playable sermons |
 | GET /wp-json/surfside/v1/roku/messages/<youtube-id> | One playable sermon and visible series |
 
-Search/year/series/page filters use the existing mobile Message Archive's
-strict validation and staff series visibility rules. The message-list response
-also includes a descending `years` array containing only years that have at
-least one verified Roku-ready R2 recording.
+Search/year/month/series/page filters use the existing mobile Message Archive's
+strict validation and staff series visibility rules. Month is only valid when
+a year is also selected.
+
+The message-list response includes a descending `years` array containing only
+years that have at least one verified Roku-ready R2 recording. When a specific
+year is selected, it also includes an ascending `months` array containing only
+months in that year with at least one verified Roku-ready R2 recording.
 
 Each item includes the canonical YouTube video ID, title, short display
 heading, date/source, YouTube thumbnail and watch URL, plus a playback object.
@@ -68,12 +73,14 @@ Actual media bytes flow from R2 to the Roku device, never through WordPress.
 
 1. GET /wp-json/surfside/v1/roku/messages should report available:true,
    the dynamic R2-ready `years` array, pagination totals, and playback URLs.
-2. GET /wp-json/surfside/v1/roku/series should omit YouTube-only series.
-3. GET /wp-json/surfside/v1/roku/messages/OTt1dfYhlDY should return a
+2. GET /wp-json/surfside/v1/roku/messages?year=2025 should return a dynamic
+   `months` array for 2025; adding `&month=2` should return February only.
+3. GET /wp-json/surfside/v1/roku/series should omit YouTube-only series.
+4. GET /wp-json/surfside/v1/roku/messages/OTt1dfYhlDY should return a
    playable MP4 URL and appropriate visible series.
-4. A valid but unregistered video ID should return 404; invalid list
-   filters should return HTTP 400.
-5. Open the returned MP4 URL in a browser and seek within it. Actual Roku
+5. A valid but unregistered video ID should return 404; invalid list
+   filters, including month without year, should return HTTP 400.
+6. Open the returned MP4 URL in a browser and seek within it. Actual Roku
    device compatibility needs testing later when the Roku application exists.
 
 This PR changes no database schema and adds no admin screen.
