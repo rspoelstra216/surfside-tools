@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Preserve previously classified sermon series while YouTube playlist discovery runs, preventing Roku Message Archive series from disappearing during a partial or interrupted background sync.
+
 ### Added
 
 - Added Live Slides controls under Manage Mobile App, with a safe off-by-default app toggle, appearance defaults and a link to the public Cloudflare viewer. The existing mobile `/app` response exposes only non-sensitive viewer configuration; WordPress never relays or polls slides.

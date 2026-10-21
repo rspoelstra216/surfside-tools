@@ -121,6 +121,10 @@ class TestYouTubeDB {
         return 1;
     }
     public function get_var($sql) {
+        if (str_starts_with($sql, 'SELECT category FROM wp_surfside_yt_playlists')) {
+            preg_match("/playlist_id = '([^']+)'/", $sql, $m);
+            return $this->playlists[$m[1]]['category'] ?? null;
+        }
         if (str_starts_with($sql, 'SHOW TABLES LIKE')) {
             if (preg_match("/LIKE '([^']+)'/", $sql, $m)) return str_replace('\\_', '_', $m[1]);
         }
@@ -289,4 +293,28 @@ check(isset($GLOBALS['wpdb']->members['PLMESSAGES1234/abcdEF12_36']),
 check(count(array_filter($GLOBALS['wpdb']->members, fn($row) => $row['playlist_id'] === 'PLSERIES123456'))
     === count($original_series), 'Master-only refresh retains series memberships');
 
-echo "YouTube sermon archive + targeted/master-only refresh regression checks passed.\n";
+// The full sync discovers every playlist before it scans and reclassifies each
+// individual series. Existing series must remain visible throughout discovery.
+check($GLOBALS['wpdb']->playlists['PLSERIES123456']['category'] === 'series',
+    'Previously synchronized sermon series exists before a repeat scan');
+check(surfside_tools_youtube_start_sync() === true, 'Subsequent full sync begins');
+$state = surfside_tools_youtube_state();
+$existing_memberships = count($GLOBALS['wpdb']->members);
+$result = surfside_tools_youtube_process_page($state);
+check(!is_wp_error($result), 'Repeat playlist discovery completes');
+check($state['phase'] === 'master', 'Repeat discovery proceeds to master phase');
+check($GLOBALS['wpdb']->playlists['PLSERIES123456']['category'] === 'series',
+    'Known series is not temporarily hidden while full sync remains unfinished');
+check($GLOBALS['wpdb']->playlists['PLMUSIC123456']['category'] === 'other',
+    'Unrelated playlist is not reclassified as a sermon series');
+check(count($GLOBALS['wpdb']->members) === $existing_memberships,
+    'Discovery does not alter sermon or series memberships');
+for ($i = 0; $i < 12 && $state['status'] === 'running'; $i++) {
+    $result = surfside_tools_youtube_process_page($state);
+    check(!is_wp_error($result), 'Repeat full sync completes each remaining page');
+}
+check($state['status'] === 'complete', 'Repeat full sync finishes normally');
+check($GLOBALS['wpdb']->playlists['PLSERIES123456']['category'] === 'series',
+    'Completed sync retains existing sermon series');
+
+echo "YouTube sermon archive + targeted/master-only refresh and series stability regression checks passed.\n";

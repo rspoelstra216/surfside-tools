@@ -395,10 +395,16 @@ function surfside_tools_youtube_process_page(&$state) {
         foreach (($response['items'] ?? array()) as $playlist) {
             $id = (string) ($playlist['id'] ?? '');
             if (!surfside_tools_youtube_valid_playlist_id($id)) continue;
+            // Preserve the last completed classification during a new scan.
+            // Discovery may finish long before all individual series are synced;
+            // demoting existing series here makes them disappear from Roku.
+            $previous_category = $wpdb->get_var($wpdb->prepare(
+                "SELECT category FROM {$tables['playlists']} WHERE playlist_id = %s", $id
+            ));
             $row = array(
                 'playlist_id' => $id,
                 'title' => sanitize_text_field($playlist['snippet']['title'] ?? ''),
-                'category' => 'other',
+                'category' => $previous_category === 'series' ? 'series' : 'other',
                 'seen_run' => $run_id,
                 'updated_at' => current_time('mysql', true),
             );
