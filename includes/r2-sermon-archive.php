@@ -503,31 +503,21 @@ function surfside_tools_staff_r2_sermons_shortcode() {
     <div class="surfside-staff-shell surfside-yt-manager" id="surfside-r2-sermons">
       <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_youtube_manager_url()); ?>">← Back to Message Archive</a></div>
       <section class="surfside-staff-hero"><p class="surfside-staff-eyebrow">Website · Messages · Roku</p>
-        <h1>Roku Sermon Copies</h1><p class="surfside-staff-muted">YouTube remains the public archive. This workspace manages matching MP4 files in R2 without uploading through WordPress.</p>
+        <h1>Roku Sermon Copies</h1><p class="surfside-staff-muted">YouTube remains the public archive. Upload the weekly MP4 to Cloudflare R2. YouTube remains the source for sermon titles and series.</p>
       </section>
       <?php if (is_array($notice)) : ?><p role="status" style="padding:12px;border:1px solid #b8c9dc"><?php echo esc_html($notice['text']); ?></p><?php endif; ?>
       <?php if (is_wp_error($schema)) : ?><p><?php echo esc_html($schema->get_error_message()); ?></p>
       <?php elseif ($master === '') : ?><p>Run the initial YouTube playlist sync in Integrations before uploading.</p>
       <?php else : ?>
-        <section class="surfside-yt-panel"><h2>R2 readiness</h2>
-          <p><strong><?php echo esc_html(number_format_i18n($ready_count)); ?> of <?php echo esc_html(number_format_i18n(count($rows))); ?></strong> master YouTube videos have registered R2 copies.</p>
-          <p><?php echo $cfg['ready'] ? 'R2 credentials detected.' : 'R2 credentials missing. Configure bucket-scoped access in wp-config.php (see docs/R2_SERMON_ARCHIVE.md).'; ?></p>
-          <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-            <input type="hidden" name="action" value="surfside_r2_reconcile">
-            <?php wp_nonce_field('surfside_r2_reconcile'); ?>
-            <button type="submit" <?php disabled(!$cfg['ready']); ?>>Reconcile R2 objects</button>
-          </form>
-          <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top:12px">
-            <input type="hidden" name="action" value="surfside_r2_export">
-            <?php wp_nonce_field('surfside_r2_export'); ?>
-            <button type="submit">Download bulk-import CSV template</button>
-          </form>
-          <p class="surfside-yt-muted">For historic files: fill in source_path in the CSV, run the local CLI uploader, then Reconcile. For weekly messages: use the form below.</p>
-        </section>
-        <?php echo surfside_yt_owner_panel(); ?>
+
         <section class="surfside-yt-panel">
-          <h2>Refresh YouTube Messages</h2>
-          <p class="surfside-yt-muted">YouTube is the catalog. After publishing a sermon, paste its YouTube link to import it in one API request, rather than waiting for the daily full sync.</p>
+          <h2>Roku sermon archive</h2>
+          <p><strong><?php echo esc_html(number_format_i18n($ready_count)); ?> of <?php echo esc_html(number_format_i18n(count($rows))); ?></strong> YouTube messages have Roku-ready copies.</p>
+          <?php if (!$cfg['ready']) : ?><p role="alert">R2 credentials missing. Configure bucket-scoped access in wp-config.php.</p><?php endif; ?>
+        </section>
+        <section class="surfside-yt-panel">
+          <h2>Find this week's message</h2>
+          <p class="surfside-yt-muted">Once your sermon is public and in the YouTube Messages playlist, paste its link to add it immediately, without waiting for the nightly sync.</p>
           <form method="post" action="<?php echo esc_url(surfside_tools_r2_manager_url()); ?>">
             <input type="hidden" name="action" value="surfside_r2_youtube_refresh">
             <input type="hidden" name="refresh_mode" value="video">
@@ -537,20 +527,10 @@ function surfside_tools_staff_r2_sermons_shortcode() {
               placeholder="https://www.youtube.com/watch?v=…" style="width:100%;max-width:580px;padding:10px">
             <button type="submit" <?php disabled($youtube_running); ?>>Find This YouTube Message</button>
           </form>
-          <p class="surfside-yt-muted">Video must already be public and in the master Messages playlist. The lookup will not change your existing review decisions or scan other playlists.</p>
-          <form method="post" action="<?php echo esc_url(surfside_tools_r2_manager_url()); ?>" style="margin-top:12px">
-            <input type="hidden" name="action" value="surfside_r2_youtube_refresh">
-            <input type="hidden" name="refresh_mode" value="playlist">
-            <?php wp_nonce_field('surfside_r2_youtube_refresh', 'surfside_r2_youtube_nonce'); ?>
-            <button type="submit" <?php disabled($youtube_running); ?>>Refresh All Messages (No Series Scan)</button>
-          </form>
-          <p class="surfside-yt-muted">This scans only the master playlist (up to 50 videos per API request). Full channel and series syncing continues automatically.</p>
           <?php if ($youtube_running) : ?>
             <p role="status"><strong>YouTube sync running:</strong> <?php echo esc_html((string) ($youtube_state['message'] ?? 'Processing')); ?>
               (<?php echo esc_html(number_format_i18n((int) ($youtube_state['requests'] ?? 0))); ?> API pages so far)</p>
-            <p><a href="<?php echo esc_url(surfside_tools_r2_manager_url()); ?>">Check progress / refresh this page</a></p>
-          <?php elseif (!empty($youtube_state['last_master_refresh'])) : ?>
-            <p class="surfside-yt-muted">Last master-only refresh: <?php echo esc_html(wp_date('F j, Y g:i A', (int) $youtube_state['last_master_refresh'])); ?></p>
+            <p><a href="<?php echo esc_url(surfside_tools_r2_manager_url()); ?>">Check sync progress</a></p>
           <?php endif; ?>
         </section>
         <section class="surfside-yt-panel"><h2>Upload this week's MP4</h2>
@@ -570,16 +550,6 @@ function surfside_tools_staff_r2_sermons_shortcode() {
           </form>
           <progress id="surfside-r2-progress" max="100" value="0" style="display:none;width:100%;margin-top:15px"></progress>
           <p role="status" aria-live="polite" id="surfside-r2-status"></p>
-        </section>
-        <section class="surfside-yt-panel"><h2>Registered copies</h2><p class="surfside-yt-muted">These statuses are refreshed after an upload or an explicit R2 reconciliation.</p>
-          <div style="max-height:480px;overflow:auto">
-            <table class="widefat striped" style="width:100%;border-collapse:collapse"><thead><tr><th>Message</th><th>Video ID</th><th>R2</th></tr></thead><tbody>
-              <?php foreach ($rows as $row) : ?><tr>
-                <td><?php echo esc_html($row['title']); ?></td><td><code><?php echo esc_html($row['video_id']); ?></code></td>
-                <td><?php echo ($row['status'] ?? '') === 'ready' ? esc_html(size_format((int) $row['size_bytes'])) : 'Not registered'; ?></td>
-              </tr><?php endforeach; ?>
-            </tbody></table>
-          </div>
         </section>
       <?php endif; ?>
     </div>
