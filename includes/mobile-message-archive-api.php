@@ -31,10 +31,11 @@ function surfside_tools_mobile_messages_register_routes() {
 function surfside_tools_mobile_messages_filters(WP_REST_Request $request) {
     $search = $request->get_param('search');
     $year = $request->get_param('year');
+    $month = $request->get_param('month');
     $series = $request->get_param('series');
     $page = $request->get_param('page');
 
-    foreach (array($search, $year, $series, $page) as $value) {
+    foreach (array($search, $year, $month, $series, $page) as $value) {
         if ($value !== null && !is_string($value) && !is_int($value)) {
             return new WP_Error('surfside_messages_invalid_filter',
                 'Invalid message archive filter.', array('status' => 400));
@@ -42,20 +43,23 @@ function surfside_tools_mobile_messages_filters(WP_REST_Request $request) {
     }
     $search = $search === null ? '' : (string) $search;
     $year = $year === null ? '' : trim((string) $year);
+    $month = $month === null ? '' : trim((string) $month);
     $series = $series === null ? '' : trim((string) $series);
     $page = $page === null ? '1' : (string) $page;
 
     if (($year !== '' && !preg_match('/^(19|20)\d{2}$/', $year))
+        || ($month !== '' && (!preg_match('/^(?:0?[1-9]|1[0-2])$/', $month) || $year === ''))
         || ($series !== '' && !surfside_tools_youtube_valid_playlist_id($series))
         || !preg_match('/^[1-9]\d{0,5}$/', $page) || (int) $page > 100000) {
         return new WP_Error('surfside_messages_invalid_filter',
-            'Invalid archive year, series or page.', array('status' => 400));
+            'Invalid archive year, month, series or page.', array('status' => 400));
     }
 
     // Match the public site's established bounds and filter behavior.
     return surfside_tools_public_messages_filters(array(
         'sm_search' => $search,
         'sm_year' => $year,
+        'sm_month' => $month,
         'sm_series' => $series,
         'sm_page' => $page,
     ));
@@ -97,7 +101,7 @@ function surfside_tools_mobile_messages_serialize_series($row) {
     );
 }
 
-/** GET /wp-json/surfside/v1/messages?search=&year=&series=&page= */
+/** GET /wp-json/surfside/v1/messages?search=&year=&month=&series=&page= */
 function surfside_tools_mobile_messages_list(WP_REST_Request $request) {
     $filters = surfside_tools_mobile_messages_filters($request);
     if (is_wp_error($filters)) return $filters;
@@ -133,8 +137,8 @@ function surfside_tools_mobile_messages_list(WP_REST_Request $request) {
         if ($video !== null) $items[] = $video;
     }
 
-    $is_home = $filters['q'] === '' && $filters['year'] === '' && $filters['series'] === ''
-        && $filters['page'] === 1;
+    $is_home = $filters['q'] === '' && $filters['year'] === '' && $filters['month'] === ''
+        && $filters['series'] === '' && $filters['page'] === 1;
     $latest = $is_home ? surfside_tools_public_messages_latest($master) : null;
     $page = (int) $list['page'];
     $pages = (int) $list['pages'];
