@@ -8,7 +8,7 @@ Base: `https://surfsidefellowship.org/wp-json/surfside/v1`
 
 | Endpoint | Purpose |
 | --- | --- |
-| `GET /messages` | Browse 12 messages per page, with optional `search`, `year`, `series`, `page` query parameters |
+| `GET /messages` | Browse 12 messages per page, with optional `search`, `year`, `month`, `series`, `page` query parameters |
 | `GET /messages/series` | Available sermon series, with titles, message counts, and YouTube thumbnail artwork |
 | `GET /messages/{video_id}` | One publicly visible message and its visible series memberships (video ID must be exactly 11 YouTube ID characters) |
 
@@ -36,7 +36,7 @@ The list response contains:
 
 The `/messages/series` response is `{ "api_version": 1, "available": true, "series": [...] }`. Each series has `id`, `title`, `message_count`, and `thumbnail_url`. The detail response is `{ "api_version": 1, "message": { ... }, "series": [{ "id": "...", "title": "..." }] }`.
 
-When the backend has no completed metadata import, list/series respond with `available: false` and empty collections. Excluded, nonexistent, and non-master videos return HTTP **404** on detail. Hidden or unknown series return **404** when directly selected. Malformed year, series, page, or video ID returns **400**.
+When the backend has no completed metadata import, list/series respond with `available: false` and empty collections. Excluded, nonexistent, and non-master videos return HTTP **404** on detail. Hidden or unknown series return **404** when directly selected. Malformed year, month, series, page, or video ID returns **400**. Month filtering requires a selected year.
 
 ## Key behavioral agreements
 
@@ -46,7 +46,7 @@ When the backend has no completed metadata import, list/series respond with `ava
 - **Series:** only discovered series with visible messages; staff-hidden series do not appear or expose a series-filtered listing, but their individually visible messages still appear in All Messages.
 - **Playback:** clients use YouTube's supported embed/watch URLs. Do not extract media, feed YouTube streams to `expo-video`, or attach the existing native Cloudflare floating/PiP player to these videos.
 - **No new storage or duplication:** videos remain on YouTube. Read-only endpoints never perform a sync, migration, API download, or metadata write and never expose the YouTube API key or unpublished staff notes.
-- **Pagination:** server limits browsing to 12 records per request and caps `page` at 100000. Only series and year filters from the public archive are honored; unsupported filters should not silently widen a hidden playlist.
+- **Pagination:** server limits browsing to 12 records per request and caps `page` at 100000. Series, year, and year-scoped month filters are honored; unsupported filters should not silently widen a hidden playlist.
 
 ## Manual deployment smoke tests
 
@@ -57,7 +57,9 @@ After merging and deploying the Tools plugin, open these public URLs **without l
 3. `https://surfsidefellowship.org/wp-json/surfside/v1/messages?page=2` — should return the second page with correct continuation fields.
 4. `https://surfsidefellowship.org/wp-json/surfside/v1/messages/series` — should return only visible series with titles and thumbnails.
 5. Substitute a real allowed 11-character ID at `/messages/{video_id}` and verify its detail and YouTube embed URL. Substitute an excluded video's ID and verify HTTP 404.
-6. Open `?year=invalid`, `?page=0`, and a known staff-hidden series ID; ensure HTTP 400/404, never the unfiltered archive.
+6. Open `?year=2025&month=2` and verify February 2025 results. Then try
+   `?month=2` without a year, `?year=invalid`, `?month=13`, `?page=0`,
+   and a known staff-hidden series ID; ensure HTTP 400/404, never the unfiltered archive.
 
 No app store release or rebuild is required for this backend-only change.
 

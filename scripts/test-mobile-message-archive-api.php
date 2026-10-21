@@ -61,6 +61,7 @@ function surfside_tools_public_messages_filters($source) {
     return array(
         'q' => substr(trim($source['sm_search'] ?? ''), 0, 100),
         'year' => $source['sm_year'] ?? '',
+        'month' => $source['sm_month'] ?? '',
         'series' => $source['sm_series'] ?? '',
         'page' => (int) ($source['sm_page'] ?? 1),
     );
@@ -147,11 +148,11 @@ check(!array_key_exists('api_key', $home)
 
 $GLOBALS['archive_calls'] = array();
 $filtered = surfside_tools_mobile_messages_list(new WP_REST_Request(array(
-    'search'=>'Calling', 'year'=>'2026', 'series'=>'PLVISIBLE1234', 'page'=>'2',
+    'search'=>'Calling', 'year'=>'2026', 'month'=>'9', 'series'=>'PLVISIBLE1234', 'page'=>'2',
 )));
 check($GLOBALS['list_filters'] === array(
-    'q'=>'Calling','year'=>'2026','series'=>'PLVISIBLE1234','page'=>2
-), 'Search/year/series/page filters reach existing website query logic');
+    'q'=>'Calling','year'=>'2026','month'=>'9','series'=>'PLVISIBLE1234','page'=>2
+), 'Search/year/month/series/page filters reach existing website query logic');
 check($filtered['pagination']['page'] === 2
     && $filtered['pagination']['has_more'] === true, 'Page 2 returns continuation metadata');
 check($filtered['latest'] === null, 'Only the unfiltered first page features Latest Sermon');
@@ -165,6 +166,7 @@ check(!in_array('list', $GLOBALS['archive_calls'], true), 'Hidden series never r
 
 foreach (array(
     array('year'=>'2026<script>'), array('year'=>'not-a-year'),
+    array('month'=>'2'), array('year'=>'2026','month'=>'0'), array('year'=>'2026','month'=>'13'),
     array('series'=>'invalid!'), array('page'=>'0'),
     array('page'=>'-1'), array('page'=>'100001'),
     array('page'=>'1 OR 1=1'), array('search'=>array('bad')),

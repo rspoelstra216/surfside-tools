@@ -49,16 +49,20 @@ function surfside_tools_public_messages_master_id() { return $GLOBALS['roku_mast
 function surfside_tools_mobile_messages_filters($request) {
     $page = $request->get_param('page');
     $year = $request->get_param('year');
+    $month = $request->get_param('month');
     $series = $request->get_param('series');
     $search = $request->get_param('search');
     if ($page !== null && (!preg_match('/^[1-9][0-9]{0,5}$/', (string) $page)
         || (int) $page > 100000)) return new WP_Error('bad_filter','Bad page',array('status'=>400));
     if ($year !== null && $year !== '' && !preg_match('/^(19|20)\d{2}$/', (string) $year))
         return new WP_Error('bad_filter','Bad year',array('status'=>400));
+    if ($month !== null && $month !== ''
+        && (!preg_match('/^(?:0?[1-9]|1[0-2])$/', (string) $month) || $year === null || $year === ''))
+        return new WP_Error('bad_filter','Bad month',array('status'=>400));
     if ($search !== null && !is_string($search)) return new WP_Error('bad_filter','Bad search',array('status'=>400));
     return array('q'=>substr((string)($search ?? ''),0,100),
-        'year'=>(string) ($year ?? ''), 'series'=>(string) ($series ?? ''),
-        'page'=>(int) ($page ?? 1));
+        'year'=>(string) ($year ?? ''), 'month'=>(string) ($month ?? ''),
+        'series'=>(string) ($series ?? ''), 'page'=>(int) ($page ?? 1));
 }
 function surfside_tools_public_messages_list($master, $filters, $r2_only = false) {
     $GLOBALS['roku_calls'][] = array('list',$master,$filters,$r2_only);
@@ -76,6 +80,11 @@ function surfside_tools_public_messages_years($master, $r2_only = false) {
     $GLOBALS['roku_calls'][] = array('years',$master,$r2_only);
     if (!$r2_only) throw new RuntimeException('Roku year facets must use R2-ready SQL');
     return array(2026, 2025, 2024);
+}
+function surfside_tools_public_messages_months($master, $year, $r2_only = false) {
+    $GLOBALS['roku_calls'][] = array('months',$master,$year,$r2_only);
+    if (!$r2_only) throw new RuntimeException('Roku month facets must use R2-ready SQL');
+    return array(1, 2, 3, 9, 10, 11, 12);
 }
 function surfside_tools_public_messages_detail($master, $id, $r2_only = false) {
     $GLOBALS['roku_calls'][] = array('detail',$master,$id,$r2_only);
@@ -128,7 +137,7 @@ check($list['latest']['id'] === 'OTt1dfYhlDY' && $list['pagination']['has_more']
 check(!isset($list['items'][0]['r2_access_key']) && !isset($list['items'][0]['secret']),
     'Public response reveals no credentials');
 $filtered = surfside_tools_roku_messages_list(new WP_REST_Request(
-    array('search'=>'Serve','year'=>'2026','series'=>'PLSERIES12345','page'=>'2')));
+    array('search'=>'Serve','year'=>'2026','month'=>'2','series'=>'PLSERIES12345','page'=>'2')));
 check($filtered['latest'] === null, 'Filtered page never claims to be homepage latest');
 $lastList = null;
 for ($i = count($GLOBALS['roku_calls']) - 1; $i >= 0; $i--) {
@@ -140,12 +149,18 @@ for ($i = count($GLOBALS['roku_calls']) - 1; $i >= 0; $i--) {
 check($lastList !== null && $lastList[3] === true
     && $lastList[2]['series'] === 'PLSERIES12345'
     && $lastList[2]['year'] === '2026'
+    && $lastList[2]['month'] === '2'
     && $lastList[2]['page'] === 2,
-    'Filtering sent to SQL before pagination');
+    'Year/month/series filtering sent to SQL before pagination');
+check($filtered['months'] === array(1, 2, 3, 9, 10, 11, 12),
+    'Selected year exposes only R2-ready archive months');
 $hidden = surfside_tools_roku_messages_list(new WP_REST_Request(array('series'=>'PLHIDDEN12345')));
 check(is_wp_error($hidden) && $hidden->get_error_data()['status'] === 404,
     'Directly requested hidden or unavailable series is rejected');
-foreach (array(array('page'=>'0'),array('page'=>'bad'),array('year'=>'test')) as $params) {
+foreach (array(
+    array('page'=>'0'), array('page'=>'bad'), array('year'=>'test'),
+    array('month'=>'2'), array('year'=>'2026','month'=>'0'), array('year'=>'2026','month'=>'13')
+) as $params) {
     $bad = surfside_tools_roku_messages_list(new WP_REST_Request($params));
     check(is_wp_error($bad) && $bad->get_error_data()['status'] === 400,
         'Roku query enforces shared mobile filter validation');
@@ -175,7 +190,7 @@ $GLOBALS['roku_base'] = 'https://video.surfsidesermons.com';
 $GLOBALS['roku_table_ready'] = false;
 $GLOBALS['roku_calls'] = array();
 $empty = surfside_tools_roku_messages_list(new WP_REST_Request());
-check(!$empty['available'] && $empty['years'] === array()
+check(!$empty['available'] && $empty['years'] === array() && $empty['months'] === array()
     && $empty['items'] === array() && $empty['pagination']['total'] === 0,
     'Missing table yields empty catalog without DB reads');
 check(!surfside_tools_roku_messages_series(new WP_REST_Request())['available'],
