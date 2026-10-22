@@ -2299,59 +2299,64 @@ function surfside_tools_weekly_update_shortcode() {
     $scheduled = function_exists('surfside_tools_weekly_pending') ? surfside_tools_weekly_pending() : array();
     $next_release = function_exists('surfside_tools_weekly_next_release_at')
         ? surfside_tools_weekly_next_release_at() : 0;
+    $reviewing = !empty($announcements_items) || is_array($sermon);
 
     ob_start();
     ?>
     <div class="surfside-weekly-update-tool">
         <h2>Surfside Weekly Update</h2>
-        <p>Upload and review next week's announcements and/or sermon notes. New documents go live automatically on <strong>Saturday at 5:00 PM Eastern</strong>; until then, the website and app show the currently published documents.</p>
+        <p class="surfside-weekly-intro">Prepare next week's announcements and sermon notes at any time. Scheduled documents will replace the current ones <strong>Saturday at 5:00 PM Eastern</strong>, not when you upload them.</p>
 
         <?php echo $message; ?>
 
-        <?php if (!empty($scheduled)) : ?>
-            <section class="surfside-weekly-schedule-status" role="status" aria-label="Scheduled weekly documents">
-                <span class="surfside-weekly-schedule-eyebrow">Ready for the weekend</span>
-                <h3>Scheduled for <?php echo esc_html(surfside_tools_weekly_release_label($scheduled['publish_at'])); ?></h3>
-                <p>The existing announcements and sermon notes remain public until this time. Uploading and scheduling a replacement below updates only the selected draft section.</p>
-                <ul>
-                    <?php if (!empty($scheduled['announcements'])) : ?>
-                        <li>Announcements: <?php echo esc_html($scheduled['announcements']['announcement_date'] ?: count($scheduled['announcements']['items']) . ' items'); ?></li>
-                    <?php endif; ?>
-                    <?php if (!empty($scheduled['sermon'])) : ?>
-                        <li>Sermon notes: <?php echo esc_html($scheduled['sermon']['title'] ?: 'Untitled message'); ?></li>
-                    <?php endif; ?>
-                </ul>
-                <?php if (!empty($scheduled['last_error'])) : ?>
-                    <p class="surfside-weekly-schedule-error">Automatic release needs attention: <?php echo esc_html($scheduled['last_error']); ?></p>
-                <?php endif; ?>
-                <form method="post" class="surfside-weekly-cancel-form" onsubmit="return confirm('Cancel the scheduled weekly documents? The currently published documents will stay live.');">
-                    <?php wp_nonce_field('surfside_tools_weekly_cancel', 'surfside_tools_weekly_cancel_nonce'); ?>
-                    <button type="submit" class="surfside-staff-button-secondary">Cancel Scheduled Update</button>
-                </form>
-            </section>
-        <?php else : ?>
-            <p class="surfside-weekly-schedule-next">Next scheduled release: <strong><?php echo esc_html(surfside_tools_weekly_release_label($next_release)); ?></strong></p>
+        <?php if (function_exists('surfside_tools_weekly_staff_status_markup')) : ?>
+            <?php echo surfside_tools_weekly_staff_status_markup($scheduled, $next_release); ?>
         <?php endif; ?>
 
-        <?php if (empty($announcements_items) && !is_array($sermon)) : ?>
+        <nav class="surfside-weekly-flow" aria-label="Weekly Update steps">
+            <div class="surfside-weekly-flow-step <?php echo !$reviewing ? 'is-current' : 'is-complete'; ?>"
+                <?php if (!$reviewing) : ?>aria-current="step"<?php endif; ?>>
+                <span class="surfside-weekly-flow-number" aria-hidden="true">1</span>
+                <span>Upload documents</span>
+            </div>
+            <div class="surfside-weekly-flow-step <?php echo $reviewing ? 'is-current' : ''; ?>"
+                <?php if ($reviewing) : ?>aria-current="step"<?php endif; ?>>
+                <span class="surfside-weekly-flow-number" aria-hidden="true">2</span>
+                <span>Review &amp; schedule</span>
+            </div>
+        </nav>
+
+        <?php if (!$reviewing) : ?>
+            <section class="surfside-weekly-work-section" aria-labelledby="surfside-weekly-upload-heading">
+                <header class="surfside-weekly-work-heading">
+                    <h3 id="surfside-weekly-upload-heading">Upload next week's documents</h3>
+                    <p>Choose one or both Word files. You'll review their contents before anything is scheduled.</p>
+                </header>
             <form method="post" enctype="multipart/form-data" class="surfside-weekly-update-upload-form">
                 <?php wp_nonce_field('surfside_tools_weekly_upload', 'surfside_tools_weekly_upload_nonce'); ?>
 
                 <div class="surfside-weekly-upload-grid">
                     <div class="surfside-weekly-upload-card">
-                        <h3>Weekly Announcements</h3>
-                        <p>Upload this week&#8217;s announcements.</p>
-                        <input type="file" name="weekly_announcements_docx" accept=".docx">
+                        <span class="surfside-weekly-file-icon" aria-hidden="true">A</span>
+                        <h4>Weekly Announcements</h4>
+                        <p>The announcements document for the upcoming service.</p>
+                        <label for="surfside-weekly-announcements-docx">Choose announcements <span class="surfside-weekly-file-type">(.docx)</span></label>
+                        <input type="file" id="surfside-weekly-announcements-docx" name="weekly_announcements_docx" accept=".docx">
                     </div>
 
                     <div class="surfside-weekly-upload-card">
-                        <h3>Sermon Notes</h3>
-                        <p>Upload this week&#8217;s sermon notes.</p>
-                        <input type="file" name="weekly_sermon_docx" accept=".docx">
+                        <span class="surfside-weekly-file-icon" aria-hidden="true">N</span>
+                        <h4>Sermon Notes</h4>
+                        <p>The message outline and Scripture references for the upcoming service.</p>
+                        <label for="surfside-weekly-sermon-docx">Choose sermon notes <span class="surfside-weekly-file-type">(.docx)</span></label>
+                        <input type="file" id="surfside-weekly-sermon-docx" name="weekly_sermon_docx" accept=".docx">
                     </div>
                 </div>
 
-                <p><button type="submit" class="wp-block-button__link wp-element-button">Upload & Review</button></p>
+                <div class="surfside-weekly-upload-actions">
+                    <p>Only the documents you select will be updated. Existing scheduled sections are preserved.</p>
+                    <button type="submit" class="wp-block-button__link wp-element-button">Upload &amp; Review <span aria-hidden="true">→</span></button>
+                </div>
             </form>
 
             <details class="surfside-weekly-advanced">
@@ -2368,11 +2373,15 @@ function surfside_tools_weekly_update_shortcode() {
                     <p>No announcement backup is currently available.</p>
                 <?php endif; ?>
             </details>
+            </section>
         <?php endif; ?>
 
-        <?php if (!empty($announcements_items) || is_array($sermon)) : ?>
-            <hr>
-            <h3>Review Weekly Update</h3>
+        <?php if ($reviewing) : ?>
+            <section class="surfside-weekly-work-section" aria-labelledby="surfside-weekly-review-heading">
+                <header class="surfside-weekly-work-heading">
+                    <h3 id="surfside-weekly-review-heading">Review and schedule</h3>
+                    <p>Confirm these details before saving the Saturday release. The website and app will continue showing the current documents until then.</p>
+                </header>
 
             <form method="post" class="surfside-weekly-update-publish-form">
                 <?php wp_nonce_field('surfside_tools_weekly_publish', 'surfside_tools_weekly_publish_nonce'); ?>
@@ -2458,10 +2467,12 @@ function surfside_tools_weekly_update_shortcode() {
                     </section>
                 <?php endif; ?>
 
-                <p class="surfside-weekly-publish-actions">
-                    <button type="submit" class="wp-block-button__link wp-element-button">Schedule for Saturday at 5 PM</button>
-                </p>
+                <div class="surfside-weekly-publish-actions">
+                    <p>Nothing changes publicly when you click Schedule. You can replace or cancel the scheduled documents before Saturday.</p>
+                    <button type="submit" class="wp-block-button__link wp-element-button">Schedule for Saturday at 5 PM <span aria-hidden="true">→</span></button>
+                </div>
             </form>
+            </section>
         <?php endif; ?>
     </div>
     <?php

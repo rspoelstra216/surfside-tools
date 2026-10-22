@@ -1,0 +1,375 @@
+/* Weekly Update Phase 3: make live, scheduled and review stages distinct. */
+.surfside-staff-weekly .surfside-weekly-update-tool {
+    max-width: 100%;
+}
+.surfside-staff-weekly .surfside-weekly-intro {
+    max-width: 800px;
+    color: #43536d;
+    line-height: 1.55;
+    margin: 0 0 20px;
+}
+.surfside-staff-weekly .surfside-weekly-status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin: 22px 0 28px;
+    align-items: stretch;
+}
+.surfside-staff-weekly .surfside-weekly-state-card {
+    padding: clamp(20px, 2.7vw, 27px);
+    border: 1px solid #d5e1ec;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 8px 22px rgba(12, 38, 68, .055);
+    min-width: 0;
+}
+.surfside-staff-weekly .surfside-weekly-state-upcoming {
+    background: #f3f8ff;
+    border-color: #bad3eb;
+}
+.surfside-staff-weekly .surfside-weekly-state-error {
+    background: #fff6f5;
+    border-color: #e6aaa3;
+}
+.surfside-staff-weekly .surfside-weekly-state-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0 0 13px;
+}
+.surfside-staff-weekly .surfside-weekly-state-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #155284;
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: .065em;
+    text-transform: uppercase;
+}
+.surfside-staff-weekly .surfside-weekly-state-live .surfside-weekly-state-eyebrow {
+    color: #167045;
+}
+.surfside-staff-weekly .surfside-weekly-state-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 99px;
+    background: currentColor;
+}
+.surfside-staff-weekly .surfside-weekly-state-channel {
+    font-size: 12px;
+    font-weight: 700;
+    color: #607188;
+}
+.surfside-staff-weekly .surfside-weekly-state-card h3 {
+    margin: 0 0 15px;
+    color: #0b2444;
+    font-size: clamp(20px, 2.2vw, 25px);
+    letter-spacing: -.02em;
+}
+.surfside-staff-weekly .surfside-weekly-release-date {
+    margin: -8px 0 13px;
+    color: #365372;
+    font-weight: 750;
+    font-size: 14px;
+}
+.surfside-staff-weekly .surfside-weekly-doc-list {
+    display: grid;
+    gap: 0;
+    margin: 0;
+}
+.surfside-staff-weekly .surfside-weekly-doc-list > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid #e0e8f0;
+}
+.surfside-staff-weekly .surfside-weekly-doc-list dt {
+    font-size: 13px;
+    font-weight: 750;
+    color: #526680;
+}
+.surfside-staff-weekly .surfside-weekly-doc-list dd {
+    min-width: 0;
+    max-width: 60%;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 750;
+    text-align: right;
+    color: #203c59;
+    overflow-wrap: anywhere;
+}
+.surfside-staff-weekly .surfside-weekly-state-footnote {
+    margin: 17px 0 0;
+    color: #596a80;
+    font-size: 13px;
+    line-height: 1.55;
+}
+.surfside-staff-weekly .surfside-weekly-draft-preview {
+    border-top: 1px solid #cdddea;
+    margin: 13px 0 0;
+    padding: 9px 0 0;
+}
+.surfside-staff-weekly .surfside-weekly-draft-preview > summary {
+    color: #0b519c;
+    font-weight: 800;
+    padding: 8px 0;
+    cursor: pointer;
+}
+.surfside-staff-weekly .surfside-weekly-draft-preview > summary:focus-visible,
+.surfside-staff-weekly .surfside-weekly-cancel-form button:focus-visible,
+.surfside-staff-weekly .surfside-weekly-upload-card input:focus-visible,
+.surfside-staff-weekly .surfside-weekly-update-tool button:focus-visible {
+    outline: 3px solid #86b9f0;
+    outline-offset: 3px;
+}
+.surfside-staff-weekly .surfside-weekly-draft-section {
+    background: #fff;
+    border: 1px solid #dde8f1;
+    border-radius: 11px;
+    padding: 16px;
+    margin: 10px 0 14px;
+    overflow-wrap: anywhere;
+}
+.surfside-staff-weekly .surfside-weekly-draft-section h4 {
+    margin: 0 0 12px;
+    color: #183957;
+    font-size: 17px;
+}
+.surfside-staff-weekly .surfside-weekly-draft-section h5 {
+    margin: 12px 0;
+}
+.surfside-staff-weekly .surfside-weekly-draft-section ol {
+    padding-left: 22px;
+    margin: 8px 0;
+}
+.surfside-staff-weekly .surfside-weekly-draft-section li + li {
+    margin-top: 8px;
+}
+.surfside-staff-weekly .surfside-weekly-draft-text {
+    line-height: 1.6;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.surfside-staff-weekly .surfside-weekly-cancel-form {
+    margin-top: 12px;
+}
+.surfside-staff-weekly .surfside-weekly-cancel-form button {
+    width: auto;
+    min-height: 42px;
+    padding: 10px 14px;
+    font: inherit;
+    font-weight: 750;
+    box-shadow: none;
+}
+.surfside-staff-weekly .surfside-weekly-flow {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 12px 0 22px;
+}
+.surfside-staff-weekly .surfside-weekly-flow-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid #d5e1ec;
+    border-radius: 11px;
+    background: #f7f9fc;
+    color: #607188;
+    font-size: 14px;
+    font-weight: 750;
+}
+.surfside-staff-weekly .surfside-weekly-flow-step.is-current {
+    background: #eaf3ff;
+    border-color: #a8c9ea;
+    color: #124879;
+}
+.surfside-staff-weekly .surfside-weekly-flow-step.is-complete {
+    background: #eef8f2;
+    border-color: #bde0ca;
+    color: #1c7043;
+}
+.surfside-staff-weekly .surfside-weekly-flow-number {
+    display: flex;
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+}
+.surfside-staff-weekly .surfside-weekly-work-section {
+    border: 1px solid #dbe4ed;
+    border-radius: 17px;
+    padding: clamp(20px, 3vw, 28px);
+    margin: 0 0 26px;
+    background: #fff;
+    box-shadow: 0 6px 20px rgba(12, 38, 68, .045);
+}
+.surfside-staff-weekly .surfside-weekly-work-heading h3 {
+    margin: 0 0 7px;
+    color: #092849;
+    font-size: clamp(21px, 2.7vw, 27px);
+}
+.surfside-staff-weekly .surfside-weekly-work-heading p {
+    margin: 0 0 14px;
+    color: #52657e;
+    line-height: 1.55;
+}
+.surfside-staff-weekly .surfside-weekly-update-tool .surfside-weekly-upload-grid {
+    gap: 16px !important;
+    margin: 18px 0 !important;
+}
+.surfside-staff-weekly .surfside-weekly-update-tool .surfside-weekly-upload-card {
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: clamp(18px, 2.4vw, 23px) !important;
+    border: 1px solid #d8e3ee !important;
+    border-radius: 13px !important;
+    background: #f9fbfd !important;
+    box-shadow: none !important;
+}
+.surfside-staff-weekly .surfside-weekly-upload-card h4 {
+    color: #17395d;
+    font-size: 19px;
+    margin: 12px 0 6px;
+}
+.surfside-staff-weekly .surfside-weekly-upload-card p {
+    margin: 0 0 16px !important;
+    color: #536880;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.surfside-staff-weekly .surfside-weekly-file-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 37px;
+    height: 37px;
+    border-radius: 9px;
+    background: #e5f0fe;
+    color: #0b4f9c;
+    font-size: 16px;
+    font-weight: 900;
+}
+.surfside-staff-weekly .surfside-weekly-upload-card label {
+    display: block;
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: #173b60;
+    font-weight: 750;
+}
+.surfside-staff-weekly .surfside-weekly-file-type {
+    font-weight: 500;
+    color: #677b90;
+}
+.surfside-staff-weekly .surfside-weekly-upload-card input[type=file] {
+    display: block;
+    max-width: 100%;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px;
+    border: 1px solid #c1d0df;
+    border-radius: 9px;
+    background: #fff;
+    font: inherit;
+    font-size: 13px;
+}
+.surfside-staff-weekly .surfside-weekly-upload-actions,
+.surfside-staff-weekly .surfside-weekly-publish-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 22px 0 0 !important;
+    padding: 20px 0 0;
+    border-top: 1px solid #e1e9f1;
+    text-align: left !important;
+}
+.surfside-staff-weekly .surfside-weekly-upload-actions p,
+.surfside-staff-weekly .surfside-weekly-publish-actions p {
+    flex: 1 1 280px;
+    max-width: 520px;
+    margin: 0;
+    color: #53657e;
+    font-size: 13px;
+    line-height: 1.55;
+}
+.surfside-staff-weekly .surfside-weekly-upload-actions button,
+.surfside-staff-weekly .surfside-weekly-publish-actions button {
+    min-height: 48px;
+    border: 1px solid #0b4f9c;
+    border-radius: 9px;
+    padding: 12px 20px;
+    color: #fff;
+    background: #0b4f9c;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: none;
+}
+.surfside-staff-weekly .surfside-weekly-update-tool .surfside-weekly-review-section {
+    min-height: 0;
+    padding: clamp(18px, 3vw, 28px) !important;
+    margin: 18px 0 !important;
+    box-shadow: none;
+}
+.surfside-staff-weekly .surfside-weekly-review-section textarea,
+.surfside-staff-weekly .surfside-weekly-review-section input[type=text] {
+    max-width: 100%;
+    min-height: 44px;
+    border: 1px solid #9cafc3;
+    border-radius: 8px;
+    padding: 11px 12px;
+    font: inherit;
+}
+.surfside-staff-weekly .surfside-weekly-review-section textarea {
+    min-height: 115px;
+    line-height: 1.55;
+}
+.surfside-staff-weekly .surfside-weekly-advanced {
+    margin: 14px 0 0 !important;
+    padding: 14px 18px !important;
+    box-shadow: none !important;
+}
+.surfside-staff-weekly .surfside-weekly-advanced > summary {
+    cursor: pointer;
+    font-weight: 750;
+    color: #25517a;
+}
+@media (max-width: 760px) {
+    .surfside-staff-weekly .surfside-weekly-status-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .surfside-staff-weekly .surfside-weekly-flow-step {
+        padding: 12px 10px;
+        font-size: 12px;
+        gap: 7px;
+    }
+    .surfside-staff-weekly .surfside-weekly-flow-number {
+        width: 25px;
+        height: 25px;
+        flex-basis: 25px;
+    }
+    .surfside-staff-weekly .surfside-weekly-doc-list > div {
+        display: grid;
+        gap: 4px;
+    }
+    .surfside-staff-weekly .surfside-weekly-doc-list dd {
+        text-align: left;
+        max-width: none;
+    }
+    .surfside-staff-weekly .surfside-weekly-upload-actions button,
+    .surfside-staff-weekly .surfside-weekly-publish-actions button {
+        width: 100%;
+    }
+}
