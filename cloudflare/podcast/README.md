@@ -62,3 +62,20 @@ Upload the intro and outro files to the **existing** R2 bucket using the Cloudfl
 - The podcast assets and MP3 output are not exposed through the Roku message catalog; only the canonical sermon MP4 key remains authoritative for Roku.
 - Spreaker drafts, authorization, publishing controls and persistent podcast IDs will be added in a separate subsystem PR after the audio output is verified. Spreaker drafts should remain unpublished pending staff review.
 - Do not merge this PR until GitHub CI and a code review pass. A live test still requires deployment/configuration actions on the Cloudflare account.
+
+## First processing test: R2 MP3 stream length fix
+
+In the October 22 first live test, FFmpeg completed far enough to send its output
+to `storage.internal`, but R2 rejected the PUT with "Provided readable stream
+must have a known length". The October 22 fix sends the actual MP3 file size
+as `Content-Length` from the Container. The Worker validates the length,
+wraps the incoming body in a `FixedLengthStream`, and streams it directly into
+the R2 binding without buffering a whole podcast in Worker memory. Both
+missing/invalid lengths and truncated bodies are rejected.
+
+Once this fix is merged and Cloudflare's GitHub build completes successfully,
+retry the **same** video ID via a newly signed `POST /jobs` request. The failed
+job may have retried previously; inspect `podcast-jobs/<id>.json` and
+`podcast-audio/<id>.mp3` first. If MP3 is already present, verify it and
+do not request an unnecessary re-encode. If status is `failed` with no MP3,
+one explicit retry is safe. The verified Roku MP4 and Spreaker remain untouched.

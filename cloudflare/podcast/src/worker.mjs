@@ -1,6 +1,7 @@
 import { Container, ContainerProxy, getContainer } from "@cloudflare/containers";
 export { ContainerProxy };
 import { validId, sourceKey, audioKey, statusKey, validStorageAccess, verifiedRequest } from "./validation.mjs";
+import { uploadAudioToR2 } from "./audio-upload.mjs";
 
 const reply = (data, status = 200) => Response.json(data, {
   status,
@@ -36,10 +37,10 @@ PodcastContainer.outboundByHost = {
       return object ? new Response(object.body, { status: 200 }) : new Response("Missing", { status: 404 });
     }
     if (await env.SERMONS_BUCKET.head(key)) return new Response("Already exists", { status: 409 });
-    await env.SERMONS_BUCKET.put(key, request.body, {
-      httpMetadata: { contentType: "audio/mpeg" }
-    });
-    return new Response("Stored", { status: 201 });
+    // A generic ReadableStream has no known size and R2 rejects it.
+    // Use the validated byte count to create a FixedLengthStream without
+    // buffering full sermon MP3s inside the memory-limited Worker.
+    return uploadAudioToR2(request, env.SERMONS_BUCKET, key);
   },
 };
 

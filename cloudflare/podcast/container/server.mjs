@@ -60,11 +60,12 @@ async function produce(id) {
     if (bytes < 1024 || bytes > 300 * 1024 * 1024) throw Error("output_size_invalid");
     const response = await fetch(STORAGE + "podcast-audio/" + id + ".mp3", {
       method: "PUT",
-      headers: { "content-type": "audio/mpeg" },
+      // The Worker needs this exact byte count for R2's fixed-length stream.
+      headers: { "content-type": "audio/mpeg", "content-length": String(bytes) },
       body: Readable.toWeb(createReadStream(output)),
       duplex: "half",
     });
-    if (!response.ok && response.status !== 409) throw Error("r2_output_failed");
+    if (!response.ok && response.status !== 409) throw Error("r2_output_failed_" + response.status);
     return bytes;
   } finally {
     await rm(dir, { recursive: true, force: true });
