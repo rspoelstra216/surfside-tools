@@ -28,16 +28,14 @@ function surfside_tools_frontend_settings_handle_post() {
     }
 
     if ($action === 'save_settings') {
-        $mode = isset($_POST['this_week_mode']) ? sanitize_key(wp_unslash($_POST['this_week_mode'])) : 'next7';
-        if (!in_array($mode, array('next7', 'sunday'), true)) {
-            $mode = 'next7';
-        }
-        update_option('surfside_tools_settings', array(
-            'google_maps_api_key' => isset($_POST['google_maps_api_key']) ? sanitize_text_field(wp_unslash($_POST['google_maps_api_key'])) : '',
-            'this_week_mode' => $mode,
-            'default_event_duration' => max(15, min(480, isset($_POST['default_event_duration']) ? absint($_POST['default_event_duration']) : 60)),
-        ), false);
-        return surfside_tools_frontend_settings_notice('Settings saved.');
+        // Google Maps remains in Integrations, while calendar preferences now
+        // have their own form. Never reset duration, week mode, or unknown keys.
+        $stored = get_option('surfside_tools_settings', array());
+        $settings = is_array($stored) ? $stored : array();
+        $settings['google_maps_api_key'] = isset($_POST['google_maps_api_key']) && is_string($_POST['google_maps_api_key'])
+            ? sanitize_text_field(wp_unslash($_POST['google_maps_api_key'])) : '';
+        update_option('surfside_tools_settings', $settings, false);
+        return surfside_tools_frontend_settings_notice('Google Maps settings saved.');
     }
 
     if ($action === 'delete_saved_place') {
@@ -104,16 +102,17 @@ function surfside_tools_staff_settings_shortcode() {
     $twitch_notice = surfside_tools_twitch_settings_handle_post();
     $settings = get_option('surfside_tools_settings', array());
     $api_key = (string) ($settings['google_maps_api_key'] ?? '');
-    $week_mode = (string) ($settings['this_week_mode'] ?? 'next7');
-    $duration = (int) ($settings['default_event_duration'] ?? 60);
-    list($saved, $calendar_places) = surfside_tools_frontend_saved_places_data();
-    $hidden = function_exists('surfside_tools_get_hidden_place_names') ? surfside_tools_get_hidden_place_names() : array();
     $church_settings_url = function_exists('surfside_tools_staff_page_url')
         ? surfside_tools_staff_page_url('site-settings')
         : home_url('/dashboard/site-settings/');
     $streaming_url = function_exists('surfside_tools_staff_page_url')
         ? surfside_tools_staff_page_url('site-settings/streaming')
         : home_url('/dashboard/site-settings/streaming/');
+    $calendar_url = function_exists('surfside_tools_staff_page_url')
+        ? surfside_tools_staff_page_url('calendar')
+        : home_url('/dashboard/calendar/');
+    $calendar_defaults_url = add_query_arg('view', 'defaults', $calendar_url);
+    $saved_places_url = add_query_arg('view', 'places', $calendar_url);
 
     ob_start();
     ?>
@@ -150,75 +149,22 @@ function surfside_tools_staff_settings_shortcode() {
                 </div>
             </details>
 
-            <details class="surfside-front-settings-card surfside-integration-card">
-                <summary><span>Calendar Defaults</span></summary>
-                <div class="surfside-integration-body">
-                    <fieldset>
-                        <legend><strong>This Week at Surfside</strong></legend>
-                        <label><input type="radio" name="this_week_mode" value="next7" <?php checked($week_mode, 'next7'); ?>> Next 7 days starting today</label>
-                        <label><input type="radio" name="this_week_mode" value="sunday" <?php checked($week_mode, 'sunday'); ?>> Current Sunday–Saturday week</label>
-                    </fieldset>
-                    <label for="surfside-front-duration"><strong>Default event duration</strong></label>
-                    <div><input id="surfside-front-duration" type="number" min="15" max="480" step="15" name="default_event_duration" value="<?php echo esc_attr($duration); ?>"> minutes</div>
-                    <p class="surfside-front-description">Used to suggest an end time after a start time is entered.</p>
-                </div>
-            </details>
-
-            <p><button type="submit" class="surfside-front-primary-button">Save Map &amp; Calendar Settings</button></p>
+            <p><button type="submit" class="surfside-front-primary-button">Save Google Maps Settings</button></p>
         </form>
 
-        <details class="surfside-front-settings-card surfside-integration-card surfside-saved-places-card">
+        <details class="surfside-front-settings-card surfside-integration-card">
+            <summary><span>Calendar Defaults</span></summary>
+            <div class="surfside-integration-body">
+                <p class="surfside-front-description">The week's display mode and default event duration are managed with the calendar.</p>
+                <p><a class="surfside-front-secondary-button surfside-streaming-settings-link" href="<?php echo esc_url($calendar_defaults_url); ?>">Open Calendar Defaults <span aria-hidden="true">›</span></a></p>
+            </div>
+        </details>
+
+        <details class="surfside-front-settings-card surfside-integration-card">
             <summary><span>Saved Places</span></summary>
             <div class="surfside-integration-body">
-                <p class="surfside-staff-muted">Removing a place does not change existing calendar events.</p>
-                <?php if (!$saved && !$calendar_places) : ?>
-                    <p>No saved or previously used places were found.</p>
-                <?php else : ?>
-                    <div class="surfside-front-place-table">
-                        <div class="surfside-front-place-head"><span>Place</span><span>Address</span><span>Source</span><span>Action</span></div>
-                        <?php foreach ($saved as $place) : ?>
-                            <div class="surfside-front-place-row">
-                                <strong><?php echo esc_html($place['name'] ?? ''); ?></strong>
-                                <span><?php echo esc_html($place['address'] ?? ''); ?></span>
-                                <span>Saved place</span>
-                                <form method="post" onsubmit="return confirm('Remove this saved place? Existing events will keep their current location.');">
-                                    <?php wp_nonce_field('surfside_front_settings', 'surfside_front_settings_nonce'); ?>
-                                    <input type="hidden" name="surfside_front_settings_action" value="delete_saved_place">
-                                    <input type="hidden" name="place_id" value="<?php echo (int) ($place['id'] ?? 0); ?>">
-                                    <button type="submit" class="surfside-front-delete-button">Delete</button>
-                                </form>
-                            </div>
-                        <?php endforeach; ?>
-                        <?php foreach ($calendar_places as $key => $place) : if (in_array($key, $hidden, true)) continue; ?>
-                            <div class="surfside-front-place-row">
-                                <strong><?php echo esc_html($place['name']); ?></strong>
-                                <span><?php echo esc_html($place['address']); ?></span>
-                                <span>Previously used</span>
-                                <form method="post">
-                                    <?php wp_nonce_field('surfside_front_settings', 'surfside_front_settings_nonce'); ?>
-                                    <input type="hidden" name="surfside_front_settings_action" value="hide_calendar_place">
-                                    <input type="hidden" name="place_name" value="<?php echo esc_attr($place['name']); ?>">
-                                    <button type="submit" class="surfside-front-delete-button">Remove</button>
-                                </form>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-
-                <?php if ($hidden) : ?>
-                    <details class="surfside-front-removed"><summary><strong>Removed suggestions (<?php echo count($hidden); ?>)</strong></summary>
-                        <div class="surfside-front-restore-list">
-                            <?php foreach ($hidden as $name) : ?>
-                                <form method="post">
-                                    <?php wp_nonce_field('surfside_front_settings', 'surfside_front_settings_nonce'); ?>
-                                    <input type="hidden" name="surfside_front_settings_action" value="restore_calendar_place">
-                                    <input type="hidden" name="place_name" value="<?php echo esc_attr($name); ?>">
-                                    <button type="submit" class="surfside-front-secondary-button">Restore <?php echo esc_html(ucwords($name)); ?></button>
-                                </form>
-                            <?php endforeach; ?>
-                        </div>
-                    </details>
-                <?php endif; ?>
+                <p class="surfside-front-description">Manage saved and previously used event locations in the Calendar area.</p>
+                <p><a class="surfside-front-secondary-button surfside-streaming-settings-link" href="<?php echo esc_url($saved_places_url); ?>">Open Saved Places <span aria-hidden="true">›</span></a></p>
             </div>
         </details>
 

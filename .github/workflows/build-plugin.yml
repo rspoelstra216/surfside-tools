@@ -120,6 +120,9 @@ jobs:
       - name: Test consolidated streaming workspace
         run: php scripts/test-streaming-workspace.php
 
+      - name: Test Calendar workspace and independent settings saves
+        run: php scripts/test-calendar-workspace.php
+
   build-plugin:
     name: Build installable plugin ZIP
     if: github.event_name != 'pull_request'

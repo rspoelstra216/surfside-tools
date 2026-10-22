@@ -37,8 +37,8 @@ function surfside_tools_workspace_catalog() {
         'events' => array('title' => 'Events & Serving', 'items' => array(
             array('label' => 'Calendar Manager', 'url' => surfside_tools_staff_page_url('calendar'), 'search' => 'events dates recurrence activities'),
             array('label' => 'Volunteer Needs', 'url' => add_query_arg('tool', 'volunteer-needs', $engagement), 'search' => 'serving opportunities help wanted'),
-            array('label' => 'Saved Places', 'url' => $settings . '#surfside-focus-saved-places', 'search' => 'calendar event locations addresses', 'cap' => 'manage_options'),
-            array('label' => 'Calendar Defaults', 'url' => $settings . '#surfside-focus-calendar-defaults', 'search' => 'week mode duration schedule', 'cap' => 'manage_options'),
+            array('label' => 'Calendar Defaults', 'url' => add_query_arg('view', 'defaults', surfside_tools_staff_page_url('calendar')), 'search' => 'calendar week mode current sunday saturday next seven days duration event defaults', 'cap' => 'manage_options'),
+            array('label' => 'Saved Places', 'url' => add_query_arg('view', 'places', surfside_tools_staff_page_url('calendar')), 'search' => 'calendar location saved places addresses remove restore previously used', 'cap' => 'manage_options'),
         )),
         'community' => array('title' => 'Community & Communications', 'items' => array(
             array('label' => 'Prayer Requests', 'url' => add_query_arg('tool', 'prayer-requests', $engagement), 'search' => 'prayers praises pending review prayer list'),
