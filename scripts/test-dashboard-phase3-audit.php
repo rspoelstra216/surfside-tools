@@ -25,6 +25,7 @@ $GLOBALS['audit_now'] = (new DateTimeImmutable('2026-10-22T10:00:00', new DateTi
 $GLOBALS['audit_date'] = '2026-10-22';
 $_GET = array();
 
+function add_shortcode(...$args) {}
 function check($ok,$why) { if(!$ok) throw new RuntimeException($why); }
 function absint($v) { return abs((int)$v); }
 function esc_html($v) { return htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8'); }
