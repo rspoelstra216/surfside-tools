@@ -73,12 +73,12 @@ check(array_keys($groups)===array('content','media','events','community','appear
 $labels=array();
 foreach($groups as $section)foreach($section['items'] as $item)$labels[$item['label']]=$item['url'];
 foreach(array('Weekly Update','Archived Sermon Notes','Message Archive','Sermon Series',
-    'Roku MP4 Uploads','Calendar Manager','Volunteer Needs','Prayer Requests',
+    'Weekly Media','Calendar Manager','Volunteer Needs','Prayer Requests',
     'Push Notifications','Website Navigation','YouVersion Integration','Staff Access') as $label) {
     check(isset($labels[$label]),'Search/navigation indexes '.$label);
 }
-check(str_contains($labels['Roku MP4 Uploads'],'/dashboard/site-management/?view=roku-media'),
-    'Roku copies preserves the established ?view= route');
+check(str_contains($labels['Weekly Media'],'/dashboard/site-management/?view=roku-media'),
+    'Weekly Media preserves the established ?view= route');
 check(isset($labels['Streaming']) &&
     $labels['Streaming'] === 'https://surfsidefellowship.org/dashboard/site-settings/streaming/',
     'All streaming operations share one canonical management URL');
@@ -122,8 +122,8 @@ check($GLOBALS['ws_assets']===array('surfside-workspace','surfside-workspace'),
 $_GET=array('view'=>'roku-media');
 $GLOBALS['ws_uri']='dashboard/site-management';
 $active=surfside_tools_workspace_current($groups);
-check($active['label']==='Roku MP4 Uploads' && $active['group']==='Messages & Media',
-    'Roku ?view= route gets the correct breadcrumb');
+check($active['label']==='Weekly Media' && $active['group']==='Messages & Media',
+    'Weekly Media retains the ?view= route breadcrumb');
 $_GET=array('view'=>'message-archive','tab'=>'series');
 $active=surfside_tools_workspace_current($groups);
 check($active['label']==='Sermon Series','Nested archive tab gets specific breadcrumb');
@@ -155,7 +155,7 @@ foreach(array('Integrations','Staff Access','Streaming','Twitch Integration','Co
     'YouTube Integration','Saved Places','Ministries') as $hidden) {
     check(!in_array($hidden,$staff_labels,true),'Privileged tool hidden from staff search: '.$hidden);
 }
-check(in_array('Prayer Requests',$staff_labels,true)&&in_array('Roku MP4 Uploads',$staff_labels,true),
+check(in_array('Prayer Requests',$staff_labels,true)&&in_array('Weekly Media',$staff_labels,true),
     'Staff retain ordinary tools');
 $GLOBALS['ws_upload']=false;
 check(!surfside_tools_workspace_is_staff_page(),'No workspace access without upload_files capability');
