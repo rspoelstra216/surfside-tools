@@ -52,8 +52,14 @@ jobs:
           python3 -m py_compile scripts/upload-r2-sermons.py
           node --check assets/js/r2-sermon-upload.js
 
-      - name: Test weekly podcast metadata preview
+      - name: Test weekly podcast metadata preview and queue safety
         run: php scripts/test-podcast-publishing.php
+
+      - name: Check Cloudflare processor source and authorization tests
+        run: |
+          cd cloudflare/podcast
+          npm run check
+          npm test
 
       - name: Test YouTube owner filename matching and inventory utility
         run: |

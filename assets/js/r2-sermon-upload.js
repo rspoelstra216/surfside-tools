@@ -108,9 +108,18 @@
         xhr.send(file);
       });
       message("Upload finished. Verifying object in R2…");
-      await request("complete", {video_id: id});
+      const completion = await request("complete", {video_id: id});
       progress.value = 100;
-      message("Uploaded and verified. Refresh this page to see the updated archive status.");
+      const podcastStatus = completion.podcast?.status;
+      if (podcastStatus === "queued" || podcastStatus === "processing") {
+        message("MP4 verified for Roku. Podcast audio processing queued.");
+      } else if (podcastStatus === "ready") {
+        message("MP4 verified for Roku. Podcast MP3 is already prepared.");
+      } else if (podcastStatus === "queue_unavailable") {
+        message("MP4 verified for Roku. Podcast processing could not be queued; the video is safe.");
+      } else {
+        message("MP4 verified for Roku. Podcast processing is not yet configured.");
+      }
       const uploadedOption = idField.querySelector('option[value="' + id + '"]');
       uploadedOption.disabled = true;
       if (podcastSelect && !podcastSelect.querySelector('option[value="' + id + '"]')) {

@@ -46,3 +46,47 @@ function surfside_tools_podcast_episode_preview($youtube_title, $sermon_date, $y
         'needs_review' => !$recognized || $date_text === '' || !$valid_id || strlen($title) > 140,
     );
 }
+
+
+/**
+ * Queue only newly verified *weekly* R2 uploads. Historical reconciliations
+ * never call this function. Missing configuration always fails closed.
+ */
+function surfside_tools_podcast_queue_verified($id) {
+    if (!is_string($id) || !preg_match('/^[A-Za-z0-9_-]{11}$/D', $id)) {
+        return array('status' => 'invalid_video');
+    }
+    if (!defined('SURFSIDE_PODCAST_WORKER_URL') ||
+        !defined('SURFSIDE_PODCAST_SHARED_SECRET') ||
+        !is_string(SURFSIDE_PODCAST_WORKER_URL) ||
+        !is_string(SURFSIDE_PODCAST_SHARED_SECRET) ||
+        strlen(SURFSIDE_PODCAST_SHARED_SECRET) < 32) {
+        return array('status' => 'not_configured');
+    }
+    $url = untrailingslashit(SURFSIDE_PODCAST_WORKER_URL);
+    if (!preg_match('~^https://[a-z0-9.-]+(?::443)?$~iD', $url)) {
+        return array('status' => 'invalid_configuration');
+    }
+    $payload = wp_json_encode(array('video_id' => $id));
+    $timestamp = (string) time();
+    $signature = hash_hmac('sha256', $timestamp . '.' . $payload, SURFSIDE_PODCAST_SHARED_SECRET);
+    $result = wp_remote_post($url . '/jobs', array(
+        'method' => 'POST',
+        'headers' => array(
+            'Content-Type' => 'application/json',
+            'X-Surfside-Time' => $timestamp,
+            'X-Surfside-Signature' => $signature,
+        ),
+        'body' => $payload,
+        'timeout' => 8,
+        'redirection' => 0,
+        'reject_unsafe_urls' => true,
+    ));
+    if (is_wp_error($result)) return array('status' => 'queue_unavailable');
+    $http = (int) wp_remote_retrieve_response_code($result);
+    if ($http !== 200 && $http !== 202) return array('status' => 'queue_unavailable');
+    $body = json_decode(wp_remote_retrieve_body($result), true);
+    $status = is_array($body) && isset($body['status']) ? $body['status'] : null;
+    return array('status' => in_array($status, array('queued', 'processing', 'ready'), true)
+        ? $status : 'queue_unavailable');
+}
