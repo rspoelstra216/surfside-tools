@@ -6,7 +6,7 @@ YouTube remains the canonical public archive and metadata source. Its synchroniz
 
     sermons/<youtube_video_id>.mp4
 
-Surfside Tools stores verified object ID, key, size, ETag and status, without duplicating YouTube metadata. The current WordPress/site/mobile message playback remains on YouTube. **This PR does not expose a public R2 or Roku playback API.**
+Surfside Tools stores verified object ID, key, size, ETag and status, without duplicating YouTube metadata. The website/mobile message archive remains on YouTube; the separate public Roku catalog API uses verified R2 copies and the configured production playback domain.
 
 ## One-time setup
 
@@ -18,9 +18,9 @@ Surfside Tools stores verified object ID, key, size, ETag and status, without du
        define('SURFSIDE_R2_ACCESS_KEY_ID', 'R2_ACCESS_KEY_ID');
        define('SURFSIDE_R2_SECRET_ACCESS_KEY', 'R2_SECRET_ACCESS_KEY');
 
-   Optional, for a FUTURE Roku delivery PR only, once you have configured a tested public R2 custom domain:
+   The public Roku catalog uses the verified R2 custom domain:
 
-       define('SURFSIDE_R2_PUBLIC_BASE_URL', 'https://sermons.example.org');
+       define('SURFSIDE_R2_PUBLIC_BASE_URL', 'https://video.surfsidesermons.com');
 
 3. Set CORS on the R2 bucket for the exact Surfside dashboard origin. Require PUT, allow Content-Type, expose ETag. For S3-style CORS JSON:
 
@@ -49,11 +49,15 @@ The ordinary YouTube sync runs on a roughly daily schedule and discovers channel
 3. Paste the YouTube watch/share link into **Find This YouTube Message**. This issues exactly one YouTube Data API playlistItems.list request with BOTH playlistId and videoId. The result is accepted only if the matching ID is actually in Messages. The new metadata and membership are written to the existing tables without triggering a full scan or pruning other records.
 4. The new video is selected in the upload dropdown. Choose the prepared MP4 and upload directly to R2.
 
-If you don't have a video link, **Refresh All Messages (No Series Scan)** does a complete master playlist scan (up to 50 videos per request), without rescanning channel and series playlists. That refresh uses the existing bounded WP-Cron page worker, so return to **Check progress** to see when it finishes. It will only finalize/prune master playlist membership after a complete scan; it never deletes series memberships. On a master-only completion, the separate last_master_refresh timestamp is recorded and the last complete full-sync timestamp remains unchanged.
+The normal full YouTube sync remains available in Integrations and maintains series memberships. The older master-only refresh endpoint is retained internally for compatibility, but its maintenance button is no longer shown on Roku Copies.
 
 An active synchronization disables new manual refreshes to prevent overlapping imports. An initial full sync is required before either fast option. Neither fast action modifies staff review decisions or the YouTube videos. The regular full sync is still needed to discover new series, reconcile renamed playlists and remove stale series memberships; its daily schedule remains intact.
 
 YouTube's documented filter and quota: https://developers.google.com/youtube/data/reference/rest/v3/playlistItems/list
+
+## Weekly Roku Copies page (post-migration UI)
+
+Roku Copies now shows just the one-video YouTube lookup and the direct MP4 uploader. The archive-wide readiness/completion count is intentionally omitted because older YouTube sermons without source MP4s are not planned for R2. The individual upload progress bar stays visible during active transfers. One-time NAS inventory, bulk CSV export, R2 reconciliation, master-only refresh, playlist ownership diagnostics, and the long per-video registration table are not displayed. The underlying bulk uploader, legacy export/reconciliation handlers and R2 status records are preserved to avoid disrupting the separate historical migration and for authorized recovery if needed.
 
 ## Weekly workflow
 
@@ -65,9 +69,9 @@ YouTube's documented filter and quota: https://developers.google.com/youtube/dat
 
 **Large-file reliability tradeoff:** The first dashboard uploader uses one PUT, which supports up to 5 GiB but is not resumable. An interrupted ~2 GB upload restarts from zero. On slow/unreliable Internet, use the local AWS CLI multipart importer below for the weekly MP4 as well. Cloudflare recommends multipart for large objects.
 
-## Historical bulk import (approximately 368 originals)
+## Historical bulk import (reference for existing migration tooling)
 
-1. Click **Download bulk-import CSV template**. It contains one row per known master YouTube video ID, its title, date, and a blank source_path.
+1. Use an existing canonical manifest of master YouTube video IDs, titles, dates, and local source_path values. The legacy CSV export action remains in the plugin for compatibility, but is no longer a visible weekly-dashboard control.
 2. Fill source_path ONLY after you have positively matched the correct local recording to that YouTube ID. Use paths relative to a local --root directory, e.g. 2024/05 May - Message.mp4. Leave uncertain rows blank; never guess ID association based solely on a similar date/title. Keep the video_id column unchanged.
 3. Install Python 3.9+ and AWS CLI v2 on the computer with the recordings. Configure these local environment variables using your OS secure environment handling: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION=auto. Do not put keys in the CSV.
 4. Download scripts/upload-r2-sermons.py from the repository. Dry run first:
@@ -79,7 +83,7 @@ YouTube's documented filter and quota: https://developers.google.com/youtube/dat
          --bucket surfside-sermons
 
 5. Inspect every match, then add --upload to the same command to run it. Large files use the AWS CLI's automatic multipart transfers. The script checks for already-existing objects and skips matching sizes/content types; it rejects conflicts rather than silently overwriting. Re-run it for failures or to resume a batch.
-6. Click **Reconcile R2 objects** in Tools. This explicitly lists R2 sermon keys, compares exact 11-character IDs to the locally synchronized YouTube master playlist, saves matches and ignores unknown keys. No YouTube metadata is created or changed. Missing objects are reflected after reconciliation.
+6. Historical uploads still require their R2 object status to be registered. The existing staff-authorized reconciliation backend is retained for the separate bulk-import workflow, but is no longer displayed on the weekly Roku Copies page. Do not assume uploading files externally automatically makes them ready in the Roku catalog.
 
 Use ffprobe to check source codecs:
 
@@ -105,9 +109,9 @@ The request does **not** contain the MP4. The browser uploads media directly to 
 
 - Only signed-in users with WordPress upload_files capability can request upload tickets, complete verifications, export the CSV, or run R2 reconciliation. REST calls use WordPress cookie/nonce authentication; admin-post uses nonce and permission.
 - Credentials remain in wp-config.php. Browser receives only a 4-hour bearer-style presigned PUT for one ID; never put these URLs in logs or screenshots. Signatures use the S3 endpoint, not a public custom domain.
-- No public R2 routes, no upload through PHP, no per-visitor R2 calls, no global hook migrations, no deletion of R2 objects.
+- No public R2 write routes, no upload through PHP, no per-visitor R2 requests, no global hook migrations, no deletion of R2 objects.
 - Verify CORS/origin works in the real staff dashboard; check bad/missing ID, too-large file, duplicate key, signed-out user, unsuccessful HEAD, and complete verification. Confirm CSV contains YouTube IDs with blank source_path and that import dry-run rejects duplicates/missing/unsafe paths.
-- R2 object readiness is distinct from **public visibility**. A later Roku endpoint must check master playlist membership, current staff exclusion decisions, and the readiness record before it returns playback URLs. Validate byte-range seeking and Content-Type through the real public R2 custom domain in that follow-up PR.
+- R2 object readiness is distinct from **public visibility**. The Roku catalog checks master playlist membership, current staff exclusion decisions, and the readiness record before it returns playback URLs. The production R2 domain is https://video.surfsidesermons.com.
 - Estimated initial storage 368 × 1.6–2 GB ≈ 589–736 GB. R2 Standard storage currently $0.015 per GB-month, with 10 GB-month free tier: approximately $8.70–$10.90 per month plus any operations, before future video conversion changes. Standard has no download/egress fees under R2 pricing terms.
 
 Cloudflare references:
