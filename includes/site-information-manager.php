@@ -403,7 +403,8 @@ function surfside_tools_site_information_manager_assets() {
 }
 
 function surfside_tools_staff_site_information_shortcode($attributes = array()) {
-    $attributes = shortcode_atts(array('section' => 'information'), $attributes, 'surfside_staff_site_information');
+    $attributes = shortcode_atts(array('section' => 'information', 'embedded' => false), $attributes, 'surfside_staff_site_information');
+    $embedded = !empty($attributes['embedded']);
     $section = sanitize_key($attributes['section']);
     $sections = array(
         'information' => array('eyebrow' => 'Core Site Details', 'title' => 'Surfside Information', 'description' => 'Manage the church identity, location, service schedule, and social links.', 'button' => 'Save Surfside Information'),
@@ -456,12 +457,14 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
     ob_start();
     ?>
     <div class="surfside-staff-shell surfside-information-manager">
+        <?php if (!$embedded) : ?>
         <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('site-settings')); ?>">← Back to Church Settings</a></div>
         <section class="surfside-staff-hero">
             <p class="surfside-staff-eyebrow"><?php echo esc_html($section_config['eyebrow']); ?></p>
             <h1><?php echo esc_html($section_config['title']); ?></h1>
             <p class="surfside-staff-muted"><?php echo esc_html($section_config['description']); ?></p>
         </section>
+        <?php endif; ?>
 
         <?php echo $notice; ?>
 

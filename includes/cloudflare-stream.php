@@ -101,6 +101,12 @@ function surfside_tools_staff_stream_shortcode() {
     surfside_tools_staff_enqueue_styles();
     if (!is_user_logged_in()) return surfside_tools_staff_login_box('Please log in to manage streaming.');
     if (!current_user_can('manage_options')) return '<p>You do not have permission to manage streaming.</p>';
+    // Reuse the existing, vetted Cloudflare form on its original URL.
+    // The other tabs reuse their established save/nonce handlers.
+    if (function_exists('surfside_tools_streaming_workspace_tab') &&
+        surfside_tools_streaming_workspace_tab() !== 'cloudflare') {
+        return surfside_tools_streaming_workspace_secondary();
+    }
     $notice = '';
     $new_webhook_secret = '';
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['surfside_stream_action'])) {
@@ -153,7 +159,8 @@ function surfside_tools_staff_stream_shortcode() {
     if (!is_array($excluded)) $excluded = array();
     ob_start(); ?>
     <div class="surfside-staff-shell"><div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('site-settings')); ?>">← Church Settings</a></div>
-    <section class="surfside-staff-hero"><p class="surfside-staff-eyebrow">Shared Services</p><h1>Streaming Management</h1><p>Manage Cloudflare Stream for the website, app, and Roku.</p></section>
+    <section class="surfside-staff-hero"><p class="surfside-staff-eyebrow">Messages &amp; Media</p><h1>Streaming</h1><p>Manage live service delivery, recordings, Watch Live and Twitch from one place.</p></section>
+    <?php if (function_exists('surfside_tools_streaming_workspace_tabs')) echo surfside_tools_streaming_workspace_tabs(); ?>
     <?php if ($notice): ?><p role="status"><?php echo esc_html($notice); ?></p><?php endif; ?>
     <h2>Cloudflare connection</h2><p><?php echo !empty($config['token']) ? 'API token saved. Enter a new token only to replace it.' : 'Enter the read-only Stream API token.'; ?></p>
     <form class="surfside-information-form" method="post"><?php wp_nonce_field('surfside_stream_manage', 'surfside_stream_nonce'); ?><input type="hidden" name="surfside_stream_action" value="token"><div class="surfside-information-field surfside-information-field-wide"><label for="stream_token">Cloudflare Stream API token</label><input id="stream_token" type="password" name="stream_token" autocomplete="new-password" placeholder="Leave blank to keep existing token"><p class="surfside-information-help">The existing token is never displayed. Leave this blank to keep it unchanged.</p></div><div><button class="button button-primary" type="submit">Save connection</button></div></form>

@@ -32,6 +32,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/prayer-member-status.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/contact-form.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-api.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/cloudflare-stream.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/streaming-workspace.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/twitch-settings.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/twitch-live-status.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/push-notifications.php';

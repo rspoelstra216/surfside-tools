@@ -31,8 +31,7 @@ function surfside_tools_workspace_catalog() {
             array('label' => 'Message Archive', 'url' => $messages, 'search' => 'YouTube sermons metadata videos review'),
             array('label' => 'Sermon Series', 'url' => add_query_arg('tab', 'series', $messages), 'search' => 'YouTube playlists grouping'),
             array('label' => 'Roku MP4 Uploads', 'url' => $roku, 'search' => 'R2 cloudflare video copies find this week message'),
-            array('label' => 'Streaming Management', 'url' => surfside_tools_staff_page_url('site-settings/streaming'), 'search' => 'Cloudflare live recording exclusions livestream notifications', 'cap' => 'manage_options'),
-            array('label' => 'Watch Live Settings', 'url' => surfside_tools_staff_page_url('site-streaming'), 'search' => 'Twitch Facebook YouTube stream destinations announcement video', 'cap' => 'manage_options'),
+            array('label' => 'Streaming', 'url' => surfside_tools_staff_page_url('site-settings/streaming'), 'search' => 'Cloudflare live recording exclusions livestream notifications Twitch Facebook YouTube Watch Live announcement video connection settings', 'cap' => 'manage_options'),
             array('label' => 'Live Slides', 'url' => surfside_tools_staff_page_url('mobile-app/live-slides'), 'search' => 'ProPresenter slides viewer colors fonts'),
         )),
         'events' => array('title' => 'Events & Serving', 'items' => array(
@@ -57,7 +56,6 @@ function surfside_tools_workspace_catalog() {
             array('label' => 'Integrations', 'url' => $settings, 'search' => 'connections configuration APIs', 'cap' => 'manage_options'),
             array('label' => 'Google Maps', 'url' => $settings . '#surfside-focus-google-maps', 'search' => 'places api key', 'cap' => 'manage_options'),
             array('label' => 'YouTube Integration', 'url' => $settings . '#surfside-focus-youtube-sermon-archive', 'search' => 'data API full sync playlist key', 'cap' => 'manage_options'),
-            array('label' => 'Twitch Integration', 'url' => $settings . '#surfside-focus-twitch', 'search' => 'client id secret livestream', 'cap' => 'manage_options'),
             array('label' => 'YouVersion Integration', 'url' => $settings . '#surfside-focus-youversion', 'search' => 'Bible scripture passage API', 'cap' => 'manage_options'),
             array('label' => 'Giving', 'url' => $settings . '#surfside-focus-giving', 'search' => 'tithes donations giving form', 'cap' => 'manage_options'),
             array('label' => 'Cloudflare Turnstile', 'url' => $settings . '#surfside-focus-cloudflare-turnstile', 'search' => 'captcha spam protection', 'cap' => 'manage_options'),
