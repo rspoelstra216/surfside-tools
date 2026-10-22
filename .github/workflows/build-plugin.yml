@@ -138,6 +138,9 @@ jobs:
       - name: Test Appearance editors, mobile photo ordering and saves
         run: php scripts/test-appearance-workspace.php
 
+      - name: Test dashboard phase 3 health and tool discovery audit
+        run: php scripts/test-dashboard-phase3-audit.php
+
       - name: Test Integrations organization and service-specific saves
         run: php scripts/test-integrations-cleanup.php
 

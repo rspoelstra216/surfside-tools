@@ -128,13 +128,21 @@ function surfside_tools_dashboard_evaluate_status($data) {
         'settings' => surfside_tools_staff_page_url('settings'),
     );
 
-    // Weekly documents intentionally remain live until the next Saturday
-    // release. Their age is not an error and must never raise a stale alert.
+    // A queued Saturday update is not evidence that something is currently
+    // published. Preserve the normal, non-stale state for any existing content.
     $scheduled = absint($data['weekly']['scheduled_at'] ?? 0);
-    $release_error = (string) ($data['weekly']['release_error'] ?? '');
+    $release_error = trim((string) ($data['weekly']['release_error'] ?? ''));
+    $has_announcements = absint($data['weekly']['announcement_count'] ?? 0) > 0
+        || trim((string) ($data['weekly']['announcement_date'] ?? '')) !== '';
+    $has_sermon = trim((string) ($data['weekly']['message_title'] ?? '')) !== '';
     if ($scheduled && $release_error !== '') {
         $weekly = array('level' => 'warning', 'label' => 'Release issue',
             'message' => 'The scheduled weekly update needs attention. Open Weekly Update to review it.');
+    } elseif (!$has_announcements && !$has_sermon) {
+        $weekly = array('level' => 'warning', 'label' => 'Not published',
+            'message' => $scheduled
+                ? 'Nothing is published yet. A new update is scheduled, but the current website and app have no weekly documents.'
+                : 'No announcements or sermon notes have been published yet. Open Weekly Update to prepare them.');
     } elseif ($scheduled) {
         $weekly = array('level' => 'good', 'label' => 'Scheduled',
             'message' => 'Next documents scheduled for ' . surfside_tools_weekly_release_label($scheduled) . '.');
@@ -143,16 +151,18 @@ function surfside_tools_dashboard_evaluate_status($data) {
             'message' => 'The published documents remain visible until the next scheduled release.');
     }
 
-    $next_event_date = '';
-    if (!empty($data['calendar']['next'])) {
-        $next_event_date = (string) ($data['calendar']['next']['occurrence_date'] ?? $data['calendar']['next']['date'] ?? '');
-    }
-    if (empty($data['calendar']['upcoming_count']) || $next_event_date === '') {
-        $calendar = array('level' => 'critical', 'label' => 'Action required', 'message' => 'The calendar has no future events.');
-    } elseif (strtotime($next_event_date) > strtotime('+14 days', $now)) {
-        $calendar = array('level' => 'warning', 'label' => 'Attention', 'message' => 'There are no events scheduled in the next 14 days.');
+    // The dashboard presents calendar occurrences over the next 30 days.
+    // Derive the calendar badge and alert from that same window. Do not
+    // compare against a separate 14-day clock or an undefined $now variable.
+    if (empty($data['calendar']['next'])) {
+        $calendar = array('level' => 'critical', 'label' => 'Action required',
+            'message' => 'The calendar has no future events.');
+    } elseif (empty($data['calendar']['occurrence_count_30'])) {
+        $calendar = array('level' => 'warning', 'label' => 'Attention',
+            'message' => 'There are no events scheduled in the next 30 days.');
     } else {
-        $calendar = array('level' => 'good', 'label' => 'Healthy', 'message' => 'Upcoming events are available.');
+        $calendar = array('level' => 'good', 'label' => 'Healthy',
+            'message' => 'Upcoming events are available.');
     }
 
     $photo_count = absint($data['homepage']['photo_count'] ?? 0);
@@ -165,9 +175,9 @@ function surfside_tools_dashboard_evaluate_status($data) {
     }
 
     if (empty($data['settings']['google_maps_connected'])) {
-        $settings = array('level' => 'critical', 'label' => 'Action required', 'message' => 'Google Places is not configured.');
+        $settings = array('level' => 'critical', 'label' => 'Action required', 'message' => 'Google Maps API key is not configured.');
     } else {
-        $settings = array('level' => 'good', 'label' => 'Configured', 'message' => 'Google Places is connected.');
+        $settings = array('level' => 'good', 'label' => 'Key saved', 'message' => 'A Google Maps API key is saved. Connectivity has not been verified by this check.');
     }
 
     $statuses = array(
