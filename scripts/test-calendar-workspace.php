@@ -180,11 +180,13 @@ check(surfside_tools_calendar_places_handle_post()==='',
     'Saved Places view does not accept unrelated Integrations form actions');
 
 $frontend=file_get_contents(dirname(__DIR__).'/includes/frontend-settings.php');
-check(str_contains($frontend,'Open Calendar Defaults') &&
-    str_contains($frontend,'Open Saved Places') &&
+check(str_contains($frontend,"'#surfside-focus-calendar-defaults'") &&
+    str_contains($frontend,"'#surfside-focus-saved-places'") &&
+    str_contains($frontend,"add_query_arg('view', 'defaults', surfside_tools_staff_page_url('calendar'))") &&
+    str_contains($frontend,"add_query_arg('view', 'places', surfside_tools_staff_page_url('calendar'))") &&
     !str_contains($frontend,'name="this_week_mode"') &&
     !str_contains($frontend,'foreach ($saved as $place)'),
-    'Legacy Integrations deep-link sections redirect to Calendar without duplicate editors');
+    'Legacy Integrations hash bookmarks redirect to Calendar without duplicate editors');
 $staffCode=file_get_contents(dirname(__DIR__).'/includes/staff-dashboard.php');
 check(str_contains($staffCode,"surfside_tools_calendar_workspace_view()") &&
     str_contains($staffCode,"surfside_tools_calendar_defaults_panel()") &&

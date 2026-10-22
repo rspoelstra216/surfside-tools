@@ -123,6 +123,9 @@ jobs:
       - name: Test Calendar workspace and independent settings saves
         run: php scripts/test-calendar-workspace.php
 
+      - name: Test Integrations organization and service-specific saves
+        run: php scripts/test-integrations-cleanup.php
+
   build-plugin:
     name: Build installable plugin ZIP
     if: github.event_name != 'pull_request'
