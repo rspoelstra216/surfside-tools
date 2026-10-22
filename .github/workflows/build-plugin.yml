@@ -109,6 +109,7 @@ jobs:
         run: |
           php scripts/test-staff-workspace.php
           node --check assets/js/staff-workspace.js
+          node scripts/test-staff-workspace-drawer.js
 
       - name: Test streaming page admin-only provisioning
         run: php scripts/test-streaming-page-provisioning.php
