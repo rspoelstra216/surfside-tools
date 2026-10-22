@@ -228,6 +228,7 @@ function surfside_tools_site_information_manager_assets() {
             var template = document.querySelector("[data-surfside-nav-template]");
             var add = document.querySelector("[data-surfside-nav-add]");
             var status = document.querySelector("[data-surfside-nav-status]");
+            var count = document.querySelector("[data-surfside-nav-count]");
             if (!list || !template || !add) return;
             var nextIndex = list.children.length;
             var dragged = null;
@@ -235,7 +236,11 @@ function surfside_tools_site_information_manager_assets() {
             function items() { return Array.from(list.querySelectorAll(".surfside-information-nav-item")); }
             function announce(message) { if (status) status.textContent = message; }
             function sync() {
-                items().forEach(function (item, index, all) {
+                var rows = items();
+                if (count) count.textContent = String(rows.length);
+                rows.forEach(function (item, index, all) {
+                    var position = item.querySelector("[data-surfside-nav-position]");
+                    if (position) position.textContent = "Link " + (index + 1);
                     var up = item.querySelector("[data-surfside-nav-up]");
                     var down = item.querySelector("[data-surfside-nav-down]");
                     if (up) up.disabled = index === 0;
@@ -456,7 +461,7 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
 
     ob_start();
     ?>
-    <div class="surfside-staff-shell surfside-information-manager">
+    <div class="surfside-staff-shell surfside-information-manager<?php echo $section === 'navigation' ? ' surfside-appearance-workspace surfside-navigation-workspace' : ''; ?>">
         <?php if (!$embedded) : ?>
         <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('site-settings')); ?>">← Back to Church Settings</a></div>
         <section class="surfside-staff-hero">
@@ -576,16 +581,24 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
             <?php endif; ?>
 
             <?php if ($section === 'navigation') : ?>
-            <section class="surfside-information-card">
-                <h2>Main Navigation</h2>
-                <p>Build the ordered menu shared by the footer and upcoming site header. Choose a published page to keep the link working if its title or slug changes.</p>
-                <div class="surfside-information-navigation" data-surfside-navigation>
+            <section class="surfside-information-card surfside-navigation-editor" aria-labelledby="surfside-navigation-heading">
+                <div class="surfside-appearance-section-heading">
+                    <div>
+                        <span class="surfside-appearance-eyebrow">Website appearance</span>
+                        <h2 id="surfside-navigation-heading">Main Navigation</h2>
+                        <p>Manage menu text, destinations and link order for the website. Choose a published page to keep its destination working when the page changes.</p>
+                    </div>
+                    <span class="surfside-appearance-count"><strong data-surfside-nav-count><?php echo count($information['navigation']); ?></strong> links</span>
+                </div>
+                <p class="surfside-appearance-guidance">Move links using the Up/Down arrows or drag the handle on desktop. You can add or remove links here. <strong>Changes only go live after Save Navigation.</strong></p>
+                <div class="surfside-information-navigation" data-surfside-navigation aria-label="Website navigation links">
                     <?php foreach ($information['navigation'] as $index => $link) :
                         $destination = ($link['type'] ?? '') === 'page' && !empty($link['page_id'])
                             ? 'page:' . absint($link['page_id'])
                             : 'custom';
                         ?>
                         <div class="surfside-information-nav-item" draggable="true">
+                            <span class="surfside-information-nav-position" data-surfside-nav-position>Link <?php echo esc_html($index + 1); ?></span>
                             <span class="surfside-information-drag" aria-hidden="true" title="Drag to reorder">⋮⋮</span>
                             <input type="hidden" name="navigation[<?php echo esc_attr($index); ?>][key]" value="<?php echo esc_attr($link['key'] ?? ''); ?>">
                             <label class="surfside-information-field"><span>Menu text</span><input type="text" name="navigation[<?php echo esc_attr($index); ?>][label]" value="<?php echo esc_attr($link['label'] ?? ''); ?>" required></label>
@@ -600,15 +613,16 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
                             <div class="surfside-information-nav-actions">
                                 <button type="button" class="surfside-information-remove" data-surfside-nav-up aria-label="Move <?php echo esc_attr($link['label'] ?? 'link'); ?> up">↑</button>
                                 <button type="button" class="surfside-information-remove" data-surfside-nav-down aria-label="Move <?php echo esc_attr($link['label'] ?? 'link'); ?> down">↓</button>
-                                <button type="button" class="surfside-information-remove" data-surfside-nav-remove>Remove</button>
+                                <button type="button" class="surfside-information-remove surfside-navigation-remove" data-surfside-nav-remove>Remove link</button>
                             </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
                 <button type="button" class="surfside-information-add" data-surfside-nav-add>+ Add navigation link</button>
-                <p class="screen-reader-text" aria-live="polite" data-surfside-nav-status></p>
+                <p class="surfside-appearance-status" role="status" aria-live="polite" data-surfside-nav-status>Saving publishes your updated navigation to the website.</p>
                 <template data-surfside-nav-template>
                     <div class="surfside-information-nav-item" draggable="true">
+                        <span class="surfside-information-nav-position" data-surfside-nav-position>New link</span>
                         <span class="surfside-information-drag" aria-hidden="true" title="Drag to reorder">⋮⋮</span>
                         <input type="hidden" name="navigation[__INDEX__][key]" value="">
                         <label class="surfside-information-field"><span>Menu text</span><input type="text" name="navigation[__INDEX__][label]" required></label>
@@ -623,7 +637,7 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
                         <div class="surfside-information-nav-actions">
                             <button type="button" class="surfside-information-remove" data-surfside-nav-up aria-label="Move link up">↑</button>
                             <button type="button" class="surfside-information-remove" data-surfside-nav-down aria-label="Move link down">↓</button>
-                            <button type="button" class="surfside-information-remove" data-surfside-nav-remove>Remove</button>
+                            <button type="button" class="surfside-information-remove surfside-navigation-remove" data-surfside-nav-remove>Remove link</button>
                         </div>
                     </div>
                 </template>

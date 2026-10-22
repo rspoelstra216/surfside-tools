@@ -222,5 +222,17 @@ function surfside_tools_workspace_enqueue_assets() {
         wp_enqueue_style('surfside-content-media-workspace', SURFSIDE_TOOLS_URL . $content_css,
             array('surfside-workspace'), surfside_tools_workspace_asset_version($content_css));
     }
+
+    // Phase 3E: appearance editors only. Does not load on the public homepage
+    // or inside the mobile app, and uses the existing hash versioning.
+    if (in_array($uri, array(
+        'dashboard/homepage',
+        'dashboard/site-navigation',
+        'dashboard/mobile-app/home-experience'
+    ), true)) {
+        $appearance_css = 'assets/css/appearance-workspace.css';
+        wp_enqueue_style('surfside-appearance-workspace', SURFSIDE_TOOLS_URL . $appearance_css,
+            array('surfside-workspace'), surfside_tools_workspace_asset_version($appearance_css));
+    }
 }
 add_action('wp_enqueue_scripts', 'surfside_tools_workspace_enqueue_assets');

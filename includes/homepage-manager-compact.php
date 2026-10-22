@@ -62,13 +62,18 @@ function surfside_tools_staff_homepage_compact_shortcode() {
 
     ob_start();
     ?>
-    <div class="surfside-staff-shell surfside-homepage-compact">
+    <div class="surfside-staff-shell surfside-homepage-compact surfside-appearance-workspace">
         <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('')); ?>">← Back to Dashboard</a></div>
         <section class="surfside-staff-hero">
             <p class="surfside-staff-eyebrow">Manage Homepage</p>
             <h1>Homepage Photos</h1>
             <p class="surfside-staff-muted">Add, reorder, replace, or remove photos shown in the homepage carousel.</p>
         </section>
+        <div class="surfside-appearance-summary" aria-label="Homepage photo configuration">
+            <div><strong><?php echo esc_html(count($images)); ?></strong><span>Photos in carousel</span></div>
+            <div><strong><?php echo esc_html(max(0, 30 - count($images))); ?></strong><span>Remaining photo slots</span></div>
+        </div>
+        <p class="surfside-appearance-guidance">Choose new photos or reorder existing ones, then select <strong>Save Homepage Photos</strong> to publish your changes. On a phone, use Move Up and Move Down instead of dragging.</p>
         <?php echo $notice; ?>
         <form method="post" enctype="multipart/form-data" class="surfside-homepage-form">
             <?php wp_nonce_field('surfside_homepage_update', 'surfside_homepage_nonce'); ?>
@@ -77,7 +82,7 @@ function surfside_tools_staff_homepage_compact_shortcode() {
             <section class="surfside-homepage-toolbar">
                 <div>
                     <h2>Carousel Photos</h2>
-                    <p><?php echo esc_html(count($images)); ?> of 30 photos used. Drag thumbnails to reorder them.</p>
+                    <p><?php echo esc_html(count($images)); ?> of 30 photos used. Drag thumbnails or use the arrow controls to change their order.</p>
                 </div>
                 <label class="surfside-homepage-upload-label">
                     Add Photos
@@ -85,6 +90,7 @@ function surfside_tools_staff_homepage_compact_shortcode() {
                 </label>
                 <div class="surfside-homepage-upload-files" data-homepage-file-status aria-live="polite"></div>
             </section>
+            <p class="surfside-homepage-order-status" data-homepage-order-status role="status" aria-live="polite">Photo order changes take effect after you save.</p>
 
             <div class="surfside-homepage-grid" data-homepage-sortable>
                 <?php if (!$images) : ?>
@@ -97,6 +103,10 @@ function surfside_tools_staff_homepage_compact_shortcode() {
                             <?php echo wp_get_attachment_image($id, 'medium', false, array('alt' => '', 'draggable' => 'false')); ?>
                             <span class="surfside-homepage-number">Photo <?php echo esc_html($index + 1); ?></span>
                             <span class="surfside-homepage-drag" draggable="true" role="button" aria-label="Drag to reorder this photo" title="Drag to reorder">Drag</span>
+                        </div>
+                        <div class="surfside-homepage-reorder" aria-label="Order for photo <?php echo esc_attr($index + 1); ?>">
+                            <button type="button" data-homepage-move-up aria-label="Move photo <?php echo esc_attr($index + 1); ?> up" <?php disabled($index === 0); ?>><span aria-hidden="true">↑</span> Move Up</button>
+                            <button type="button" data-homepage-move-down aria-label="Move photo <?php echo esc_attr($index + 1); ?> down" <?php disabled($index === count($images) - 1); ?>><span aria-hidden="true">↓</span> Move Down</button>
                         </div>
                         <details class="surfside-homepage-edit">
                             <summary>Edit Photo</summary>
@@ -111,7 +121,7 @@ function surfside_tools_staff_homepage_compact_shortcode() {
             </div>
 
             <div class="surfside-homepage-savebar">
-                <span class="surfside-homepage-hint">Recommended image size: 1920 × 1080. Removing a photo does not delete it from the Media Library.</span>
+                <span class="surfside-homepage-hint">Recommended: 1920 × 1080. Reordering, replacements and removals take effect after saving. Photos removed from the carousel stay in the Media Library.</span>
                 <button class="surfside-homepage-save" type="submit">Save Homepage Photos</button>
             </div>
         </form>
@@ -142,8 +152,38 @@ function surfside_tools_staff_homepage_compact_shortcode() {
             });
             grid.addEventListener('drop',function(e){if(!dragged)return;e.preventDefault();finishDrag();});
             grid.addEventListener('dragend',finishDrag,true);
-            function finishDrag(){if(dragged)dragged.classList.remove('dragging');dragged=null;renumber();}
-            function renumber(){[].slice.call(grid.querySelectorAll('.surfside-homepage-photo')).forEach(function(card,index){var number=card.querySelector('.surfside-homepage-number');if(number)number.textContent='Photo '+(index+1);});}
+            var orderStatus=document.querySelector('[data-homepage-order-status]');
+            function finishDrag(){if(dragged){dragged.classList.remove('dragging');if(orderStatus)orderStatus.textContent='Photo order changed. Save Homepage Photos to publish.';}dragged=null;renumber();}
+            function renumber(){
+                var cards=[].slice.call(grid.querySelectorAll('.surfside-homepage-photo'));
+                cards.forEach(function(card,index){
+                    var number=card.querySelector('.surfside-homepage-number');
+                    if(number)number.textContent='Photo '+(index+1);
+                    var up=card.querySelector('[data-homepage-move-up]');
+                    var down=card.querySelector('[data-homepage-move-down]');
+                    if(up){up.disabled=index===0;up.setAttribute('aria-label','Move photo '+(index+1)+' up');}
+                    if(down){down.disabled=index===cards.length-1;down.setAttribute('aria-label','Move photo '+(index+1)+' down');}
+                    var controls=card.querySelector('.surfside-homepage-reorder');
+                    if(controls)controls.setAttribute('aria-label','Order for photo '+(index+1));
+                });
+            }
+            grid.addEventListener('click',function(e){
+                var up=e.target.closest('[data-homepage-move-up]');
+                var down=e.target.closest('[data-homepage-move-down]');
+                var control=up||down;
+                if(!control)return;
+                var card=control.closest('.surfside-homepage-photo');
+                if(!card)return;
+                if(up&&card.previousElementSibling&&card.previousElementSibling.matches('.surfside-homepage-photo')){
+                    grid.insertBefore(card,card.previousElementSibling);
+                }else if(down&&card.nextElementSibling&&card.nextElementSibling.matches('.surfside-homepage-photo')){
+                    grid.insertBefore(card.nextElementSibling,card);
+                }else return;
+                renumber();
+                if(orderStatus)orderStatus.textContent='Photo moved. Save Homepage Photos to publish the new order.';
+                control.focus();
+            });
+            renumber();
         }
         var input=document.querySelector('[data-homepage-new-images]');
         var status=document.querySelector('[data-homepage-file-status]');
