@@ -61,9 +61,9 @@
 .surfside-workspace-content .surfside-staff-hero{padding:12px 0 22px}
 .surfside-workspace-scrim{display:none}
 
-@media(max-width:1050px){
-  .surfside-workspace{display:block;width:min(1000px,calc(100vw - 28px))}
-  .surfside-workspace-toolbar{position:sticky;top:4px;z-index:99;padding:8px 12px;box-shadow:0 3px 10px rgba(7,27,58,.06)}
+/* Use the same on-demand Tools & Search drawer on desktop, tablets and phones. */
+.surfside-workspace{display:block;width:min(1440px,calc(100vw - 32px))}
+  .surfside-workspace-toolbar{position:sticky;top:calc(var(--wp-admin--admin-bar--height, 0px) + 8px);z-index:99;padding:8px 12px;box-shadow:0 3px 10px rgba(7,27,58,.06)}
   .surfside-workspace-menu{
     display:inline-flex;align-items:center;gap:9px;min-height:43px;
     padding:9px 13px;border:1px solid #bfd0e3;border-radius:9px;
@@ -73,7 +73,7 @@
   .surfside-workspace-menu span{font-size:18px;line-height:1}
   .surfside-workspace-sidebar{
     position:fixed;z-index:10002;inset:0 auto 0 0;top:0;left:0;
-    width:min(320px,calc(100vw - 50px));height:100vh;height:100dvh;
+    width:min(340px,calc(100vw - 50px));height:100vh;height:100dvh;
     max-height:none;overflow-y:auto;border-radius:0 16px 16px 0;
     visibility:hidden;transform:translateX(-105%);transition:transform .2s ease,visibility .2s ease;
     box-shadow:0 12px 45px rgba(7,27,58,.2);
@@ -82,7 +82,7 @@
   .surfside-workspace-close{display:inline-grid;place-items:center;border:0;background:transparent;font-size:30px;line-height:1;cursor:pointer;color:var(--ss-ink);padding:2px 8px}
   .surfside-workspace-scrim{position:fixed;inset:0;background:rgba(5,20,38,.50);z-index:10001}
   .surfside-workspace.is-open .surfside-workspace-scrim{display:block}
-}
+
 @media(max-width:640px){
   .surfside-workspace-toolbar{gap:8px;align-items:flex-start}
   .surfside-workspace-menu{font-size:13px;padding:9px;min-height:40px}

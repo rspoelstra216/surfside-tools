@@ -10,15 +10,13 @@
     var openButton = root.querySelector('[data-ss-open]');
     var empty = root.querySelector('[data-ss-empty]');
     var groups = Array.prototype.slice.call(root.querySelectorAll('[data-ss-group]'));
-    var mobile = window.matchMedia('(max-width: 1050px)');
 
     function setOpen(open, restoreFocus) {
-      if (!mobile.matches) open = false;
       root.classList.toggle('is-open', open);
       if (openButton) openButton.setAttribute('aria-expanded', open ? 'true' : 'false');
       var scrim = root.querySelector('.surfside-workspace-scrim');
       if (scrim) scrim.hidden = !open;
-      if (drawer) drawer.setAttribute('aria-hidden', mobile.matches && !open ? 'true' : 'false');
+      if (drawer) drawer.setAttribute('aria-hidden', !open ? 'true' : 'false');
       if (open && search) search.focus();
       if (!open && restoreFocus && openButton) openButton.focus();
     }
@@ -51,8 +49,6 @@
     Array.prototype.forEach.call(root.querySelectorAll('[data-ss-close]'), function (control) {
       control.addEventListener('click', function () { setOpen(false, true); });
     });
-    mobile.addEventListener ? mobile.addEventListener('change', function () { setOpen(false, false); })
-      : mobile.addListener(function () { setOpen(false, false); });
 
     document.addEventListener('keydown', function (event) {
       if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'k') {
@@ -62,6 +58,28 @@
       } else if (event.key === 'Escape' && root.classList.contains('is-open')) {
         event.preventDefault();
         setOpen(false, true);
+      } else if (event.key === 'Tab' && root.classList.contains('is-open') && drawer) {
+        // Keep keyboard focus in the open navigation overlay on every screen size.
+        var tabbables = Array.prototype.filter.call(
+          drawer.querySelectorAll('a[href], button:not([disabled]), input:not([disabled])'),
+          function (element) {
+            return element.getClientRects().length > 0 &&
+              !element.closest('[hidden]') && element.getAttribute('aria-hidden') !== 'true';
+          }
+        );
+        if (tabbables.length) {
+          var firstItem = tabbables[0];
+          var lastItem = tabbables[tabbables.length - 1];
+          if (event.shiftKey && (document.activeElement === firstItem ||
+              !drawer.contains(document.activeElement))) {
+            event.preventDefault();
+            lastItem.focus();
+          } else if (!event.shiftKey && (document.activeElement === lastItem ||
+              !drawer.contains(document.activeElement))) {
+            event.preventDefault();
+            firstItem.focus();
+          }
+        }
       } else if (event.key === 'ArrowDown' && event.target === search) {
         var first = root.querySelector('[data-ss-link]:not([hidden])');
         // Hidden parent <li> and groups are excluded from keyboard results.
