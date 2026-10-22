@@ -257,16 +257,35 @@ function surfside_tools_staff_calendar_shortcode() {
         return '<div class="surfside-staff-shell"><p>You do not have permission to access the calendar manager.</p></div>';
     }
 
+    $view = function_exists('surfside_tools_calendar_workspace_view')
+        ? surfside_tools_calendar_workspace_view() : 'events';
+    if ($view !== 'events' && !current_user_can('manage_options')) {
+        return '<div class="surfside-staff-shell"><p>You do not have permission to manage calendar settings.</p></div>';
+    }
+    $titles = array('events' => 'Manage Events', 'defaults' => 'Calendar Defaults', 'places' => 'Saved Places');
+    $descriptions = array(
+        'events' => 'Add and edit upcoming church events from a focused staff page.',
+        'defaults' => 'Set how the calendar presents the week and suggests event duration.',
+        'places' => 'Review and manage locations available to calendar and weekly update tools.',
+    );
+
     ob_start();
     ?>
-    <div class="surfside-staff-shell">
+    <div class="surfside-staff-shell surfside-calendar-workspace">
         <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('')); ?>">← Back to Dashboard</a></div>
         <section class="surfside-staff-hero">
-            <p class="surfside-staff-eyebrow">Calendar Manager</p>
-            <h1>Manage Events</h1>
-            <p class="surfside-staff-muted">Add and edit upcoming church events from a focused staff page.</p>
+            <p class="surfside-staff-eyebrow">Events &amp; Serving</p>
+            <h1><?php echo esc_html($titles[$view]); ?></h1>
+            <p class="surfside-staff-muted"><?php echo esc_html($descriptions[$view]); ?></p>
         </section>
-        <?php echo do_shortcode('[surfside_tools_calendar_manager]'); ?>
+        <?php if (function_exists('surfside_tools_calendar_workspace_tabs')) echo surfside_tools_calendar_workspace_tabs(); ?>
+        <?php if ($view === 'defaults') : ?>
+            <?php echo surfside_tools_calendar_defaults_panel(); ?>
+        <?php elseif ($view === 'places') : ?>
+            <?php echo surfside_tools_calendar_places_panel(); ?>
+        <?php else : ?>
+            <?php echo do_shortcode('[surfside_tools_calendar_manager]'); ?>
+        <?php endif; ?>
     </div>
     <?php
     return ob_get_clean();

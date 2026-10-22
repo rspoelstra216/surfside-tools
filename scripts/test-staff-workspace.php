@@ -93,6 +93,9 @@ check(str_contains($labels['Prayer Requests'],'view=member-engagement')
     'Prayer review preserves deep links from existing email');
 check(str_contains($labels['YouVersion Integration'],'#surfside-focus-youversion'),
     'Integrations search uses a focused accordion deep link');
+check(str_contains($labels['Calendar Defaults'],'/dashboard/calendar/?view=defaults')
+    && str_contains($labels['Saved Places'],'/dashboard/calendar/?view=places'),
+    'Calendar settings and Saved Places search point to Calendar rather than Integrations');
 $wrapped=surfside_tools_workspace_wrap_content('<p>Existing editor remains unchanged</p>');
 check(str_contains($wrapped,'data-surfside-workspace')
     && str_contains($wrapped,'Find a tool')
@@ -128,6 +131,20 @@ $GLOBALS['ws_uri']='dashboard';
 $_GET=array('view'=>'member-engagement','tool'=>'prayer-requests','section'=>'pending');
 $active=surfside_tools_workspace_current($groups);
 check($active['label']==='Prayer Requests','Review email route retains a proper breadcrumb');
+
+$GLOBALS['ws_uri']='dashboard/calendar';
+$_GET=array('view'=>'defaults');
+$active=surfside_tools_workspace_current($groups);
+check($active['label']==='Calendar Defaults' && $active['group']==='Events & Serving',
+    'Calendar Defaults gets a task-based breadcrumb');
+$_GET=array('view'=>'places');
+$active=surfside_tools_workspace_current($groups);
+check($active['label']==='Saved Places' && $active['group']==='Events & Serving',
+    'Saved Places gets a task-based breadcrumb');
+$_GET=array();
+$active=surfside_tools_workspace_current($groups);
+check($active['label']==='Calendar Manager','Existing Calendar Manager route remains canonical');
+$GLOBALS['ws_uri']='dashboard';
 
 $GLOBALS['ws_options']=false;
 $GLOBALS['ws_tools_admin']=false;

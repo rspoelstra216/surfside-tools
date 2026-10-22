@@ -1,0 +1,90 @@
+/* Calendar Manager / Defaults / Saved Places shared staff workspace */
+.surfside-calendar-workspace-tabs{
+  display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 24px;padding:7px;
+  border-radius:14px;background:#f0f5fb;border:1px solid #d7e2ef;
+}
+.surfside-calendar-workspace-tabs a{
+  display:inline-flex;align-items:center;justify-content:center;min-height:43px;
+  padding:10px 15px;border:1px solid transparent;border-radius:9px;
+  color:#23476e!important;text-decoration:none!important;font-weight:750;font-size:14px;
+  line-height:1.25;
+}
+.surfside-calendar-workspace-tabs a:hover{background:#e0edfa!important;color:#064b91!important}
+.surfside-calendar-workspace-tabs a.is-active,.surfside-calendar-workspace-tabs a[aria-current=page]{
+  background:#fff!important;color:#06396f!important;border-color:#aecbe5;
+  box-shadow:0 2px 9px rgba(13,44,79,.07)
+}
+.surfside-calendar-workspace-tabs a:focus-visible,
+.surfside-calendar-preferences-form :focus-visible,
+.surfside-calendar-places button:focus-visible{
+  outline:3px solid #88b9ff;outline-offset:2px
+}
+.surfside-calendar-preference-card{
+  max-width:100%;padding:clamp(20px,3vw,30px);
+  border:1px solid rgba(6,27,51,.13);border-radius:18px;background:#fff;
+  box-shadow:0 8px 24px rgba(6,27,51,.06);
+}
+.surfside-calendar-preference-card h2{margin:0 0 8px;color:#061b33}
+.surfside-calendar-preference-card>p{color:#526279;margin:0 0 22px}
+.surfside-calendar-preferences-form{display:grid;justify-items:start;gap:15px}
+.surfside-calendar-preferences-form fieldset{
+  display:grid;gap:12px;min-width:0;border:0;padding:0;margin:0 0 7px;
+}
+.surfside-calendar-preferences-form legend,.surfside-calendar-preference-label{
+  font-weight:800;color:#26323d;margin:0 0 8px
+}
+.surfside-calendar-preferences-form fieldset label{
+  display:inline-flex;gap:9px;align-items:center;color:#283c55;cursor:pointer;
+}
+.surfside-calendar-preferences-form input[type=radio]{accent-color:#0b5fa5;width:18px;height:18px}
+.surfside-calendar-duration-row{display:flex;align-items:center;gap:10px;color:#53647a}
+.surfside-calendar-duration-row input{
+  min-height:44px;width:122px;max-width:100%;padding:9px 11px;
+  border:1px solid #9eafc4;border-radius:9px;font:inherit;color:#172b4a
+}
+.surfside-calendar-preferences-form>p{color:#617086;font-size:.92rem;margin:0 0 7px}
+.surfside-calendar-preferences-form button,
+.surfside-calendar-restore-list button{
+  min-height:44px;padding:10px 16px;border-radius:9px;font:inherit;font-weight:800;cursor:pointer
+}
+.surfside-calendar-preferences-form button{
+  background:#0b5fa5;color:#fff;border:1px solid #0b5fa5;
+}
+.surfside-calendar-place-table{border:1px solid #d8e0e8;border-radius:11px;overflow:hidden}
+.surfside-calendar-place-head,.surfside-calendar-place-row{
+  display:grid;grid-template-columns:minmax(120px,1.2fr) minmax(120px,1.5fr) minmax(95px,.75fr) 96px;
+  gap:12px;align-items:center;padding:12px 14px;
+}
+.surfside-calendar-place-head{background:#edf3f8;font-weight:800;color:#263d58}
+.surfside-calendar-place-row+.surfside-calendar-place-row{border-top:1px solid #e3e8ed}
+.surfside-calendar-place-row>*{min-width:0;overflow-wrap:anywhere}
+.surfside-calendar-place-remove{
+  background:transparent;border:0;color:#a92020;text-decoration:underline;cursor:pointer;
+  min-height:40px;padding:7px 3px;font:inherit;font-weight:700
+}
+.surfside-calendar-removed-places{margin-top:18px}
+.surfside-calendar-removed-places summary{
+  font-weight:750;color:#23476e;cursor:pointer;padding:10px 0
+}
+.surfside-calendar-restore-list{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.surfside-calendar-restore-list button{
+  border:1px solid #0b5fa5;color:#0b4f9c;background:#fff
+}
+.surfside-calendar-restore-list button:hover{background:#eaf3fb}
+.surfside-calendar-preferences .surfside-front-settings-notice,
+.surfside-calendar-places .surfside-front-settings-notice{
+  padding:13px 15px;border-radius:10px;margin:0 0 18px;font-weight:700;
+  border:1px solid #b7dbc0;background:#edf7ed;color:#245f2a
+}
+.surfside-calendar-preferences .surfside-front-settings-error,
+.surfside-calendar-places .surfside-front-settings-error{
+  border-color:#efbcbc;background:#fdecec;color:#8b2323
+}
+@media(max-width:720px){
+  .surfside-calendar-workspace-tabs{display:grid;grid-template-columns:1fr;gap:3px;padding:4px}
+  .surfside-calendar-workspace-tabs a{justify-content:flex-start;padding:12px}
+  .surfside-calendar-place-head{display:none}
+  .surfside-calendar-place-row{grid-template-columns:minmax(0,1fr);gap:5px}
+  .surfside-calendar-place-row form{margin-top:5px}
+  .surfside-calendar-restore-list button{width:100%}
+}
