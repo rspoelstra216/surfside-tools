@@ -200,5 +200,17 @@ function surfside_tools_workspace_enqueue_assets() {
     $js = 'assets/js/staff-workspace.js';
     wp_enqueue_style('surfside-workspace', SURFSIDE_TOOLS_URL . $css, array(), surfside_tools_workspace_asset_version($css));
     wp_enqueue_script('surfside-workspace', SURFSIDE_TOOLS_URL . $js, array(), surfside_tools_workspace_asset_version($js), true);
+
+    // One shared presentation layer for staff care screens; do not load it on
+    // the public website, other staff management pages, or anonymous visits.
+    $uri = trim((string) get_page_uri(get_queried_object_id()), '/');
+    $view = isset($_GET['view']) && is_string($_GET['view'])
+        ? sanitize_key(wp_unslash($_GET['view'])) : '';
+    if (($uri === 'dashboard' && $view === 'member-engagement')
+        || $uri === 'dashboard/contact-routing') {
+        $care_css = 'assets/css/member-care-workspace.css';
+        wp_enqueue_style('surfside-member-care-workspace', SURFSIDE_TOOLS_URL . $care_css,
+            array('surfside-workspace'), surfside_tools_workspace_asset_version($care_css));
+    }
 }
 add_action('wp_enqueue_scripts', 'surfside_tools_workspace_enqueue_assets');

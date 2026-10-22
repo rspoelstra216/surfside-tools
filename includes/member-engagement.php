@@ -34,7 +34,7 @@ function surfside_tools_staff_member_engagement_view() {
 
     $tool = isset($_GET['tool']) ? sanitize_key(wp_unslash($_GET['tool'])) : '';
     if ($tool === 'prayer-requests' && function_exists('surfside_tools_prayer_list_manager_panel')) {
-        return '<div class="surfside-staff-shell">' . surfside_tools_prayer_list_manager_panel() . '</div>';
+        return '<div class="surfside-staff-shell surfside-member-care surfside-prayer-workspace">' . surfside_tools_prayer_list_manager_panel() . '</div>';
     }
     if ($tool === 'volunteer-needs' && function_exists('surfside_tools_staff_volunteer_needs_view')) {
         return surfside_tools_staff_volunteer_needs_view();
@@ -45,24 +45,29 @@ function surfside_tools_staff_member_engagement_view() {
     $needs = function_exists('surfside_tools_get_volunteer_needs') ? array_filter(surfside_tools_get_volunteer_needs(), function($need){ return !empty($need['active']); }) : array();
 
     ob_start(); ?>
-    <div class="surfside-staff-shell surfside-member-engagement">
+    <div class="surfside-staff-shell surfside-member-engagement surfside-member-care">
       <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('')); ?>">← Back to Dashboard</a></div>
       <section class="surfside-staff-hero">
         <p class="surfside-staff-eyebrow">Member Engagement</p>
         <h1>Member Engagement</h1>
         <p class="surfside-staff-muted">Manage ways Surfside members can pray, serve, and respond to current church needs.</p>
       </section>
-      <div class="surfside-staff-grid">
+      <div class="surfside-care-summary" aria-label="Member engagement overview">
+        <div><strong><?php echo esc_html($pending); ?></strong><span>Prayers awaiting review</span></div>
+        <div><strong><?php echo esc_html($active); ?></strong><span>Active prayer requests</span></div>
+        <div><strong><?php echo esc_html(count($needs)); ?></strong><span>Published volunteer needs</span></div>
+      </div>
+      <div class="surfside-staff-grid surfside-care-hub-grid">
         <article class="surfside-staff-card">
           <span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('document'); ?></span>
-          <h2>Prayer Requests</h2>
-          <p><?php echo esc_html($pending); ?> pending review · <?php echo esc_html($active); ?> active on the Church Prayer List.</p>
+          <h2>Prayers and Praises</h2>
+          <p><?php echo esc_html($pending); ?> waiting for review · <?php echo esc_html($active); ?> currently visible on the Church Prayer List.</p>
           <div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_member_engagement_url('prayer-requests')); ?>">Manage Prayer Requests <span class="surfside-staff-arrow">›</span></a></div>
         </article>
         <article class="surfside-staff-card">
           <span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon('settings'); ?></span>
           <h2>Volunteer Needs</h2>
-          <p><?php echo esc_html(count($needs)); ?> active serving opportunit<?php echo count($needs) === 1 ? 'y' : 'ies'; ?> currently published.</p>
+          <p><?php echo esc_html(count($needs)); ?> serving opportunit<?php echo count($needs) === 1 ? 'y' : 'ies'; ?> currently published in the app.</p>
           <div class="surfside-staff-actions"><a class="surfside-staff-button-secondary" href="<?php echo esc_url(surfside_tools_member_engagement_url('volunteer-needs')); ?>">Manage Volunteer Needs <span class="surfside-staff-arrow">›</span></a></div>
         </article>
       </div>

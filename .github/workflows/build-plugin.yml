@@ -129,6 +129,9 @@ jobs:
       - name: Test Calendar Manager layout and editor shortcuts
         run: php scripts/test-calendar-manager-layout.php
 
+      - name: Test Member Engagement care and contact routing layout
+        run: php scripts/test-member-care-workspace.php
+
       - name: Test Integrations organization and service-specific saves
         run: php scripts/test-integrations-cleanup.php
 
