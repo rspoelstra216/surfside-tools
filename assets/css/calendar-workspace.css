@@ -88,3 +88,350 @@
   .surfside-calendar-place-row form{margin-top:5px}
   .surfside-calendar-restore-list button{width:100%}
 }
+
+
+/* Phase 3B: task-oriented Calendar Manager, scoped to staff Calendar only. */
+.surfside-calendar-workspace .surfside-calendar-manager {
+  min-width: 0;
+}
+.surfside-calendar-workspace #surfside-calendar-event-editor,
+.surfside-calendar-workspace #surfside-calendar-event-list {
+  scroll-margin-top: 105px;
+  min-width: 0;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-status {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  padding: 23px clamp(18px, 3vw, 27px);
+  background: #eef5fc;
+  border: 1px solid #c8dcef;
+  border-radius: 17px;
+  box-shadow: none;
+}
+.surfside-calendar-workspace .surfside-calendar-status-intro {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.surfside-calendar-workspace .surfside-calendar-status-eyebrow,
+.surfside-calendar-workspace .surfside-calendar-panel-eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: #41617f;
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .07em;
+}
+.surfside-calendar-workspace .surfside-calendar-status-intro strong {
+  display: block;
+  color: #123657;
+  font-size: clamp(19px, 2.4vw, 24px);
+  line-height: 1.2;
+  letter-spacing: -.025em;
+}
+.surfside-calendar-workspace .surfside-calendar-status-intro p {
+  margin: 7px 0 0;
+  color: #4c637c;
+  line-height: 1.45;
+  font-size: 14px;
+}
+.surfside-calendar-workspace .surfside-calendar-status-side {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-status-pill {
+  padding: 5px 11px;
+  background: #dcebf9;
+  border: 1px solid #bad2e9;
+  border-radius: 999px;
+  color: #1b517d;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: normal;
+  text-align: center;
+}
+.surfside-calendar-workspace .surfside-calendar-section-jumps {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.surfside-calendar-workspace .surfside-calendar-section-jumps a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid #9dbad7;
+  border-radius: 9px;
+  background: #fff;
+  color: #0b4f9c;
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.surfside-calendar-workspace .surfside-calendar-section-jumps a.surfside-calendar-new-event-link {
+  background: #0b4f9c;
+  border-color: #0b4f9c;
+  color: #fff;
+}
+.surfside-calendar-workspace .surfside-calendar-section-jumps a:hover {
+  background: #e6f1ff;
+  color: #073b74;
+}
+.surfside-calendar-workspace .surfside-calendar-section-jumps a.surfside-calendar-new-event-link:hover {
+  background: #083f7d;
+  color: #fff;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-layout {
+  gap: 18px;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-panel {
+  padding: clamp(18px, 2.4vw, 26px);
+  border: 1px solid #d5e1ed;
+  border-radius: 16px;
+  box-shadow: 0 7px 23px rgba(8, 35, 65, .045);
+}
+.surfside-calendar-workspace .surfside-calendar-panel-heading {
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e1e9f1;
+}
+.surfside-calendar-workspace .surfside-calendar-panel-heading h2,
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-manage-heading h2 {
+  margin: 0 0 7px;
+  font-size: clamp(22px, 2.5vw, 27px);
+  line-height: 1.15;
+  color: #102f50;
+}
+.surfside-calendar-workspace .surfside-calendar-panel-heading p {
+  margin: 0;
+  color: #586b82;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-form label {
+  margin-bottom: 15px;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-form
+  :is(input[type="text"], input[type="search"], input[type="date"], input[type="time"], input[type="number"], select, textarea) {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #aabbd0;
+  border-radius: 9px;
+  font: inherit;
+  background: #fff;
+  color: #162e48;
+  box-sizing: border-box;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-form textarea {
+  min-height: 125px;
+  line-height: 1.55;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-form
+  :is(input, textarea, select):focus-visible,
+.surfside-calendar-workspace .surfside-calendar-section-jumps a:focus-visible,
+.surfside-calendar-workspace .surfside-calendar-event-actions :is(a, button):focus-visible,
+.surfside-calendar-workspace .surfside-calendar-search-form :is(input, button, a):focus-visible {
+  outline: 3px solid #85b5ea;
+  outline-offset: 2px;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-recurrence {
+  border: 1px solid #d8e4ee;
+  border-radius: 11px;
+  padding: 14px;
+  margin: 10px 0 17px;
+  background: #fafcff;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-recurrence legend {
+  padding: 0 5px;
+  font-weight: 800;
+  color: #173e61;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-form-actions {
+  border-top: 1px solid #e1e8f1;
+  padding-top: 17px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-form-actions .surfside-staff-button {
+  min-height: 46px;
+  border-radius: 9px;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-manage-heading {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-manage-heading .surfside-staff-muted {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-search-form input {
+  min-width: 0;
+  flex: 1 1 155px;
+  min-height: 44px;
+  border-radius: 9px;
+  padding: 10px 12px;
+  border: 1px solid #aabbd0;
+  background: #fff;
+  font: inherit;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-search-form button,
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-search-form a {
+  min-height: 44px;
+  padding: 10px 13px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-weight: 750;
+}
+.surfside-calendar-workspace .surfside-calendar-result-summary {
+  padding: 11px 14px;
+  margin: 0 0 16px;
+  background: #f0f6fd;
+  border: 1px solid #d4e3f2;
+  border-radius: 9px;
+  color: #2c506f;
+  overflow-wrap: anywhere;
+}
+.surfside-calendar-workspace .surfside-calendar-empty-results {
+  padding: 25px 20px;
+  border: 1px dashed #b8ccdf;
+  border-radius: 12px;
+  text-align: center;
+  background: #f9fbfe;
+}
+.surfside-calendar-workspace .surfside-calendar-empty-results p {
+  margin: 0 0 12px;
+  color: #526781;
+}
+.surfside-calendar-workspace .surfside-calendar-empty-results a {
+  font-weight: 800;
+  color: #0b4f9c;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-event-list {
+  gap: 10px;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-event {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding: 17px;
+  border: 1px solid #d9e4ef;
+  border-radius: 12px;
+  background: #fff;
+}
+.surfside-calendar-workspace .surfside-calendar-event h3 {
+  font-size: 17px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-event-actions {
+  gap: 7px;
+  align-items: center;
+  padding-top: 11px;
+  border-top: 1px solid #e9eff5;
+}
+.surfside-calendar-workspace .surfside-calendar-event-actions form {
+  margin: 0;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-event-actions :is(a, button) {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 38px;
+  border: 1px solid #b9cfe5;
+  border-radius: 8px;
+  padding: 7px 11px;
+  color: #12508c;
+  background: #f6faff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-event-actions :is(a, button):hover {
+  border-color: #85b4e2;
+  background: #e6f2ff;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-event-actions .surfside-calendar-delete-action {
+  color: #9e2e28;
+  border-color: #ebc7c4;
+  background: #fff8f7;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-event-actions .surfside-calendar-delete-action:hover {
+  color: #81231d;
+  background: #ffebe8;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-past-event {
+  gap: 10px;
+  min-width: 0;
+}
+.surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-past-event strong {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 900px) {
+  .surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Finding an event is the common mobile task. Put list before long form.
+     When editing, leave the selected editor first for a direct deep link. */
+  .surfside-calendar-workspace .surfside-calendar-layout:not(.is-editing) .surfside-calendar-panel-list {
+    order: -1;
+  }
+  .surfside-calendar-workspace .surfside-calendar-status-side {
+    align-items: flex-start;
+    width: 100%;
+  }
+  .surfside-calendar-workspace .surfside-calendar-section-jumps {
+    width: 100%;
+  }
+  .surfside-calendar-workspace .surfside-calendar-section-jumps a {
+    flex: 1 1 135px;
+  }
+}
+@media (max-width: 600px) {
+  .surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-status {
+    padding: 18px;
+  }
+  .surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-panel {
+    padding: 17px;
+  }
+  .surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-status-intro strong {
+    font-size: 20px;
+  }
+  .surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-search-form button,
+  .surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-search-form a {
+    flex: 0 1 auto;
+  }
+  .surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-event-actions {
+    flex-wrap: wrap;
+  }
+  .surfside-calendar-workspace .surfside-calendar-manager .surfside-calendar-form-actions .surfside-staff-button {
+    width: 100%;
+  }
+}
