@@ -159,4 +159,32 @@ assert_r2(is_array($complete) && $complete['verified'],
     'staff-page completion reuses the existing R2 HEAD verification');
 assert_r2(get_transient('surfside_r2_upload_42_'.$id) === false,
     'pending staff-page session consumed only after successful completion');
+
+$source = file_get_contents(dirname(__DIR__) . '/includes/r2-sermon-archive.php');
+$staff_ui = substr($source, strpos($source, 'function surfside_tools_staff_r2_sermons_shortcode()'));
+foreach (array(
+    'Download bulk-import CSV template',
+    'Reconcile R2 objects',
+    'Refresh All Messages (No Series Scan)',
+    'Registered copies',
+    'surfside_yt_owner_panel()',
+    'Roku sermon archive',
+    'YouTube messages have Roku-ready copies',
+    'number_format_i18n($ready_count)',
+) as $obsolete) {
+    assert_r2(strpos($staff_ui, $obsolete) === false,
+        'Roku Copies page omits one-time migration/matching widget: ' . $obsolete);
+}
+foreach (array(
+    "Find this week's message",
+    'surfside-r2-upload-form',
+    'surfside-r2-id',
+    'surfside-r2-progress',
+) as $weekly) {
+    assert_r2(strpos($staff_ui, $weekly) !== false,
+        'Roku Copies retains the weekly workflow: ' . $weekly);
+}
+assert_r2(strpos($source, 'function surfside_tools_r2_reconcile_post()') !== false
+    && strpos($source, 'function surfside_tools_r2_export_post()') !== false,
+    'Maintenance operations remain available for existing imports without on-screen clutter');
 echo "PASS: R2 IDs, signing, permissions, staff-page upload authorization and verification\n";
