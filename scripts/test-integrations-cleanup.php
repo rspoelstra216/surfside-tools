@@ -25,6 +25,7 @@ function check($ok, $message) {
     if (!$ok) throw new RuntimeException($message);
 }
 function add_shortcode($name, $callback) { $GLOBALS['shortcodes'][$name] = $callback; }
+function add_action($name, $callback, $priority = 10) { $GLOBALS['actions'][$name] = $callback; }
 function is_user_logged_in() { return $GLOBALS['logged_in']; }
 function current_user_can($cap) { return $cap === 'manage_options' && $GLOBALS['is_admin']; }
 function surfside_tools_prevent_cache() { $GLOBALS['called'][] = 'prevent_cache'; }
