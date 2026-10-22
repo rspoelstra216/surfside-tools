@@ -135,6 +135,9 @@ jobs:
       - name: Test Content and Media publishing management screens
         run: php scripts/test-content-media-workspace.php
 
+      - name: Test Appearance editors, mobile photo ordering and saves
+        run: php scripts/test-appearance-workspace.php
+
       - name: Test Integrations organization and service-specific saves
         run: php scripts/test-integrations-cleanup.php
 
