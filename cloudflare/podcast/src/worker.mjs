@@ -1,4 +1,5 @@
-import { Container, getContainer } from "@cloudflare/containers";
+import { Container, ContainerProxy, getContainer } from "@cloudflare/containers";
+export { ContainerProxy };
 import { validId, sourceKey, audioKey, statusKey, validStorageAccess, verifiedRequest } from "./validation.mjs";
 
 const reply = (data, status = 200) => Response.json(data, {
