@@ -197,7 +197,12 @@ function surfside_tools_r2_upload_complete($request) {
         return new WP_Error('r2_write', 'Uploaded to R2, but could not save verification. Use Reconcile.', array('status' => 500));
     }
     delete_transient($key);
-    return rest_ensure_response(array('verified' => true, 'video_id' => $id, 'bytes' => $head['size']));
+    // Never hold up Roku verification if optional podcast processing is unavailable.
+    // Only a successfully completed staff weekly upload queues audio, not migration reconciliation.
+    $podcast = function_exists('surfside_tools_podcast_queue_verified')
+        ? surfside_tools_podcast_queue_verified($id)
+        : array('status' => 'not_configured');
+    return rest_ensure_response(array('verified' => true, 'video_id' => $id, 'bytes' => $head['size'], 'podcast' => $podcast));
 }
 
 add_action('rest_api_init', function () {
