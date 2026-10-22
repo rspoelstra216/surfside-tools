@@ -98,13 +98,22 @@ check($GLOBALS['wpdb']->reads === 0, 'Unauthorized access must not query archive
 $GLOBALS['viewer_can_upload'] = true;
 $GLOBALS['viewer_archive_ready'] = 0;
 $out = surfside_tools_staff_sermon_archive_view();
-check(strpos($out, 'No sermon archive has been initialized') !== false, 'Uninitialized archive shows empty state');
+check(strpos($out, 'No sermon archive has been initialized') !== false &&
+    strpos($out, 'Archive not ready yet') !== false,
+    'Uninitialized archive shows clear empty state');
 check($GLOBALS['wpdb']->reads === 0, 'Viewer must not initialize archive');
 
 $GLOBALS['viewer_archive_ready'] = 1;
 $_GET = array('archive_q' => 'Serve%_');
 $out = surfside_tools_staff_sermon_archive_view();
 check(strpos($out, 'Made to Serve') !== false, 'Archived row can be opened from list');
+check(strpos($out, 'Saved weekly sermon notes') !== false &&
+    strpos($out, 'Video Archive Manager') !== false &&
+    strpos($out, 'Weekly Update') !== false,
+    'Archive explains written notes and links to other publishing tools');
+check(strpos($out, 'Showing results for') !== false &&
+    strpos($out, 'Archived notes') === false,
+    'Archive displays searched term without implying publication actions');
 check(strpos($GLOBALS['wpdb']->last_sql, 'Serve\\%\\_') !== false, 'LIKE search wildcards are escaped');
 check($GLOBALS['wpdb']->reads === 2, 'A list view fetches count and metadata only');
 check(strpos($out, 'Next') !== false, 'List supports pagination');
@@ -115,6 +124,10 @@ check(strpos($out, 'Serve in Love') !== false, 'Detail displays archived notes')
 check(strpos($out, '<script>') === false, 'Detail does not inject untrusted markup');
 check(strpos($out, '&lt;script&gt;') !== false, 'Sermon title is escaped');
 check(strpos($out, 'Closing Prayer') !== false, 'Closing prayer displayed');
-check(strpos($out, 'All Archived Notes') !== false, 'Detail returns to archive');
+check(strpos($out, 'All Archived Notes') !== false &&
+    strpos($out, 'Archived notes · Read only') !== false,
+    'Detail is explicitly read-only and returns to archive');
+check(strpos($out, '<form method="post"') === false,
+    'Read-only archive never adds a write form');
 
 echo "Read-only sermon archive dashboard regression checks passed.\n";
