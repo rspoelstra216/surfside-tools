@@ -111,6 +111,9 @@ jobs:
           node --check assets/js/staff-workspace.js
           node scripts/test-staff-workspace-drawer.js
 
+      - name: Test staff dashboard and login cache bypass
+        run: php scripts/test-staff-cache.php
+
       - name: Test streaming page admin-only provisioning
         run: php scripts/test-streaming-page-provisioning.php
 
