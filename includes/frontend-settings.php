@@ -99,20 +99,21 @@ function surfside_tools_staff_settings_shortcode() {
     $shared_notice = function_exists('surfside_tools_church_settings_shared_save')
         ? surfside_tools_church_settings_shared_save()
         : '';
+    // Process legacy submissions from stale Integrations forms, but only
+    // render the current Twitch editor in the Streaming workspace.
     $twitch_notice = surfside_tools_twitch_settings_handle_post();
     $settings = get_option('surfside_tools_settings', array());
     $api_key = (string) ($settings['google_maps_api_key'] ?? '');
     $church_settings_url = function_exists('surfside_tools_staff_page_url')
         ? surfside_tools_staff_page_url('site-settings')
         : home_url('/dashboard/site-settings/');
-    $streaming_url = function_exists('surfside_tools_staff_page_url')
-        ? surfside_tools_staff_page_url('site-settings/streaming')
-        : home_url('/dashboard/site-settings/streaming/');
-    $calendar_url = function_exists('surfside_tools_staff_page_url')
-        ? surfside_tools_staff_page_url('calendar')
-        : home_url('/dashboard/calendar/');
-    $calendar_defaults_url = add_query_arg('view', 'defaults', $calendar_url);
-    $saved_places_url = add_query_arg('view', 'places', $calendar_url);
+    $legacy_redirects = array(
+        '#surfside-focus-calendar-defaults' => add_query_arg('view', 'defaults', surfside_tools_staff_page_url('calendar')),
+        '#surfside-focus-saved-places' => add_query_arg('view', 'places', surfside_tools_staff_page_url('calendar')),
+        '#surfside-focus-streaming' => surfside_tools_staff_page_url('site-settings/streaming'),
+        '#surfside-focus-twitch' => add_query_arg('stream_tab', 'twitch', surfside_tools_staff_page_url('site-settings/streaming')),
+        '#surfside-twitch' => add_query_arg('stream_tab', 'twitch', surfside_tools_staff_page_url('site-settings/streaming')),
+    );
 
     ob_start();
     ?>
@@ -121,16 +122,17 @@ function surfside_tools_staff_settings_shortcode() {
         <section class="surfside-staff-hero">
             <p class="surfside-staff-eyebrow">Technical Configuration</p>
             <h1>Integrations</h1>
-            <p class="surfside-staff-muted">External services and connection settings used by Surfside.</p>
+            <p class="surfside-staff-muted">Connect the services Surfside uses. Expand a service to view its settings, save changes, or test the connection.</p>
         </section>
 
         <?php echo $notice; ?>
         <?php echo $shared_notice; ?>
         <?php echo $twitch_notice; ?>
-        <?php if (isset($_GET['integrations_saved'])) : ?>
-            <div class="surfside-front-settings-notice surfside-front-settings-success surfside-integrations-save-notice">Integration settings saved.</div>
-        <?php endif; ?>
-
+        <section class="surfside-integrations-section" aria-labelledby="surfside-integrations-connections">
+          <div class="surfside-integrations-section-heading">
+            <h2 id="surfside-integrations-connections">External connections</h2>
+            <p>API credentials and metadata synchronization for content and locations.</p>
+          </div>
         <form method="post" class="surfside-front-settings-form">
             <?php wp_nonce_field('surfside_front_settings', 'surfside_front_settings_nonce'); ?>
             <input type="hidden" name="surfside_front_settings_action" value="save_settings">
@@ -152,49 +154,26 @@ function surfside_tools_staff_settings_shortcode() {
             <p><button type="submit" class="surfside-front-primary-button">Save Google Maps Settings</button></p>
         </form>
 
-        <details class="surfside-front-settings-card surfside-integration-card">
-            <summary><span>Calendar Defaults</span></summary>
-            <div class="surfside-integration-body">
-                <p class="surfside-front-description">The week's display mode and default event duration are managed with the calendar.</p>
-                <p><a class="surfside-front-secondary-button surfside-streaming-settings-link" href="<?php echo esc_url($calendar_defaults_url); ?>">Open Calendar Defaults <span aria-hidden="true">›</span></a></p>
-            </div>
-        </details>
+        <?php if (function_exists('surfside_tools_youtube_settings_panel')) echo surfside_tools_youtube_settings_panel(); ?>
+        <?php if (function_exists('surfside_tools_youversion_settings_panel')) echo surfside_tools_youversion_settings_panel(); ?>
+        </section>
 
-        <details class="surfside-front-settings-card surfside-integration-card">
-            <summary><span>Saved Places</span></summary>
-            <div class="surfside-integration-body">
-                <p class="surfside-front-description">Manage saved and previously used event locations in the Calendar area.</p>
-                <p><a class="surfside-front-secondary-button surfside-streaming-settings-link" href="<?php echo esc_url($saved_places_url); ?>">Open Saved Places <span aria-hidden="true">›</span></a></p>
-            </div>
-        </details>
-
+        <section class="surfside-integrations-section" aria-labelledby="surfside-integrations-services">
+          <div class="surfside-integrations-section-heading">
+            <h2 id="surfside-integrations-services">Church services</h2>
+            <p>Giving and contact-form protection, shared by Surfside's public channels.</p>
+          </div>
         <?php if (function_exists('surfside_tools_church_settings_shared_integrations_panel')) echo surfside_tools_church_settings_shared_integrations_panel(); ?>
 
-        <details class="surfside-front-settings-card surfside-integration-card surfside-streaming-integration-card">
-            <summary><span>Streaming</span></summary>
-            <div class="surfside-integration-body">
-                <p class="surfside-front-description">Cloudflare live configuration, Watch Live destinations and Twitch connectivity are managed together.</p>
-                <p><a class="surfside-front-secondary-button surfside-streaming-settings-link" href="<?php echo esc_url($streaming_url); ?>">Open Streaming Settings <span aria-hidden="true">›</span></a></p>
-            </div>
-        </details>
+        </section>
 
-        <?php if (function_exists('surfside_tools_youtube_settings_panel')) echo surfside_tools_youtube_settings_panel(); ?>
-
-        <details class="surfside-front-settings-card surfside-integration-card">
-            <summary><span>Twitch</span></summary>
-            <div class="surfside-integration-body">
-                <p>Manage Twitch credentials and test the connection from the Streaming workspace.</p>
-                <p><a class="surfside-front-secondary-button" href="<?php echo esc_url(add_query_arg('stream_tab', 'twitch', $streaming_url)); ?>">Open Twitch Connection <span aria-hidden="true">›</span></a></p>
-            </div>
-        </details>
-
+        <section class="surfside-integrations-section" aria-labelledby="surfside-integrations-advanced">
+          <div class="surfside-integrations-section-heading">
+            <h2 id="surfside-integrations-advanced">Advanced appearance</h2>
+            <p>Optional reveal and countdown styling overrides. Leave unchanged to use the built-in design.</p>
+          </div>
         <?php if (function_exists('surfside_tools_visual_css_settings_panel')) echo surfside_tools_visual_css_settings_panel(); ?>
-        <?php if (function_exists('surfside_tools_youversion_settings_panel')) echo surfside_tools_youversion_settings_panel(); ?>
-
-        <div class="surfside-integrations-save-shell">
-            <button type="button" class="surfside-front-primary-button surfside-integrations-save-all" id="surfside-integrations-save-all">Save Integrations</button>
-            <div class="surfside-front-description surfside-integrations-save-status" id="surfside-integrations-save-status" aria-live="polite"></div>
-        </div>
+        </section>
     </div>
 
     <style>
@@ -208,14 +187,45 @@ function surfside_tools_staff_settings_shortcode() {
         .surfside-front-settings-form fieldset{border:0;padding:0;margin:18px 0}.surfside-front-settings-form fieldset label{display:block;margin:10px 0}.surfside-front-key-row{display:flex;gap:10px;margin-top:8px}.surfside-front-key-row input{flex:1;min-width:0}.surfside-front-settings input[type=number]{padding:10px 12px;border:1px solid #9aa9b8;border-radius:7px;font:inherit}
         .surfside-front-description{color:#526279;font-size:.92rem}.surfside-front-primary-button,.surfside-front-secondary-button,.surfside-front-delete-button{border-radius:8px;padding:10px 16px;font:inherit;font-weight:700;cursor:pointer}.surfside-front-primary-button{border:0;background:#0b4f9c;color:#fff}.surfside-front-secondary-button{border:1px solid #0b4f9c;background:#fff;color:#0b4f9c}.surfside-front-delete-button{border:0;background:transparent;color:#b42318;text-decoration:underline;padding:4px}
         .surfside-front-settings-notice{padding:13px 15px;border-radius:10px;margin-bottom:18px;font-weight:700}.surfside-front-settings-success{background:#edf7ed;color:#245f2a}.surfside-front-settings-error{background:#fdecec;color:#8b2323}
-        .surfside-front-place-table{margin-top:16px;border:1px solid #d8e0e8;border-radius:10px;overflow:hidden}.surfside-front-place-head,.surfside-front-place-row{display:grid;grid-template-columns:1.2fr 1.5fr .8fr 90px;gap:12px;align-items:center;padding:12px 14px}.surfside-front-place-head{background:#edf3f8;font-weight:800}.surfside-front-place-row+.surfside-front-place-row{border-top:1px solid #e3e8ed}.surfside-front-restore-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-        .surfside-front-settings-form>p,.surfside-shared-integrations-save,.surfside-visual-css-settings-card form>p{display:none!important}.surfside-youversion-row button[name="surfside_youversion_settings_action"][value="save"]{display:none!important}
-        .surfside-shared-integrations-form{margin-top:0}.surfside-streaming-settings-link{display:inline-flex;align-items:center;gap:8px;width:auto!important;text-decoration:none!important}
-        .surfside-integrations-save-shell{padding-top:6px;padding-bottom:28px}.surfside-integrations-save-all{width:auto!important;min-width:190px}.surfside-integrations-save-status{display:inline-block;margin-left:12px}.surfside-integrations-save-notice{margin-top:0}
-        @media(max-width:720px){.surfside-front-key-row{display:block}.surfside-front-key-row button{margin-top:8px}.surfside-front-place-head{display:none}.surfside-front-place-row{grid-template-columns:1fr;gap:5px}.surfside-integration-card>summary{grid-template-columns:minmax(0,1fr) 20px;column-gap:9px;padding:13px 14px}.surfside-integration-body{padding:0 16px 16px}.surfside-integrations-save-all{width:100%!important}.surfside-integrations-save-status{display:block;margin:8px 0 0}}
+        .surfside-front-settings .surfside-integrations-section{margin:0 0 28px;display:grid;gap:10px}
+        .surfside-integrations-section-heading{margin:0 0 6px}
+        .surfside-integrations-section-heading h2{margin:0 0 5px!important;font-size:20px!important;color:#071b3a}
+        .surfside-integrations-section-heading p{margin:0;color:#526279;font-size:.94rem}
+        .surfside-front-settings .surfside-integrations-section .surfside-integration-card{margin:0}
+        .surfside-front-settings .surfside-integration-card>summary{display:flex;align-items:center;gap:10px}
+        .surfside-front-settings .surfside-integration-card>summary:after{margin-left:auto;flex:none}
+        .surfside-front-settings .surfside-integration-card>summary .surfside-integration-status{display:inline-flex!important;margin-left:auto;color:#526279;font-size:.78rem;font-weight:700;line-height:1.3}
+        .surfside-front-settings .surfside-integration-card form>p{margin:14px 0}
+        .surfside-front-settings .surfside-integration-card button[type=submit]{min-height:42px}
+        .surfside-front-settings .surfside-shared-integrations-save{display:block!important;margin:17px 0 0;padding:0 20px 18px}
+        .surfside-front-settings .surfside-visual-css-settings-card form>p{display:block!important}
+        .surfside-front-settings .surfside-youversion-row button[name="surfside_youversion_settings_action"][value="save"]{display:inline-flex!important}
+        .surfside-front-settings .surfside-front-settings-form>p{display:block!important;margin:6px 0 12px;padding:0 20px}
+        .surfside-shared-integrations-form{margin:0}
+        .surfside-front-settings input[type=number]{padding:10px 12px;border:1px solid #9aa9b8;border-radius:7px;font:inherit}
+        @media(max-width:720px){.surfside-front-key-row{display:block}.surfside-front-key-row button{margin-top:8px}.surfside-integration-card>summary{padding:13px 14px}.surfside-integration-body{padding:0 16px 16px}.surfside-front-settings .surfside-shared-integrations-save{padding:0 16px 16px}.surfside-front-settings .surfside-front-settings-form>p{padding:0 16px}.surfside-front-settings .surfside-front-primary-button{width:100%;justify-content:center}}
     </style>
     <script>
+    // Old fragment bookmarks cannot be redirected by PHP because fragments
+    // never reach the server. Forward them to their canonical staff workspaces.
+    (function(){
+      const aliases = <?php echo wp_json_encode($legacy_redirects); ?>;
+      const target = Object.prototype.hasOwnProperty.call(aliases,window.location.hash)
+        ? aliases[window.location.hash] : '';
+      if(target){window.location.replace(target)}
+    })();
     document.addEventListener('DOMContentLoaded',function(){
+        // Action-specific YouTube/YouVersion redirects should reopen the
+        // corresponding accordion to make success/error feedback visible.
+        const returnedHash = window.location.hash;
+        const returnedId = {
+          '#surfside-youtube': 'surfside-youtube',
+          '#surfside-youversion': 'surfside-youversion'
+        }[returnedHash];
+        if(returnedId){
+          const card=document.getElementById(returnedId);
+          if(card){card.open=true;card.scrollIntoView({block:'start'})}
+        }
         const mapsButton=document.getElementById('surfside-front-test-maps');
         const mapsInput=document.getElementById('surfside-front-google-key');
         const mapsStatus=document.getElementById('surfside-front-maps-status');
@@ -233,38 +243,6 @@ function surfside_tools_staff_settings_shortcode() {
             });
         }
 
-        const saveButton=document.getElementById('surfside-integrations-save-all');
-        const saveStatus=document.getElementById('surfside-integrations-save-status');
-        if(!saveButton)return;
-        saveButton.addEventListener('click',async function(){
-            const forms=[
-                document.querySelector('.surfside-front-settings-form'),
-                document.querySelector('.surfside-shared-integrations-form'),
-                document.querySelector('.surfside-visual-css-settings-card form'),
-                document.querySelector('.surfside-youversion-form'),
-                document.querySelector('.surfside-twitch-form')
-            ].filter(Boolean);
-            saveButton.disabled=true;
-            saveButton.textContent='Saving…';
-            if(saveStatus)saveStatus.textContent='Saving all integration settings.';
-            try{
-                for(const form of forms){
-                    const data=new FormData(form);
-                    if(form.classList.contains('surfside-youversion-form')) data.set('surfside_youversion_settings_action','save');
-                    const response=await fetch(window.location.href,{method:'POST',body:data,credentials:'same-origin',redirect:'follow'});
-                    if(!response.ok)throw new Error('Save failed');
-                }
-                if(saveStatus)saveStatus.textContent='Saved. Refreshing…';
-                const url=new URL(window.location.href);
-                url.searchParams.set('integrations_saved','1');
-                url.hash='';
-                window.location.href=url.toString();
-            }catch(error){
-                saveButton.disabled=false;
-                saveButton.textContent='Save Integrations';
-                if(saveStatus)saveStatus.textContent='One or more settings could not be saved. Please try again.';
-            }
-        });
     });
     </script>
     <?php
