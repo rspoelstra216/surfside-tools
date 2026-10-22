@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "surfside-sermon-podcast",
+  "main": "src/worker.mjs",
+  "compatibility_date": "2026-10-01",
+  "durable_objects": {
+    "bindings": [{ "name": "PODCAST_CONTAINER", "class_name": "PodcastContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PodcastContainer"] }],
+  "containers": [{
+    "class_name": "PodcastContainer",
+    "image": "./container/Dockerfile",
+    "instance_type": "standard-1",
+    "max_instances": 1
+  }],
+  "r2_buckets": [{
+    "binding": "SERMONS_BUCKET",
+    "bucket_name": "surfside-sermons"
+  }],
+  "queues": {
+    "producers": [{ "binding": "PODCAST_QUEUE", "queue": "surfside-podcast-jobs" }],
+    "consumers": [{
+      "queue": "surfside-podcast-jobs",
+      "max_batch_size": 1,
+      "max_batch_timeout": 1,
+      "max_retries": 2
+    }]
+  }
+}
