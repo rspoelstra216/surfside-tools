@@ -96,16 +96,26 @@ function surfside_tools_staff_volunteer_needs_view() {
     }
 
     $needs = surfside_tools_get_volunteer_needs();
+    $active_count = count(array_filter($needs, function($need) { return !empty($need['active']); }));
+    $inactive_count = count($needs) - $active_count;
     $ministries = function_exists('surfside_tools_get_published_ministries') ? surfside_tools_get_published_ministries() : array();
     $back_url = function_exists('surfside_tools_member_engagement_url') ? surfside_tools_member_engagement_url() : surfside_tools_staff_page_url('');
     ob_start(); ?>
-    <div class="surfside-staff-shell surfside-volunteer-needs-manager">
+    <div class="surfside-staff-shell surfside-volunteer-needs-manager surfside-member-care">
       <div class="surfside-staff-back"><a href="<?php echo esc_url($back_url); ?>">← Back to Member Engagement</a></div>
       <section class="surfside-staff-hero">
         <p class="surfside-staff-eyebrow">Member Engagement</p>
-        <h1>Current Volunteer Needs</h1>
-        <p class="surfside-staff-muted">Publish timely serving opportunities for the Surfside church community. Active needs appear in the mobile app, where members can use the existing Connect form to respond.</p>
+        <h1>Volunteer Needs</h1>
+        <p class="surfside-staff-muted">Manage serving opportunities shown in the Surfside app. Members respond using the existing Connect form.</p>
       </section>
+      <div class="surfside-care-summary" aria-label="Currently saved volunteer needs">
+        <div><strong><?php echo $active_count; ?></strong><span>Visible in app</span></div>
+        <div><strong><?php echo $inactive_count; ?></strong><span>Not published</span></div>
+        <div><strong><?php echo count($needs); ?></strong><span>Total saved</span></div>
+      </div>
+      <div class="surfside-care-intro">
+        <p><strong>Manage opportunities</strong> — Edit the details, select which needs appear in the app, and use the arrow buttons to set the order. Changes take effect after you save.</p>
+      </div>
       <?php if ($saved): ?><div class="surfside-mobile-notice">Volunteer needs saved.</div><?php endif; ?>
       <form method="post" class="surfside-volunteer-needs-form">
         <?php wp_nonce_field('surfside_volunteer_needs_save', 'surfside_volunteer_needs_nonce'); ?>
@@ -113,7 +123,16 @@ function surfside_tools_staff_volunteer_needs_view() {
           <?php foreach ($needs as $index => $need): ?>
             <section class="surfside-staff-panel surfside-volunteer-need" data-volunteer-need>
               <input type="hidden" name="volunteer_needs[<?php echo esc_attr($index); ?>][key]" value="<?php echo esc_attr($need['key']); ?>">
-              <div class="surfside-volunteer-need-head"><h2>Volunteer Need</h2><label class="surfside-volunteer-active"><input type="checkbox" name="volunteer_needs[<?php echo esc_attr($index); ?>][active]" value="1" <?php checked(!empty($need['active'])); ?>> Active</label></div>
+              <div class="surfside-volunteer-need-head">
+                <div class="surfside-volunteer-need-title">
+                  <span class="surfside-care-eyebrow">Serving opportunity <?php echo $index + 1; ?></span>
+                  <h2><?php echo esc_html($need['title'] ?: 'Untitled opportunity'); ?></h2>
+                </div>
+                <label class="surfside-volunteer-active">
+                  <input type="checkbox" name="volunteer_needs[<?php echo esc_attr($index); ?>][active]" value="1" <?php checked(!empty($need['active'])); ?>>
+                  Show in app
+                </label>
+              </div>
               <div class="surfside-volunteer-grid">
                 <label class="surfside-volunteer-field surfside-volunteer-wide"><span>Title</span><input type="text" name="volunteer_needs[<?php echo esc_attr($index); ?>][title]" value="<?php echo esc_attr($need['title']); ?>" maxlength="90" required placeholder="Children’s Ministry Check-In Helper"></label>
                 <label class="surfside-volunteer-field"><span>Ministry</span><select name="volunteer_needs[<?php echo esc_attr($index); ?>][ministry_key]"><option value="">No specific ministry</option><?php foreach ($ministries as $ministry): $ministry_key = sanitize_key($ministry['key'] ?? ''); ?><option value="<?php echo esc_attr($ministry_key); ?>" <?php selected($need['ministry_key'], $ministry_key); ?>><?php echo esc_html($ministry['name'] ?? ''); ?></option><?php endforeach; ?></select></label>
@@ -125,10 +144,17 @@ function surfside_tools_staff_volunteer_needs_view() {
           <?php endforeach; ?>
         </div>
         <button type="button" class="surfside-volunteer-add" data-volunteer-add>+ Add Volunteer Need</button>
+        <p class="surfside-volunteer-save-note">Only checked opportunities appear in the app. Removing an opportunity from this list takes effect when you save.</p>
         <template data-volunteer-template>
           <section class="surfside-staff-panel surfside-volunteer-need" data-volunteer-need>
             <input type="hidden" name="volunteer_needs[__INDEX__][key]" value="">
-            <div class="surfside-volunteer-need-head"><h2>Volunteer Need</h2><label class="surfside-volunteer-active"><input type="checkbox" name="volunteer_needs[__INDEX__][active]" value="1" checked> Active</label></div>
+            <div class="surfside-volunteer-need-head">
+              <div class="surfside-volunteer-need-title">
+                <span class="surfside-care-eyebrow">New serving opportunity</span>
+                <h2>Volunteer Need</h2>
+              </div>
+              <label class="surfside-volunteer-active"><input type="checkbox" name="volunteer_needs[__INDEX__][active]" value="1" checked> Show in app</label>
+            </div>
             <div class="surfside-volunteer-grid">
               <label class="surfside-volunteer-field surfside-volunteer-wide"><span>Title</span><input type="text" name="volunteer_needs[__INDEX__][title]" maxlength="90" required placeholder="Children’s Ministry Check-In Helper"></label>
               <label class="surfside-volunteer-field"><span>Ministry</span><select name="volunteer_needs[__INDEX__][ministry_key]"><option value="">No specific ministry</option><?php foreach ($ministries as $ministry): ?><option value="<?php echo esc_attr(sanitize_key($ministry['key'] ?? '')); ?>"><?php echo esc_html($ministry['name'] ?? ''); ?></option><?php endforeach; ?></select></label>

@@ -1,0 +1,335 @@
+/* Member Engagement, Prayer Review, Volunteer Needs and Contact Routing.
+   Presentation only; scoped to staff dashboard pages. */
+.surfside-member-care, .surfside-contact-routing-workspace {
+  --care-ink: #102c49;
+  --care-subtle: #50647b;
+  --care-line: #d7e3ee;
+  --care-blue: #0b4f9c;
+  min-width: 0;
+}
+.surfside-member-care .surfside-care-summary {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px;
+  margin: 0 0 22px;
+}
+.surfside-member-care .surfside-care-summary > div {
+  display:flex; flex-direction:column; gap:6px; justify-content:center;
+  min-width:0; padding:17px 20px; border-radius:14px;
+  background:#f2f7fd; border:1px solid #cfdff0;
+}
+.surfside-member-care .surfside-care-summary strong {
+  color:#103d6d; font-size:clamp(25px,3vw,34px); line-height:1; font-weight:850;
+}
+.surfside-member-care .surfside-care-summary span {
+  color:#4b627c; font-size:13px; font-weight:700; line-height:1.4;
+}
+.surfside-member-care .surfside-care-section-heading,
+.surfside-contact-routing-workspace .surfside-care-section-heading {
+  display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap;
+  gap:14px; padding-bottom:17px; margin-bottom:14px;
+  border-bottom:1px solid #e0e9f1;
+}
+.surfside-member-care .surfside-care-section-heading h2,
+.surfside-contact-routing-workspace .surfside-care-section-heading h2 {
+  margin:0 0 7px; color:var(--care-ink); font-size:clamp(21px,2.7vw,27px);
+}
+.surfside-member-care .surfside-care-section-heading p,
+.surfside-contact-routing-workspace .surfside-care-section-heading p {
+  margin:0; color:var(--care-subtle); font-size:14px; line-height:1.55;
+}
+.surfside-member-care .surfside-care-section-count {
+  padding:7px 11px; background:#f3f7fc; color:#2b587d;
+  font-size:12px; font-weight:850; border:1px solid var(--care-line);
+  border-radius:99px;
+}
+.surfside-member-care .surfside-care-empty {
+  border:1px dashed #bacde0; border-radius:13px;
+  background:#f9fcff; text-align:center; padding:25px 18px; margin-top:14px;
+}
+.surfside-member-care .surfside-care-empty strong {
+  color:#234968; font-size:19px;
+}
+.surfside-member-care .surfside-care-empty p {
+  color:#597087; margin:8px 0 0;
+}
+.surfside-member-care .surfside-care-eyebrow {
+  display:block; margin:0 0 7px; font-size:11px;
+  font-weight:850; letter-spacing:.07em; text-transform:uppercase; color:#59728a;
+}
+.surfside-member-care .surfside-care-hub-grid .surfside-staff-card {
+  justify-content:flex-start; min-height:265px; gap:7px;
+}
+.surfside-member-care .surfside-care-hub-grid .surfside-staff-card h2 {
+  font-size:clamp(22px,2.4vw,28px);
+}
+.surfside-member-care .surfside-care-hub-grid .surfside-staff-card p {
+  margin:8px auto 24px; line-height:1.6;
+}
+
+/* Prayer review: preserve staff-only content and all action POST targets. */
+.surfside-prayer-workspace .surfside-prayer-tabs {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px; margin: 0 0 20px;
+}
+.surfside-prayer-workspace .surfside-prayer-tabs a {
+  display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:8px;
+  padding:11px 13px; border-radius:11px;
+  border:1px solid #b9cde1; background:#fff; color:#164c81;
+  font-size:14px; font-weight:800; text-decoration:none;
+  min-height:45px;
+}
+.surfside-prayer-workspace .surfside-prayer-tabs a.is-active,
+.surfside-prayer-workspace .surfside-prayer-tabs a[aria-current="page"] {
+  background:#0b4f9c; border-color:#0b4f9c; color:#fff;
+  box-shadow:0 4px 12px rgba(11,79,156,.14);
+}
+.surfside-prayer-workspace .surfside-prayer-tabs a span {
+  display:inline-grid; place-items:center; padding:2px 7px; min-width:25px;
+  border-radius:99px; background:#e9f2fa; color:#20547e; font-size:12px;
+}
+.surfside-prayer-workspace .surfside-prayer-tabs a.is-active span {
+  background:rgba(255,255,255,.2); color:#fff;
+}
+.surfside-prayer-workspace .surfside-prayer-manager-card {
+  margin-top:15px; padding:clamp(16px,2.7vw,23px);
+  background:#fff; border:1px solid #d5e0eb; border-radius:13px;
+  box-shadow:0 4px 13px rgba(11,45,79,.035);
+}
+.surfside-prayer-workspace .surfside-prayer-manager-head {
+  display:flex; justify-content:space-between; align-items:start; gap:12px;
+}
+.surfside-prayer-workspace .surfside-prayer-requester {
+  display:block; font-size:17px; font-weight:800; color:#112c48;
+  overflow-wrap:anywhere;
+}
+.surfside-prayer-workspace .surfside-prayer-privacy-note {
+  display:block; font-size:12px; margin-top:5px; color:#63738a;
+}
+.surfside-prayer-workspace .surfside-prayer-status {
+  flex:0 0 auto; background:#ecf3fa; color:#315979;
+  padding:5px 11px; border:1px solid #d6e3ed;
+  border-radius:99px; font-size:12px; font-weight:850;
+}
+.surfside-prayer-workspace .surfside-prayer-request-text {
+  color:#283f57; font-size:15px; line-height:1.7;
+  white-space:normal; overflow-wrap:anywhere; margin:17px 0;
+}
+.surfside-prayer-workspace .surfside-prayer-meta {
+  margin:0 0 13px; color:#587087; font-size:13px; line-height:1.5;
+}
+.surfside-prayer-workspace .surfside-prayer-action-group {
+  border-top:1px solid #e5ebf2; padding-top:14px;
+}
+.surfside-prayer-workspace .surfside-prayer-action-hint {
+  margin:0 0 11px; color:#51667e; font-size:13px;
+}
+.surfside-prayer-workspace .surfside-prayer-actions,
+.surfside-prayer-workspace .surfside-prayer-inline-actions {
+  display:flex; gap:9px; align-items:center; flex-wrap:wrap;
+}
+.surfside-prayer-workspace .surfside-prayer-actions form,
+.surfside-prayer-workspace .surfside-prayer-inline-actions form {
+  margin:0;
+}
+.surfside-prayer-workspace .surfside-prayer-actions :is(button,.surfside-staff-button,.surfside-staff-button-secondary),
+.surfside-prayer-workspace .surfside-prayer-inline-actions :is(button,.surfside-staff-button,.surfside-staff-button-secondary) {
+  flex:0 1 auto; width:auto; min-height:44px; padding:10px 14px;
+  font:inherit; font-weight:800; border-radius:9px; cursor:pointer;
+}
+.surfside-prayer-workspace .surfside-prayer-inline-actions {
+  margin:0;
+}
+.surfside-prayer-workspace .surfside-prayer-extend {
+  margin:0;
+}
+.surfside-prayer-workspace .surfside-prayer-extend label {
+  display:flex; align-items:center; flex-wrap:wrap; gap:9px;
+  color:#344b63; font-size:14px; font-weight:800;
+}
+.surfside-prayer-workspace .surfside-prayer-extend select {
+  min-height:44px; border-radius:9px; border:1px solid #b2c6d8;
+  background:#fff; padding:9px 12px; font:inherit; color:#173c60;
+}
+.surfside-prayer-workspace .surfside-prayer-tabs a:focus-visible,
+.surfside-prayer-workspace .surfside-prayer-manager-card :is(button,select):focus-visible {
+  outline:3px solid #88b9ff; outline-offset:2px;
+}
+
+/* Volunteer editing: current publication state and clear save boundary. */
+.surfside-volunteer-needs-manager .surfside-care-intro {
+  margin:0 0 19px; padding:15px 18px;
+  background:#f7fafd; border:1px solid #dae5ef; border-radius:11px;
+}
+.surfside-volunteer-needs-manager .surfside-care-intro p,
+.surfside-volunteer-needs-manager .surfside-volunteer-save-note {
+  margin:0; color:#536982; font-size:14px; line-height:1.55;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-needs-form {
+  gap:15px;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-need {
+  border:1px solid #d4e0ec; border-radius:15px;
+  box-shadow:0 6px 16px rgba(15,45,80,.04);
+  padding:clamp(18px,3vw,28px);
+  margin:0 0 12px;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-need-head {
+  display:flex; align-items:center; flex-wrap:wrap; gap:14px;
+  padding-bottom:15px; margin-bottom:19px; border-bottom:1px solid #e6edf3;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-need-title {
+  flex:1 1 180px; min-width:0;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-need-title h2 {
+  margin:0; font-size:clamp(18px,2.4vw,23px); color:#123554; overflow-wrap:anywhere;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-active {
+  padding:9px 12px; border:1px solid #c8dbee; background:#f0f7fe;
+  border-radius:9px; min-height:44px; font-size:13px; color:#285b86;
+  font-weight:800; cursor:pointer;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-active input {
+  accent-color:#0b4f9c; width:18px; height:18px;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-field :is(input,select,textarea) {
+  min-height:44px; border-color:#aabdd0;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-field textarea {
+  min-height:110px; line-height:1.55;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-actions {
+  gap:9px; padding-top:16px; border-top:1px solid #e6edf3;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-control {
+  border-color:#b5cde3; color:#15518b; background:#f8fbff;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-control[data-volunteer-remove] {
+  margin-left:auto; color:#9b3429; border-color:#e7c7c2; background:#fff9f8;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-save-note {
+  margin:0 0 6px;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-save-actions {
+  justify-content:flex-end; padding-top:13px; border-top:1px solid #e1e9f0;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-save-actions .surfside-staff-button {
+  width:auto; min-height:48px; padding:11px 23px;
+  border-radius:9px; font-weight:800;
+}
+.surfside-volunteer-needs-manager .surfside-volunteer-needs-form :is(button,input,select,textarea):focus-visible {
+  outline:3px solid #88b9ff; outline-offset:2px;
+}
+
+/* Contact Routing is admin only; addresses never appear in public assets. */
+.surfside-contact-routing-workspace .surfside-contact-routing-summary {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:13px; margin:0 0 22px;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-summary > div {
+  display:grid; gap:6px; padding:18px 20px;
+  background:#f3f8fd; border:1px solid #d3e3f1; border-radius:12px;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-summary strong {
+  font-size:15px; color:#163957;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-summary span {
+  font-size:13px; color:#536982; font-weight:700;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-summary .is-configured {
+  color:#22663f;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-summary .needs-attention {
+  color:#9b4630;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-grid {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:17px;
+  margin-top:20px;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-field {
+  min-width:0; padding:16px; border:1px solid #d9e5ef;
+  border-radius:12px; background:#fbfdff;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-field.is-pastoral {
+  grid-column:1/-1; background:#f4f8fc; border-color:#b9cfdf;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-field label {
+  display:block; margin:0 0 9px; font-weight:800; color:#183d5e;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-privacy {
+  display:inline-block; margin:0 0 10px; padding:4px 8px;
+  font-size:11px; font-weight:800; text-transform:uppercase;
+  color:#674927; border-radius:6px; background:#fdf5e5;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-field input {
+  display:block; width:100%; max-width:100%; min-height:46px;
+  box-sizing:border-box; padding:11px 12px;
+  font:inherit; color:#172f49; border:1px solid #9fb7cd;
+  background:#fff; border-radius:9px;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-field p {
+  margin:9px 0 0; color:#516780; font-size:13px; line-height:1.5;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-save {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:15px; padding:18px 0;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-save p {
+  max-width:490px; flex:1 1 240px; margin:0; color:#586e85;
+  font-size:13px; line-height:1.55;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-save button {
+  width:auto; min-height:48px; border:0; cursor:pointer;
+  padding:11px 22px; border-radius:9px;
+}
+.surfside-contact-routing-workspace .surfside-care-save-notice {
+  padding:14px 16px; margin:0 0 20px; background:#edf8f1;
+  border:1px solid #b8dec4; color:#1b683a; border-radius:10px; font-weight:800;
+}
+.surfside-contact-routing-workspace .surfside-contact-routing-form :is(input,button):focus-visible {
+  outline:3px solid #88b9ff; outline-offset:2px;
+}
+@media(max-width:760px) {
+  .surfside-member-care .surfside-care-summary { gap:8px; }
+  .surfside-member-care .surfside-care-summary > div { padding:13px 12px; }
+  .surfside-member-care .surfside-care-summary strong { font-size:25px; }
+  .surfside-prayer-workspace .surfside-prayer-manager-head {
+    align-items:flex-start; flex-direction:column;
+  }
+  .surfside-prayer-workspace .surfside-prayer-actions,
+  .surfside-prayer-workspace .surfside-prayer-inline-actions {
+    align-items:stretch;
+  }
+  .surfside-contact-routing-workspace .surfside-contact-routing-grid { grid-template-columns:1fr; }
+  .surfside-contact-routing-workspace .surfside-contact-routing-field.is-pastoral { grid-column:auto; }
+}
+@media(max-width:530px) {
+  .surfside-member-care .surfside-care-summary { grid-template-columns:1fr; }
+  .surfside-member-care .surfside-care-summary > div {
+    flex-direction:row; align-items:center; justify-content:space-between; gap:15px;
+  }
+  .surfside-member-care .surfside-care-summary strong { font-size:25px; }
+  .surfside-prayer-workspace .surfside-prayer-tabs { gap:6px; }
+  .surfside-prayer-workspace .surfside-prayer-tabs a {
+    padding:9px 4px; gap:5px; font-size:12px;
+  }
+  .surfside-prayer-workspace .surfside-prayer-manager-card { padding:17px; }
+  .surfside-prayer-workspace .surfside-prayer-actions,
+  .surfside-prayer-workspace .surfside-prayer-inline-actions {
+    flex-direction:column; align-items:stretch;
+  }
+  .surfside-prayer-workspace .surfside-prayer-actions :is(button,.surfside-staff-button,.surfside-staff-button-secondary),
+  .surfside-prayer-workspace .surfside-prayer-inline-actions :is(button,.surfside-staff-button,.surfside-staff-button-secondary) {
+    width:100%;
+  }
+  .surfside-prayer-workspace .surfside-prayer-extend { width:100%; margin-top:9px; }
+  .surfside-prayer-workspace .surfside-prayer-extend label { justify-content:space-between; }
+  .surfside-volunteer-needs-manager .surfside-volunteer-control[data-volunteer-remove] {
+    margin-left:0;
+  }
+  .surfside-volunteer-needs-manager .surfside-volunteer-save-actions .surfside-staff-button {
+    width:100%;
+  }
+  .surfside-contact-routing-workspace .surfside-contact-routing-summary {
+    grid-template-columns:1fr;
+  }
+  .surfside-contact-routing-workspace .surfside-contact-routing-save button { width:100%; }
+}
