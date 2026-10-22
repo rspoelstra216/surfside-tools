@@ -105,6 +105,11 @@ jobs:
       - name: Test authenticated Cloudflare go-live webhook delivery
         run: php scripts/test-cloudflare-live-notifications.php
 
+      - name: Test front-end workspace navigation and search
+        run: |
+          php scripts/test-staff-workspace.php
+          node --check assets/js/staff-workspace.js
+
       - name: Test streaming page admin-only provisioning
         run: php scripts/test-streaming-page-provisioning.php
 
