@@ -75,12 +75,13 @@ require dirname(__DIR__) . '/includes/calendar-manager.php';
 $_GET = array();
 $_POST = array();
 $html = surfside_tools_calendar_manager_shortcode();
+$text = preg_replace('/\s+/', ' ', strip_tags($html));
 check(strpos($html, 'id="surfside-calendar-event-editor"') !== false &&
     strpos($html, 'id="surfside-calendar-event-list"') !== false,
     'Editor and browse sections have stable deep-link targets');
-check(strpos($html, 'Browse events') !== false &&
-    strpos($html, 'Add an event') !== false &&
-    strpos($html, '1 active event') !== false,
+check(strpos($text, 'Browse events') !== false &&
+    strpos($text, 'Add an event') !== false &&
+    strpos($text, '1 active event') !== false,
     'Staff can immediately browse/add events and see accurate count');
 check(strpos($html, 'surfside-calendar-panel-list') !== false &&
     strpos($html, 'surfside-calendar-panel-editor') !== false &&
@@ -101,16 +102,18 @@ check(strpos($html, 'name="surfside_calendar_action" value="save"') !== false &&
 
 $_GET = array('event_search'=>'nonexistent');
 $empty = surfside_tools_calendar_manager_shortcode();
-check(strpos($empty, '0 matching events') !== false &&
-    strpos($empty, '0 results') !== false &&
+$emptyText = preg_replace('/\s+/', ' ', strip_tags($empty));
+check(strpos($emptyText, '0 matching events') !== false &&
+    strpos($emptyText, '0 results') !== false &&
     strpos($empty, 'No events matched your search.') !== false &&
     strpos($empty, 'Show all events') !== false,
     'Search shows accurate empty result count and clear recovery');
 
 $_GET = array('event_search'=>'Potluck');
 $filtered = surfside_tools_calendar_manager_shortcode();
-check(strpos($filtered, '1 matching event') !== false &&
-    strpos($filtered, '1 result') !== false &&
+$filteredText = preg_replace('/\s+/', ' ', strip_tags($filtered));
+check(strpos($filteredText, '1 matching event') !== false &&
+    strpos($filteredText, '1 result') !== false &&
     strpos($filtered, 'Senior Potluck Luncheon') !== false,
     'Search count is scoped to matching events rather than all events');
 
