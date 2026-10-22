@@ -45,6 +45,7 @@ function wp_schedule_single_event($when,$hook) {
 function wp_clear_scheduled_hook($hook) { unset($GLOBALS['scheduled'][$hook]); }
 function sanitize_text_field($v) { return trim(strip_tags((string)$v)); }
 function sanitize_textarea_field($v) { return trim(strip_tags((string)$v)); }
+function absint($value) { return abs((int) $value); }
 function wp_kses_post($v) { return (string)$v; }
 function esc_html($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 function esc_attr($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
