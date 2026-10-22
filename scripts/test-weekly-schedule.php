@@ -45,6 +45,7 @@ function wp_schedule_single_event($when,$hook) {
 function wp_clear_scheduled_hook($hook) { unset($GLOBALS['scheduled'][$hook]); }
 function sanitize_text_field($v) { return trim(strip_tags((string)$v)); }
 function sanitize_textarea_field($v) { return trim(strip_tags((string)$v)); }
+function absint($value) { return abs((int) $value); }
 function wp_kses_post($v) { return (string)$v; }
 function esc_html($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 function esc_attr($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
@@ -70,6 +71,7 @@ function has_cached_files() { return false; }
 
 require dirname(__DIR__) . '/includes/core-weekly-tools.php';
 require dirname(__DIR__) . '/includes/weekly-schedule.php';
+require dirname(__DIR__) . '/includes/weekly-workspace-ui.php';
 
 $tz = new DateTimeZone('America/New_York');
 function eastern($date) { return (new DateTimeImmutable($date,new DateTimeZone('America/New_York')))->getTimestamp(); }
@@ -104,6 +106,20 @@ check(get_option('surfside_tools_announcements_current')===$old_ann
 check($GLOBALS['test_archive_calls']===0 && $GLOBALS['test_purges']===0,
     'Staging does not archive or purge public content');
 
+$staff = surfside_tools_weekly_staff_status_markup($queued, $saturday);
+check(strpos($staff, 'Currently published') !== false &&
+      strpos($staff, 'Previous Message') !== false &&
+      strpos($staff, 'October 17/18, 2026') !== false,
+    'Staff clearly sees last week as currently public');
+check(strpos($staff, 'Ready for Saturday') !== false &&
+      strpos($staff, 'Next Message') !== false &&
+      strpos($staff, 'New announcement') !== false &&
+      strpos($staff, 'Review scheduled documents') !== false,
+    'Scheduled summary and a read-only preview are visible');
+check(strpos($staff, 'surfside_tools_weekly_cancel_nonce') !== false &&
+      strpos($staff, 'Cancel Scheduled Update') !== false,
+    'Scheduled cancellation keeps the existing secured form');
+
 $changed=surfside_tools_weekly_schedule(array(
     'announcement_date'=>'October 24/25, 2026','items'=>array('Corrected announcement')),null,$friday+60);
 check($changed['sermon']['title']==='Next Message' &&
@@ -134,6 +150,11 @@ check($planned['publish_at']===$nextSat,'Another upload following the cutoff tar
 check(surfside_tools_weekly_cancel_pending()===true,'Authorized staff can cancel pending release');
 check(!surfside_tools_weekly_pending() && !isset($GLOBALS['scheduled'][SURFSIDE_TOOLS_WEEKLY_RELEASE_HOOK]),
     'Cancel removes the draft and its cron event');
+$emptyStatus = surfside_tools_weekly_staff_status_markup(array(), $nextSat);
+check(strpos($emptyStatus, 'Nothing scheduled yet') !== false &&
+      strpos($emptyStatus, 'Currently published') !== false &&
+      strpos($emptyStatus, 'Cancel Scheduled Update') === false,
+    'Unsheduled view still shows live documents without cancel action');
 check(get_option('surfside_tools_message_current')['title']==='Next Message',
     'Cancel does not change published sermon');
 
@@ -181,8 +202,12 @@ check(get_option('surfside_tools_message_current')['title']==='Fix' &&
 
 $screen=surfside_tools_weekly_update_shortcode();
 check(strpos($screen,'Saturday at 5:00 PM Eastern')!==false &&
-    strpos($screen,'Next scheduled release')!==false,
-    'Staff screen documents new Saturday release and status');
+    strpos($screen,'Nothing scheduled yet')!==false &&
+    strpos($screen,'Currently published')!==false &&
+    strpos($screen,'Upload next week')!==false &&
+    strpos($screen,'aria-current="step"')!==false &&
+    strpos($screen,'surfside-weekly-announcements-docx')!==false,
+    'Staff page renders live/next cards, accessible steps and labeled upload fields');
 check(strpos($screen,'Publish Weekly Update')===false,
     'Main weekly flow no longer advertises immediate publication');
 
@@ -194,4 +219,21 @@ check(strpos($dashboard,'Weekly content became stale')===false &&
     strpos($overview,'still from last week')===false,
     'Tuesday stale warnings and week-old alerts removed from both dashboard evaluators');
 
-echo "PASS: Weekly scheduled release, Easter DST, merges, archive failure/retry, cancel, access, and dashboard\n";
+$staffCode = file_get_contents(dirname(__DIR__) . '/includes/staff-dashboard.php');
+$stylesheet = file_get_contents(dirname(__DIR__) . '/assets/css/weekly-workspace.css');
+check(strpos($staffCode, '<h1>Weekly Update</h1>') !== false &&
+      strpos($stylesheet, '.surfside-weekly-status-grid') !== false &&
+      strpos($stylesheet, '@media (max-width: 760px)') !== false &&
+      strpos($stylesheet, 'grid-template-columns: 1fr;') !== false,
+    'Staff header and mobile stacking are integrated without altering core actions');
+
+$unsafe = array('publish_at' => $nextSat,
+    'sermon' => array('title' => '<script>alert(1)</script>',
+                     'notes' => '<img src=x onerror=alert(1)>'));
+$escaped = surfside_tools_weekly_staff_status_markup($unsafe, $nextSat);
+check(strpos($escaped, '<script>') === false &&
+      strpos($escaped, '<img ') === false &&
+      strpos($escaped, '&lt;script&gt;') !== false,
+    'Staged document review escapes unsafe content');
+
+echo "PASS: Scheduled weekly publication, DST, backups, retries, cancellation and polished staff status\n";
