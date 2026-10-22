@@ -110,3 +110,4 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/home-latest-sermon.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/dashboard-overview.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/admin.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-page-provisioning.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/staff-workspace-navigation.php';

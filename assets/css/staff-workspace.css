@@ -1,0 +1,98 @@
+/* Surfside Tools staff workspace — intentionally scoped to dashboard pages. */
+.surfside-workspace {
+  --ss-ink:#071b3a;--ss-blue:#0b4f9c;--ss-muted:#52627b;--ss-line:#dbe5f0;
+  box-sizing:border-box;width:min(1440px,calc(100vw - 32px));max-width:none;
+  margin-left:calc(50% - min(720px, 50vw - 16px));
+  display:grid;grid-template-columns:254px minmax(0,1fr);gap:26px;
+  align-items:start;color:var(--ss-ink);font-family:inherit;
+}
+.surfside-workspace *, .surfside-workspace *:before,.surfside-workspace *:after{box-sizing:border-box}
+.surfside-workspace-sidebar {
+  position:sticky;top:22px;align-self:start;max-height:calc(100vh - 44px);
+  max-height:calc(100dvh - 44px);overflow-y:auto;overscroll-behavior:contain;
+  background:#fff;border:1px solid var(--ss-line);border-radius:16px;
+  padding:16px 13px 18px;box-shadow:0 8px 24px rgba(7,27,58,.06);
+}
+.surfside-workspace-brand{display:flex;align-items:center;justify-content:space-between;padding:7px 9px 19px}
+.surfside-workspace-brand a,.surfside-workspace-brand a:hover{color:var(--ss-ink);text-decoration:none!important;font-size:21px;font-weight:650;letter-spacing:-.035em}
+.surfside-workspace-brand strong{color:var(--ss-blue);font-weight:850}
+.surfside-workspace-search-label{display:block;font-size:12px;font-weight:800;color:var(--ss-muted);margin:0 7px 5px}
+.surfside-workspace-sidebar input[type=search]{
+  display:block;width:100%;min-height:43px;padding:9px 12px;border-radius:9px;
+  border:1px solid #adbed1;background:#f7faff;font-size:14px;
+  color:var(--ss-ink);margin:0 0 16px;line-height:1.3;
+}
+.surfside-workspace-sidebar input[type=search]:focus-visible,.surfside-workspace a:focus-visible,
+.surfside-workspace button:focus-visible{outline:3px solid #8bbaff!important;outline-offset:2px}
+.surfside-workspace-home,.surfside-workspace-group a {
+  display:block!important;padding:9px 11px;border-radius:8px;
+  color:#31415b!important;text-decoration:none!important;
+  font-weight:550;font-size:14px;line-height:1.4;
+  overflow-wrap:anywhere;
+}
+.surfside-workspace-home{font-weight:750;margin-bottom:8px}
+.surfside-workspace-home:hover,.surfside-workspace-group a:hover{background:#f0f6fc!important;color:var(--ss-blue)!important}
+.surfside-workspace a.is-active{background:#e7f1ff!important;color:#083d7f!important;font-weight:800}
+.surfside-workspace-group{border-top:1px solid #edf1f5;padding-top:12px;margin-top:7px}
+.surfside-workspace-group h2{font-size:12px!important;letter-spacing:.055em;text-transform:uppercase;line-height:1.4;color:#62728a;margin:0 11px 6px!important;font-weight:800}
+.surfside-workspace-group ul{list-style:none!important;margin:0!important;padding:0!important}
+.surfside-workspace-group li{margin:0!important;padding:0!important;list-style:none!important}
+.surfside-workspace [hidden]{display:none!important}
+.surfside-workspace-no-results{padding:12px 8px;color:var(--ss-muted);font-size:14px}
+.surfside-workspace-main{min-width:0;max-width:100%;padding:0}
+.surfside-workspace-toolbar{
+  display:flex;align-items:center;gap:14px;padding:12px 19px;
+  border:1px solid var(--ss-line);border-radius:12px;background:#fff;margin:0 0 18px;
+  min-height:53px;
+}
+.surfside-workspace-breadcrumb{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:13px;font-weight:650;color:#637188}
+.surfside-workspace-breadcrumb a{color:var(--ss-blue);text-decoration:none!important}
+.surfside-workspace-breadcrumb [aria-current=page]{color:var(--ss-ink);font-weight:800}
+.surfside-workspace-menu,.surfside-workspace-close{display:none}
+.surfside-workspace-content{min-width:0}
+.surfside-workspace-content .surfside-staff-shell,
+.surfside-workspace-content .entry-content .surfside-staff-shell{max-width:100%;padding:12px 0 36px}
+.surfside-workspace-content .surfside-staff-dashboard-hero{
+  margin:0 0 18px!important;padding:28px 32px;border:1px solid var(--ss-line);
+  border-radius:16px;
+}
+.surfside-workspace-content .surfside-staff-dashboard-hero h1{font-size:clamp(32px,4vw,48px)}
+.surfside-workspace-content .surfside-staff-back{display:none}
+.surfside-workspace-content .surfside-staff-hero{padding:12px 0 22px}
+.surfside-workspace-scrim{display:none}
+
+@media(max-width:1050px){
+  .surfside-workspace{display:block;width:min(1000px,calc(100vw - 28px))}
+  .surfside-workspace-toolbar{position:sticky;top:4px;z-index:99;padding:8px 12px;box-shadow:0 3px 10px rgba(7,27,58,.06)}
+  .surfside-workspace-menu{
+    display:inline-flex;align-items:center;gap:9px;min-height:43px;
+    padding:9px 13px;border:1px solid #bfd0e3;border-radius:9px;
+    background:#eaf3ff;color:#0b4f9c;font-size:14px;font-weight:800;
+    cursor:pointer;white-space:nowrap;
+  }
+  .surfside-workspace-menu span{font-size:18px;line-height:1}
+  .surfside-workspace-sidebar{
+    position:fixed;z-index:10002;inset:0 auto 0 0;top:0;left:0;
+    width:min(320px,calc(100vw - 50px));height:100vh;height:100dvh;
+    max-height:none;overflow-y:auto;border-radius:0 16px 16px 0;
+    visibility:hidden;transform:translateX(-105%);transition:transform .2s ease,visibility .2s ease;
+    box-shadow:0 12px 45px rgba(7,27,58,.2);
+  }
+  .surfside-workspace.is-open .surfside-workspace-sidebar{transform:translateX(0);visibility:visible}
+  .surfside-workspace-close{display:inline-grid;place-items:center;border:0;background:transparent;font-size:30px;line-height:1;cursor:pointer;color:var(--ss-ink);padding:2px 8px}
+  .surfside-workspace-scrim{position:fixed;inset:0;background:rgba(5,20,38,.50);z-index:10001}
+  .surfside-workspace.is-open .surfside-workspace-scrim{display:block}
+}
+@media(max-width:640px){
+  .surfside-workspace-toolbar{gap:8px;align-items:flex-start}
+  .surfside-workspace-menu{font-size:13px;padding:9px;min-height:40px}
+  .surfside-workspace-breadcrumb{font-size:12px;gap:5px;line-height:1.5;padding-top:7px}
+  .surfside-workspace-content .surfside-staff-dashboard-hero{padding:23px 18px}
+  .surfside-workspace-content .surfside-staff-hero{padding:14px 0}
+}
+@media(prefers-reduced-motion:reduce){
+  .surfside-workspace-sidebar{transition:none}
+}
+
+/* Keep linked Integration settings visible below the sticky mobile toolbar. */
+.surfside-workspace .surfside-front-settings-card{scroll-margin-top:85px}
