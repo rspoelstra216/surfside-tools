@@ -31,7 +31,11 @@ function esc_html($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'
 function esc_attr($v) { return esc_html($v); }
 function esc_url($v) { return esc_html($v); }
 function wp_kses_post($v) { return strip_tags($v, '<p><strong><em><h2><h3><a>'); }
-function add_query_arg($args, $url) { return $url . '?' . http_build_query($args, '', '&', PHP_QUERY_RFC3986); }
+function add_query_arg($args, $value, $url = null) {
+    // WordPress accepts both (array $args, $url) and ($key, $value, $url).
+    if (is_array($args)) return $value . '?' . http_build_query($args, '', '&', PHP_QUERY_RFC3986);
+    return $url . '?' . http_build_query(array($args => $value), '', '&', PHP_QUERY_RFC3986);
+}
 function surfside_tools_notes_without_main_heading($notes, $heading) { return $notes; }
 function surfside_tools_render_sermon_notes_html($text) { return '<p>' . esc_html($text) . '</p>'; }
 
