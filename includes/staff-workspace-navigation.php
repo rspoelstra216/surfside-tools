@@ -181,9 +181,24 @@ function surfside_tools_workspace_wrap_content($content) {
 }
 add_filter('the_content', 'surfside_tools_workspace_wrap_content', 99);
 
+/**
+ * Asset URL version follows the file's actual content, not the plugin-wide
+ * version (which can remain 3.3.0 across several GitHub deployments).
+ * Only computed on staff dashboard requests; nothing affects public assets.
+ */
+function surfside_tools_workspace_asset_version($relative_path) {
+    if (!defined('SURFSIDE_TOOLS_PATH')) return SURFSIDE_TOOLS_VERSION;
+    $file = SURFSIDE_TOOLS_PATH . ltrim($relative_path, '/');
+    if (!is_file($file) || !is_readable($file)) return SURFSIDE_TOOLS_VERSION;
+    $digest = hash_file('sha256', $file);
+    return $digest ? substr($digest, 0, 12) : SURFSIDE_TOOLS_VERSION;
+}
+
 function surfside_tools_workspace_enqueue_assets() {
     if (!surfside_tools_workspace_is_staff_page()) return;
-    wp_enqueue_style('surfside-workspace', SURFSIDE_TOOLS_URL . 'assets/css/staff-workspace.css', array(), SURFSIDE_TOOLS_VERSION);
-    wp_enqueue_script('surfside-workspace', SURFSIDE_TOOLS_URL . 'assets/js/staff-workspace.js', array(), SURFSIDE_TOOLS_VERSION, true);
+    $css = 'assets/css/staff-workspace.css';
+    $js = 'assets/js/staff-workspace.js';
+    wp_enqueue_style('surfside-workspace', SURFSIDE_TOOLS_URL . $css, array(), surfside_tools_workspace_asset_version($css));
+    wp_enqueue_script('surfside-workspace', SURFSIDE_TOOLS_URL . $js, array(), surfside_tools_workspace_asset_version($js), true);
 }
 add_action('wp_enqueue_scripts', 'surfside_tools_workspace_enqueue_assets');

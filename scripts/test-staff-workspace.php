@@ -3,6 +3,7 @@
 define('ABSPATH', __DIR__ . '/');
 define('SURFSIDE_TOOLS_URL', 'https://surfsidefellowship.org/wp-content/plugins/surfside-tools/');
 define('SURFSIDE_TOOLS_VERSION', '3.3.0');
+define('SURFSIDE_TOOLS_PATH', dirname(__DIR__) . '/');
 
 $GLOBALS['ws_admin'] = true;
 $GLOBALS['ws_logged_in'] = true;
@@ -101,6 +102,16 @@ check(str_contains($wrapped,'data-surfside-workspace')
 check(substr_count($wrapped,'data-ss-group')===6,'All permitted navigation groups rendered');
 check(!str_contains($wrapped,'<form method="post"'),
     'Navigation wrapper creates no new write actions');
+$css = 'assets/css/staff-workspace.css';
+$js = 'assets/js/staff-workspace.js';
+check(surfside_tools_workspace_asset_version($css)
+    === substr(hash_file('sha256', SURFSIDE_TOOLS_PATH . $css), 0, 12),
+    'Workspace CSS cache key derives from actual deployed content');
+check(surfside_tools_workspace_asset_version($js)
+    === substr(hash_file('sha256', SURFSIDE_TOOLS_PATH . $js), 0, 12),
+    'Workspace JS cache key derives from actual deployed content');
+check(surfside_tools_workspace_asset_version('assets/does-not-exist.css') === SURFSIDE_TOOLS_VERSION,
+    'Missing optional file falls back to plugin version safely');
 surfside_tools_workspace_enqueue_assets();
 check($GLOBALS['ws_assets']===array('surfside-workspace','surfside-workspace'),
     'Dashboard receives scoped style and JS only');
