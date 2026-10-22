@@ -236,7 +236,7 @@ function surfside_tools_staff_weekly_update_shortcode() {
         <section class="surfside-staff-hero">
             <p class="surfside-staff-eyebrow">Weekly Update</p>
             <h1>Upload This Week&apos;s Documents</h1>
-            <p class="surfside-staff-muted">Use this page for announcements and sermon notes only. You can upload one document or both documents, review the results, then publish.</p>
+            <p class="surfside-staff-muted">Upload and review announcements or sermon notes any time. The approved documents are scheduled to replace the current ones on Saturday at 5:00 PM Eastern.</p>
         </section>
         <?php echo surfside_tools_weekly_update_shortcode(); ?>
     </div>

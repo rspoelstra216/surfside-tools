@@ -350,6 +350,9 @@ function surfside_tools_build_announcements_html($items) {
 }
 
 function surfside_tools_get_announcements_data() {
+    if (function_exists('surfside_tools_weekly_maybe_activate')) {
+        surfside_tools_weekly_maybe_activate();
+    }
     $data = get_option('surfside_tools_announcements_current');
 
     if (!is_array($data)) {
@@ -394,7 +397,10 @@ function surfside_tools_save_announcements($announcement_date, $items) {
         'timestamp'         => current_time('timestamp'),
     );
 
-    update_option('surfside_tools_announcements_current', $data, false);
+    $saved = update_option('surfside_tools_announcements_current', $data, false);
+    if (!$saved && get_option('surfside_tools_announcements_current') !== $data) {
+        return new WP_Error('surfside_announcements_save_failed', 'Current announcements could not be updated.');
+    }
 
     surfside_tools_purge_cache();
 
@@ -490,12 +496,16 @@ function surfside_weekly_docx_importer_shortcode() {
         if (empty($editable_items)) {
             $message = surfside_tools_importer_notice('No announcements were available to save.', 'error');
         } else {
-            $saved = surfside_tools_save_announcements($announcement_date_value, $editable_items);
+            $saved = surfside_tools_weekly_schedule(array(
+                'announcement_date' => $announcement_date_value,
+                'items' => $editable_items,
+            ), null);
             if (is_wp_error($saved)) {
                 $message = surfside_tools_importer_notice($saved->get_error_message(), 'error');
             } else {
                 $message = surfside_tools_importer_notice(
-                    '<strong>Weekly announcements published.</strong>',
+                    '<strong>Announcements scheduled for ' .
+                    esc_html(surfside_tools_weekly_release_label($saved['publish_at'])) . '.</strong>',
                     'success'
                 );
                 $preview_html = surfside_tools_build_announcements_html($editable_items);
@@ -532,7 +542,7 @@ function surfside_weekly_docx_importer_shortcode() {
                         $preview_html = surfside_tools_build_announcements_html($editable_items);
 
                         $message = surfside_tools_importer_notice(
-                            'Please review then click <strong>Save to Website</strong>.',
+                            'Please review then click <strong>Schedule Announcements</strong>.',
                             'success'
                         );
                     }
@@ -547,7 +557,7 @@ function surfside_weekly_docx_importer_shortcode() {
     ob_start(); ?>
     <div class="surfside-docx-importer">
         <h2>Import Weekly Announcements</h2>
-        <p>Upload the weekly announcements as a <strong>.docx</strong> file. Surfside Tools will read the numbered list, clean Word formatting, let you preview/edit the result, and save it to the existing Announcements field.</p>
+        <p>Upload the weekly announcements as a <strong>.docx</strong> file, review the numbered list, and schedule it for Saturday at 5:00 PM Eastern.</p>
 
         <?php echo $message; ?>
 
@@ -560,7 +570,7 @@ function surfside_weekly_docx_importer_shortcode() {
         <?php if (!empty($editable_items)) : ?>
             <hr>
             <h3>Editable Preview</h3>
-            <p>Verify the date, review the announcements, make any quick edits, then save to the website.</p>
+            <p>Verify the date, review the announcements, then schedule them for Saturday at 5:00 PM Eastern.</p>
 
             <form method="post" class="surfside-docx-save-form">
                 <?php wp_nonce_field('surfside_tools_save_preview', 'surfside_tools_save_preview_nonce'); ?>
@@ -585,7 +595,7 @@ function surfside_weekly_docx_importer_shortcode() {
                     <?php echo wp_kses_post($preview_html); ?>
                 </div>
 
-                <p><button type="submit" class="wp-block-button__link wp-element-button">Save to Website</button></p>
+                <p><button type="submit" class="wp-block-button__link wp-element-button">Schedule Announcements</button></p>
             </form>
         <?php elseif ($preview_html) : ?>
             <hr><h3>Parsed Preview</h3><div class="surfside-docx-preview"><?php if ($announcement_date_value) : ?><h2 class="announcement-date">Announcements for <?php echo esc_html($announcement_date_value); ?></h2><?php endif; ?><?php echo wp_kses_post($preview_html); ?></div>
@@ -783,6 +793,48 @@ add_action('wp_head', function () {
         .surfside-weekly-update-tool .surfside-weekly-publish-actions {
             margin-top: 2rem;
             text-align: center;
+        }
+
+        .surfside-weekly-update-tool .surfside-weekly-schedule-next,
+        .surfside-weekly-update-tool .surfside-weekly-schedule-status {
+            margin: 20px 0 24px;
+            border: 1px solid #c5d8eb;
+            border-radius: 14px;
+            background: #f4f8fd;
+            padding: 18px 22px;
+            color: #263c53;
+        }
+        .surfside-weekly-update-tool .surfside-weekly-schedule-status h3 {
+            margin: 4px 0 10px;
+            color: #123d70;
+            font-size: clamp(18px, 3vw, 22px);
+        }
+        .surfside-weekly-update-tool .surfside-weekly-schedule-status p {
+            margin: 0 0 10px;
+        }
+        .surfside-weekly-update-tool .surfside-weekly-schedule-status ul {
+            margin: 10px 0 18px;
+            padding-left: 21px;
+        }
+        .surfside-weekly-update-tool .surfside-weekly-schedule-eyebrow {
+            color: #2e587e;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+        }
+        .surfside-weekly-update-tool .surfside-weekly-cancel-form button {
+            background: #fff;
+            border: 1px solid #a7bcd3;
+            border-radius: 9px;
+            min-height: 42px;
+            padding: 9px 15px;
+            color: #174977;
+            cursor: pointer;
+        }
+        .surfside-weekly-update-tool .surfside-weekly-schedule-error {
+            color: #982a21;
+            font-weight: 750;
         }
 
         @media (max-width: 800px) {
@@ -1759,6 +1811,9 @@ function surfside_tools_render_sermon_notes_html($notes_text) {
 }
 
 function surfside_tools_get_message_data() {
+    if (function_exists('surfside_tools_weekly_maybe_activate')) {
+        surfside_tools_weekly_maybe_activate();
+    }
     $data = get_option('surfside_tools_message_current');
 
     if (!is_array($data)) {
@@ -1899,10 +1954,14 @@ function surfside_sermon_docx_importer_shortcode() {
             'prayer' => isset($_POST['message_prayer']) ? wp_unslash($_POST['message_prayer']) : '',
         );
 
-        $saved = surfside_tools_save_message($data);
+        $saved = surfside_tools_weekly_schedule(null, $data);
         $message = is_wp_error($saved)
             ? surfside_tools_importer_notice(esc_html($saved->get_error_message()), 'error')
-            : surfside_tools_importer_notice('<strong>Sermon notes published and archived.</strong>', 'success');
+            : surfside_tools_importer_notice(
+                '<strong>Sermon notes scheduled for ' .
+                esc_html(surfside_tools_weekly_release_label($saved['publish_at'])) . '.</strong>',
+                'success'
+            );
 
         $parsed = array(
             'title' => sanitize_text_field($data['title']),
@@ -1937,7 +1996,7 @@ function surfside_sermon_docx_importer_shortcode() {
                         $message = surfside_tools_importer_notice($result->get_error_message(), 'error');
                     } else {
                         $parsed = $result;
-                        $message = surfside_tools_importer_notice('Please review then click <strong>Save Sermon Notes</strong>.', 'success');
+                        $message = surfside_tools_importer_notice('Please review then click <strong>Schedule Sermon Notes</strong>.', 'success');
                     }
 
                     if (!empty($upload['file']) && file_exists($upload['file'])) {
@@ -1956,7 +2015,7 @@ function surfside_sermon_docx_importer_shortcode() {
     ?>
     <div class="surfside-sermon-docx-importer">
         <h2>Import Sermon Notes</h2>
-        <p>Upload the sermon notes as a <strong>.docx</strong> file. Surfside Tools will detect the title, series, date, sermon points, Scripture references, and reflection questions.</p>
+        <p>Upload the sermon notes as a <strong>.docx</strong> file. Review the title, series, and notes before scheduling Saturday at 5:00 PM Eastern.</p>
 
         <?php echo $message; ?>
 
@@ -1969,7 +2028,7 @@ function surfside_sermon_docx_importer_shortcode() {
         <?php if (is_array($parsed)) : ?>
             <hr>
             <h3>Editable Preview</h3>
-            <p>Review the message details and notes below. Make any quick edits, then save to the website.</p>
+            <p>Review the message details and notes below. Make any quick edits, then schedule the publication.</p>
 
             <form method="post" class="surfside-sermon-save-form">
                 <?php wp_nonce_field('surfside_tools_save_sermon', 'surfside_tools_save_sermon_nonce'); ?>
@@ -2015,7 +2074,7 @@ function surfside_sermon_docx_importer_shortcode() {
                     <?php endif; ?>
                 </div>
 
-                <p><button type="submit" class="wp-block-button__link wp-element-button">Save Sermon Notes</button></p>
+                <p><button type="submit" class="wp-block-button__link wp-element-button">Schedule Sermon Notes</button></p>
             </form>
         <?php endif; ?>
     </div>
@@ -2057,11 +2116,18 @@ function surfside_tools_weekly_update_shortcode() {
     $sermon = null;
     $announcement_preview_html = '';
     $sermon_preview_html = '';
-    $archive_error = '';
+    $schedule_error = '';
 
-    // Publish reviewed content.
-    if (isset($_POST['surfside_tools_weekly_publish_nonce']) && wp_verify_nonce($_POST['surfside_tools_weekly_publish_nonce'], 'surfside_tools_weekly_publish')) {
-        $published = array();
+    if (function_exists('surfside_tools_weekly_maybe_activate')) {
+        surfside_tools_weekly_maybe_activate();
+    }
+
+    // Keep the currently published documents visible until the Saturday
+    // release. Reviewed uploads are saved as a private scheduled draft.
+    if (isset($_POST['surfside_tools_weekly_publish_nonce']) &&
+        wp_verify_nonce($_POST['surfside_tools_weekly_publish_nonce'], 'surfside_tools_weekly_publish')) {
+        $staged_announcements = null;
+        $staged_sermon = null;
 
         if (isset($_POST['publish_announcements']) && $_POST['publish_announcements'] === '1') {
             $announcement_date_value = isset($_POST['announcement_date']) ? sanitize_text_field(wp_unslash($_POST['announcement_date'])) : '';
@@ -2078,8 +2144,10 @@ function surfside_tools_weekly_update_shortcode() {
             }
 
             if (!empty($announcements_items)) {
-                surfside_tools_save_announcements($announcement_date_value, $announcements_items);
-                $published[] = 'Announcements';
+                $staged_announcements = array(
+                    'announcement_date' => $announcement_date_value,
+                    'items' => $announcements_items,
+                );
                 $announcement_preview_html = surfside_tools_build_announcements_html($announcements_items);
             }
         }
@@ -2095,12 +2163,7 @@ function surfside_tools_weekly_update_shortcode() {
             );
 
             if (trim($sermon['title']) !== '' || trim($sermon['notes']) !== '') {
-                $sermon_result = surfside_tools_save_message($sermon);
-                if (is_wp_error($sermon_result)) {
-                    $archive_error = $sermon_result->get_error_message();
-                } else {
-                    $published[] = 'Sermon Notes (archived)';
-                }
+                $staged_sermon = $sermon;
                 $sermon['title'] = sanitize_text_field($sermon['title']);
                 $sermon['series'] = sanitize_text_field($sermon['series']);
                 $sermon['date'] = sanitize_text_field($sermon['date']);
@@ -2111,14 +2174,33 @@ function surfside_tools_weekly_update_shortcode() {
             }
         }
 
-        if (!empty($published)) {
-            $message = surfside_tools_importer_notice('<strong>Weekly update published.</strong><br>' . esc_html(implode(' and ', $published)) . ' updated.', 'success');
-        } elseif (!$archive_error) {
-            $message = surfside_tools_importer_notice('Nothing was selected to publish.', 'error');
+        if ($staged_announcements !== null || $staged_sermon !== null) {
+            $result = surfside_tools_weekly_schedule($staged_announcements, $staged_sermon);
+            if (is_wp_error($result)) {
+                $message = surfside_tools_importer_notice(esc_html($result->get_error_message()), 'error');
+            } else {
+                $message = surfside_tools_importer_notice(
+                    '<strong>Weekly update scheduled.</strong> New documents go live ' .
+                    esc_html(surfside_tools_weekly_release_label($result['publish_at'])) .
+                    '. The current documents stay visible until then.', 'success'
+                );
+                // No need to keep the previous editor form on screen after the
+                // scheduled version is stored; staff can upload replacements.
+                $announcements_items = array();
+                $sermon = null;
+            }
+        } else {
+            $message = surfside_tools_importer_notice('No documents were selected to schedule.', 'error');
         }
-        if ($archive_error) {
-            $message .= surfside_tools_importer_notice(esc_html($archive_error), 'error');
-        }
+    }
+
+    // Cancel only the staged update; leave published records and archive intact.
+    if (isset($_POST['surfside_tools_weekly_cancel_nonce']) &&
+        wp_verify_nonce($_POST['surfside_tools_weekly_cancel_nonce'], 'surfside_tools_weekly_cancel')) {
+        $cancelled = surfside_tools_weekly_cancel_pending();
+        $message = is_wp_error($cancelled)
+            ? surfside_tools_importer_notice(esc_html($cancelled->get_error_message()), 'error')
+            : surfside_tools_importer_notice('Scheduled update canceled. Published documents were not changed.', 'success');
     }
 
     // Restore announcements.
@@ -2203,7 +2285,7 @@ function surfside_tools_weekly_update_shortcode() {
         }
 
         if ($parsed_any) {
-            $message = surfside_tools_importer_notice('Please review then click <strong>Publish Weekly Update</strong>.', 'success');
+            $message = surfside_tools_importer_notice('Please review your documents, then click <strong>Schedule for Saturday at 5 PM</strong>.', 'success');
         } elseif (empty($errors)) {
             $message = surfside_tools_importer_notice('Please choose at least one DOCX file to upload.', 'error');
         }
@@ -2214,14 +2296,42 @@ function surfside_tools_weekly_update_shortcode() {
     }
 
     $announcement_backup = get_option('surfside_tools_announcements_backup');
+    $scheduled = function_exists('surfside_tools_weekly_pending') ? surfside_tools_weekly_pending() : array();
+    $next_release = function_exists('surfside_tools_weekly_next_release_at')
+        ? surfside_tools_weekly_next_release_at() : 0;
 
     ob_start();
     ?>
     <div class="surfside-weekly-update-tool">
         <h2>Surfside Weekly Update</h2>
-        <p>Upload the weekly announcements and/or sermon notes. Leave either file blank if you only need to update one section.</p>
+        <p>Upload and review next week's announcements and/or sermon notes. New documents go live automatically on <strong>Saturday at 5:00 PM Eastern</strong>; until then, the website and app show the currently published documents.</p>
 
         <?php echo $message; ?>
+
+        <?php if (!empty($scheduled)) : ?>
+            <section class="surfside-weekly-schedule-status" role="status" aria-label="Scheduled weekly documents">
+                <span class="surfside-weekly-schedule-eyebrow">Ready for the weekend</span>
+                <h3>Scheduled for <?php echo esc_html(surfside_tools_weekly_release_label($scheduled['publish_at'])); ?></h3>
+                <p>The existing announcements and sermon notes remain public until this time. Uploading and scheduling a replacement below updates only the selected draft section.</p>
+                <ul>
+                    <?php if (!empty($scheduled['announcements'])) : ?>
+                        <li>Announcements: <?php echo esc_html($scheduled['announcements']['announcement_date'] ?: count($scheduled['announcements']['items']) . ' items'); ?></li>
+                    <?php endif; ?>
+                    <?php if (!empty($scheduled['sermon'])) : ?>
+                        <li>Sermon notes: <?php echo esc_html($scheduled['sermon']['title'] ?: 'Untitled message'); ?></li>
+                    <?php endif; ?>
+                </ul>
+                <?php if (!empty($scheduled['last_error'])) : ?>
+                    <p class="surfside-weekly-schedule-error">Automatic release needs attention: <?php echo esc_html($scheduled['last_error']); ?></p>
+                <?php endif; ?>
+                <form method="post" class="surfside-weekly-cancel-form" onsubmit="return confirm('Cancel the scheduled weekly documents? The currently published documents will stay live.');">
+                    <?php wp_nonce_field('surfside_tools_weekly_cancel', 'surfside_tools_weekly_cancel_nonce'); ?>
+                    <button type="submit" class="surfside-staff-button-secondary">Cancel Scheduled Update</button>
+                </form>
+            </section>
+        <?php else : ?>
+            <p class="surfside-weekly-schedule-next">Next scheduled release: <strong><?php echo esc_html(surfside_tools_weekly_release_label($next_release)); ?></strong></p>
+        <?php endif; ?>
 
         <?php if (empty($announcements_items) && !is_array($sermon)) : ?>
             <form method="post" enctype="multipart/form-data" class="surfside-weekly-update-upload-form">
@@ -2275,7 +2385,7 @@ function surfside_tools_weekly_update_shortcode() {
 
                         <p>
                             <label><strong>Announcement Date</strong></label><br>
-                            <small>Please verify before publishing.</small><br>
+                            <small>Please verify before scheduling.</small><br>
                             <input type="text" name="announcement_date" value="<?php echo esc_attr($announcement_date_value); ?>" placeholder="July 4/5, 2026" style="max-width:260px;width:100%;">
                         </p>
 
@@ -2349,7 +2459,7 @@ function surfside_tools_weekly_update_shortcode() {
                 <?php endif; ?>
 
                 <p class="surfside-weekly-publish-actions">
-                    <button type="submit" class="wp-block-button__link wp-element-button">Publish Weekly Update</button>
+                    <button type="submit" class="wp-block-button__link wp-element-button">Schedule for Saturday at 5 PM</button>
                 </p>
             </form>
         <?php endif; ?>

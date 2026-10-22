@@ -34,6 +34,9 @@ jobs:
       - name: Test Weekly Update DOCX parsing
         run: php scripts/test-weekly-docx-parser.php
 
+      - name: Test Saturday Weekly Update staging and publishing
+        run: php scripts/test-weekly-schedule.php
+
       - name: Test archived sermon viewer access and queries
         run: php scripts/test-sermon-archive-viewer.php
 

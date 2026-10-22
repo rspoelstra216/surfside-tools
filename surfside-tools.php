@@ -14,6 +14,7 @@ define('SURFSIDE_TOOLS_URL', plugin_dir_url(__FILE__));
 
 require_once SURFSIDE_TOOLS_PATH . 'includes/core-weekly-tools.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/sermon-archive.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/weekly-schedule.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/youtube-sermon-archive.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/youtube-sermon-settings.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-information.php';
