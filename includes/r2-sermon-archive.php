@@ -494,7 +494,9 @@ function surfside_tools_staff_r2_sermons_shortcode() {
     }
     $notice = get_transient('surfside_r2_notice_' . get_current_user_id());
     delete_transient('surfside_r2_notice_' . get_current_user_id());
-    wp_enqueue_script('surfside-r2-sermon-upload', SURFSIDE_TOOLS_URL . 'assets/js/r2-sermon-upload.js', array(), SURFSIDE_TOOLS_VERSION, true);
+    $r2_js_path = SURFSIDE_TOOLS_PATH . 'assets/js/r2-sermon-upload.js';
+    $r2_js_version = is_file($r2_js_path) ? (string) filemtime($r2_js_path) : SURFSIDE_TOOLS_VERSION;
+    wp_enqueue_script('surfside-r2-sermon-upload', SURFSIDE_TOOLS_URL . 'assets/js/r2-sermon-upload.js', array(), $r2_js_version, true);
     wp_add_inline_script('surfside-r2-sermon-upload', 'window.SurfsideR2Upload = ' . wp_json_encode(array(
         'endpoint' => surfside_tools_r2_manager_url(), 'nonce' => wp_create_nonce('surfside_r2_browser_upload'),
     )) . ';', 'before');
@@ -552,7 +554,9 @@ function surfside_tools_staff_r2_sermons_shortcode() {
           <label for="surfside-podcast-id">Uploaded sermon</label>
           <select id="surfside-podcast-id">
             <option value="">Choose an uploaded sermon</option>
-            <?php foreach ($rows as $row) : if (($row['status'] ?? '') !== 'ready') continue;
+            <?php $podcast_visible = 0; foreach ($rows as $row) :
+              if (($row['status'] ?? '') !== 'ready' || $podcast_visible >= 12) continue;
+              ++$podcast_visible;
               $preview = surfside_tools_podcast_episode_preview($row['title'], $row['sermon_date'], $row['video_id']); ?>
               <option value="<?php echo esc_attr($row['video_id']); ?>" data-podcast-title="<?php echo esc_attr($preview['title']); ?>" data-podcast-description="<?php echo esc_attr($preview['description']); ?>" data-podcast-review="<?php echo $preview['needs_review'] ? '1' : '0'; ?>" <?php selected($highlight, $row['video_id']); ?>><?php echo esc_html($row['title']); ?></option>
             <?php endforeach; ?>
