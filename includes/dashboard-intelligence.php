@@ -7,6 +7,8 @@ if (!defined('ABSPATH')) {
 function surfside_tools_dashboard_status_data() {
     $announcements = function_exists('surfside_tools_get_announcements_data') ? (array) surfside_tools_get_announcements_data() : array();
     $message = function_exists('surfside_tools_get_message_data') ? (array) surfside_tools_get_message_data() : array();
+    $scheduled = function_exists('surfside_tools_weekly_pending')
+        ? surfside_tools_weekly_pending() : array();
 
     $announcement_items = array();
     foreach (array('items', 'announcement_items') as $key) {
@@ -70,6 +72,8 @@ function surfside_tools_dashboard_status_data() {
             'published_timestamp' => $weekly_timestamp,
             'message_title' => (string) ($message['title'] ?? ''),
             'message_date' => (string) ($message['date'] ?? ''),
+            'scheduled_at' => absint($scheduled['publish_at'] ?? 0),
+            'release_error' => (string) ($scheduled['last_error'] ?? ''),
         ),
         'calendar' => array(
             'upcoming_count' => count(array_filter(array_keys($active_event_ids))),
@@ -124,17 +128,19 @@ function surfside_tools_dashboard_evaluate_status($data) {
         'settings' => surfside_tools_staff_page_url('settings'),
     );
 
-    $now = current_time('timestamp');
-    $weekday = (int) wp_date('N', $now);
-    $monday = strtotime('monday this week 00:00:00', $now);
-    $weekly_current = !empty($data['weekly']['published_timestamp']) && $data['weekly']['published_timestamp'] >= $monday;
-
-    if ($weekly_current) {
-        $weekly = array('level' => 'good', 'label' => 'Current', 'message' => 'This week’s content has been published.');
-    } elseif ($weekday === 1) {
-        $weekly = array('level' => 'warning', 'label' => 'Attention', 'message' => 'Weekly content became stale today. Prepare this week’s update.');
+    // Weekly documents intentionally remain live until the next Saturday
+    // release. Their age is not an error and must never raise a stale alert.
+    $scheduled = absint($data['weekly']['scheduled_at'] ?? 0);
+    $release_error = (string) ($data['weekly']['release_error'] ?? '');
+    if ($scheduled && $release_error !== '') {
+        $weekly = array('level' => 'warning', 'label' => 'Release issue',
+            'message' => 'The scheduled weekly update needs attention. Open Weekly Update to review it.');
+    } elseif ($scheduled) {
+        $weekly = array('level' => 'good', 'label' => 'Scheduled',
+            'message' => 'Next documents scheduled for ' . surfside_tools_weekly_release_label($scheduled) . '.');
     } else {
-        $weekly = array('level' => 'critical', 'label' => 'Action required', 'message' => 'Weekly content is still from last week.');
+        $weekly = array('level' => 'good', 'label' => 'Published',
+            'message' => 'The published documents remain visible until the next scheduled release.');
     }
 
     $next_event_date = '';

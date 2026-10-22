@@ -1,0 +1,197 @@
+<?php
+/** Scheduled Weekly Update (Saturday 5 PM Eastern) regression. */
+define('ABSPATH', __DIR__ . '/');
+$GLOBALS['options'] = array();
+$GLOBALS['hooks'] = array();
+$GLOBALS['scheduled'] = array();
+$GLOBALS['test_user'] = true;
+$GLOBALS['test_can_upload'] = true;
+$GLOBALS['test_fail_cron'] = false;
+$GLOBALS['test_archive_failure'] = false;
+$GLOBALS['test_archive_calls'] = 0;
+$GLOBALS['test_purges'] = 0;
+$GLOBALS['test_now'] = 0;
+
+class WP_Error {
+    private $code;
+    private $message;
+    public function __construct($code, $message) { $this->code=$code; $this->message=$message; }
+    public function get_error_message() { return $this->message; }
+}
+function is_wp_error($v) { return $v instanceof WP_Error; }
+function check($ok,$msg) { if (!$ok) throw new RuntimeException($msg); }
+function add_action($name, $callback, $priority=10) { $GLOBALS['hooks'][$name][]=$callback; }
+function add_filter(...$args) {}
+function add_shortcode(...$args) {}
+function has_action(...$args) { return false; }
+function is_user_logged_in() { return $GLOBALS['test_user']; }
+function current_user_can($cap) { return $cap === 'upload_files' && $GLOBALS['test_can_upload']; }
+function get_option($name,$default=false) { return $GLOBALS['options'][$name] ?? $default; }
+function add_option($name,$value,$deprecated='',$autoload=false) {
+    if (array_key_exists($name,$GLOBALS['options'])) return false;
+    $GLOBALS['options'][$name]=$value;
+    return true;
+}
+function update_option($name,$value,$autoload=false) {
+    if (array_key_exists($name,$GLOBALS['options']) && $GLOBALS['options'][$name] === $value) return false;
+    $GLOBALS['options'][$name]=$value;
+    return true;
+}
+function delete_option($name) { $existed=array_key_exists($name,$GLOBALS['options']); unset($GLOBALS['options'][$name]); return $existed; }
+function wp_schedule_single_event($when,$hook) {
+    if ($GLOBALS['test_fail_cron']) return false;
+    $GLOBALS['scheduled'][$hook]=(int)$when; return true;
+}
+function wp_clear_scheduled_hook($hook) { unset($GLOBALS['scheduled'][$hook]); }
+function sanitize_text_field($v) { return trim(strip_tags((string)$v)); }
+function sanitize_textarea_field($v) { return trim(strip_tags((string)$v)); }
+function wp_kses_post($v) { return (string)$v; }
+function esc_html($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+function esc_attr($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+function esc_textarea($v) { return esc_html($v); }
+function wp_unslash($v) { return is_array($v) ? array_map('stripslashes',$v) : stripslashes((string)$v); }
+function current_time($fmt,$gmt=false) { return $fmt==='timestamp' ? $GLOBALS['test_now'] : '2026-10-24 17:00:00'; }
+function date_i18n($fmt,$time) { return gmdate($fmt,$time); }
+function wp_date($fmt,$timestamp=null,$timezone=null) {
+    $tz=$timezone ?: new DateTimeZone('America/New_York');
+    $date=new DateTimeImmutable('@'.($timestamp??$GLOBALS['test_now']));
+    return $date->setTimezone($tz)->format($fmt);
+}
+function wp_nonce_field($action,$name) { echo '<input name="'.esc_attr($name).'" value="test-nonce">'; }
+function wp_verify_nonce($nonce,$action) { return $nonce === 'test-nonce'; }
+function nocache_headers() {}
+function surfside_tools_sermon_archive_on_publish($data) {
+    $GLOBALS['test_archive_calls']++;
+    if ($GLOBALS['test_archive_failure'])
+        return new WP_Error('archive_failed','The sermon archive could not be saved.');
+    return true;
+}
+function has_cached_files() { return false; }
+
+require dirname(__DIR__) . '/includes/core-weekly-tools.php';
+require dirname(__DIR__) . '/includes/weekly-schedule.php';
+
+$tz = new DateTimeZone('America/New_York');
+function eastern($date) { return (new DateTimeImmutable($date,new DateTimeZone('America/New_York')))->getTimestamp(); }
+$friday=eastern('2026-10-23 13:00:00');
+$saturday=eastern('2026-10-24 17:00:00');
+check(surfside_tools_weekly_next_release_at($friday)===$saturday,'Friday release is Saturday 5 PM');
+check(surfside_tools_weekly_next_release_at(eastern('2026-10-24 16:59:59'))===$saturday,
+    'Before 5 PM on Saturday is still this Saturday');
+check(surfside_tools_weekly_next_release_at($saturday)===eastern('2026-10-31 17:00:00'),
+    'At exactly 5 PM Saturday moves to next weekend');
+check(surfside_tools_weekly_next_release_at(eastern('2026-11-01 08:00:00'))===eastern('2026-11-07 17:00:00'),
+    'Fall DST uses Eastern wall clock for following Saturday');
+check(surfside_tools_weekly_next_release_at(eastern('2027-03-13 18:00:00'))===eastern('2027-03-20 17:00:00'),
+    'Spring DST uses Eastern wall clock for following Saturday');
+check(strpos(surfside_tools_weekly_release_label($saturday),'5:00 PM EDT')!==false,'Schedule label includes EDT');
+
+$old_ann=array('announcement_date'=>'October 17/18, 2026','items'=>array('Previous announcement'),
+    'announcements'=>'<ol><li>Previous announcement</li></ol>','timestamp'=>1);
+$old_sermon=array('title'=>'Previous Message','series'=>'Old series','date'=>'October 17, 2026',
+    'main_heading'=>'Old title','notes'=>'Old notes','prayer'=>'Old prayer','timestamp'=>1);
+$GLOBALS['options']['surfside_tools_announcements_current']=$old_ann;
+$GLOBALS['options']['surfside_tools_message_current']=$old_sermon;
+$GLOBALS['test_now']=$friday;
+$queued=surfside_tools_weekly_schedule(array('announcement_date'=>'October 24/25, 2026','items'=>array(
+    'New announcement','  Second announcement  ')),array(
+        'title'=>'Next Message','notes'=>'New notes','date'=>'October 24/25, 2026'),$friday);
+check(!is_wp_error($queued)&&$queued['publish_at']===$saturday,'Both documents scheduled successfully');
+check($GLOBALS['scheduled'][SURFSIDE_TOOLS_WEEKLY_RELEASE_HOOK]===$saturday,'WP-Cron event set at the release time');
+check(get_option('surfside_tools_announcements_current')===$old_ann
+    && get_option('surfside_tools_message_current')===$old_sermon,
+    'Staging does not expose new data or overwrite last week');
+check($GLOBALS['test_archive_calls']===0 && $GLOBALS['test_purges']===0,
+    'Staging does not archive or purge public content');
+
+$changed=surfside_tools_weekly_schedule(array(
+    'announcement_date'=>'October 24/25, 2026','items'=>array('Corrected announcement')),null,$friday+60);
+check($changed['sermon']['title']==='Next Message' &&
+    $changed['announcements']['items']===array('Corrected announcement'),
+    'Correcting only announcements preserves the staged sermon notes');
+check(surfside_tools_weekly_maybe_activate($saturday-1)===false,'One second early does not publish');
+check(get_option('surfside_tools_announcements_current')===$old_ann &&
+    get_option('surfside_tools_message_current')===$old_sermon,'Both public options unchanged until cutoff');
+
+$GLOBALS['test_now']=$saturday;
+check(surfside_tools_weekly_maybe_activate($saturday)===true,'Queued documents activate at Saturday 5 PM');
+$published_ann=surfside_tools_get_announcements_data();
+$published_sermon=surfside_tools_get_message_data();
+check($published_ann['items']===array('Corrected announcement') &&
+    $published_sermon['title']==='Next Message','Both documents appear in public getters after release');
+check(get_option('surfside_tools_announcements_backup')['items']===array('Previous announcement') &&
+    get_option('surfside_tools_message_backup')['title']==='Previous Message',
+    'Previous publication backed up at activation, not during stage');
+check($GLOBALS['test_archive_calls']===1 && !surfside_tools_weekly_pending() &&
+    !isset($GLOBALS['scheduled'][SURFSIDE_TOOLS_WEEKLY_RELEASE_HOOK]),
+    'Archive happens once and draft/cron are removed after successful release');
+check(surfside_tools_weekly_maybe_activate($saturday+1)===false &&
+    $GLOBALS['test_archive_calls']===1,'Repeat cron/public reads are idempotent');
+
+$nextSat=eastern('2026-10-31 17:00:00');
+$planned=surfside_tools_weekly_schedule(null,array('title'=>'November Sermon','notes'=>'Nov notes'),$saturday+30);
+check($planned['publish_at']===$nextSat,'Another upload following the cutoff targets next weekend');
+check(surfside_tools_weekly_cancel_pending()===true,'Authorized staff can cancel pending release');
+check(!surfside_tools_weekly_pending() && !isset($GLOBALS['scheduled'][SURFSIDE_TOOLS_WEEKLY_RELEASE_HOOK]),
+    'Cancel removes the draft and its cron event');
+check(get_option('surfside_tools_message_current')['title']==='Next Message',
+    'Cancel does not change published sermon');
+
+$GLOBALS['test_can_upload']=false;
+check(is_wp_error(surfside_tools_weekly_schedule(null,array('title'=>'Wrong','notes'=>'Denied'),$saturday+40)),
+    'Unauthorized uploader cannot schedule');
+check(is_wp_error(surfside_tools_weekly_cancel_pending()),'Unauthorized person cannot cancel');
+$GLOBALS['test_can_upload']=true;
+check(is_wp_error(surfside_tools_weekly_schedule(null,null,$saturday+40)),
+    'Empty upload cannot schedule');
+
+$GLOBALS['test_fail_cron']=true;
+$failedCron=surfside_tools_weekly_schedule(array('announcement_date'=>'Oct 31','items'=>array('Draft')),null,$saturday+40);
+check(is_wp_error($failedCron) &&
+    !empty(surfside_tools_weekly_pending()['last_error']) &&
+    get_option('surfside_tools_announcements_current')['items']===array('Corrected announcement'),
+    'Failed event registration warns staff without publishing draft');
+$GLOBALS['test_fail_cron']=false;
+$planned=surfside_tools_weekly_schedule(null,array('title'=>'Fix','notes'=>'Pending notes'),$saturday+41);
+check(empty($planned['last_error']) &&
+    $planned['announcements']['items']===array('Draft') &&
+    $planned['sermon']['title']==='Fix','Retry clears cron error and merges both sections');
+
+$GLOBALS['test_archive_failure']=true;
+$before=get_option('surfside_tools_message_current');
+$beforeAnn=get_option('surfside_tools_announcements_current');
+$failed=surfside_tools_weekly_maybe_activate($nextSat);
+check(is_wp_error($failed) &&
+    get_option('surfside_tools_message_current')===$before &&
+    get_option('surfside_tools_announcements_current')===$beforeAnn,
+    'Archive failure leaves both last-week documents visible');
+check(surfside_tools_weekly_pending()['retry_after']===$nextSat+300 &&
+    $GLOBALS['scheduled'][SURFSIDE_TOOLS_WEEKLY_RELEASE_HOOK]===$nextSat+300,
+    'Archive failure schedules five-minute retry');
+check(surfside_tools_weekly_maybe_activate($nextSat+1)===false,
+    'Retry backoff avoids repeated archive writes on every visitor');
+
+$GLOBALS['test_archive_failure']=false;
+$GLOBALS['test_now']=$nextSat+300;
+check(surfside_tools_weekly_maybe_activate($nextSat+300)===true,
+    'Retry publishes both sections once archive recovers');
+check(get_option('surfside_tools_message_current')['title']==='Fix' &&
+    get_option('surfside_tools_announcements_current')['items']===array('Draft'),
+    'Retry publishes complete intended release');
+
+$screen=surfside_tools_weekly_update_shortcode();
+check(strpos($screen,'Saturday at 5:00 PM Eastern')!==false &&
+    strpos($screen,'Next scheduled release')!==false,
+    'Staff screen documents new Saturday release and status');
+check(strpos($screen,'Publish Weekly Update')===false,
+    'Main weekly flow no longer advertises immediate publication');
+
+$dashboard=file_get_contents(dirname(__DIR__) . '/includes/dashboard-intelligence.php');
+$overview=file_get_contents(dirname(__DIR__) . '/includes/dashboard-overview.php');
+check(strpos($dashboard,'Weekly content became stale')===false &&
+    strpos($dashboard,'still from last week')===false &&
+    strpos($overview,'Weekly content became stale')===false &&
+    strpos($overview,'still from last week')===false,
+    'Tuesday stale warnings and week-old alerts removed from both dashboard evaluators');
+
+echo "PASS: Weekly scheduled release, Easter DST, merges, archive failure/retry, cancel, access, and dashboard\n";

@@ -33,37 +33,9 @@ function surfside_tools_dashboard_current_evaluation($data) {
     $evaluation = surfside_tools_dashboard_evaluate_status($data);
     $statuses = $evaluation['statuses'];
 
-    $now = current_time('timestamp');
-    $weekday = (int) wp_date('N', $now);
-    $monday = strtotime('monday this week 00:00:00', $now);
-    $weekly_timestamp = surfside_tools_dashboard_visible_announcement_timestamp(
-        $data['weekly']['announcement_date'] ?? '',
-        $data['weekly']['published_timestamp'] ?? 0
-    );
-    $weekly_current = $weekly_timestamp && $weekly_timestamp >= $monday;
-
-    if ($weekly_current) {
-        $statuses['weekly'] = array(
-            'level' => 'good',
-            'label' => 'Current',
-            'message' => 'This week’s content has been published.',
-            'url' => surfside_tools_staff_page_url('weekly-update'),
-        );
-    } elseif ($weekday === 1) {
-        $statuses['weekly'] = array(
-            'level' => 'warning',
-            'label' => 'Attention',
-            'message' => 'Weekly content became stale today. Prepare this week’s update.',
-            'url' => surfside_tools_staff_page_url('weekly-update'),
-        );
-    } else {
-        $statuses['weekly'] = array(
-            'level' => 'critical',
-            'label' => 'Action required',
-            'message' => 'Weekly content is still from last week.',
-            'url' => surfside_tools_staff_page_url('weekly-update'),
-        );
-    }
+    // Weekly Update is deliberately scheduled for Saturday at 5 PM.
+    // Reuse the shared status, not the old Monday/Tuesday stale-content
+    // overrides, so the dashboard never nags about last week's documents.
 
     if (empty($data['calendar']['next'])) {
         $statuses['calendar'] = array(
@@ -231,7 +203,7 @@ function surfside_tools_dashboard_overview_shortcode() {
                     <div class="surfside-dashboard-status-content">
                         <?php echo surfside_tools_dashboard_stat_block($card['metric'], $card['metric_label']); ?>
                         <?php foreach ($card['details'] as $detail) : ?><p class="surfside-dashboard-detail"><?php echo wp_kses_post($detail); ?></p><?php endforeach; ?>
-                        <?php if ($key !== 'weekly' || ($status['level'] ?? 'good') === 'good') : ?><p class="surfside-dashboard-status-message"><?php echo esc_html($status['message']); ?></p><?php endif; ?>
+                        <p class="surfside-dashboard-status-message"><?php echo esc_html($status['message']); ?></p>
                         <div class="surfside-staff-actions">
                             <a class="<?php echo $key === 'weekly' ? 'surfside-staff-button' : 'surfside-staff-button-secondary'; ?>" href="<?php echo esc_url($status['url']); ?>"><?php echo esc_html(surfside_tools_dashboard_action_label($key, $status)); ?> <span class="surfside-staff-arrow">›</span></a>
                             <?php if ($key === 'weekly') : ?>
