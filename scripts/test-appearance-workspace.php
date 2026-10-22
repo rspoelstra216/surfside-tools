@@ -93,8 +93,10 @@ require dirname(__DIR__).'/includes/site-information-manager.php';
 $photos=surfside_tools_staff_homepage_compact_shortcode();
 check(substr_count($photos,'class="surfside-homepage-photo"')===3,
     'Homepage editor renders the existing three images');
-check(substr_count($photos,'data-homepage-move-up')===3
-    && substr_count($photos,'data-homepage-move-down')===3
+preg_match_all('/<button\b[^>]*\bdata-homepage-move-up\b/', $photos, $upButtons);
+preg_match_all('/<button\b[^>]*\bdata-homepage-move-down\b/', $photos, $downButtons);
+check(count($upButtons[0])===3
+    && count($downButtons[0])===3
     && strpos($photos,'Move photo 1 up')!==false
     && strpos($photos,'Move photo 3 down')!==false,
     'Home gallery provides accessible move buttons for every photo');
