@@ -12,7 +12,29 @@
   const progress = root.querySelector("#surfside-r2-progress");
   const cancel = root.querySelector("#surfside-r2-cancel");
   const submit = form.querySelector('button[type="submit"]');
+  const podcastSelect = root.querySelector("#surfside-podcast-id");
+  const podcastEmpty = root.querySelector("#surfside-podcast-empty");
+  const podcastDetails = root.querySelector("#surfside-podcast-details");
+  const podcastTitle = root.querySelector("#surfside-podcast-title");
+  const podcastDescription = root.querySelector("#surfside-podcast-description");
+  const podcastReview = root.querySelector("#surfside-podcast-review");
   let active = null;
+
+  const showPodcastPreview = () => {
+    if (!podcastSelect) return;
+    const option = podcastSelect.selectedOptions[0];
+    const selected = Boolean(option && option.value);
+    podcastEmpty.hidden = selected;
+    podcastDetails.hidden = !selected;
+    if (!selected) return;
+    podcastTitle.textContent = option.dataset.podcastTitle || "";
+    podcastDescription.textContent = option.dataset.podcastDescription || "";
+    podcastReview.hidden = option.dataset.podcastReview !== "1";
+  };
+  if (podcastSelect) {
+    podcastSelect.addEventListener("change", showPodcastPreview);
+    showPodcastPreview();
+  }
 
   const message = (text) => { status.textContent = text; };
   const request = async (route, payload) => {
@@ -89,7 +111,21 @@
       await request("complete", {video_id: id});
       progress.value = 100;
       message("Uploaded and verified. Refresh this page to see the updated archive status.");
-      idField.querySelector('option[value="' + id + '"]').disabled = true;
+      const uploadedOption = idField.querySelector('option[value="' + id + '"]');
+      uploadedOption.disabled = true;
+      if (podcastSelect && !podcastSelect.querySelector('option[value="' + id + '"]')) {
+        const newOption = document.createElement("option");
+        newOption.value = id;
+        newOption.textContent = uploadedOption.textContent.replace(/^✓\s*/, "");
+        newOption.dataset.podcastTitle = uploadedOption.dataset.podcastTitle || "";
+        newOption.dataset.podcastDescription = uploadedOption.dataset.podcastDescription || "";
+        newOption.dataset.podcastReview = uploadedOption.dataset.podcastReview || "1";
+        podcastSelect.appendChild(newOption);
+      }
+      if (podcastSelect) {
+        podcastSelect.value = id;
+        showPodcastPreview();
+      }
       fileField.value = "";
     } catch (error) {
       message(error.message || "Upload failed.");

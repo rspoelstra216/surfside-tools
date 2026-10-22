@@ -470,8 +470,8 @@ function surfside_tools_r2_ready_url($id) {
 function surfside_tools_staff_r2_sermons_shortcode() {
     if (function_exists('surfside_tools_prevent_cache')) surfside_tools_prevent_cache();
     if (function_exists('surfside_tools_staff_enqueue_styles')) surfside_tools_staff_enqueue_styles();
-    if (!is_user_logged_in()) return surfside_tools_staff_login_box('Sign in to manage Roku sermon files.');
-    if (!current_user_can('upload_files')) return '<div class="surfside-staff-shell"><p>You do not have permission to manage sermon files.</p></div>';
+    if (!is_user_logged_in()) return surfside_tools_staff_login_box('Sign in to manage weekly media publishing.');
+    if (!current_user_can('upload_files')) return '<div class="surfside-staff-shell"><p>You do not have permission to manage weekly media.</p></div>';
     $schema = surfside_tools_r2_ensure_table();
     $cfg = surfside_tools_r2_config();
     $master = surfside_tools_r2_master_id();
@@ -494,15 +494,17 @@ function surfside_tools_staff_r2_sermons_shortcode() {
     }
     $notice = get_transient('surfside_r2_notice_' . get_current_user_id());
     delete_transient('surfside_r2_notice_' . get_current_user_id());
-    wp_enqueue_script('surfside-r2-sermon-upload', SURFSIDE_TOOLS_URL . 'assets/js/r2-sermon-upload.js', array(), SURFSIDE_TOOLS_VERSION, true);
+    $r2_js_path = SURFSIDE_TOOLS_PATH . 'assets/js/r2-sermon-upload.js';
+    $r2_js_version = is_file($r2_js_path) ? (string) filemtime($r2_js_path) : SURFSIDE_TOOLS_VERSION;
+    wp_enqueue_script('surfside-r2-sermon-upload', SURFSIDE_TOOLS_URL . 'assets/js/r2-sermon-upload.js', array(), $r2_js_version, true);
     wp_add_inline_script('surfside-r2-sermon-upload', 'window.SurfsideR2Upload = ' . wp_json_encode(array(
         'endpoint' => surfside_tools_r2_manager_url(), 'nonce' => wp_create_nonce('surfside_r2_browser_upload'),
     )) . ';', 'before');
     ob_start(); ?>
     <div class="surfside-staff-shell surfside-yt-manager" id="surfside-r2-sermons">
       <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_youtube_manager_url()); ?>">← Back to Message Archive</a></div>
-      <section class="surfside-staff-hero"><p class="surfside-staff-eyebrow">Website · Messages · Roku</p>
-        <h1>Roku Sermon Copies</h1><p class="surfside-staff-muted">YouTube remains the public archive. Upload the weekly MP4 to Cloudflare R2. YouTube remains the source for sermon titles and series.</p>
+      <section class="surfside-staff-hero"><p class="surfside-staff-eyebrow">Messages &amp; Media · Weekly Publishing</p>
+        <h1>Weekly Media Publishing</h1><p class="surfside-staff-muted">Find the weekly YouTube message, upload its MP4 for Roku, and prepare the matching podcast episode using the same sermon metadata.</p>
       </section>
       <?php if (is_array($notice)) : ?><p role="status" style="padding:12px;border:1px solid #b8c9dc"><?php echo esc_html($notice['text']); ?></p><?php endif; ?>
       <?php if (is_wp_error($schema)) : ?><p><?php echo esc_html($schema->get_error_message()); ?></p>
@@ -533,8 +535,8 @@ function surfside_tools_staff_r2_sermons_shortcode() {
             <label for="surfside-r2-id">YouTube message</label>
             <select id="surfside-r2-id" required>
               <option value="">Choose a YouTube video</option>
-              <?php foreach ($rows as $row) : ?>
-                <option value="<?php echo esc_attr($row['video_id']); ?>" <?php if ($highlight === $row['video_id']) echo 'selected'; ?> <?php disabled(($row['status'] ?? '') === 'ready'); ?>><?php echo esc_html((($row['status'] ?? '') === 'ready' ? '✓ ' : '') . $row['title'] . ' (' . $row['video_id'] . ')'); ?></option>
+              <?php foreach ($rows as $row) : $preview = surfside_tools_podcast_episode_preview($row['title'], $row['sermon_date'], $row['video_id']); ?>
+                <option value="<?php echo esc_attr($row['video_id']); ?>" data-podcast-title="<?php echo esc_attr($preview['title']); ?>" data-podcast-description="<?php echo esc_attr($preview['description']); ?>" data-podcast-review="<?php echo $preview['needs_review'] ? '1' : '0'; ?>" <?php if ($highlight === $row['video_id']) echo 'selected'; ?> <?php disabled(($row['status'] ?? '') === 'ready'); ?>><?php echo esc_html((($row['status'] ?? '') === 'ready' ? '✓ ' : '') . $row['title'] . ' (' . $row['video_id'] . ')'); ?></option>
               <?php endforeach; ?>
             </select>
             <label for="surfside-r2-file" style="display:block;margin-top:12px">Roku-ready MP4 (H.264/AAC, faststart)</label>
@@ -545,6 +547,27 @@ function surfside_tools_staff_r2_sermons_shortcode() {
           </form>
           <progress id="surfside-r2-progress" max="100" value="0" style="display:none;width:100%;margin-top:15px"></progress>
           <p role="status" aria-live="polite" id="surfside-r2-status"></p>
+        </section>
+        <section class="surfside-yt-panel" id="surfside-podcast-preview">
+          <h2>Podcast episode preview</h2>
+          <p class="surfside-yt-muted">Preview the title and description from YouTube metadata for an MP4 already verified in R2. Podcast processing and Spreaker publishing are not connected yet; this page will not create or publish an episode.</p>
+          <label for="surfside-podcast-id">Uploaded sermon</label>
+          <select id="surfside-podcast-id">
+            <option value="">Choose an uploaded sermon</option>
+            <?php $podcast_visible = 0; foreach ($rows as $row) :
+              if (($row['status'] ?? '') !== 'ready' || $podcast_visible >= 12) continue;
+              ++$podcast_visible;
+              $preview = surfside_tools_podcast_episode_preview($row['title'], $row['sermon_date'], $row['video_id']); ?>
+              <option value="<?php echo esc_attr($row['video_id']); ?>" data-podcast-title="<?php echo esc_attr($preview['title']); ?>" data-podcast-description="<?php echo esc_attr($preview['description']); ?>" data-podcast-review="<?php echo $preview['needs_review'] ? '1' : '0'; ?>" <?php selected($highlight, $row['video_id']); ?>><?php echo esc_html($row['title']); ?></option>
+            <?php endforeach; ?>
+          </select>
+          <p id="surfside-podcast-empty" class="surfside-yt-muted">Select an uploaded sermon to see its proposed podcast metadata.</p>
+          <div id="surfside-podcast-details" hidden>
+            <p><strong>Proposed episode title:</strong> <span id="surfside-podcast-title"></span></p>
+            <p><strong>Proposed description:</strong></p>
+            <p id="surfside-podcast-description" style="white-space:pre-line"></p>
+            <p id="surfside-podcast-review" role="status" hidden>Review this title/date before publishing: it does not fully match the expected weekly naming format.</p>
+          </div>
         </section>
       <?php endif; ?>
     </div>

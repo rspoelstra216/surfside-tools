@@ -104,6 +104,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/volunteer-needs.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/member-engagement.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/sermon-archive-viewer.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/youtube-message-manager.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/podcast-publishing.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/r2-sermon-archive.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/youtube-owner-file-matching.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/youtube-owner-manual-matching.php';

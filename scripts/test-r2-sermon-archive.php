@@ -180,6 +180,9 @@ foreach (array(
     'surfside-r2-upload-form',
     'surfside-r2-id',
     'surfside-r2-progress',
+    'Weekly Media Publishing',
+    'surfside-podcast-id',
+    'surfside-podcast-details',
 ) as $weekly) {
     assert_r2(strpos($staff_ui, $weekly) !== false,
         'Roku Copies retains the weekly workflow: ' . $weekly);

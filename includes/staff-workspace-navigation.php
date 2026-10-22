@@ -30,7 +30,7 @@ function surfside_tools_workspace_catalog() {
         'media' => array('title' => 'Messages & Media', 'items' => array(
             array('label' => 'Message Archive', 'url' => $messages, 'search' => 'YouTube sermons metadata videos review'),
             array('label' => 'Sermon Series', 'url' => add_query_arg('tab', 'series', $messages), 'search' => 'YouTube playlists grouping'),
-            array('label' => 'Roku MP4 Uploads', 'url' => $roku, 'search' => 'R2 cloudflare video copies find this week message'),
+            array('label' => 'Weekly Media', 'url' => $roku, 'search' => 'weekly media publishing sermon podcast Spreaker R2 Cloudflare Roku MP4 video audio find this week message'),
             array('label' => 'Streaming', 'url' => surfside_tools_staff_page_url('site-settings/streaming'), 'search' => 'Cloudflare live recording exclusions livestream notifications Twitch Facebook YouTube Watch Live announcement video connection settings', 'cap' => 'manage_options'),
             array('label' => 'Live Slides', 'url' => surfside_tools_staff_page_url('mobile-app/live-slides'), 'search' => 'ProPresenter slides viewer colors fonts'),
         )),
