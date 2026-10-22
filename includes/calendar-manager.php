@@ -581,16 +581,34 @@ function surfside_tools_calendar_manager_shortcode() {
         <?php echo $notice; ?>
 
         <div class="surfside-calendar-note surfside-calendar-status">
-            <div>
-                <strong>Manage Church Events</strong><br>
-                Add, update, and organize the events that appear on the Surfside website.
+            <div class="surfside-calendar-status-intro">
+                <span class="surfside-calendar-status-eyebrow">Church Calendar</span>
+                <strong>Manage your events in one place</strong>
+                <p>Add new events, find existing ones, or adjust an event's dates and recurrence.</p>
             </div>
-            <div class="surfside-calendar-status-pill"><?php echo esc_html($managed_events['total']); ?> active event<?php echo $managed_events['total'] === 1 ? '' : 's'; ?></div>
+            <div class="surfside-calendar-status-side">
+                <span class="surfside-calendar-status-pill">
+                    <?php echo esc_html($managed_events['total']); ?>
+                    <?php echo $event_search !== '' ? ' matching event' : ' active event'; ?><?php echo $managed_events['total'] === 1 ? '' : 's'; ?>
+                </span>
+                <nav class="surfside-calendar-section-jumps" aria-label="Calendar event actions">
+                    <a href="#surfside-calendar-event-list">Browse events</a>
+                    <a class="surfside-calendar-new-event-link" href="<?php echo esc_url(remove_query_arg(array('edit_event', 'event_page')) . '#surfside-calendar-event-editor'); ?>">
+                        <?php echo $editing ? 'Add another event' : 'Add an event'; ?>
+                    </a>
+                </nav>
+            </div>
         </div>
 
-        <div class="surfside-calendar-layout">
-            <section class="surfside-calendar-panel">
-                <h2><?php echo $editing ? 'Edit Event' : 'Add Event'; ?></h2>
+        <div class="surfside-calendar-layout<?php echo $editing ? ' is-editing' : ''; ?>">
+            <section id="surfside-calendar-event-editor" class="surfside-calendar-panel surfside-calendar-panel-editor" aria-labelledby="surfside-calendar-editor-title">
+                <div class="surfside-calendar-panel-heading">
+                    <span class="surfside-calendar-panel-eyebrow"><?php echo $editing ? 'Editing existing event' : 'New calendar event'; ?></span>
+                    <h2 id="surfside-calendar-editor-title"><?php echo $editing ? 'Edit Event' : 'Add Event'; ?></h2>
+                    <p><?php echo $editing
+                        ? 'Update the event below. The changes take effect when you save.'
+                        : 'Fill in the event details below. You can add a one-time, recurring, or multi-day event.'; ?></p>
+                </div>
                 <form method="post" class="surfside-calendar-form" data-default-duration="<?php echo esc_attr(function_exists('surfside_tools_get_setting') ? (int) surfside_tools_get_setting('default_event_duration', 60) : 60); ?>">
                     <?php wp_nonce_field('surfside_calendar_manager', 'surfside_calendar_nonce'); ?>
                     <input type="hidden" name="surfside_calendar_action" value="save">
@@ -736,21 +754,35 @@ function surfside_tools_calendar_manager_shortcode() {
                 <?php endif; ?>
             </section>
 
-            <section class="surfside-calendar-panel">
+            <section id="surfside-calendar-event-list" class="surfside-calendar-panel surfside-calendar-panel-list" aria-labelledby="surfside-calendar-list-title">
                 <div class="surfside-calendar-manage-heading">
                     <div>
-                        <h2>Manage Events</h2>
-                        <p class="surfside-staff-muted">Search or browse all event records, including events farther in the future.</p>
+                        <h2 id="surfside-calendar-list-title">Browse Events</h2>
+                        <p class="surfside-staff-muted">Find upcoming and recurring events, including events scheduled farther in the future.</p>
                     </div>
                     <form method="get" class="surfside-calendar-search-form">
                         <label class="screen-reader-text" for="surfside-event-search">Search events</label>
                         <input id="surfside-event-search" type="search" name="event_search" value="<?php echo esc_attr($event_search); ?>" placeholder="Search events or locations">
-                        <button type="submit">Search</button>
+                        <button type="submit" aria-label="Search calendar events">Search</button>
                         <?php if ($event_search !== '') : ?><a href="<?php echo esc_url(remove_query_arg(array('event_search','event_page'))); ?>">Clear</a><?php endif; ?>
                     </form>
                 </div>
+                <?php if ($event_search !== '') : ?>
+                    <p class="surfside-calendar-result-summary" role="status">
+                        <?php echo esc_html($managed_events['total']); ?>
+                        result<?php echo $managed_events['total'] === 1 ? '' : 's'; ?>
+                        for <strong><?php echo esc_html($event_search); ?></strong>
+                    </p>
+                <?php endif; ?>
                 <?php if (empty($events)) : ?>
-                    <p class="surfside-staff-muted">No matching events were found.</p>
+                    <div class="surfside-calendar-empty-results">
+                        <p><?php echo $event_search !== '' ? 'No events matched your search.' : 'No active upcoming events have been added yet.'; ?></p>
+                        <?php if ($event_search !== '') : ?>
+                            <a href="<?php echo esc_url(remove_query_arg(array('event_search', 'event_page')) . '#surfside-calendar-event-list'); ?>">Show all events</a>
+                        <?php else : ?>
+                            <a href="#surfside-calendar-event-editor">Add your first event</a>
+                        <?php endif; ?>
+                    </div>
                 <?php else : ?>
                     <div class="surfside-calendar-event-list">
                         <?php foreach ($events as $event) : ?>
@@ -763,21 +795,21 @@ function surfside_tools_calendar_manager_shortcode() {
                                     <?php if (!empty($event['location'])) : ?><p><?php echo esc_html($event['location']); ?></p><?php endif; ?>
                                 </div>
                                 <div class="surfside-calendar-event-actions">
-                                    <a href="<?php echo esc_url(add_query_arg('edit_event', $event['id'])); ?>">Edit</a>
+                                    <a class="surfside-calendar-edit-action" aria-label="Edit <?php echo esc_attr($event['title']); ?>" href="<?php echo esc_url(add_query_arg('edit_event', $event['id']) . '#surfside-calendar-event-editor'); ?>">Edit</a>
                                     <?php if (($event['recurrence_type'] ?? 'none') !== 'none' && !empty($event['next_occurrence_date'])) : ?>
                                         <form method="post" onsubmit="return confirm('<?php echo esc_js('Remove only the ' . surfside_tools_calendar_format_date($event['next_occurrence_date']) . ' occurrence?'); ?>');">
                                             <?php wp_nonce_field('surfside_calendar_manager', 'surfside_calendar_nonce'); ?>
                                             <input type="hidden" name="surfside_calendar_action" value="delete_occurrence">
                                             <input type="hidden" name="event_id" value="<?php echo esc_attr($event['id']); ?>">
                                             <input type="hidden" name="occurrence_date" value="<?php echo esc_attr($event['next_occurrence_date']); ?>">
-                                            <button type="submit">Skip next</button>
+                                            <button type="submit" aria-label="Skip next occurrence of <?php echo esc_attr($event['title']); ?>">Skip next</button>
                                         </form>
                                     <?php endif; ?>
                                     <form method="post" onsubmit="return confirm('Move this event to trash?');">
                                         <?php wp_nonce_field('surfside_calendar_manager', 'surfside_calendar_nonce'); ?>
                                         <input type="hidden" name="surfside_calendar_action" value="delete">
                                         <input type="hidden" name="event_id" value="<?php echo esc_attr($event['id']); ?>">
-                                        <button type="submit">Delete</button>
+                                        <button type="submit" class="surfside-calendar-delete-action" aria-label="Delete <?php echo esc_attr($event['title']); ?>">Delete</button>
                                     </form>
                                 </div>
                             </article>
@@ -805,7 +837,7 @@ function surfside_tools_calendar_manager_shortcode() {
                             <article class="surfside-calendar-past-event">
                                 <strong><?php echo esc_html($event['title']); ?></strong>
                                 <span><?php echo esc_html(surfside_tools_calendar_format_date($event['date'])); ?></span>
-                                <a href="<?php echo esc_url(add_query_arg('edit_event', $event['id'])); ?>">Edit</a>
+                                <a aria-label="Edit past event <?php echo esc_attr($event['title']); ?>" href="<?php echo esc_url(add_query_arg('edit_event', $event['id']) . '#surfside-calendar-event-editor'); ?>">Edit</a>
                             </article>
                         <?php endforeach; ?>
                     </div>
