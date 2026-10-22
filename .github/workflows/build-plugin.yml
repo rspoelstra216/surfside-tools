@@ -114,6 +114,9 @@ jobs:
       - name: Test streaming page admin-only provisioning
         run: php scripts/test-streaming-page-provisioning.php
 
+      - name: Test consolidated streaming workspace
+        run: php scripts/test-streaming-workspace.php
+
   build-plugin:
     name: Build installable plugin ZIP
     if: github.event_name != 'pull_request'

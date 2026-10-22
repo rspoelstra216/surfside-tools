@@ -1,0 +1,62 @@
+/* Streaming workspace: Cloudflare, Watch Live, and Twitch in one admin screen. */
+.surfside-streaming-tabs {
+  display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 24px;padding:7px;
+  border-radius:14px;background:#f0f5fb;border:1px solid #d7e2ef;
+}
+.surfside-streaming-tabs a{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:43px;padding:10px 15px;border:1px solid transparent;border-radius:9px;
+  color:#23476e!important;text-decoration:none!important;font-weight:750;font-size:14px;line-height:1.25;
+}
+.surfside-streaming-tabs a:hover{background:#e0edfa!important;color:#064b91!important}
+.surfside-streaming-tabs a.is-active,.surfside-streaming-tabs a[aria-current=page]{
+  background:#fff!important;color:#06396f!important;border-color:#aecbe5;
+  box-shadow:0 2px 9px rgba(13,44,79,.07);
+}
+.surfside-streaming-tabs a:focus-visible{
+  outline:3px solid #88b9ff;outline-offset:2px;
+}
+.surfside-streaming-watch>.surfside-information-manager{
+  padding:0;max-width:none;width:100%;
+}
+.surfside-streaming-watch>.surfside-information-manager .surfside-information-form{
+  margin-top:0;
+}
+.surfside-streaming-twitch #surfside-twitch{
+  padding:0;margin:0;border:1px solid #d7e2ef;border-radius:13px;background:#fff;overflow:hidden;
+}
+.surfside-streaming-twitch #surfside-twitch>summary{
+  display:none;
+}
+.surfside-streaming-twitch .surfside-integration-body{
+  padding:clamp(18px,3vw,28px);
+}
+.surfside-streaming-twitch .surfside-integration-body>p{margin:0 0 15px}
+.surfside-streaming-twitch .surfside-twitch-form{
+  display:grid;gap:10px;max-width:650px;margin:16px 0 20px;
+}
+.surfside-streaming-twitch .surfside-twitch-form input[type=text],
+.surfside-streaming-twitch .surfside-twitch-form input[type=password]{
+  width:100%;min-height:44px;padding:10px 12px;color:#172b4a;
+  background:#fff;border:1px solid #9eafc4;border-radius:9px;font:inherit;
+}
+.surfside-streaming-twitch .surfside-front-secondary-button{
+  display:inline-block;padding:10px 16px;border:1px solid #0b5fa5;background:#fff;
+  border-radius:9px;color:#0b4f9c;min-height:42px;font:inherit;font-weight:750;cursor:pointer;
+}
+.surfside-streaming-twitch .surfside-front-secondary-button:hover{background:#eaf3fb}
+.surfside-streaming-twitch .surfside-front-secondary-button:focus-visible{
+  outline:3px solid rgba(11,95,165,.4);outline-offset:2px;
+}
+.surfside-streaming-twitch .surfside-front-description{color:#51627b}
+.surfside-streaming-twitch .surfside-front-settings-notice{
+  margin:0 0 18px;padding:12px 15px;border-radius:9px;border:1px solid #a9c4e6;
+  background:#f3f7fe;
+}
+.surfside-streaming-twitch .surfside-front-settings-error{
+  background:#fff3f3;border-color:#f3aeae;color:#8e2525;
+}
+@media(max-width:650px){
+  .surfside-streaming-tabs{display:grid;grid-template-columns:1fr;gap:3px;padding:4px}
+  .surfside-streaming-tabs a{justify-content:flex-start;padding:12px}
+}

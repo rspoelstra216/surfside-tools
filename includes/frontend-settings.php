@@ -112,8 +112,8 @@ function surfside_tools_staff_settings_shortcode() {
         ? surfside_tools_staff_page_url('site-settings')
         : home_url('/dashboard/site-settings/');
     $streaming_url = function_exists('surfside_tools_staff_page_url')
-        ? surfside_tools_staff_page_url('site-streaming')
-        : home_url('/dashboard/site-streaming/');
+        ? surfside_tools_staff_page_url('site-settings/streaming')
+        : home_url('/dashboard/site-settings/streaming/');
 
     ob_start();
     ?>
@@ -227,14 +227,20 @@ function surfside_tools_staff_settings_shortcode() {
         <details class="surfside-front-settings-card surfside-integration-card surfside-streaming-integration-card">
             <summary><span>Streaming</span></summary>
             <div class="surfside-integration-body">
-                <p class="surfside-front-description">Livestream channel, offline announcement media, and shared streaming destinations.</p>
+                <p class="surfside-front-description">Cloudflare live configuration, Watch Live destinations and Twitch connectivity are managed together.</p>
                 <p><a class="surfside-front-secondary-button surfside-streaming-settings-link" href="<?php echo esc_url($streaming_url); ?>">Open Streaming Settings <span aria-hidden="true">›</span></a></p>
             </div>
         </details>
 
         <?php if (function_exists('surfside_tools_youtube_settings_panel')) echo surfside_tools_youtube_settings_panel(); ?>
 
-        <?php echo surfside_tools_twitch_settings_panel(); ?>
+        <details class="surfside-front-settings-card surfside-integration-card">
+            <summary><span>Twitch</span></summary>
+            <div class="surfside-integration-body">
+                <p>Manage Twitch credentials and test the connection from the Streaming workspace.</p>
+                <p><a class="surfside-front-secondary-button" href="<?php echo esc_url(add_query_arg('stream_tab', 'twitch', $streaming_url)); ?>">Open Twitch Connection <span aria-hidden="true">›</span></a></p>
+            </div>
+        </details>
 
         <?php if (function_exists('surfside_tools_visual_css_settings_panel')) echo surfside_tools_visual_css_settings_panel(); ?>
         <?php if (function_exists('surfside_tools_youversion_settings_panel')) echo surfside_tools_youversion_settings_panel(); ?>

@@ -47,14 +47,14 @@ function surfside_tools_twitch_settings_handle_post() {
     return surfside_tools_frontend_settings_notice('Unknown Twitch settings action.', 'error');
 }
 
-function surfside_tools_twitch_settings_panel() {
+function surfside_tools_twitch_settings_panel($expanded = false) {
     if (!is_user_logged_in() || !current_user_can('manage_options')) return '';
     $credentials = surfside_tools_twitch_credentials();
     $id_locked = defined('SURFSIDE_TWITCH_CLIENT_ID');
     $secret_locked = defined('SURFSIDE_TWITCH_CLIENT_SECRET');
     ob_start();
     ?>
-    <details id="surfside-twitch" class="surfside-front-settings-card surfside-integration-card">
+    <details id="surfside-twitch" class="surfside-front-settings-card surfside-integration-card" <?php if ($expanded) echo 'open'; ?>>
         <summary><span>Twitch</span></summary>
         <div class="surfside-integration-body">
             <p class="surfside-front-description">Detects when the configured Twitch channel is live. Channel settings remain in Streaming Settings.</p>
@@ -67,8 +67,9 @@ function surfside_tools_twitch_settings_panel() {
                 <input id="surfside-twitch-client-id" type="text" name="twitch_client_id" autocomplete="off" value="<?php echo esc_attr($credentials['client_id']); ?>" <?php disabled($id_locked); ?>>
                 <label for="surfside-twitch-client-secret"><strong>Client Secret</strong></label>
                 <input id="surfside-twitch-client-secret" type="password" name="twitch_client_secret" autocomplete="new-password" value="" placeholder="<?php echo $credentials['secret'] !== '' ? 'Secret saved — leave blank to keep' : 'Paste Client Secret'; ?>" <?php disabled($secret_locked); ?>>
-                <p class="surfside-front-description">The saved secret is never displayed. Save Integrations before testing.</p>
+                <p class="surfside-front-description">The saved secret is never displayed. Save Twitch settings before testing.</p>
                 <?php if (!$secret_locked && $credentials['secret'] !== '') : ?><label><input type="checkbox" name="clear_twitch_client_secret" value="1"> Remove secret on Save</label><?php endif; ?>
+                <p><button type="submit" class="surfside-front-secondary-button">Save Twitch Settings</button></p>
             </form>
             <form method="post">
                 <?php wp_nonce_field('surfside_twitch_settings', 'surfside_twitch_settings_nonce'); ?>
@@ -76,7 +77,7 @@ function surfside_tools_twitch_settings_panel() {
                 <p><button type="submit" class="surfside-front-secondary-button">Test Connection</button></p>
             </form>
             <h3>Automatic go-live notifications</h3>
-            <p class="surfside-front-description">Go-live notifications are now triggered by Cloudflare Stream, not Twitch. Set them up in <strong>Church Settings → Streaming Management</strong>. Twitch remains an optional viewing fallback.</p>
+            <p class="surfside-front-description">Go-live notifications are now triggered by Cloudflare Stream, not Twitch. Set them up in the <a href="<?php echo esc_url(surfside_tools_streaming_workspace_url()); ?>">Cloudflare &amp; Recordings</a> tab. Twitch remains an optional viewing fallback.</p>
         </div>
     </details>
     <?php

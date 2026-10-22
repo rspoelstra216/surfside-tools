@@ -78,6 +78,15 @@ foreach(array('Weekly Update','Archived Sermon Notes','Message Archive','Sermon 
 }
 check(str_contains($labels['Roku MP4 Uploads'],'/dashboard/site-management/?view=roku-media'),
     'Roku copies preserves the established ?view= route');
+check(isset($labels['Streaming']) &&
+    $labels['Streaming'] === 'https://surfsidefellowship.org/dashboard/site-settings/streaming/',
+    'All streaming operations share one canonical management URL');
+check(!isset($labels['Watch Live Settings']) && !isset($labels['Streaming Management']),
+    'Legacy streaming editors do not appear as separate navigation entries');
+check(!isset($labels['Twitch Integration']),
+    'Twitch does not appear in a second settings category');
+check(str_contains($groups['media']['items'][3]['search'], 'Twitch'),
+    'Searching for Twitch finds the unified Streaming tool');
 check(str_contains($labels['Prayer Requests'],'view=member-engagement')
     && str_contains($labels['Prayer Requests'],'tool=prayer-requests'),
     'Prayer review preserves deep links from existing email');
@@ -114,7 +123,7 @@ $GLOBALS['ws_tools_admin']=false;
 $staff=surfside_tools_workspace_catalog();
 $staff_labels=array();
 foreach($staff as $section)foreach($section['items'] as $item)$staff_labels[]=$item['label'];
-foreach(array('Integrations','Staff Access','Streaming Management','Contact Routing',
+foreach(array('Integrations','Staff Access','Streaming','Twitch Integration','Contact Routing',
     'YouTube Integration','Saved Places','Ministries') as $hidden) {
     check(!in_array($hidden,$staff_labels,true),'Privileged tool hidden from staff search: '.$hidden);
 }
