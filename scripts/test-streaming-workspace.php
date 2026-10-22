@@ -61,7 +61,7 @@ check($GLOBALS['expanded']===true,'Twitch form is expanded for first-time discov
 check(strpos($twitch,'Save Twitch Settings')!==false
     && strpos($twitch,'Existing Twitch POST handler invoked')!==false,
     'Existing Twitch save/test controls are reused');
-check(strpos($twitch,'cloudflare')!==false,'Every view keeps cloudflare navigation');
+check(strpos($twitch,'Cloudflare &amp; Recordings')!==false,'Every view keeps Cloudflare navigation');
 $GLOBALS['allowed']=false;
 check(strpos(surfside_tools_streaming_workspace_secondary(),'permission')!==false,
     'Non-admin user cannot open editors');
