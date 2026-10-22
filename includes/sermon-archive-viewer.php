@@ -143,29 +143,42 @@ function surfside_tools_staff_sermon_archive_view() {
 
     ob_start();
     ?>
-    <div class="surfside-staff-shell surfside-sermon-archive">
+    <div class="surfside-staff-shell surfside-sermon-archive surfside-content-media">
         <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('')); ?>">← Back to Dashboard</a></div>
         <section class="surfside-staff-hero">
             <p class="surfside-staff-eyebrow">Weekly Update</p>
             <h1>Archived Sermon Notes</h1>
             <p class="surfside-staff-muted">Browse notes preserved during weekly publishing. Archived notes are read-only; publishing still happens through Weekly Update.</p>
         </section>
+        <div class="surfside-content-context">
+            <div>
+                <strong>Saved weekly sermon notes</strong>
+                <p>This archive holds written notes from Weekly Update. For YouTube recordings and sermon series, use Message Archive Manager.</p>
+            </div>
+            <nav class="surfside-content-actions" aria-label="Sermon content tools">
+                <a href="<?php echo esc_url(surfside_tools_staff_page_url('weekly-update')); ?>">Weekly Update</a>
+                <a href="<?php echo esc_url(function_exists('surfside_tools_youtube_manager_url')
+                    ? surfside_tools_youtube_manager_url()
+                    : add_query_arg('view', 'message-archive', surfside_tools_staff_page_url('site-management'))); ?>">Video Archive Manager</a>
+            </nav>
+        </div>
 
         <?php if (!$archive_ready) : ?>
             <section class="surfside-sermon-archive-panel">
-                <p class="surfside-sermon-archive-empty">No sermon archive has been initialized yet. Notes will appear after the next successful sermon publication.</p>
+                <div class="surfside-content-empty"><strong>Archive not ready yet</strong><p>No sermon archive has been initialized. Notes will appear here after sermon publishing creates the archive.</p></div>
             </section>
         <?php elseif ($requested_id) : ?>
             <section class="surfside-sermon-archive-panel">
                 <a class="surfside-sermon-archive-return" href="<?php echo esc_url($list_url); ?>">← All Archived Notes</a>
                 <?php if (!$record) : ?>
-                    <p class="surfside-sermon-archive-empty">This archived sermon could not be found.</p>
+                    <div class="surfside-content-empty"><strong>Message not found</strong><p>This archived sermon is unavailable. Return to the notes list to choose another message.</p></div>
                 <?php else :
                     $main_heading = (string) ($record['main_heading'] ?? '');
                     $notes = (string) ($record['notes'] ?? '');
                     $notes_for_display = surfside_tools_notes_without_main_heading($notes, $main_heading);
                     ?>
                     <article class="surfside-sermon-archive-detail">
+                        <span class="surfside-content-eyebrow">Archived notes · Read only</span>
                         <h2><?php echo esc_html($record['title'] ?: 'Untitled Sermon'); ?></h2>
                         <p class="surfside-sermon-archive-meta">
                             <?php
@@ -200,19 +213,29 @@ function surfside_tools_staff_sermon_archive_view() {
                         <label for="surfside-archive-query">Search archived notes</label>
                         <input id="surfside-archive-query" type="search" name="archive_q"
                             value="<?php echo esc_attr($search); ?>"
-                            placeholder="Title, series, date, or words in the notes">
+                            placeholder="Title, series, date, or words in the notes" autocomplete="off">
                     </div>
                     <button type="submit">Search</button>
                     <?php if ($search !== '') : ?><a class="surfside-sermon-archive-clear" href="<?php echo esc_url(surfside_tools_sermon_archive_viewer_url()); ?>">Clear</a><?php endif; ?>
                 </form>
             </section>
             <section class="surfside-sermon-archive-panel">
-                <h2>Saved Messages</h2>
-                <p class="surfside-staff-muted">
-                    <?php echo esc_html(sprintf('%d archived message%s%s', $list['total'], $list['total'] === 1 ? '' : 's', $search !== '' ? ' matching your search' : '')); ?>
-                </p>
+                <div class="surfside-content-list-heading">
+                    <div>
+                        <h2>Saved Messages</h2>
+                        <p>Open a message to review its archived notes. This page does not edit or republish records.</p>
+                    </div>
+                    <span class="surfside-content-count" role="status"><?php echo esc_html(sprintf('%d archived message%s%s', $list['total'], $list['total'] === 1 ? '' : 's', $search !== '' ? ' found' : '')); ?></span>
+                </div>
+                <?php if ($search !== '') : ?>
+                    <p class="surfside-content-filter-summary">Showing results for <strong><?php echo esc_html($search); ?></strong></p>
+                <?php endif; ?>
                 <?php if (empty($list['rows'])) : ?>
-                    <p class="surfside-sermon-archive-empty"><?php echo $search !== '' ? 'No archived messages match that search.' : 'No sermon notes have been archived yet.'; ?></p>
+                    <div class="surfside-content-empty">
+                        <strong><?php echo $search !== '' ? 'No matching notes' : 'No saved notes yet'; ?></strong>
+                        <p><?php echo $search !== '' ? 'Try a different title, series, date or phrase from the notes.' : 'Sermon notes appear here after they are archived during weekly publishing.'; ?></p>
+                        <?php if ($search !== '') : ?><a href="<?php echo esc_url(surfside_tools_sermon_archive_viewer_url()); ?>">Show all archived notes</a><?php endif; ?>
+                    </div>
                 <?php else : ?>
                     <ul class="surfside-sermon-archive-list">
                         <?php foreach ($list['rows'] as $item) : ?>

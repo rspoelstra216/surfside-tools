@@ -212,5 +212,15 @@ function surfside_tools_workspace_enqueue_assets() {
         wp_enqueue_style('surfside-member-care-workspace', SURFSIDE_TOOLS_URL . $care_css,
             array('surfside-workspace'), surfside_tools_workspace_asset_version($care_css));
     }
+
+    // Publishing/media styling is loaded only for the three related staff
+    // management screens, never on a public sermon or announcement page.
+    if (($uri === 'dashboard' && $view === 'sermon-archive')
+        || ($uri === 'dashboard/site-management' && $view === 'message-archive')
+        || $uri === 'dashboard/mobile-app/featured-announcement') {
+        $content_css = 'assets/css/content-media-workspace.css';
+        wp_enqueue_style('surfside-content-media-workspace', SURFSIDE_TOOLS_URL . $content_css,
+            array('surfside-workspace'), surfside_tools_workspace_asset_version($content_css));
+    }
 }
 add_action('wp_enqueue_scripts', 'surfside_tools_workspace_enqueue_assets');

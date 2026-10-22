@@ -132,6 +132,9 @@ jobs:
       - name: Test Member Engagement care and contact routing layout
         run: php scripts/test-member-care-workspace.php
 
+      - name: Test Content and Media publishing management screens
+        run: php scripts/test-content-media-workspace.php
+
       - name: Test Integrations organization and service-specific saves
         run: php scripts/test-integrations-cleanup.php
 

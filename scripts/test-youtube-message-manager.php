@@ -181,6 +181,10 @@ check(strpos($out, 'Made &lt;script&gt;unsafe&lt;/script&gt; to Serve') !== fals
 check(strpos($out, 'www.youtube-nocookie.com/embed/') !== false, 'Official embedded YouTube player provided');
 check(strpos($out, 'Not found in video title') !== false, 'Missing sermon date displayed honestly');
 check(strpos($out, 'Needs Review') !== false, 'Missing-date video is flagged for review');
+check(strpos($out, 'Written sermon notes are stored separately') !== false &&
+      strpos($out, 'Archived Sermon Notes') !== false &&
+      strpos($out, 'Only <strong>Excluded</strong> hides this video') !== false,
+    'Video review clearly distinguishes notes archive and public visibility');
 
 $base = $GLOBALS['test_db']->videos[$GLOBALS['test_video_id']];
 $save = surfside_tools_youtube_review_save_video($GLOBALS['test_master'], $GLOBALS['test_video_id'], '2026-10-18', 'include');
@@ -353,6 +357,9 @@ $_GET = array(
 $GLOBALS['test_redirect_blocked'] = false;
 $detail = surfside_tools_staff_youtube_message_manager_shortcode();
 check(strpos($detail, 'Back to filtered videos') !== false, 'Detail shows a filter-preserving Back link');
+check(strpos($detail, 'surfside-content-media') !== false &&
+      strpos($detail, 'Archived Sermon Notes') !== false,
+    'Staff review screen uses the shared publishing/media presentation');
 check(strpos($detail, 'archive_status=review') !== false && strpos($detail, 'archive_page=2') !== false,
     'Detail Back link retains status and page');
 check(strpos($detail, 'name="archive_status" value="review"') !== false,

@@ -520,13 +520,25 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
     );
     ob_start();
     ?>
-    <div class="surfside-staff-shell surfside-yt-manager">
+    <div class="surfside-staff-shell surfside-yt-manager surfside-content-media">
         <div class="surfside-staff-back"><a href="<?php echo esc_url(surfside_tools_staff_page_url('site-management')); ?>">← Back to Manage Website</a></div>
         <section class="surfside-staff-hero">
             <p class="surfside-staff-eyebrow">Website · Messages</p>
             <h1>Message Archive Manager</h1>
             <p class="surfside-staff-muted">Review YouTube sermons, correct dates, and control which videos and series will appear in the future public archive. No YouTube videos or notes are changed.</p>
         </section>
+        <div class="surfside-content-context">
+            <div>
+                <strong>YouTube videos and sermon series</strong>
+                <p>Review which videos appear in the public Messages archive. Written sermon notes are stored separately in Archived Sermon Notes.</p>
+            </div>
+            <nav class="surfside-content-actions" aria-label="Related message tools">
+                <a href="<?php echo esc_url(surfside_tools_staff_page_url('') . '?view=sermon-archive'); ?>">Archived Sermon Notes</a>
+                <?php if (function_exists('surfside_tools_r2_manager_url')) : ?>
+                    <a href="<?php echo esc_url(surfside_tools_r2_manager_url()); ?>">Roku MP4 Copies</a>
+                <?php endif; ?>
+            </nav>
+        </div>
 
         <?php if (isset($notice_text[$notice_code])) : ?>
             <div class="surfside-yt-notice<?php echo !in_array($notice_code, array('saved','end_of_queue'), true) ? ' error' : ''; ?>"><?php echo esc_html($notice_text[$notice_code]); ?></div>
@@ -537,9 +549,9 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
         <?php else : ?>
             <div class="surfside-yt-metrics">
                 <div class="surfside-yt-metric"><strong><?php echo esc_html(number_format_i18n($summary['total'])); ?></strong><span>Master Messages videos</span></div>
-                <div class="surfside-yt-metric"><strong><?php echo esc_html(number_format_i18n($summary['needs_review'])); ?></strong><span>Needs review</span></div>
-                <div class="surfside-yt-metric"><strong><?php echo esc_html(number_format_i18n($summary['undated'])); ?></strong><span>Missing sermon dates</span></div>
-                <div class="surfside-yt-metric"><strong><?php echo esc_html(number_format_i18n($summary['excluded'])); ?></strong><span>Excluded videos</span></div>
+                <a class="surfside-yt-metric surfside-content-metric-link" href="<?php echo esc_url(surfside_tools_youtube_manager_url(array('archive_status'=>'review'))); ?>"><strong><?php echo esc_html(number_format_i18n($summary['needs_review'])); ?></strong><span>Needs review <span aria-hidden="true">→</span></span></a>
+                <a class="surfside-yt-metric surfside-content-metric-link" href="<?php echo esc_url(surfside_tools_youtube_manager_url(array('archive_status'=>'undated'))); ?>"><strong><?php echo esc_html(number_format_i18n($summary['undated'])); ?></strong><span>Missing sermon dates <span aria-hidden="true">→</span></span></a>
+                <a class="surfside-yt-metric surfside-content-metric-link" href="<?php echo esc_url(surfside_tools_youtube_manager_url(array('archive_status'=>'exclude'))); ?>"><strong><?php echo esc_html(number_format_i18n($summary['excluded'])); ?></strong><span>Excluded videos <span aria-hidden="true">→</span></span></a>
             </div>
 
             <nav class="surfside-yt-tabs" aria-label="Message Archive sections">
@@ -551,6 +563,7 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
             <?php if ($tab === 'series') : ?>
                 <section class="surfside-yt-panel">
                     <h2>Sermon Series Playlists</h2>
+                    <p class="surfside-content-inline-note">Series visibility applies to the series page. Individual messages remain available unless excluded separately.</p>
                     <p class="surfside-staff-muted">These playlists contain videos also found in Messages. Hiding a series will hide its series page in the future public archive, but those individual sermons remain in All Messages unless you exclude the videos separately.</p>
                     <?php if (!$series_rows) : ?><p>No series playlists were discovered.</p><?php endif; ?>
                     <?php foreach ($series_rows as $row) :
@@ -584,6 +597,7 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
                         ?>
                         <h2><?php echo esc_html($video['title']); ?></h2>
                         <p><span class="surfside-yt-chip <?php echo esc_attr($decision); ?>"><?php echo esc_html($decision === 'review' ? 'Needs Review' : ($decision === 'exclude' ? 'Excluded' : 'Included')); ?></span></p>
+                        <p class="surfside-content-inline-note">Only <strong>Excluded</strong> hides this video from the public archive. Needs Review remains visible until you make a decision.</p>
                         <iframe class="surfside-yt-preview" loading="lazy" title="<?php echo esc_attr($video['title']); ?>"
                             src="<?php echo esc_url('https://www.youtube-nocookie.com/embed/' . $video['video_id']); ?>"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
@@ -661,14 +675,19 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
                         </div>
                         <div><button type="submit">Filter</button></div>
                     </form>
-                    <p class="surfside-yt-muted"><?php echo esc_html(number_format_i18n($list['count'])); ?> matching messages.
+                    <p class="surfside-yt-muted surfside-content-filter-summary" role="status"><?php echo esc_html(number_format_i18n($list['count'])); ?> matching messages.
                         <?php if ($filters['search'] || $filters['status'] !== 'all' || $filters['year'] || $filters['series']) : ?>
                             <a class="surfside-yt-link" href="<?php echo esc_url(surfside_tools_youtube_manager_url()); ?>">Clear filters</a>
                         <?php endif; ?>
                     </p>
                 </section>
                 <section class="surfside-yt-panel">
-                    <?php if (!$list['rows']) : ?><p>No messages match these filters.</p>
+                    <?php if (!$list['rows']) : ?>
+                        <div class="surfside-content-empty">
+                            <strong>Nothing matched your filters</strong>
+                            <p>Try a different title, status, year or series to find a message.</p>
+                            <a href="<?php echo esc_url(surfside_tools_youtube_manager_url()); ?>">Show all videos</a>
+                        </div>
                     <?php else : ?><ul class="surfside-yt-list">
                         <?php foreach ($list['rows'] as $item_index => $row) :
                             $decision = surfside_tools_youtube_review_disposition($row);
@@ -682,7 +701,7 @@ function surfside_tools_staff_youtube_message_manager_shortcode() {
                                     <strong><?php echo esc_html($row['title']); ?></strong>
                                     <p class="surfside-yt-muted"><?php echo esc_html($row['effective_date'] ?: 'Sermon date not assigned'); ?>
                                         <?php if (!empty($row['manual_date'])) : ?> · Corrected manually<?php endif; ?></p>
-                                    <p><a class="surfside-yt-link" href="<?php echo esc_url(surfside_tools_youtube_manager_url(array_merge($list_args, array('video'=>$row['video_id'], 'archive_position'=>$absolute_position)))); ?>">Review Video ›</a></p>
+                                    <p><a class="surfside-yt-link surfside-content-review-link" href="<?php echo esc_url(surfside_tools_youtube_manager_url(array_merge($list_args, array('video'=>$row['video_id'], 'archive_position'=>$absolute_position)))); ?>">Review Video <span aria-hidden="true">→</span></a></p>
                                 </div>
                                 <span class="surfside-yt-chip <?php echo esc_attr($decision); ?>"><?php echo esc_html($decision === 'review' ? 'Needs Review' : ($decision === 'exclude' ? 'Excluded' : 'Included')); ?></span>
                             </div></li>
