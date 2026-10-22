@@ -116,8 +116,8 @@ check(strpos($out, 'Saved weekly sermon notes') !== false &&
     strpos($out, 'Weekly Update') !== false,
     'Archive explains written notes and links to other publishing tools');
 check(strpos($out, 'Showing results for') !== false &&
-    strpos($out, 'Archived notes') === false,
-    'Archive displays searched term without implying publication actions');
+    strpos($out, 'Saved Messages') !== false,
+    'Archive displays search term and read-only saved messages list');
 check(strpos($GLOBALS['wpdb']->last_sql, 'Serve\\%\\_') !== false, 'LIKE search wildcards are escaped');
 check($GLOBALS['wpdb']->reads === 2, 'A list view fetches count and metadata only');
 check(strpos($out, 'Next') !== false, 'List supports pagination');
