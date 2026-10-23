@@ -80,7 +80,7 @@ async function incoming(request, env) {
   // Spreaker is never implicit: only server-signed, complete metadata may opt in.
   const spreaker = validDraftMetadata(data?.spreaker) ? {
     title: test ? ("[TEST - DO NOT PUBLISH] " + data.spreaker.title).slice(0, 140) : data.spreaker.title,
-    description: test ? ("TEST DRAFT ONLY — delete after integration verification.\\n\\n" +
+    description: test ? ("TEST DRAFT ONLY — delete after integration verification.\n\n" +
       data.spreaker.description).slice(0, 8000) : data.spreaker.description,
   } : null;
   await state(env, id, "queued", "", test);
