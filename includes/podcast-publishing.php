@@ -119,3 +119,64 @@ function surfside_tools_podcast_queue_verified($id) {
         'spreaker_draft_requested' => $spreaker !== null && $status === 'queued',
     );
 }
+
+/**
+ * Explicit admin-only integration test. Uses a complete R2 podcast MP3, never
+ * reruns FFmpeg, never publishes Spreaker episodes, and never scans the backlog.
+ */
+function surfside_tools_podcast_test_existing_audio($id) {
+    if (!current_user_can('manage_options')) {
+        return new WP_Error('podcast_forbidden', 'Only site administrators can create Spreaker test drafts.', array('status' => 403));
+    }
+    if (!is_string($id) || !preg_match('/^[A-Za-z0-9_-]{11}$/D', $id)) {
+        return new WP_Error('podcast_bad_id', 'Select a valid YouTube sermon.', array('status' => 400));
+    }
+    if (!defined('SURFSIDE_SPREAKER_DRAFTS_ENABLED') || SURFSIDE_SPREAKER_DRAFTS_ENABLED !== true) {
+        return new WP_Error('podcast_disabled', 'Spreaker draft creation is disabled in WordPress.', array('status' => 409));
+    }
+    $metadata = surfside_tools_podcast_spreaker_metadata($id);
+    if ($metadata === null) {
+        return new WP_Error('podcast_metadata', 'This sermon needs a valid title and date before testing.', array('status' => 409));
+    }
+    if (!defined('SURFSIDE_PODCAST_WORKER_URL') || !defined('SURFSIDE_PODCAST_SHARED_SECRET') ||
+        !is_string(SURFSIDE_PODCAST_WORKER_URL) || !is_string(SURFSIDE_PODCAST_SHARED_SECRET) ||
+        strlen(SURFSIDE_PODCAST_SHARED_SECRET) < 32) {
+        return new WP_Error('podcast_config', 'The Cloudflare podcast Worker connection is not configured.', array('status' => 503));
+    }
+    $worker = untrailingslashit(SURFSIDE_PODCAST_WORKER_URL);
+    if (!preg_match('~^https://[a-z0-9.-]+(?::443)?$~iD', $worker)) {
+        return new WP_Error('podcast_config', 'Cloudflare podcast Worker URL is invalid.', array('status' => 503));
+    }
+    $payload = wp_json_encode(array('video_id' => $id, 'spreaker' => $metadata, 'test' => true));
+    $timestamp = (string) time();
+    $signature = hash_hmac('sha256', $timestamp . '.' . $payload, SURFSIDE_PODCAST_SHARED_SECRET);
+    $result = wp_remote_post($worker . '/draft-test', array(
+        'headers' => array(
+            'Content-Type' => 'application/json',
+            'X-Surfside-Time' => $timestamp,
+            'X-Surfside-Signature' => $signature,
+        ),
+        'body' => $payload,
+        'timeout' => 15,
+        'redirection' => 0,
+        'reject_unsafe_urls' => true,
+    ));
+    if (is_wp_error($result)) {
+        return new WP_Error('podcast_unavailable', 'Cloudflare could not be reached; check Observability logs.', array('status' => 503));
+    }
+    $http = (int) wp_remote_retrieve_response_code($result);
+    $response = json_decode(wp_remote_retrieve_body($result), true);
+    if ($http === 202 && is_array($response) && ($response['status'] ?? '') === 'queued') {
+        return array('status' => 'queued', 'video_id' => $id, 'test' => true);
+    }
+    if ($http === 409 && ($response['already_exists'] ?? false)) {
+        return new WP_Error('podcast_duplicate', 'A Spreaker draft job already exists for this sermon (' .
+            sanitize_text_field((string) ($response['status'] ?? 'unknown')) . '). Check Spreaker or R2 before retrying.', array('status' => 409));
+    }
+    $error = is_array($response) ? ($response['error'] ?? '') : '';
+    if ($error === 'prepared_audio_missing') {
+        return new WP_Error('podcast_no_audio', 'No finished podcast MP3 exists in R2 for this sermon.', array('status' => 409));
+    }
+    return new WP_Error('podcast_test_failed', 'Spreaker test could not be queued (' .
+        sanitize_text_field(is_string($error) ? $error : 'HTTP ' . $http) . ').', array('status' => 503));
+}
