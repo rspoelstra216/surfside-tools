@@ -3,10 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check src/worker.mjs && node --check src/validation.mjs && node --check container/server.mjs",
+    "check": "node --check src/worker.mjs && node --check src/validation.mjs && node --check src/spreaker.mjs && node --check container/server.mjs",
     "test": "node --test tests/*.test.mjs",
     "deploy": "wrangler deploy"
   },
-  "dependencies": { "@cloudflare/containers": "latest" },
-  "devDependencies": { "wrangler": "latest" }
+  "dependencies": {
+    "@cloudflare/containers": "latest"
+  },
+  "devDependencies": {
+    "wrangler": "latest"
+  }
 }
