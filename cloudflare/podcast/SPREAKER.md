@@ -110,3 +110,37 @@ API documentation:
 - https://developers.spreaker.com/guides/authentication/
 - https://developers.spreaker.com/guides/working-with-draft-episodes/
 - https://developers.spreaker.com/api/episodes/
+
+
+## One-time test when all sermons are already in R2
+
+You do **not** need to re-upload an MP4 or cancel any of the ten manually
+scheduled Spreaker catch-up episodes. After enabling the Cloudflare credentials
+and `SURFSIDE_SPREAKER_DRAFTS_ENABLED` in WordPress:
+
+1. Open **Weekly Media Publishing → Podcast episode preview** as a site
+   administrator.
+2. Choose an existing uploaded sermon that has a **finished MP3** at
+   `podcast-audio/<youtube-id>.mp3` in Cloudflare R2 (for example, one of the
+   previously verified Cloudflare audio-processing tests).
+3. Read and check the confirmation checkbox and click
+   **Create TEST Spreaker draft**. This action is **explicit only**; it is not
+   part of any automatic archive scan.
+4. The authenticated WordPress POST calls the HMAC-protected Worker
+   `POST /draft-test`. The Worker **never starts FFmpeg** for this route.
+   It checks that the R2 MP3 exists and queues only the Spreaker draft-upload
+   step. It changes neither the R2 media nor any existing Spreaker episode.
+5. Look for `podcast-spreaker/<id>.json` with status `uploaded` and
+   open **Spreaker → Drafts** for the explicitly labeled
+   `[TEST - DO NOT PUBLISH]` episode. Confirm the audio, title, description,
+   and correct existing show **3402314**, and **delete the test draft** once
+   verified. Do not publish it.
+6. An existing R2 draft status record for that YouTube ID blocks a second
+   manual test request. This avoids blindly generating extra drafts on
+   repeated clicks or requests. Manual Spreaker episodes are *not* known to
+   the Cloudflare status records, which is why the test is visibly labeled.
+   If a test is in an uncertain status, inspect logs and reconcile manually
+   rather than reissuing the request.
+
+Normal weekly uploads continue to create unpublished drafts only from new,
+verified MP4 uploads as before. The manual action creates only a test draft.
