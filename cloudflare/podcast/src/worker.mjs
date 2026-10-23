@@ -2,7 +2,7 @@ import { Container, ContainerProxy, getContainer } from "@cloudflare/containers"
 export { ContainerProxy };
 import { validId, sourceKey, audioKey, statusKey, validStorageAccess, verifiedRequest } from "./validation.mjs";
 import { uploadAudioToR2 } from "./audio-upload.mjs";
-import { validDraftMetadata, spreakerConfigured, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
+import { validDraftMetadata, testDraftMetadata, spreakerConfigured, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
 
 const reply = (data, status = 200) => Response.json(data, {
   status,
@@ -78,11 +78,7 @@ async function incoming(request, env) {
       return reply({ video_id: id, status: existing.status, already_exists: true,
         episode_id: existing.episode_id ?? null }, 409);
     }
-    const marker = "[TEST - DO NOT PUBLISH] ";
-    const title = marker + data.spreaker.title.slice(0, 140 - marker.length);
-    const description = ("TEST DRAFT ONLY. Do not publish; delete after verifying Spreaker integration.\\n\\n" +
-      data.spreaker.description).slice(0, 8000);
-    const metadata = { title, description };
+    const metadata = testDraftMetadata(data.spreaker);
     try {
       await saveDraftState(env, id, "queued");
       await env.PODCAST_QUEUE.send({ kind: "spreaker", video_id: id, spreaker: metadata });
