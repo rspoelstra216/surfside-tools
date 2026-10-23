@@ -11,6 +11,17 @@ export const validDraftMetadata = (data) =>
   data.title.length <= 140 && typeof data.description === "string" &&
   data.description.trim().length > 0 && data.description.length <= 8000;
 
+// Explicitly mark integration tests so they cannot be mistaken for scheduled episodes.
+export const testDraftMetadata = (metadata) => {
+  if (!validDraftMetadata(metadata)) return null;
+  const label = "[TEST - DO NOT PUBLISH] ";
+  return {
+    title: label + metadata.title.slice(0, 140 - label.length),
+    description: ("TEST DRAFT ONLY. Do not publish; delete after verifying Spreaker integration.\\n\\n" +
+      metadata.description).slice(0, 8000),
+  };
+};
+
 export const spreakerConfigured = (env) =>
   typeof env.SPREAKER_OAUTH_ACCESS_TOKEN === "string" &&
   env.SPREAKER_OAUTH_ACCESS_TOKEN.length > 20 &&
