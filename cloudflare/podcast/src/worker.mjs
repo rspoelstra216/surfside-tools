@@ -2,7 +2,7 @@ import { Container, ContainerProxy, getContainer } from "@cloudflare/containers"
 export { ContainerProxy };
 import { validId, sourceKey, audioKey, statusKey, validStorageAccess, verifiedRequest } from "./validation.mjs";
 import { uploadAudioToR2 } from "./audio-upload.mjs";
-import { validDraftMetadata, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
+import { validDraftMetadata, spreakerConfigured, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
 
 const reply = (data, status = 200) => Response.json(data, {
   status,
@@ -46,7 +46,8 @@ PodcastContainer.outboundByHost = {
 };
 
 async function incoming(request, env) {
-  if (!["/jobs", "/status"].includes(new URL(request.url).pathname) || request.method !== "POST") {
+  const route = new URL(request.url).pathname;
+  if (!["/jobs", "/status", "/draft-test"].includes(route) || request.method !== "POST") {
     return reply({ error: "not_found" }, 404);
   }
   if (!await verifiedRequest(request, env.SURFSIDE_PODCAST_SHARED_SECRET)) {
@@ -60,6 +61,37 @@ async function incoming(request, env) {
   if (new URL(request.url).pathname === "/status") {
     const [audio, spreaker] = await Promise.all([readState(env, id), readDraftState(env, id)]);
     return reply(spreaker ? { ...audio, spreaker } : audio);
+  }
+  if (route === "/draft-test") {
+    // Explicit one-time operator test. Never modifies existing MP3s or invokes FFmpeg.
+    // The title visibly distinguishes this unpublished test from manually scheduled episodes.
+    if (data?.test !== true || !validDraftMetadata(data?.spreaker)) {
+      return reply({ error: "invalid_test_request" }, 400);
+    }
+    if (!spreakerConfigured(env)) return reply({ error: "spreaker_not_configured" }, 503);
+    const audio = await env.SERMONS_BUCKET.head(audioKey(id));
+    if (!audio || audio.size < 1024 || audio.size > 300 * 1024 * 1024) {
+      return reply({ error: "prepared_audio_missing" }, 409);
+    }
+    const existing = await readDraftState(env, id);
+    if (existing) {
+      return reply({ video_id: id, status: existing.status, already_exists: true,
+        episode_id: existing.episode_id ?? null }, 409);
+    }
+    const marker = "[TEST - DO NOT PUBLISH] ";
+    const title = marker + data.spreaker.title.slice(0, 140 - marker.length);
+    const description = ("TEST DRAFT ONLY. Do not publish; delete after verifying Spreaker integration.\\n\\n" +
+      data.spreaker.description).slice(0, 8000);
+    const metadata = { title, description };
+    try {
+      await saveDraftState(env, id, "queued");
+      await env.PODCAST_QUEUE.send({ kind: "spreaker", video_id: id, spreaker: metadata });
+      return reply({ video_id: id, status: "queued", test: true }, 202);
+    } catch (error) {
+      console.error("Unable to queue Spreaker test draft", id, String(error));
+      await saveDraftState(env, id, "queue_unavailable");
+      return reply({ error: "queue_unavailable" }, 503);
+    }
   }
   if (!await env.SERMONS_BUCKET.head(sourceKey(id))) return reply({ error: "sermon_missing" }, 409);
   if (!await env.SERMONS_BUCKET.head("podcast-assets/intro.mp3") ||
