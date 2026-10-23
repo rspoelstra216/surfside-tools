@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validDraftMetadata, multipartAudioStream, processSpreakerDraft, readDraftState } from "../src/spreaker.mjs";
+import { validDraftMetadata, testDraftMetadata, multipartAudioStream, processSpreakerDraft, readDraftState } from "../src/spreaker.mjs";
 
 const id = "0_QXD1k4fcI";
 const meta = { title: "Made to Serve | Made for More Series (Week 6)",
@@ -104,3 +104,17 @@ test("missing secrets fail closed without reaching Spreaker", async () => {
   assert.equal(state.status, "not_configured");
   assert.equal(requests, 0);
 });
+
+test("test drafts are unmistakably labeled, bounded, and cannot become published automatically", () => {
+  const data = testDraftMetadata(meta);
+  assert.match(data.title, /^\[TEST - DO NOT PUBLISH\] /);
+  assert.match(data.description, /^TEST DRAFT ONLY\. Do not publish/);
+  assert.match(data.description, /Sermon date:/);
+  assert.equal(validDraftMetadata(data), true);
+  const lengthy = testDraftMetadata({ ...meta, title: "A".repeat(140), description: "D".repeat(8000) });
+  assert.equal(lengthy.title.length, 140);
+  assert.equal(lengthy.description.length, 8000);
+  assert.equal(validDraftMetadata(lengthy), true);
+  assert.equal(testDraftMetadata({ ...meta, title: "" }), null);
+});
+
