@@ -235,6 +235,14 @@ function surfside_tools_r2_browser_upload_dispatch($data) {
         return new WP_Error('r2_bad_nonce', 'Upload authorization expired. Reload the Roku Copies page and try again.', array('status' => 403));
     }
     $mode = isset($data['mode']) && is_string($data['mode']) ? sanitize_key($data['mode']) : '';
+    if ($mode === 'spreaker_draft_test') {
+        $id = $data['video_id'] ?? null;
+        if (!current_user_can('manage_options') ||
+            !surfside_tools_r2_video_id($id) || !surfside_tools_r2_is_master_video($id)) {
+            return new WP_Error('podcast_forbidden', 'Only administrators can test an existing YouTube sermon.', array('status' => 403));
+        }
+        return surfside_tools_podcast_test_existing_audio($id);
+    }
     if (!in_array($mode, array('ticket', 'complete'), true)) {
         return new WP_Error('r2_bad_mode', 'Unknown R2 upload operation.', array('status' => 400));
     }
@@ -572,6 +580,18 @@ function surfside_tools_staff_r2_sermons_shortcode() {
             <p><strong>Proposed description:</strong></p>
             <p id="surfside-podcast-description" style="white-space:pre-line"></p>
             <p id="surfside-podcast-review" role="status" hidden>Review this title/date before publishing: it does not fully match the expected weekly naming format.</p>
+            <?php if (current_user_can('manage_options') && defined('SURFSIDE_SPREAKER_DRAFTS_ENABLED') && SURFSIDE_SPREAKER_DRAFTS_ENABLED === true) : ?>
+              <div style="margin-top:18px;padding-top:14px;border-top:1px solid #d3dbe5">
+                <h3>Test Spreaker integration</h3>
+                <p class="surfside-yt-muted">Uses an existing finished R2 MP3 to create a clearly labeled <strong>unpublished TEST draft</strong> in Spreaker. No audio is reprocessed, and no existing scheduled episodes are changed. A manually uploaded episode may already exist; delete the test draft after checking it.</p>
+                <label style="display:block;margin:12px 0">
+                  <input type="checkbox" id="surfside-podcast-test-confirm">
+                  I understand this creates a separate test draft and will not publish it.
+                </label>
+                <button type="button" id="surfside-podcast-test-button" disabled>Create TEST Spreaker draft</button>
+                <p id="surfside-podcast-test-status" role="status" aria-live="polite"></p>
+              </div>
+            <?php endif; ?>
           </div>
         </section>
       <?php endif; ?>
