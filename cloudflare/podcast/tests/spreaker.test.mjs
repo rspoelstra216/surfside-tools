@@ -112,7 +112,7 @@ test("isolated full-pipeline test uploads only to a separate unpublished Spreake
   const send = async (url, opts) => {
     if (url.endsWith("/episodes/drafts")) {
       const data = new URLSearchParams(opts.body);
-      assert.match(data.get("title"), /^\\[TEST - DO NOT PUBLISH\\] /);
+      assert.equal(data.get("title").startsWith("[TEST - DO NOT PUBLISH] "), true);
       created++;
       return Response.json({ response: { episode: { episode_id: 8742, type: "DRAFT" } } });
     }
