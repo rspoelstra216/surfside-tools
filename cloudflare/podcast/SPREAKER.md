@@ -110,3 +110,66 @@ API documentation:
 - https://developers.spreaker.com/guides/authentication/
 - https://developers.spreaker.com/guides/working-with-draft-episodes/
 - https://developers.spreaker.com/api/episodes/
+
+
+## Admin-only complete end-to-end pipeline test (no new YouTube sermon required)
+
+**Purpose:** Reproduce the entire real-world upload and publishing workflow without
+deleting any existing Roku MP4 or podcast MP3 or touching the ten manually
+scheduled Spreaker episodes. The older draft-only test in PR #479 does **not**
+exercise the browser MP4 upload or FFmpeg and is superseded by this test.
+
+After this PR is merged and the new Worker deployment is Ready:
+
+1. Open **Surfside Tools → Weekly Media Publishing** as a WordPress
+   administrator. Confirm `SURFSIDE_SPREAKER_DRAFTS_ENABLED` is `true` and
+   that both Spreaker secrets are present in the Cloudflare Worker.
+2. Under **Podcast episode preview**, select a recent sermon with a recognized
+   title and date, e.g. `0_QXD1k4fcI`. You may select a sermon *already* in
+   R2 because the test does not use the canonical Roku upload path.
+3. Under **Full pipeline test (admin only)**, browse to the original sermon
+   **MP4 on your computer**, check the confirmation, and choose
+   **Run end-to-end test**. Keep the browser tab open for the upload, FFmpeg,
+   and Spreaker checks.
+4. The browser performs the normal **presigned direct R2 PUT** into
+   `podcast-test-input/<video-id>.mp4`. PHP checks HEAD, file size, and
+   `video/mp4` type before sending the HMAC-signed `POST /jobs` with an
+   explicit `test: true` flag and reviewed YouTube title/description.
+5. The **same Cloudflare Queue and Container/FFmpeg processing logic** extracts
+   audio, prepends the current intro, appends the current outro, normalizes
+   levels, and uploads to `podcast-test-audio/<video-id>.mp3`.
+6. On success, Cloudflare queues the **same Spreaker draft creation and MP3
+   upload** logic, with a clearly labeled title
+   `[TEST - DO NOT PUBLISH] ...`.
+7. The staff page polls Cloudflare via the existing nonce-protected WordPress
+   route, showing audio status and Spreaker draft status. Confirm:
+   - `podcast-test-jobs/<video-id>.json` has `status: "ready"`;
+   - `podcast-test-spreaker/<video-id>.json` has `status: "uploaded"`;
+   - the newly generated MP3 plays correctly;
+   - the new episode is **unpublished** under **Spreaker → Drafts** in the
+     existing show `3402314`.
+8. **Delete the unmistakably labeled test draft** in Spreaker after inspection.
+   To reclaim R2 storage, remove only the four `podcast-test-*` objects
+   for that ID through the Cloudflare R2 object browser *after* processing
+   finishes. Do not delete `sermons/<video-id>.mp4`,
+   `podcast-audio/<video-id>.mp3`, normal `podcast-jobs` objects or the
+   shared `podcast-assets`.
+
+### Limits and safety
+
+- This test is administrator-only and requires the existing WordPress
+  nonce, a reviewed YouTube catalog entry, the server's Worker HMAC secret,
+  and an explicit confirmation checkbox. No Worker secret reaches JavaScript.
+- Test output paths are separate for input, audio, processing state, and
+  Spreaker state. The public Roku catalog and established podcast MP3s
+  are not altered. This is a one-run-per-video-ID test until those test
+  objects are deliberately removed. Running this test again without cleaning
+  up must not overwrite the previous test source.
+- Test Spreaker metadata is visibly marked; no API endpoint schedules or
+  publishes it. Staff should delete the test draft manually, **not** any
+  existing scheduled episodes.
+- If the UI reports an error after the MP4 verifies, inspect the test
+  status objects and Cloudflare Observability before retrying. Blind
+  resubmission could create unnecessary extra draft episodes.
+- No changes to the bulk archive, public Roku endpoints, or production
+  weekly upload flow are necessary for this test.
