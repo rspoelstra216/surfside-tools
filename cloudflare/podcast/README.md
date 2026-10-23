@@ -1,10 +1,10 @@
-# Cloudflare weekly sermon audio processor (first stage)
+# Cloudflare weekly sermon audio processor
 
 ## Purpose and boundaries
 
 A successful **new weekly MP4 upload from Weekly Media Publishing** now makes one optional, authenticated HTTP call to a Cloudflare Worker to enqueue audio production. This call is invoked **only** from the established browser upload-completion handler, *after* the existing R2 HEAD, size and Content-Type checks mark Roku playback ready. It is not invoked by the historical import script, reconciliation, YouTube playlist scans, or Roku public APIs. The existing YouTube video ID remains the job ID. **A processing failure never undoes Roku readiness.**
 
-This stage does **not** touch Spreaker, publish a podcast or require a NAS. Its output is an MP3 in R2, for a separate Spreaker draft-upload PR after live processing has been verified. R2 continues to hold the Roku video under its canonical key.
+When explicitly enabled, the optional Spreaker integration now prepares an **unpublished draft with the finished MP3**, using reviewed YouTube metadata provided by WordPress. See [SPREAKER.md](SPREAKER.md) for one-time OAuth configuration and rollout. The Cloudflare processor never publishes an episode or requires a NAS. R2 continues to hold the Roku video under its canonical key.
 
 ## Cloudflare side
 
@@ -25,6 +25,7 @@ Code lives under \`cloudflare/podcast/\`. It includes:
 | \`podcast-assets/outro.mp3\` | Static outro recording, uploaded once |
 | \`podcast-audio/<youtube-id>.mp3\` | Resulting **private** MP3, not automatically posted to Spreaker |
 | \`podcast-jobs/<youtube-id>.json\` | Processing state (\`queued\`, \`processing\`, \`ready\`, \`failed\`) |
+| \`podcast-spreaker/<youtube-id>.json\` | Optional unpublished Spreaker draft status / episode ID (no secrets) |
 
 Upload the intro and outro files to the **existing** R2 bucket using the Cloudflare R2 object browser. Both must be real playable MP3s. If your saved bumpers are WAVs, convert each once to MP3 first. The program does **not** alter the originals or the sermon video.
 
@@ -60,7 +61,7 @@ Upload the intro and outro files to the **existing** R2 bucket using the Cloudfl
 - WordPress signs the raw JSON with HMAC-SHA256 over \`timestamp + "." + body\`, and the Worker rejects signatures outside ±5 minutes. The secret must match between WordPress and the Worker.
 - The Worker only accepts \`POST /jobs\` and \`POST /status\` with valid signatures. The processor Container is not public. Container outbound R2 access is scoped to known media paths and object types; no R2 secret key is present inside its environment.
 - The podcast assets and MP3 output are not exposed through the Roku message catalog; only the canonical sermon MP4 key remains authoritative for Roku.
-- Spreaker drafts, authorization, publishing controls and persistent podcast IDs will be added in a separate subsystem PR after the audio output is verified. Spreaker drafts should remain unpublished pending staff review.
+- Spreaker draft creation and MP3 transfer are opt-in; see [SPREAKER.md](SPREAKER.md). Spreaker episode IDs are persisted, but no publication occurs automatically. Staff must review and publish drafts.
 - Do not merge this PR until GitHub CI and a code review pass. A live test still requires deployment/configuration actions on the Cloudflare account.
 
 ## First processing test: R2 MP3 stream length fix
