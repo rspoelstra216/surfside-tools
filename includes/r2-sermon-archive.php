@@ -555,7 +555,7 @@ function surfside_tools_staff_r2_sermons_shortcode() {
         </section>
         <section class="surfside-yt-panel" id="surfside-podcast-preview">
           <h2>Podcast episode preview</h2>
-          <p class="surfside-yt-muted">Preview the title and description from YouTube metadata for an MP4 already verified in R2. Podcast processing and Spreaker publishing are not connected yet; this page will not create or publish an episode.</p>
+          <p class="surfside-yt-muted">Preview the title and description from YouTube metadata. When staff explicitly enable the Spreaker integration, new verified weekly uploads automatically generate an unpublished draft after Cloudflare finishes the MP3. Publishing remains manual in Spreaker.</p>
           <label for="surfside-podcast-id">Uploaded sermon</label>
           <select id="surfside-podcast-id">
             <option value="">Choose an uploaded sermon</option>
