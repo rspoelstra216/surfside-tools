@@ -105,42 +105,49 @@ export default {
         }
         continue;
       }
+      let audioReady = false;
       try {
         if (await env.SERMONS_BUCKET.head(audioKey(id))) {
           await state(env, id, "ready");
           message.ack();
-          continue;
-        }
-        if (!await env.SERMONS_BUCKET.head(sourceKey(id))) throw Error("source_missing");
-        await state(env, id, "processing");
-        const result = await getContainer(env.PODCAST_CONTAINER, id).fetch(
-          new Request("http://container/process", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ video_id: id }),
-          })
-        );
-        if (!result.ok) throw Error("container_processing_failed");
-        if (!await env.SERMONS_BUCKET.head(audioKey(id))) throw Error("audio_not_saved");
-        await state(env, id, "ready");
-        message.ack();
-        // Publish nothing: a separate Queue message prepares an unpublished draft.
-        // Spreaker errors must never change the verified R2 MP3 job to failed.
-        const metadata = message.body?.spreaker;
-        if (validDraftMetadata(metadata)) {
-          try {
-            await saveDraftState(env, id, "queued");
-            await env.PODCAST_QUEUE.send({ kind: "spreaker", video_id: id,
-              spreaker: { title: metadata.title, description: metadata.description } });
-          } catch (error) {
-            console.error("Unable to queue Spreaker draft", id, String(error));
-            await saveDraftState(env, id, "queue_unavailable");
-          }
+          audioReady = true;
+        } else {
+          if (!await env.SERMONS_BUCKET.head(sourceKey(id))) throw Error("source_missing");
+          await state(env, id, "processing");
+          const result = await getContainer(env.PODCAST_CONTAINER, id).fetch(
+            new Request("http://container/process", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ video_id: id }),
+            })
+          );
+          if (!result.ok) throw Error("container_processing_failed");
+          if (!await env.SERMONS_BUCKET.head(audioKey(id))) throw Error("audio_not_saved");
+          await state(env, id, "ready");
+          message.ack();
+          audioReady = true;
         }
       } catch (error) {
         console.error("Podcast processing failed", id, String(error));
         await state(env, id, "failed", "processing_failed");
         message.retry({ delaySeconds: 120 });
+      }
+      // A separate Queue job can ONLY create an unpublished Spreaker draft.
+      // Keep its entire failure path outside the audio job's try/catch.
+      const metadata = message.body?.spreaker;
+      if (audioReady && validDraftMetadata(metadata)) {
+        try {
+          const previous = await readDraftState(env, id);
+          if (!previous || previous.status === "queue_unavailable") {
+            await saveDraftState(env, id, "queued");
+            await env.PODCAST_QUEUE.send({ kind: "spreaker", video_id: id,
+              spreaker: { title: metadata.title, description: metadata.description } });
+          }
+        } catch (error) {
+          console.error("Unable to queue Spreaker draft", id, String(error));
+          try { await saveDraftState(env, id, "queue_unavailable"); }
+          catch (saveError) { console.error("Unable to save Spreaker queue status", id, String(saveError)); }
+        }
       }
     }
   },
