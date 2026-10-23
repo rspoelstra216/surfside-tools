@@ -17,7 +17,7 @@ export const testDraftMetadata = (metadata) => {
   const label = "[TEST - DO NOT PUBLISH] ";
   return {
     title: label + metadata.title.slice(0, 140 - label.length),
-    description: ("TEST DRAFT ONLY. Do not publish; delete after verifying Spreaker integration.\\n\\n" +
+    description: ("TEST DRAFT ONLY. Do not publish; delete after verifying Spreaker integration.\n\n" +
       metadata.description).slice(0, 8000),
   };
 };
