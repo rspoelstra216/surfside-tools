@@ -48,6 +48,29 @@ function surfside_tools_podcast_episode_preview($youtube_title, $sermon_date, $y
 }
 
 
+
+/**
+ * Only weekly verified uploads can opt in to Spreaker draft preparation.
+ * The existing YouTube review catalog supplies canonical metadata; ambiguous
+ * or excluded sermons are skipped rather than creating a misleading draft.
+ * No Spreaker credentials ever pass through WordPress or the browser.
+ */
+function surfside_tools_podcast_spreaker_metadata($id) {
+    if (!defined('SURFSIDE_SPREAKER_DRAFTS_ENABLED') || SURFSIDE_SPREAKER_DRAFTS_ENABLED !== true ||
+        !function_exists('surfside_tools_youtube_review_video') ||
+        !function_exists('surfside_tools_youtube_review_master_id')) {
+        return null;
+    }
+    $master = surfside_tools_youtube_review_master_id();
+    if ($master === '') return null;
+    $video = surfside_tools_youtube_review_video($master, $id);
+    if (!is_array($video) || ($video['disposition'] ?? '') === 'exclude') return null;
+    $date = $video['effective_date'] ?? $video['sermon_date'] ?? '';
+    $preview = surfside_tools_podcast_episode_preview($video['title'] ?? '', $date, $id);
+    if ($preview['needs_review'] || strlen($preview['description']) > 8000) return null;
+    return array('title' => $preview['title'], 'description' => $preview['description']);
+}
+
 /**
  * Queue only newly verified *weekly* R2 uploads. Historical reconciliations
  * never call this function. Missing configuration always fails closed.
@@ -67,7 +90,10 @@ function surfside_tools_podcast_queue_verified($id) {
     if (!preg_match('~^https://[a-z0-9.-]+(?::443)?$~iD', $url)) {
         return array('status' => 'invalid_configuration');
     }
-    $payload = wp_json_encode(array('video_id' => $id));
+    $data = array('video_id' => $id);
+    $spreaker = surfside_tools_podcast_spreaker_metadata($id);
+    if ($spreaker !== null) $data['spreaker'] = $spreaker;
+    $payload = wp_json_encode($data);
     $timestamp = (string) time();
     $signature = hash_hmac('sha256', $timestamp . '.' . $payload, SURFSIDE_PODCAST_SHARED_SECRET);
     $result = wp_remote_post($url . '/jobs', array(
@@ -87,6 +113,9 @@ function surfside_tools_podcast_queue_verified($id) {
     if ($http !== 200 && $http !== 202) return array('status' => 'queue_unavailable');
     $body = json_decode(wp_remote_retrieve_body($result), true);
     $status = is_array($body) && isset($body['status']) ? $body['status'] : null;
-    return array('status' => in_array($status, array('queued', 'processing', 'ready'), true)
-        ? $status : 'queue_unavailable');
+    return array(
+        'status' => in_array($status, array('queued', 'processing', 'ready'), true)
+            ? $status : 'queue_unavailable',
+        'spreaker_draft_requested' => $spreaker !== null && $status === 'queued',
+    );
 }
