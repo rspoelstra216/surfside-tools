@@ -119,3 +119,54 @@ function surfside_tools_podcast_queue_verified($id) {
         'spreaker_draft_requested' => $spreaker !== null && $status === 'queued',
     );
 }
+
+/**
+ * One-time full-pipeline test: signed Worker request using a staged MP4.
+ * No production sermon/audio key is read or overwritten by this mode.
+ * This is separate from normal weekly uploads and never auto-publishes Spreaker.
+ */
+function surfside_tools_podcast_test_worker($id, $status_only = false) {
+    if (!current_user_can('manage_options') || !is_string($id) ||
+        !preg_match('/^[A-Za-z0-9_-]{11}$/D', $id)) {
+        return new WP_Error('podcast_test_forbidden', 'Site administrator access required.', array('status' => 403));
+    }
+    $metadata = surfside_tools_podcast_spreaker_metadata($id);
+    if ($metadata === null) {
+        return new WP_Error('podcast_test_metadata', 'A complete, reviewed title and sermon date are required.', array('status' => 409));
+    }
+    if (!defined('SURFSIDE_PODCAST_WORKER_URL') || !defined('SURFSIDE_PODCAST_SHARED_SECRET') ||
+        !is_string(SURFSIDE_PODCAST_WORKER_URL) || !is_string(SURFSIDE_PODCAST_SHARED_SECRET) ||
+        strlen(SURFSIDE_PODCAST_SHARED_SECRET) < 32) {
+        return new WP_Error('podcast_test_config', 'The podcast Worker is not configured.', array('status' => 503));
+    }
+    $base = untrailingslashit(SURFSIDE_PODCAST_WORKER_URL);
+    if (!preg_match('~^https://[a-z0-9.-]+(?::443)?$~iD', $base)) {
+        return new WP_Error('podcast_test_config', 'Podcast Worker URL is not valid.', array('status' => 503));
+    }
+    $payload = wp_json_encode($status_only
+        ? array('video_id' => $id, 'test' => true)
+        : array('video_id' => $id, 'test' => true, 'spreaker' => $metadata));
+    $when = (string) time();
+    $result = wp_remote_post($base . ($status_only ? '/status' : '/jobs'), array(
+        'headers' => array(
+            'Content-Type' => 'application/json',
+            'X-Surfside-Time' => $when,
+            'X-Surfside-Signature' => hash_hmac('sha256', $when . '.' . $payload, SURFSIDE_PODCAST_SHARED_SECRET),
+        ),
+        'body' => $payload,
+        'timeout' => 12,
+        'redirection' => 0,
+        'reject_unsafe_urls' => true,
+    ));
+    if (is_wp_error($result)) {
+        return new WP_Error('podcast_test_unavailable', 'Cloudflare Worker could not be contacted.', array('status' => 503));
+    }
+    $code = (int) wp_remote_retrieve_response_code($result);
+    $body = json_decode(wp_remote_retrieve_body($result), true);
+    if (($code === 200 || $code === 202) && is_array($body) && isset($body['status'])) {
+        return $body;
+    }
+    return new WP_Error('podcast_test_worker', 'Cloudflare test request failed (' .
+        sanitize_text_field(is_array($body) && is_string($body['error'] ?? null) ? $body['error'] : 'HTTP ' . $code) . ').',
+        array('status' => 409));
+}
