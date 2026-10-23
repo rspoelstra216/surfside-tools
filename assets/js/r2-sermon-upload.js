@@ -18,6 +18,10 @@
   const podcastTitle = root.querySelector("#surfside-podcast-title");
   const podcastDescription = root.querySelector("#surfside-podcast-description");
   const podcastReview = root.querySelector("#surfside-podcast-review");
+  const testConfirm = root.querySelector("#surfside-podcast-test-confirm");
+  const testButton = root.querySelector("#surfside-podcast-test-button");
+  const testStatus = root.querySelector("#surfside-podcast-test-status");
+  let draftPending = false;
   let active = null;
 
   const showPodcastPreview = () => {
@@ -26,15 +30,24 @@
     const selected = Boolean(option && option.value);
     podcastEmpty.hidden = selected;
     podcastDetails.hidden = !selected;
+    if (testButton) {
+      testButton.disabled = !selected || option.dataset.podcastReview === "1" ||
+        !testConfirm.checked || draftPending;
+    }
     if (!selected) return;
     podcastTitle.textContent = option.dataset.podcastTitle || "";
     podcastDescription.textContent = option.dataset.podcastDescription || "";
     podcastReview.hidden = option.dataset.podcastReview !== "1";
   };
   if (podcastSelect) {
-    podcastSelect.addEventListener("change", showPodcastPreview);
+    podcastSelect.addEventListener("change", () => {
+      if (testConfirm) testConfirm.checked = false;
+      if (testStatus) testStatus.textContent = "";
+      showPodcastPreview();
+    });
     showPodcastPreview();
   }
+  if (testConfirm) testConfirm.addEventListener("change", showPodcastPreview);
 
   const message = (text) => { status.textContent = text; };
   const request = async (route, payload) => {
@@ -65,6 +78,27 @@
     }
     return body.data;
   };
+
+  if (testButton) testButton.addEventListener("click", async () => {
+    const option = podcastSelect?.selectedOptions[0];
+    if (!option?.value || option.dataset.podcastReview === "1" || !testConfirm?.checked || draftPending) return;
+    draftPending = true;
+    showPodcastPreview();
+    testStatus.textContent = "Requesting unpublished Spreaker test draft…";
+    try {
+      const result = await request("spreaker_draft_test", { video_id: option.value });
+      if (result.status !== "queued") throw new Error("Unexpected draft queue response.");
+      testStatus.textContent = "TEST draft queued for " + result.video_id +
+        ". Check podcast-spreaker/" + result.video_id +
+        ".json for uploaded, then inspect Spreaker Drafts. Do not publish the test episode.";
+    } catch (error) {
+      testStatus.textContent = error.message || "Spreaker test draft request failed.";
+    } finally {
+      draftPending = false;
+      testConfirm.checked = false;
+      showPodcastPreview();
+    }
+  });
 
   cancel.addEventListener("click", () => {
     if (active) active.abort();
