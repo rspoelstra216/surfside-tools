@@ -18,6 +18,12 @@
   const podcastTitle = root.querySelector("#surfside-podcast-title");
   const podcastDescription = root.querySelector("#surfside-podcast-description");
   const podcastReview = root.querySelector("#surfside-podcast-review");
+  const podcastTestFile = root.querySelector("#surfside-podcast-test-file");
+  const podcastTestConfirm = root.querySelector("#surfside-podcast-test-confirm");
+  const podcastTestButton = root.querySelector("#surfside-podcast-test-upload");
+  const podcastTestProgress = root.querySelector("#surfside-podcast-test-progress");
+  const podcastTestStatus = root.querySelector("#surfside-podcast-test-status");
+  let testBusy = false;
   let active = null;
 
   const showPodcastPreview = () => {
@@ -26,6 +32,10 @@
     const selected = Boolean(option && option.value);
     podcastEmpty.hidden = selected;
     podcastDetails.hidden = !selected;
+    if (podcastTestButton) {
+      podcastTestButton.disabled = testBusy || !selected || option.dataset.podcastReview === "1" ||
+        !podcastTestConfirm.checked || !podcastTestFile.files[0];
+    }
     if (!selected) return;
     podcastTitle.textContent = option.dataset.podcastTitle || "";
     podcastDescription.textContent = option.dataset.podcastDescription || "";
@@ -35,6 +45,9 @@
     podcastSelect.addEventListener("change", showPodcastPreview);
     showPodcastPreview();
   }
+
+  if (podcastTestConfirm) podcastTestConfirm.addEventListener("change", showPodcastPreview);
+  if (podcastTestFile) podcastTestFile.addEventListener("change", showPodcastPreview);
 
   const message = (text) => { status.textContent = text; };
   const request = async (route, payload) => {
@@ -65,6 +78,75 @@
     }
     return body.data;
   };
+
+  // Admin-only full-pipeline test: browser MP4 -> isolated R2 upload ->
+  // server-side verification -> existing Cloudflare Queue/FFmpeg -> Spreaker draft.
+  if (podcastTestButton) podcastTestButton.addEventListener("click", async () => {
+    const option = podcastSelect?.selectedOptions[0];
+    const videoId = option?.value || "";
+    const file = podcastTestFile.files[0];
+    if (testBusy || !podcastTestConfirm.checked || !/^[A-Za-z0-9_-]{11}$/.test(videoId) ||
+        option.dataset.podcastReview === "1" || !file || !/\.mp4$/i.test(file.name)) {
+      podcastTestStatus.textContent = "Select a valid sermon, MP4 and confirmation.";
+      return;
+    }
+    testBusy = true;
+    showPodcastPreview();
+    podcastTestProgress.style.display = "block";
+    podcastTestProgress.value = 0;
+    const say = (text) => { podcastTestStatus.textContent = text; };
+    try {
+      say("Requesting isolated R2 test-upload authorization…");
+      const ticket = await request("test_ticket", { video_id: videoId, size: file.size });
+      say("Uploading test MP4 directly to R2 (live Roku copy is unchanged)…");
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", ticket.upload_url, true);
+        xhr.setRequestHeader("Content-Type", "video/mp4");
+        xhr.upload.onprogress = (evt) => {
+          if (evt.lengthComputable) {
+            podcastTestProgress.value = Math.floor(100 * evt.loaded / evt.total);
+            say("Uploading test MP4: " + podcastTestProgress.value + "%");
+          }
+        };
+        xhr.onload = () => xhr.status >= 200 && xhr.status < 300
+          ? resolve() : reject(new Error("R2 upload returned HTTP " + xhr.status));
+        xhr.onerror = () => reject(new Error("Test MP4 could not be uploaded to R2."));
+        xhr.send(file);
+      });
+      say("MP4 uploaded. Verifying R2 and queuing Cloudflare processing…");
+      const complete = await request("test_complete", { video_id: videoId });
+      if (!complete.verified || complete.podcast?.status !== "queued") {
+        throw new Error("Test upload verified, but processing was not queued: " +
+          (complete.podcast?.status || "unknown"));
+      }
+      say("R2 verified. Cloudflare audio extraction queued; monitoring Spreaker draft…");
+      // Poll the signed WordPress proxy (never send Worker secrets to the browser).
+      for (let i = 0; i < 100; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+        const result = await request("test_status", { video_id: videoId });
+        const audio = result.status || "unknown";
+        const draft = result.spreaker?.status || "waiting";
+        say("Cloudflare audio: " + audio + " | Spreaker test draft: " + draft);
+        if (audio === "failed" || ["review_required", "not_configured", "queue_unavailable"].includes(draft)) {
+          say("Test needs investigation. Audio: " + audio + ", Spreaker: " + draft +
+            ". Check Cloudflare Observability and the test status objects.");
+          return;
+        }
+        if (audio === "ready" && draft === "uploaded") {
+          say("End-to-end TEST succeeded. Verify the [TEST - DO NOT PUBLISH] draft in Spreaker, then delete it.");
+          return;
+        }
+      }
+      say("Test is taking longer than expected. Check podcast-test-jobs and podcast-test-spreaker in R2.");
+    } catch (error) {
+      say(error.message || "End-to-end test failed to start.");
+    } finally {
+      testBusy = false;
+      podcastTestConfirm.checked = false;
+      showPodcastPreview();
+    }
+  });
 
   cancel.addEventListener("click", () => {
     if (active) active.abort();
