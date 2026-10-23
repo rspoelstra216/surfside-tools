@@ -45,20 +45,20 @@ function processAudio(intro, sermon, outro, output) {
   });
 }
 
-async function produce(id) {
+async function produce(id, test = false) {
   const dir = await mkdtemp(path.join(tmpdir(), "surfside-podcast-"));
   try {
     const sermon = path.join(dir, "sermon.mp4");
     const intro = path.join(dir, "intro.mp3");
     const outro = path.join(dir, "outro.mp3");
     const output = path.join(dir, "episode.mp3");
-    await download("sermons/" + id + ".mp4", sermon);
+    await download((test ? "podcast-test-input/" : "sermons/") + id + ".mp4", sermon);
     await download("podcast-assets/intro.mp3", intro);
     await download("podcast-assets/outro.mp3", outro);
     await processAudio(intro, sermon, outro, output);
     const bytes = (await stat(output)).size;
     if (bytes < 1024 || bytes > 300 * 1024 * 1024) throw Error("output_size_invalid");
-    const response = await fetch(STORAGE + "podcast-audio/" + id + ".mp3", {
+    const response = await fetch(STORAGE + (test ? "podcast-test-audio/" : "podcast-audio/") + id + ".mp3", {
       method: "PUT",
       // The Worker needs this exact byte count for R2's fixed-length stream.
       headers: { "content-type": "audio/mpeg", "content-length": String(bytes) },
@@ -87,9 +87,14 @@ http.createServer(async (request, response) => {
       body += chunk.toString();
       if (body.length > 256) throw Error("request_too_large");
     }
-    const id = JSON.parse(body)?.video_id;
+    const payload = JSON.parse(body);
+    const id = payload?.video_id;
+    const test = payload?.test === true;
+    if (payload?.test !== undefined && typeof payload.test !== "boolean") {
+      response.writeHead(400).end("invalid_test_flag"); return;
+    }
     if (!idPattern.test(id)) { response.writeHead(400).end("invalid_id"); return; }
-    const bytes = await produce(id);
+    const bytes = await produce(id, test);
     response.writeHead(200, { "content-type": "application/json" })
       .end(JSON.stringify({ ok: true, bytes }));
   } catch (error) {
