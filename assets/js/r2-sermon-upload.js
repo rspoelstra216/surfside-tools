@@ -112,7 +112,10 @@
       progress.value = 100;
       const podcastStatus = completion.podcast?.status;
       if (podcastStatus === "queued" || podcastStatus === "processing") {
-        message("MP4 verified for Roku. Podcast audio processing queued.");
+        message("MP4 verified for Roku. Podcast audio processing queued." +
+          (completion.podcast?.spreaker_draft_requested
+            ? " An unpublished Spreaker draft is planned after audio processing."
+            : ""));
       } else if (podcastStatus === "ready") {
         message("MP4 verified for Roku. Podcast MP3 is already prepared.");
       } else if (podcastStatus === "queue_unavailable") {
