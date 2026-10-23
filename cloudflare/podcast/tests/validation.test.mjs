@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { webcrypto } from "node:crypto";
-import { validId, sourceKey, audioKey, validStorageAccess, verifiedRequest } from "../src/validation.mjs";
+import { validId, sourceKey, audioKey, statusKey, validStorageAccess, verifiedRequest } from "../src/validation.mjs";
 
 globalThis.crypto ??= webcrypto;
 test("YouTube IDs and fixed keys are strict", () => {
@@ -34,4 +34,20 @@ test("HMAC rejects missing, invalid and replayed timestamps", async () => {
   assert.equal(await verifiedRequest(req("0".repeat(64)), secret, Number(timestamp) * 1000), false);
   assert.equal(await verifiedRequest(req(sig), secret, (Number(timestamp) + 1000) * 1000), false);
   assert.equal(await verifiedRequest(req(sig), "short", Number(timestamp) * 1000), false);
+});
+
+test("isolated end-to-end test paths cannot overwrite canonical Roku or podcast objects", () => {
+  const id = "0_QXD1k4fcI";
+  assert.equal(sourceKey(id), "sermons/0_QXD1k4fcI.mp4");
+  assert.equal(audioKey(id), "podcast-audio/0_QXD1k4fcI.mp3");
+  assert.equal(statusKey(id), "podcast-jobs/0_QXD1k4fcI.json");
+  assert.equal(sourceKey(id, true), "podcast-test-input/0_QXD1k4fcI.mp4");
+  assert.equal(audioKey(id, true), "podcast-test-audio/0_QXD1k4fcI.mp3");
+  assert.equal(statusKey(id, true), "podcast-test-jobs/0_QXD1k4fcI.json");
+  assert.equal(validStorageAccess(sourceKey(id, true), "GET"), true);
+  assert.equal(validStorageAccess(audioKey(id, true), "PUT"), true);
+  assert.equal(validStorageAccess(sourceKey(id, true), "PUT"), false);
+  assert.equal(validStorageAccess(audioKey(id, true), "GET"), false);
+  assert.equal(validStorageAccess("podcast-test-spreaker/0_QXD1k4fcI.json", "PUT"), false);
+  assert.equal(validStorageAccess("podcast-test-input/../../secrets.mp4", "GET"), false);
 });

@@ -1,19 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validDraftMetadata, multipartAudioStream, processSpreakerDraft, readDraftState } from "../src/spreaker.mjs";
+import { validDraftMetadata, draftKey, multipartAudioStream, processSpreakerDraft, readDraftState } from "../src/spreaker.mjs";
 
 const id = "0_QXD1k4fcI";
 const meta = { title: "Made to Serve | Made for More Series (Week 6)",
   description: "Sermon date: October 18, 2026\\nWatch on YouTube: https://www.youtube.com/watch?v=0_QXD1k4fcI" };
 const audioBytes = new TextEncoder().encode("FAKE_MP3_STREAM");
-const env = (configured = true) => {
+const env = (configured = true, test = false) => {
   const records = new Map();
   return {
     SPREAKER_OAUTH_ACCESS_TOKEN: configured ? "a".repeat(40) : undefined,
     SPREAKER_SHOW_ID: "10240",
     SERMONS_BUCKET: {
       async get(key) {
-        if (key === `podcast-audio/${id}.mp3`) return {
+        if (key === `${test ? "podcast-test-audio" : "podcast-audio"}/${id}.mp3`) return {
           size: audioBytes.byteLength,
           body: new ReadableStream({ start(c) { c.enqueue(audioBytes); c.close(); } }),
         };
@@ -103,4 +103,37 @@ test("missing secrets fail closed without reaching Spreaker", async () => {
   const state = await processSpreakerDraft(binding, id, meta, () => {requests++;});
   assert.equal(state.status, "not_configured");
   assert.equal(requests, 0);
+});
+
+test("isolated full-pipeline test uploads only to a separate unpublished Spreaker draft", async () => {
+  const binding = env(true, true);
+  let created = 0;
+  let uploaded = 0;
+  const send = async (url, opts) => {
+    if (url.endsWith("/episodes/drafts")) {
+      const data = new URLSearchParams(opts.body);
+      assert.equal(data.get("title").startsWith("[TEST - DO NOT PUBLISH] "), true);
+      created++;
+      return Response.json({ response: { episode: { episode_id: 8742, type: "DRAFT" } } });
+    }
+    uploaded++;
+    assert.equal(url, "https://api.spreaker.com/v2/episodes/8742");
+    assert.match(new TextDecoder().decode(new Uint8Array(await new Response(opts.body).arrayBuffer())), /FAKE_MP3_STREAM/);
+    return Response.json({ response: { episode: { episode_id: 8742, type: "DRAFT" } } });
+  };
+  const testMeta = {
+    ...meta,
+    title: "[TEST - DO NOT PUBLISH] " + meta.title,
+    description: "TEST DRAFT ONLY. " + meta.description,
+  };
+  const result = await processSpreakerDraft(binding, id, testMeta, send, true);
+  assert.equal(result.status, "uploaded");
+  assert.equal(result.episode_id, "8742");
+  assert.equal(draftKey(id, true), "podcast-test-spreaker/" + id + ".json");
+  assert.equal((await readDraftState(binding, id, true)).status, "uploaded");
+  assert.equal(await readDraftState(binding, id, false), null);
+  assert.equal(created, 1);
+  assert.equal(uploaded, 1);
+  await processSpreakerDraft(binding, id, testMeta, send, true);
+  assert.equal(created, 1, "repeated checks must not create extra test episodes");
 });

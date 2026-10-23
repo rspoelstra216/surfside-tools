@@ -3,7 +3,7 @@
 // reuses the same draft instead of creating a second episode.
 const enc = new TextEncoder();
 const validId = (id) => typeof id === "string" && /^[A-Za-z0-9_-]{11}$/.test(id);
-export const draftKey = (id) => `podcast-spreaker/${id}.json`;
+export const draftKey = (id, test = false) => `${test ? "podcast-test-spreaker" : "podcast-spreaker"}/${id}.json`;
 
 export const validDraftMetadata = (data) =>
   data && typeof data === "object" && !Array.isArray(data) &&
@@ -16,17 +16,17 @@ export const spreakerConfigured = (env) =>
   env.SPREAKER_OAUTH_ACCESS_TOKEN.length > 20 &&
   /^[1-9][0-9]*$/.test(String(env.SPREAKER_SHOW_ID ?? ""));
 
-const read = async (env, id) => {
-  const object = await env.SERMONS_BUCKET.get(draftKey(id));
+const read = async (env, id, test = false) => {
+  const object = await env.SERMONS_BUCKET.get(draftKey(id, test));
   if (!object) return null;
   try { return await object.json(); } catch { return { status: "review_required" }; }
 };
 export const readDraftState = read;
 
-export async function saveDraftState(env, id, status, episodeId = null, detail = "") {
+export async function saveDraftState(env, id, status, episodeId = null, detail = "", test = false) {
   const state = { video_id: id, status, episode_id: episodeId, detail,
     updated_at: new Date().toISOString() };
-  await env.SERMONS_BUCKET.put(draftKey(id), JSON.stringify(state), {
+  await env.SERMONS_BUCKET.put(draftKey(id, test), JSON.stringify(state), {
     httpMetadata: { contentType: "application/json" },
   });
   return state;
@@ -67,25 +67,26 @@ export function multipartAudioStream(audio, videoId, boundary) {
   return { body, contentLength: header.byteLength + audio.size + trailer.byteLength };
 }
 
-export async function processSpreakerDraft(env, id, metadata, fetcher = fetch) {
+export async function processSpreakerDraft(env, id, metadata, fetcher = fetch, test = false) {
+  const save = (status, episodeId = null, detail = "") => saveDraftState(env, id, status, episodeId, detail, test);
   if (!validId(id) || !validDraftMetadata(metadata)) {
-    return saveDraftState(env, id, "review_required", null, "invalid_metadata");
+    return save("review_required", null, "invalid_metadata");
   }
-  const previous = await read(env, id);
+  const previous = await read(env, id, test);
   if (previous?.status === "uploaded") return previous;
   if (previous?.status === "review_required" || previous?.status === "creating") return previous;
   if (!spreakerConfigured(env)) {
-    return saveDraftState(env, id, "not_configured", previous?.episode_id ?? null);
+    return save("not_configured", previous?.episode_id ?? null);
   }
-  const audio = await env.SERMONS_BUCKET.get(`podcast-audio/${id}.mp3`);
+  const audio = await env.SERMONS_BUCKET.get(`${test ? "podcast-test-audio" : "podcast-audio"}/${id}.mp3`);
   if (!audio || !audio.size || audio.size > 300 * 1024 * 1024 || !audio.body) {
-    return saveDraftState(env, id, "review_required", previous?.episode_id ?? null, "audio_missing_or_invalid");
+    return save("review_required", previous?.episode_id ?? null, "audio_missing_or_invalid");
   }
 
   let episodeId = previous?.episode_id;
   if (!episodeId) {
     // This marker prevents a blind duplicate POST after an ambiguous network failure.
-    await saveDraftState(env, id, "creating");
+    await save("creating");
     try {
       const params = new URLSearchParams({
         title: metadata.title,
@@ -97,18 +98,18 @@ export async function processSpreakerDraft(env, id, metadata, fetcher = fetch) {
         body: params.toString(), redirect: "error",
       });
       if (!response.ok) {
-        return saveDraftState(env, id, "review_required", null, `draft_http_${response.status}`);
+        return save("review_required", null, `draft_http_${response.status}`);
       }
       const episode = getEpisode(await response.json());
       if (!Number.isSafeInteger(Number(episode?.episode_id)) || Number(episode.episode_id) <= 0 ||
           episode?.type !== "DRAFT") {
-        return saveDraftState(env, id, "review_required", null, "unexpected_draft_response");
+        return save("review_required", null, "unexpected_draft_response");
       }
       episodeId = String(episode.episode_id);
-      await saveDraftState(env, id, "draft_created", episodeId);
+      await save("draft_created", episodeId);
     } catch (error) {
       console.error("Spreaker draft creation ambiguous; manual review required", id, String(error));
-      return saveDraftState(env, id, "review_required", null, "draft_response_uncertain");
+      return save("review_required", null, "draft_response_uncertain");
     }
   }
 
@@ -123,19 +124,19 @@ export async function processSpreakerDraft(env, id, metadata, fetcher = fetch) {
       body, duplex: "half", redirect: "error",
     });
   } catch (error) {
-    await saveDraftState(env, id, "upload_retry", episodeId, "audio_transfer_error");
+    await save("upload_retry", episodeId, "audio_transfer_error");
     throw error;
   }
   if (!response.ok) {
-    await saveDraftState(env, id, response.status === 401 || response.status === 403
+    await save(response.status === 401 || response.status === 403
       ? "review_required" : "upload_retry", episodeId, `audio_http_${response.status}`);
-    if (response.status === 401 || response.status === 403) return read(env, id);
+    if (response.status === 401 || response.status === 403) return read(env, id, test);
     throw Error(`spreaker_audio_http_${response.status}`);
   }
   const uploaded = getEpisode(await response.json().catch(() => null));
   if (!uploaded || String(uploaded.episode_id) !== episodeId || uploaded.type !== "DRAFT") {
-    return saveDraftState(env, id, "review_required", episodeId, "unexpected_audio_response");
+    return save("review_required", episodeId, "unexpected_audio_response");
   }
   // Uploaded means attached to an UNPUBLISHED draft; encoding may still be running.
-  return saveDraftState(env, id, "uploaded", episodeId);
+  return save("uploaded", episodeId);
 }

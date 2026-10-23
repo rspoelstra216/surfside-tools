@@ -1,14 +1,16 @@
 export const validId = (id) => typeof id === "string" && /^[A-Za-z0-9_-]{11}$/.test(id);
-export const sourceKey = (id) => `sermons/${id}.mp4`;
-export const audioKey = (id) => `podcast-audio/${id}.mp3`;
-export const statusKey = (id) => `podcast-jobs/${id}.json`;
+// Isolated test paths protect canonical Roku and podcast objects.
+export const sourceKey = (id, test = false) => `${test ? "podcast-test-input" : "sermons"}/${id}.mp4`;
+export const audioKey = (id, test = false) => `${test ? "podcast-test-audio" : "podcast-audio"}/${id}.mp3`;
+export const statusKey = (id, test = false) => `${test ? "podcast-test-jobs" : "podcast-jobs"}/${id}.json`;
 
 export function validStorageAccess(key, method) {
   if (method === "GET") {
-    return /^sermons\/[A-Za-z0-9_-]{11}\.mp4$/.test(key) ||
+    return /^(?:sermons|podcast-test-input)\/[A-Za-z0-9_-]{11}\.mp4$/.test(key) ||
       key === "podcast-assets/intro.mp3" || key === "podcast-assets/outro.mp3";
   }
-  return method === "PUT" && /^podcast-audio\/[A-Za-z0-9_-]{11}\.mp3$/.test(key);
+  return method === "PUT" &&
+    /^(?:podcast-audio|podcast-test-audio)\/[A-Za-z0-9_-]{11}\.mp3$/.test(key);
 }
 
 export async function verifiedRequest(request, secret, now = Date.now()) {
