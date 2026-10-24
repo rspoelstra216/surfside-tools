@@ -228,6 +228,12 @@ function surfside_tools_r2_podcast_test_upload($mode, $data) {
         return new WP_Error('podcast_test_id', 'Choose an existing YouTube Messages sermon.', array('status' => 400));
     }
     if ($mode === 'test_status') return surfside_tools_podcast_test_worker($id, true);
+    if ($mode === 'test_spreaker_retry') {
+        if (($data['confirmed_no_draft'] ?? '') !== 'yes') {
+            return new WP_Error('podcast_test_confirmation', 'Confirm this is the known redirect preflight failure before retrying.', array('status' => 400));
+        }
+        return surfside_tools_podcast_test_worker($id, false, true);
+    }
     $key = 'podcast-test-input/' . $id . '.mp4';
     $head_url = surfside_tools_r2_presign('HEAD', $key);
     if (is_wp_error($head_url)) return $head_url;
@@ -324,7 +330,7 @@ function surfside_tools_r2_browser_upload_dispatch($data) {
         return new WP_Error('r2_bad_nonce', 'Upload authorization expired. Reload the Roku Copies page and try again.', array('status' => 403));
     }
     $mode = isset($data['mode']) && is_string($data['mode']) ? sanitize_key($data['mode']) : '';
-    if (in_array($mode, array('test_ticket', 'test_complete', 'test_resume', 'test_status'), true)) {
+    if (in_array($mode, array('test_ticket', 'test_complete', 'test_resume', 'test_status', 'test_spreaker_retry'), true)) {
         return surfside_tools_r2_podcast_test_upload($mode, $data);
     }
     if (!in_array($mode, array('ticket', 'complete'), true)) {
@@ -677,6 +683,12 @@ function surfside_tools_staff_r2_sermons_shortcode() {
             </label>
             <button id="surfside-podcast-test-upload" type="button" disabled>Run end-to-end test</button>
             <button id="surfside-podcast-test-resume" type="button" disabled style="margin-left:8px">Resume verified test MP4</button>
+            <div style="margin-top:12px">
+              <button id="surfside-podcast-test-spreaker-retry" type="button" disabled>
+                Retry Spreaker TEST draft only
+              </button>
+              <p class="surfside-yt-muted">Use only when the audio test is <strong>ready</strong>, the Spreaker state is <strong>review_required / draft_response_uncertain</strong>, and Cloudflare logs show the unsupported redirect option. This retries Spreaker only; it will not process the MP4 again. Confirm no draft was created first.</p>
+            </div>
             <p class="surfside-yt-muted">If the MP4 already uploaded but Cloudflare rejected the request, correct the Worker shared secret and choose Resume. Do not upload the MP4 again.</p>
             <progress id="surfside-podcast-test-progress" max="100" value="0" style="display:none;width:100%;margin-top:12px"></progress>
             <p id="surfside-podcast-test-status" role="status" aria-live="polite"></p>

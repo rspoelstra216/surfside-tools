@@ -23,6 +23,16 @@ const read = async (env, id, test = false) => {
 };
 export const readDraftState = read;
 
+// Explicit recovery is restricted to the known Cloudflare redirect-mode
+// preflight failure. This historical failure occurred before any HTTP
+// request reached Spreaker, so no draft episode was created by that attempt.
+// Other uncertain responses must remain review-only to prevent duplicates.
+export const canRetryKnownRedirectFailure = (state) =>
+  state?.status === "review_required" &&
+  state?.detail === "draft_response_uncertain" &&
+  state?.episode_id == null;
+
+
 export async function saveDraftState(env, id, status, episodeId = null, detail = "", test = false) {
   const state = { video_id: id, status, episode_id: episodeId, detail,
     updated_at: new Date().toISOString() };
@@ -95,7 +105,7 @@ export async function processSpreakerDraft(env, id, metadata, fetcher = fetch, t
       });
       const response = await fetcher(`${endpoint}/episodes/drafts`, {
         method: "POST", headers: { ...tokenHeaders(env), "content-type": "application/x-www-form-urlencoded" },
-        body: params.toString(), redirect: "error",
+        body: params.toString(), redirect: "manual",
       });
       if (!response.ok) {
         return save("review_required", null, `draft_http_${response.status}`);
@@ -121,7 +131,7 @@ export async function processSpreakerDraft(env, id, metadata, fetcher = fetch, t
       method: "POST",
       headers: { ...tokenHeaders(env), "content-type": `multipart/form-data; boundary=${boundary}`,
         "content-length": String(contentLength) },
-      body, duplex: "half", redirect: "error",
+      body, duplex: "half", redirect: "manual",
     });
   } catch (error) {
     await save("upload_retry", episodeId, "audio_transfer_error");

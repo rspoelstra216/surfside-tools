@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validDraftMetadata, draftKey, multipartAudioStream, processSpreakerDraft, readDraftState } from "../src/spreaker.mjs";
+import { validDraftMetadata, draftKey, canRetryKnownRedirectFailure, multipartAudioStream, processSpreakerDraft, readDraftState } from "../src/spreaker.mjs";
 
 const id = "0_QXD1k4fcI";
 const meta = { title: "Made to Serve | Made for More Series (Week 6)",
@@ -37,7 +37,8 @@ test("MP3 streams as correct multipart request and Spreaker stays unpublished", 
   const send = async (url, options) => {
     calls.push(url);
     assert.match(options.headers.authorization, /^Bearer /);
-    assert.equal(options.redirect, "error");
+    assert.equal(options.redirect, "manual", "Cloudflare Workers rejects redirect:error before sending");
+    assert.equal(options.redirect, "manual");
     if (url.endsWith("/episodes/drafts")) {
       const fields = new URLSearchParams(options.body);
       assert.equal(fields.get("title"), meta.title);
@@ -136,4 +137,34 @@ test("isolated full-pipeline test uploads only to a separate unpublished Spreake
   assert.equal(uploaded, 1);
   await processSpreakerDraft(binding, id, testMeta, send, true);
   assert.equal(created, 1, "repeated checks must not create extra test episodes");
+});
+
+test("Cloudflare redirect handling rejects 302 without following Authorization headers", async () => {
+  const binding = env();
+  let count = 0;
+  const outcome = await processSpreakerDraft(binding, id, meta, async (_url, options) => {
+    count++;
+    assert.equal(options.redirect, "manual");
+    return new Response(null, { status: 302, headers: { Location: "https://example.org/unsafe" } });
+  });
+  assert.equal(count, 1);
+  assert.equal(outcome.status, "review_required");
+  assert.equal(outcome.detail, "draft_http_302");
+  assert.equal(outcome.episode_id, null);
+});
+
+test("historical redirect preflight error has narrow manual recovery eligibility", () => {
+  assert.equal(canRetryKnownRedirectFailure({
+    status: "review_required", detail: "draft_response_uncertain", episode_id: null,
+  }), true);
+  assert.equal(canRetryKnownRedirectFailure({
+    status: "review_required", detail: "draft_http_401", episode_id: null,
+  }), false);
+  assert.equal(canRetryKnownRedirectFailure({
+    status: "review_required", detail: "draft_response_uncertain", episode_id: 212,
+  }), false);
+  assert.equal(canRetryKnownRedirectFailure({
+    status: "creating", detail: "draft_response_uncertain", episode_id: null,
+  }), false);
+  assert.equal(canRetryKnownRedirectFailure(null), false);
 });
