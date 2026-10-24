@@ -125,7 +125,7 @@ function surfside_tools_podcast_queue_verified($id) {
  * No production sermon/audio key is read or overwritten by this mode.
  * This is separate from normal weekly uploads and never auto-publishes Spreaker.
  */
-function surfside_tools_podcast_test_worker($id, $status_only = false) {
+function surfside_tools_podcast_test_worker($id, $status_only = false, $retry_only = false) {
     if (!current_user_can('manage_options') || !is_string($id) ||
         !preg_match('/^[A-Za-z0-9_-]{11}$/D', $id)) {
         return new WP_Error('podcast_test_forbidden', 'Site administrator access required.', array('status' => 403));
@@ -145,9 +145,12 @@ function surfside_tools_podcast_test_worker($id, $status_only = false) {
     }
     $payload = wp_json_encode($status_only
         ? array('video_id' => $id, 'test' => true)
-        : array('video_id' => $id, 'test' => true, 'spreaker' => $metadata));
+        : ($retry_only
+            ? array('video_id' => $id, 'test' => true, 'confirmed_no_draft' => true, 'spreaker' => $metadata)
+            : array('video_id' => $id, 'test' => true, 'spreaker' => $metadata)));
     $when = (string) time();
-    $result = wp_remote_post($base . ($status_only ? '/status' : '/jobs'), array(
+    $path = $status_only ? '/status' : ($retry_only ? '/retry-test-spreaker' : '/jobs');
+    $result = wp_remote_post($base . $path, array(
         'headers' => array(
             'Content-Type' => 'application/json',
             'X-Surfside-Time' => $when,
