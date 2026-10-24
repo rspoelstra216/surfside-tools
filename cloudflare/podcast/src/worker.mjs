@@ -2,7 +2,7 @@ import { Container, ContainerProxy, getContainer } from "@cloudflare/containers"
 export { ContainerProxy };
 import { validId, sourceKey, audioKey, statusKey, validStorageAccess, verifiedRequest } from "./validation.mjs";
 import { uploadAudioToR2 } from "./audio-upload.mjs";
-import { validDraftMetadata, spreakerConfigured, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
+import { validDraftMetadata, spreakerConfigured, canRetryKnownRedirectFailure, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
 
 const reply = (data, status = 200) => Response.json(data, {
   status,
@@ -46,7 +46,8 @@ PodcastContainer.outboundByHost = {
 };
 
 async function incoming(request, env) {
-  if (!["/jobs", "/status"].includes(new URL(request.url).pathname) || request.method !== "POST") {
+  const route = new URL(request.url).pathname;
+  if (!["/jobs", "/status", "/retry-test-spreaker"].includes(route) || request.method !== "POST") {
     return reply({ error: "not_found" }, 404);
   }
   if (!await verifiedRequest(request, env.SURFSIDE_PODCAST_SHARED_SECRET)) {
@@ -59,9 +60,36 @@ async function incoming(request, env) {
   if (!validId(id)) return reply({ error: "invalid_video_id" }, 400);
   const test = data?.test === true;
   if (data?.test !== undefined && typeof data.test !== "boolean") return reply({ error: "invalid_test_flag" }, 400);
-  if (new URL(request.url).pathname === "/status") {
+  if (route === "/status") {
     const [audio, spreaker] = await Promise.all([readState(env, id, test), readDraftState(env, id, test)]);
     return reply(spreaker ? { ...audio, spreaker } : audio);
+  }
+  if (route === "/retry-test-spreaker") {
+    // Strictly a manually confirmed, test-only recovery of the historical
+    // unsupported redirect:"error" preflight. Does not re-run FFmpeg.
+    if (!test || data?.confirmed_no_draft !== true || !validDraftMetadata(data?.spreaker))
+      return reply({ error: "test_retry_requires_confirmation" }, 400);
+    if (!spreakerConfigured(env)) return reply({ error: "test_requires_spreaker" }, 409);
+    const [audio, previous, spreaker] = await Promise.all([
+      readState(env, id, true),
+      env.SERMONS_BUCKET.head(audioKey(id, true)),
+      readDraftState(env, id, true),
+    ]);
+    if (audio.status !== "ready" || !previous || !canRetryKnownRedirectFailure(spreaker)) {
+      return reply({ error: "retry_not_eligible" }, 409);
+    }
+    // No episode ID was received, and the verified old failure was thrown
+    // before fetch executed. Reset only the test record for a single attempt.
+    await saveDraftState(env, id, "queued", null, "", true);
+    try {
+      await env.PODCAST_QUEUE.send({ kind: "spreaker", video_id: id, test: true,
+        spreaker: { title: data.spreaker.title, description: data.spreaker.description } });
+      return reply({ video_id: id, status: "queued", test: true }, 202);
+    } catch (error) {
+      console.error("Unable to queue recovered Spreaker test draft", id, String(error));
+      await saveDraftState(env, id, "queue_unavailable", null, "", true);
+      return reply({ error: "queue_unavailable" }, 503);
+    }
   }
   if (test && (!validDraftMetadata(data?.spreaker) || !spreakerConfigured(env))) return reply({ error: "test_requires_spreaker" }, 409);
   if (!await env.SERMONS_BUCKET.head(sourceKey(id, test))) return reply({ error: "sermon_missing" }, 409);
