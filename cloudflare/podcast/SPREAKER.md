@@ -207,3 +207,39 @@ not require an MP4 from your computer or touch canonical Roku/podcast
 media. If it still returns `unauthorized`, investigate a mismatched shared
 secret or a WordPress/server clock more than five minutes out of sync.
 Never paste credentials into a GitHub issue, chat, screenshot, or log.
+
+## Recovery after Cloudflare rejected `redirect: "error"` (October 23, 2026)
+
+Cloudflare Observability for the first complete `OTt1dfYhlDY` test shows:
+`TypeError: Invalid redirect value, must be one of "follow" or "manual"`.
+The error was raised by Cloudflare's `fetch` implementation **before it sent**
+the Spreaker draft creation POST. The existing test MP3 is complete and the
+test audio job is `ready`. This PR changes **both** Spreaker API calls to
+`redirect: "manual"`. We must not use `follow` with Authorization headers,
+since redirecting to a different origin could leak the token.
+
+For this *confirmed preflight-only failure*, an operator can resume the
+**Spreaker stage only**, without reuploading the MP4 or rerunning FFmpeg:
+
+1. Merge this PR and confirm the latest Cloudflare Worker deployment is Ready.
+2. In **Weekly Media Publishing → Podcast episode preview**, keep the same
+   sermon selected (YouTube ID `OTt1dfYhlDY`).
+3. Verify `podcast-test-jobs/<id>.json` status `ready`, and
+   `podcast-test-spreaker/<id>.json` status `review_required`,
+   `detail: draft_response_uncertain`, `episode_id: null`. Verify the
+   Cloudflare log shows specifically the invalid redirect option, and that
+   Spreaker has no matching `[TEST - DO NOT PUBLISH]` episode.
+4. Check the confirmation and click **Retry Spreaker TEST draft only**.
+5. WordPress sends a fresh HMAC-signed request to the test recovery route.
+   The Worker verifies the previous state and test MP3, then creates a
+   new queue message for the existing Spreaker draft creation/audio upload.
+6. Look for the new test Spreaker status `uploaded` and a matching
+   **unpublished** episode with audio in the existing show, then delete
+   only the explicitly labeled test draft.
+
+The recovery action *refuses* already-created drafts, any production podcast
+job, audio not ready, or a different error state. All other ambiguous responses
+must remain in manual review to avoid accidentally creating duplicate drafts.
+Do not manually delete status JSON to force retries.
+
+Reference: https://developers.cloudflare.com/workers/runtime-apis/request/
