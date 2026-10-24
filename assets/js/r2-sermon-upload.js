@@ -22,6 +22,7 @@
   const podcastTestConfirm = root.querySelector("#surfside-podcast-test-confirm");
   const podcastTestButton = root.querySelector("#surfside-podcast-test-upload");
   const podcastTestResume = root.querySelector("#surfside-podcast-test-resume");
+  const podcastTestSpreakerRetry = root.querySelector("#surfside-podcast-test-spreaker-retry");
   const podcastTestProgress = root.querySelector("#surfside-podcast-test-progress");
   const podcastTestStatus = root.querySelector("#surfside-podcast-test-status");
   let testBusy = false;
@@ -42,6 +43,10 @@
       // has the correct size/type, and does not have an active Queue job.
       podcastTestResume.disabled = testBusy || !selected || option.dataset.podcastReview === "1" ||
         !podcastTestConfirm.checked;
+    }
+    if (podcastTestSpreakerRetry) {
+      podcastTestSpreakerRetry.disabled = testBusy || !selected ||
+        option.dataset.podcastReview === "1" || !podcastTestConfirm.checked;
     }
     if (!selected) return;
     podcastTitle.textContent = option.dataset.podcastTitle || "";
@@ -182,6 +187,31 @@
       await monitorTest(videoId, say);
     } catch (error) {
       say(error.message || "Could not resume the staged test. Check the Worker shared secret.");
+    } finally {
+      testBusy = false;
+      podcastTestConfirm.checked = false;
+      showPodcastPreview();
+    }
+  });
+
+  if (podcastTestSpreakerRetry) podcastTestSpreakerRetry.addEventListener("click", async () => {
+    const option = podcastSelect?.selectedOptions[0];
+    const videoId = option?.value || "";
+    if (testBusy || !podcastTestConfirm?.checked || !/^[A-Za-z0-9_-]{11}$/.test(videoId) ||
+        option.dataset.podcastReview === "1") return;
+    testBusy = true;
+    showPodcastPreview();
+    const say = (text) => { podcastTestStatus.textContent = text; };
+    try {
+      say("Checking eligibility for Spreaker-only TEST retry…");
+      const result = await request("test_spreaker_retry", {
+        video_id: videoId, confirmed_no_draft: "yes"
+      });
+      if (result.status !== "queued") throw new Error("Spreaker-only test retry was not queued.");
+      say("Spreaker TEST draft queued using existing MP3. Monitoring status…");
+      await monitorTest(videoId, say);
+    } catch (error) {
+      say(error.message || "Spreaker-only test retry failed. Check Cloudflare status and logs.");
     } finally {
       testBusy = false;
       podcastTestConfirm.checked = false;
