@@ -255,6 +255,38 @@ function surfside_tools_r2_podcast_test_upload($mode, $data) {
         set_transient($transient, (int) $size, 4 * HOUR_IN_SECONDS);
         return array('upload_url' => $upload_url, 'video_id' => $id);
     }
+    if ($mode === 'test_resume') {
+        // The earlier POST may have failed after R2 accepted a multi-GB MP4.
+        // Never require another upload, or blindly enqueue without checking
+        // both the staged object and the current signed Worker status.
+        $size = $http === 200 ? (int) wp_remote_retrieve_header($head, 'content-length') : 0;
+        $type = $http === 200
+            ? strtolower(trim((string) wp_remote_retrieve_header($head, 'content-type'))) : '';
+        if ($size < 1024 * 1024 || $size > 5 * 1024 * 1024 * 1024 || $type !== 'video/mp4') {
+            return new WP_Error('podcast_test_staged', 'No valid staged test MP4 was found in R2; do not delete the original sermon.', array('status' => 409));
+        }
+        // Verify credentials without starting FFmpeg; this also protects
+        // against accidental double-submit if a prior job was queued.
+        $previous = surfside_tools_podcast_test_worker($id, true);
+        if (is_wp_error($previous)) return $previous;
+        $status = $previous['status'] ?? '';
+        if (in_array($status, array('queued', 'processing', 'ready'), true) ||
+            !empty($previous['spreaker'])) {
+            return array('verified' => true, 'video_id' => $id,
+                'podcast' => $previous, 'resumed' => false);
+        }
+        if (!in_array($status, array('not_queued', 'failed'), true)) {
+            return new WP_Error('podcast_test_state', 'Test job has an unexpected state. Check Cloudflare before retrying.', array('status' => 409));
+        }
+        $queued = surfside_tools_podcast_test_worker($id, false);
+        if (is_wp_error($queued)) return $queued;
+        if (($queued['status'] ?? '') !== 'queued' &&
+            ($queued['status'] ?? '') !== 'processing' &&
+            ($queued['status'] ?? '') !== 'ready') {
+            return new WP_Error('podcast_test_state', 'Cloudflare did not confirm an accepted test job.', array('status' => 409));
+        }
+        return array('verified' => true, 'video_id' => $id, 'podcast' => $queued, 'resumed' => true);
+    }
     if ($mode === 'test_complete') {
         $expected = (int) get_transient($transient);
         if ($expected <= 0) {
@@ -265,9 +297,9 @@ function surfside_tools_r2_podcast_test_upload($mode, $data) {
             strtolower(trim((string) wp_remote_retrieve_header($head, 'content-type'))) !== 'video/mp4') {
             return new WP_Error('podcast_test_unverified', 'The test MP4 did not pass R2 size and type verification.', array('status' => 409));
         }
-        delete_transient($transient);
         $queued = surfside_tools_podcast_test_worker($id, false);
         if (is_wp_error($queued)) return $queued;
+        delete_transient($transient);
         return array('verified' => true, 'video_id' => $id, 'podcast' => $queued);
     }
     return new WP_Error('podcast_test_mode', 'Unknown test operation.', array('status' => 400));
@@ -292,7 +324,7 @@ function surfside_tools_r2_browser_upload_dispatch($data) {
         return new WP_Error('r2_bad_nonce', 'Upload authorization expired. Reload the Roku Copies page and try again.', array('status' => 403));
     }
     $mode = isset($data['mode']) && is_string($data['mode']) ? sanitize_key($data['mode']) : '';
-    if (in_array($mode, array('test_ticket', 'test_complete', 'test_status'), true)) {
+    if (in_array($mode, array('test_ticket', 'test_complete', 'test_resume', 'test_status'), true)) {
         return surfside_tools_r2_podcast_test_upload($mode, $data);
     }
     if (!in_array($mode, array('ticket', 'complete'), true)) {
@@ -644,6 +676,8 @@ function surfside_tools_staff_r2_sermons_shortcode() {
               I understand this creates an additional unpublished [TEST] Spreaker draft to delete after verifying.
             </label>
             <button id="surfside-podcast-test-upload" type="button" disabled>Run end-to-end test</button>
+            <button id="surfside-podcast-test-resume" type="button" disabled style="margin-left:8px">Resume verified test MP4</button>
+            <p class="surfside-yt-muted">If the MP4 already uploaded but Cloudflare rejected the request, correct the Worker shared secret and choose Resume. Do not upload the MP4 again.</p>
             <progress id="surfside-podcast-test-progress" max="100" value="0" style="display:none;width:100%;margin-top:12px"></progress>
             <p id="surfside-podcast-test-status" role="status" aria-live="polite"></p>
           </div>

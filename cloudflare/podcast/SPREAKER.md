@@ -173,3 +173,37 @@ After this PR is merged and the new Worker deployment is Ready:
   resubmission could create unnecessary extra draft episodes.
 - No changes to the bulk archive, public Roku endpoints, or production
   weekly upload flow are necessary for this test.
+
+## Resume a staged test after Cloudflare authorization fails
+
+If **Full pipeline test** finishes its direct R2 MP4 upload but the staff page
+reports `Cloudflare test request failed (unauthorized)`, then the
+`podcast-test-input/<video-id>.mp4` was staged but Cloudflare refused the
+HMAC-signed WordPress `POST /jobs`. Neither FFmpeg nor Spreaker ran.
+
+1. Verify Cloudflare's Worker has the **runtime Secret** named
+   `SURFSIDE_PODCAST_SHARED_SECRET` under **Settings → Variables and Secrets**.
+   This is not `SPREAKER_OAUTH_ACCESS_TOKEN` or the OAuth client secret.
+2. Verify the production `wp-config.php` has
+   `SURFSIDE_PODCAST_SHARED_SECRET` set to the **exact same long string** as
+   the Cloudflare Worker secret, without quotes from a password manager,
+   whitespace changes, or a different test secret. Both environments must
+   use the original shared HMAC secret. You cannot reveal Cloudflare's
+   encrypted value in its dashboard; if the two values cannot be reconciled,
+   choose a fresh random secret and update **both** locations.
+3. Save/deploy any Cloudflare secret change, confirm the Worker is Ready, and
+   reload the staff page. Do **not** try to reupload the full MP4.
+4. Select the **same** YouTube sermon in the Podcast Preview, check the
+   confirmation box and click **Resume verified test MP4**. PHP re-verifies
+   the staged R2 object's size and MIME type, checks the Worker using the
+   signed read-only `POST /status`, and only queues a new processing attempt
+   if no job is already running/completed. This also works after the original
+   upload transient expires.
+5. Follow the updated status text through Cloudflare `ready` and Spreaker
+   `uploaded`; review and then delete the unpublished **TEST** draft.
+
+The resume route remains administrator-only and nonce-protected; it does
+not require an MP4 from your computer or touch canonical Roku/podcast
+media. If it still returns `unauthorized`, investigate a mismatched shared
+secret or a WordPress/server clock more than five minutes out of sync.
+Never paste credentials into a GitHub issue, chat, screenshot, or log.

@@ -187,6 +187,16 @@ foreach (array(
     assert_r2(strpos($staff_ui, $weekly) !== false,
         'Roku Copies retains the weekly workflow: ' . $weekly);
 }
+// An aborted Worker handoff must not force a second multi-GB R2 upload.
+assert_r2(strpos($source, "if (\$mode === 'test_resume')") !== false
+    && strpos($source, 'surfside_tools_podcast_test_worker($id, true)') !== false
+    && strpos($source, "'test_resume', 'test_status'") !== false,
+    'administrator-only test resume rechecks staged R2 object and Worker status');
+$test_client = file_get_contents(dirname(__DIR__) . '/assets/js/r2-sermon-upload.js');
+assert_r2(strpos($test_client, 'surfside-podcast-test-resume') !== false
+    && strpos($test_client, 'request("test_resume"') !== false,
+    'test UI can resume the existing uploaded MP4 without browser file reupload');
+
 assert_r2(strpos($source, 'function surfside_tools_r2_reconcile_post()') !== false
     && strpos($source, 'function surfside_tools_r2_export_post()') !== false,
     'Maintenance operations remain available for existing imports without on-screen clutter');
