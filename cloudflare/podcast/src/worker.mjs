@@ -80,10 +80,16 @@ async function incoming(request, env) {
     }
     // No episode ID was received, and the verified old failure was thrown
     // before fetch executed. Reset only the test record for a single attempt.
+    const label = "[TEST - DO NOT PUBLISH] ";
+    const metadata = {
+      title: (label + data.spreaker.title).slice(0, 140),
+      description: ("TEST DRAFT ONLY — delete after integration verification.\n\n" +
+        data.spreaker.description).slice(0, 8000),
+    };
     await saveDraftState(env, id, "queued", null, "", true);
     try {
       await env.PODCAST_QUEUE.send({ kind: "spreaker", video_id: id, test: true,
-        spreaker: { title: data.spreaker.title, description: data.spreaker.description } });
+        spreaker: metadata });
       return reply({ video_id: id, status: "queued", test: true }, 202);
     } catch (error) {
       console.error("Unable to queue recovered Spreaker test draft", id, String(error));
