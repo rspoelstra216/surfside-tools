@@ -42,6 +42,27 @@
       if (empty) empty.hidden = shown > 0;
     }
 
+    // The middle breadcrumb identifies a navigation category rather than a
+    // destination page. Open the drawer to that section, without navigating
+    // away from the current editor or hiding items behind an old search.
+    var categoryButton = root.querySelector('[data-ss-breadcrumb-group]');
+    if (categoryButton) categoryButton.addEventListener('click', function () {
+      var categoryKey = categoryButton.getAttribute('data-ss-breadcrumb-group');
+      var category = Array.prototype.find.call(groups, function (group) {
+        return group.getAttribute('data-ss-group-key') === categoryKey;
+      });
+      if (!category) return;
+      if (search) search.value = '';
+      filterTools();
+      setOpen(true, false);
+      var heading = category.querySelector('h2');
+      if (heading) {
+        heading.setAttribute('tabindex', '-1');
+        heading.focus({ preventScroll: true });
+      }
+      category.scrollIntoView({ block: 'start', behavior: 'auto' });
+    });
+
     if (search) search.addEventListener('input', filterTools);
     if (openButton) openButton.addEventListener('click', function () {
       setOpen(!root.classList.contains('is-open'), false);

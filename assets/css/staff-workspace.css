@@ -47,6 +47,15 @@
 }
 .surfside-workspace-breadcrumb{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:13px;font-weight:650;color:#637188}
 .surfside-workspace-breadcrumb a{color:var(--ss-blue);text-decoration:none!important}
+.surfside-workspace-breadcrumb .surfside-workspace-breadcrumb-group{
+  display:inline-flex;align-items:center;min-height:36px;margin:-4px 0;
+  padding:4px 2px;border:0!important;border-radius:4px;background:transparent!important;
+  box-shadow:none!important;color:var(--ss-blue)!important;
+  font:inherit!important;line-height:inherit!important;font-weight:650!important;
+  text-align:left;text-decoration:underline;text-underline-offset:3px;
+  cursor:pointer;white-space:normal;
+}
+.surfside-workspace-breadcrumb .surfside-workspace-breadcrumb-group:hover{color:#083d7f!important}
 .surfside-workspace-breadcrumb [aria-current=page]{color:var(--ss-ink);font-weight:800}
 .surfside-workspace-menu,.surfside-workspace-close{display:none}
 .surfside-workspace-content{min-width:0}
