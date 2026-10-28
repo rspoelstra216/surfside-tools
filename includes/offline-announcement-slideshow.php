@@ -76,6 +76,20 @@ function surfside_tools_offline_slideshow_mobile_api($payload) {
 }
 add_filter('surfside_tools_mobile_api_app', 'surfside_tools_offline_slideshow_mobile_api');
 
+/** Lightweight polling endpoint for the website's offline announcement player. */
+function surfside_tools_offline_slideshow_register_public_route() {
+    register_rest_route('surfside/v1', '/announcement-slideshow', array(
+        'methods' => WP_REST_Server::READABLE,
+        'permission_callback' => '__return_true',
+        'callback' => function () {
+            $response = rest_ensure_response(surfside_tools_offline_slideshow_public_data());
+            $response->header('Cache-Control', 'no-store, max-age=0');
+            return $response;
+        },
+    ));
+}
+add_action('rest_api_init', 'surfside_tools_offline_slideshow_register_public_route');
+
 
 /**
  * Upload announcement images during this page's normal multipart form POST,

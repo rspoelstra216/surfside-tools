@@ -60,10 +60,18 @@ function surfside_tools_watch_live_enqueue_assets() {
         array('surfside-tools-design-system'),
         file_exists($style_path) ? (string) filemtime($style_path) : SURFSIDE_TOOLS_VERSION
     );
+    $announcements_path = SURFSIDE_TOOLS_PATH . 'assets/js/watch-live-announcements.js';
+    wp_enqueue_script(
+        'surfside-tools-watch-live-announcements',
+        SURFSIDE_TOOLS_URL . 'assets/js/watch-live-announcements.js',
+        array(),
+        file_exists($announcements_path) ? (string) filemtime($announcements_path) : SURFSIDE_TOOLS_VERSION,
+        true
+    );
     wp_enqueue_script(
         'surfside-tools-watch-live',
         SURFSIDE_TOOLS_URL . 'assets/js/watch-live-stream.js',
-        array(),
+        array('surfside-tools-watch-live-announcements'),
         file_exists($script_path) ? (string) filemtime($script_path) : SURFSIDE_TOOLS_VERSION,
         true
     );
@@ -94,6 +102,10 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
     $channel = sanitize_key($streaming['twitch_channel'] ?? 'surfsidecf');
     $video_id = absint($streaming['announcement_video_id'] ?? 0);
     $video_url = $video_id ? wp_get_attachment_url($video_id) : '';
+    $published_slideshow = function_exists('surfside_tools_offline_slideshow_public_data')
+        ? surfside_tools_offline_slideshow_public_data() : array('slides' => array());
+    $slideshow_json = wp_json_encode($published_slideshow['slides'] ?? array());
+    $slideshow_endpoint = rest_url('surfside/v1/announcement-slideshow');
     $youtube_url = surfside_tools_site_information_url($streaming['youtube_url'] ?? 'https://www.youtube.com/@addpastor');
     $facebook_url = surfside_tools_site_information_url($streaming['facebook_url'] ?? 'https://www.facebook.com/SurfsideCommunityFellowship');
     $twitch_url = 'https://www.twitch.tv/' . $channel;
@@ -117,6 +129,8 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
         data-stream-endpoint="<?php echo esc_url($stream_endpoint); ?>"
         data-player-id="<?php echo esc_attr($player_id); ?>"
         data-next-service="<?php echo esc_attr($next_timestamp); ?>"
+        data-announcement-endpoint="<?php echo esc_url($slideshow_endpoint); ?>"
+        data-announcement-slides="<?php echo esc_attr($slideshow_json); ?>"
     >
         <div class="surfside-watch-live__inner">
             <header class="surfside-watch-live__intro<?php echo $dedicated_watch_page ? ' surfside-watch-live__intro--visually-hidden' : ''; ?>">
@@ -148,27 +162,30 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
                 </div>
 
                 <div class="surfside-watch-live__offline" data-stream-state="offline" hidden>
+                    <div class="surfside-watch-live__slideshow" data-announcement-slideshow hidden>
+                        <img class="surfside-watch-live__slideshow-image" data-announcement-image
+                             alt="Surfside announcements" decoding="async">
+                    </div>
                     <?php if ($video_url) : ?>
                         <video
                             class="surfside-watch-live__video"
                             src="<?php echo esc_url($video_url); ?>"
                             muted
-                            autoplay
                             loop
                             playsinline
                             preload="metadata"
                             aria-label="Surfside announcements"
                         ></video>
-                        <span class="surfside-watch-live__badge surfside-watch-live__badge--announcements">Surfside announcements</span>
-                    <?php else : ?>
-                        <div class="surfside-watch-live__offline-message">
-                            <p class="surfside-watch-live__eyebrow">Next livestream</p>
-                            <?php if ($next_label) : ?>
-                                <h3><?php echo esc_html($next_label); ?></h3>
-                            <?php endif; ?>
-                            <p>We are offline right now. Join us for our next live service.</p>
-                        </div>
                     <?php endif; ?>
+                    <div class="surfside-watch-live__offline-message" data-announcement-fallback-message
+                         <?php if ($video_url) : ?>hidden<?php endif; ?>>
+                        <p class="surfside-watch-live__eyebrow">Next livestream</p>
+                        <?php if ($next_label) : ?>
+                            <h3><?php echo esc_html($next_label); ?></h3>
+                        <?php endif; ?>
+                        <p>We are offline right now. Join us for our next live service.</p>
+                    </div>
+                    <span class="surfside-watch-live__badge surfside-watch-live__badge--announcements" data-announcement-badge hidden>Surfside announcements</span>
                 </div>
             </div>
 

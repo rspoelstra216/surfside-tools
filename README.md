@@ -35,7 +35,7 @@ Ministries are shared website/app content managed from **Church Settings → Min
 
 - Shared blue-led coastal design system and reusable Gutenberg standards.
 - Plugin-owned responsive header, footer, service sections, homepage components, ministries, events, Watch Live, contact form, and Church Portal.
-- Twitch-aware live/offline experience with next-service state and locally managed announcement media.
+- Twitch/Cloudflare-aware live/replay/offline experience with next-service state; the website plays the published announcement images when the stream reaches the offline announcement state, refreshing them every minute and falling back to the legacy MP4 when empty or unavailable.
 - Native calendar views, event details, Today at Surfside, printing, calendar-export actions, and direct month navigation.
 - Native Contact form with shared category routing and Cloudflare Turnstile protection.
 - Full-width Ministry Directory with audience filters, selectable details, and serving/contact actions.
@@ -50,6 +50,7 @@ The versioned `/wp-json/surfside/v1/` API supplies approved public data to the S
 - published Ministries with audience, Featured status, and resolved contact data;
 - app Home hero image, focal position, zoom, and Featured Announcement;
 - offline Worship media, including a published image slideshow in `livestream.announcement_slideshow` (`updated_at`, `default_duration_seconds`, ordered `slides` with `image_url` and `duration_seconds`), alongside unchanged `announcement_video_url` for older clients;
+- lightweight public `GET /wp-json/surfside/v1/announcement-slideshow` returns the same published slideshow for website refresh without re-downloading the full app payload;
 - validated Connect/contact submission with shared category routing;
 - public Bible passage/version access backed by YouVersion; and
 - push-device registration support for staff-sent Expo notifications.
