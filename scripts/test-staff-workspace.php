@@ -102,7 +102,7 @@ check(str_contains($wrapped,'data-surfside-workspace')
     && str_contains($wrapped,'Existing editor remains unchanged')
     && str_contains($wrapped,'aria-label="Breadcrumb"'),
     'Content shell preserves original rendered editor and provides search/breadcrumb');
-check(substr_count($wrapped,'data-ss-group')===6,'All permitted navigation groups rendered');
+check(preg_match_all('/\\sdata-ss-group(?=\\s|>)/', $wrapped)===6,'All permitted navigation groups rendered');
 check(str_contains($wrapped, 'data-ss-group-key="media"'),
     'Breadcrumb categories match the shared, capability-filtered group keys');
 $GLOBALS['ws_uri']='dashboard/site-settings/streaming';
