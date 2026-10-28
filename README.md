@@ -15,6 +15,7 @@ It gives church staff front-end workflows for routine publishing and management 
 - **Calendar Manager** — manage one-time, multi-day, and recurring events, locations, images, public calendar presentation, and independent Ministry/Bible Study classifications.
 - **Manage Website** — maintain website-specific presentation such as navigation and homepage media.
 - **Manage Mobile App** — maintain Home Experience, Featured Announcement, and Push Notifications.
+- **Streaming → Watch Live → Offline announcement slideshow** — select/upload Media Library images, reorder, set slide durations, disable, preview, and publish a shared offline playlist while retaining the legacy MP4 fallback.
 - **Member Engagement** — manage Prayer Requests and Volunteer Needs.
 - **Church Settings** — maintain shared church information, Ministries, Contact Routing, Integrations, and other infrequently changed shared configuration.
 
@@ -48,7 +49,7 @@ The versioned `/wp-json/surfside/v1/` API supplies approved public data to the S
 - published event occurrences;
 - published Ministries with audience, Featured status, and resolved contact data;
 - app Home hero image, focal position, zoom, and Featured Announcement;
-- offline Worship media;
+- offline Worship media, including a published image slideshow in `livestream.announcement_slideshow` (`updated_at`, `default_duration_seconds`, ordered `slides` with `image_url` and `duration_seconds`), alongside unchanged `announcement_video_url` for older clients;
 - validated Connect/contact submission with shared category routing;
 - public Bible passage/version access backed by YouVersion; and
 - push-device registration support for staff-sent Expo notifications.
