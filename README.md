@@ -15,7 +15,7 @@ It gives church staff front-end workflows for routine publishing and management 
 - **Calendar Manager** — manage one-time, multi-day, and recurring events, locations, images, public calendar presentation, and independent Ministry/Bible Study classifications.
 - **Manage Website** — maintain website-specific presentation such as navigation and homepage media.
 - **Manage Mobile App** — maintain Home Experience, Featured Announcement, and Push Notifications.
-- **Streaming → Watch Live → Offline announcement slideshow** — select/upload Media Library images, reorder, set slide durations, disable, preview, and publish a shared offline playlist while retaining the legacy MP4 fallback.
+- **Streaming → Watch Live → Offline announcement slideshow** — upload images directly through a multipart Tools form (like Homepage Photos), optionally select existing Media Library images, reorder, set slide durations, disable, preview, and publish the shared offline playlist. New uploads append to the list and can be rearranged after publishing. The legacy MP4 fallback remains intact.
 - **Member Engagement** — manage Prayer Requests and Volunteer Needs.
 - **Church Settings** — maintain shared church information, Ministries, Contact Routing, Integrations, and other infrequently changed shared configuration.
 
