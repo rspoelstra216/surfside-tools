@@ -132,6 +132,11 @@ jobs:
       - name: Test consolidated streaming workspace
         run: php scripts/test-streaming-workspace.php
 
+      - name: Test shared offline announcement slideshow and editor syntax
+        run: |
+          php scripts/test-offline-announcement-slideshow.php
+          node --check assets/js/offline-slideshow.js
+
       - name: Test Calendar workspace and independent settings saves
         run: php scripts/test-calendar-workspace.php
 
