@@ -185,7 +185,7 @@ function surfside_tools_watch_live_shortcode($attributes = array()) {
                         <?php endif; ?>
                         <p>We are offline right now. Join us for our next live service.</p>
                     </div>
-                    <span class="surfside-watch-live__badge surfside-watch-live__badge--announcements">Surfside announcements</span>
+                    <span class="surfside-watch-live__badge surfside-watch-live__badge--announcements" data-announcement-badge hidden>Surfside announcements</span>
                 </div>
             </div>
 
