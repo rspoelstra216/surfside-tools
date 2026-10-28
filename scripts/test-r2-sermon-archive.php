@@ -187,15 +187,32 @@ foreach (array(
     assert_r2(strpos($staff_ui, $weekly) !== false,
         'Roku Copies retains the weekly workflow: ' . $weekly);
 }
-// An aborted Worker handoff must not force a second multi-GB R2 upload.
-assert_r2(strpos($source, "if (\$mode === 'test_resume')") !== false
-    && strpos($source, 'surfside_tools_podcast_test_worker($id, true)') !== false
-    && strpos($source, "'test_resume', 'test_status'") !== false,
-    'administrator-only test resume rechecks staged R2 object and Worker status');
+// The one-time end-to-end test is retired from the staff Tools page and
+// browser request routes; production weekly upload and preview remain.
 $test_client = file_get_contents(dirname(__DIR__) . '/assets/js/r2-sermon-upload.js');
-assert_r2(strpos($test_client, 'surfside-podcast-test-resume') !== false
-    && strpos($test_client, 'request("test_resume"') !== false,
-    'test UI can resume the existing uploaded MP4 without browser file reupload');
+$podcast_backend = file_get_contents(dirname(__DIR__) . '/includes/podcast-publishing.php');
+foreach (array(
+    'Full pipeline test (admin only)',
+    'surfside-podcast-test-file',
+    'surfside-podcast-test-upload',
+    'surfside-podcast-test-resume',
+    'surfside-podcast-test-spreaker-retry',
+) as $retired) {
+    assert_r2(strpos($staff_ui, $retired) === false,
+        'weekly page does not display retired test controls: ' . $retired);
+}
+foreach (array('test_ticket', 'test_complete', 'test_resume', 'test_status', 'test_spreaker_retry') as $retired) {
+    assert_r2(strpos($source, "'" . $retired . "'") === false &&
+        strpos($test_client, '"' . $retired . '"') === false,
+        'retired test upload operation is inaccessible: ' . $retired);
+}
+assert_r2(strpos($source, 'function surfside_tools_r2_podcast_test_upload') === false &&
+    strpos($podcast_backend, 'function surfside_tools_podcast_test_worker') === false,
+    'retired test-only WordPress handlers removed');
+assert_r2(strpos($source, 'surfside_tools_podcast_queue_verified($id)') !== false &&
+    strpos($podcast_backend, 'function surfside_tools_podcast_queue_verified') !== false &&
+    strpos($test_client, 'request("complete"') !== false,
+    'normal verified weekly upload still queues the production podcast job');
 
 assert_r2(strpos($source, 'function surfside_tools_r2_reconcile_post()') !== false
     && strpos($source, 'function surfside_tools_r2_export_post()') !== false,

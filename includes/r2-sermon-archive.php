@@ -217,100 +217,6 @@ add_action('rest_api_init', function () {
 });
 
 
-/** Full-pipeline test uploads to isolated keys, never to canonical Roku MP4 paths. */
-function surfside_tools_r2_podcast_test_upload($mode, $data) {
-    if (!current_user_can('manage_options') || !defined('SURFSIDE_SPREAKER_DRAFTS_ENABLED') ||
-        SURFSIDE_SPREAKER_DRAFTS_ENABLED !== true) {
-        return new WP_Error('podcast_test_forbidden', 'Podcast integration testing requires a site administrator.', array('status' => 403));
-    }
-    $id = $data['video_id'] ?? '';
-    if (!surfside_tools_r2_video_id($id) || !surfside_tools_r2_is_master_video($id)) {
-        return new WP_Error('podcast_test_id', 'Choose an existing YouTube Messages sermon.', array('status' => 400));
-    }
-    if ($mode === 'test_status') return surfside_tools_podcast_test_worker($id, true);
-    if ($mode === 'test_spreaker_retry') {
-        if (($data['confirmed_no_draft'] ?? '') !== 'yes') {
-            return new WP_Error('podcast_test_confirmation', 'Confirm this is the known redirect preflight failure before retrying.', array('status' => 400));
-        }
-        return surfside_tools_podcast_test_worker($id, false, true);
-    }
-    $key = 'podcast-test-input/' . $id . '.mp4';
-    $head_url = surfside_tools_r2_presign('HEAD', $key);
-    if (is_wp_error($head_url)) return $head_url;
-    $head = wp_remote_head($head_url, array('timeout' => 20, 'redirection' => 0, 'reject_unsafe_urls' => true));
-    if (is_wp_error($head)) return new WP_Error('podcast_test_r2', 'R2 could not be reached.', array('status' => 503));
-    $http = (int) wp_remote_retrieve_response_code($head);
-    if ($http !== 200 && $http !== 404) {
-        return new WP_Error('podcast_test_r2', 'R2 verification failed (HTTP ' . $http . ').', array('status' => 503));
-    }
-    $transient = 'surfside_podcast_test_' . get_current_user_id() . '_' . $id;
-    if ($mode === 'test_ticket') {
-        if (surfside_tools_podcast_spreaker_metadata($id) === null) {
-            return new WP_Error('podcast_test_metadata', 'The YouTube title or date needs review first.', array('status' => 409));
-        }
-        $size = $data['size'] ?? null;
-        if (!is_numeric($size) || (string) (int) $size !== (string) $size ||
-            (int) $size < 1024 * 1024 || (int) $size > 5 * 1024 * 1024 * 1024) {
-            return new WP_Error('podcast_test_size', 'Choose an MP4 between 1 MB and 5 GiB.', array('status' => 400));
-        }
-        if ($http === 200) {
-            return new WP_Error('podcast_test_exists', 'This test MP4 is already staged; do not overwrite it.', array('status' => 409));
-        }
-        $upload_url = surfside_tools_r2_presign('PUT', $key, array(), 14400, 'video/mp4');
-        if (is_wp_error($upload_url)) return $upload_url;
-        set_transient($transient, (int) $size, 4 * HOUR_IN_SECONDS);
-        return array('upload_url' => $upload_url, 'video_id' => $id);
-    }
-    if ($mode === 'test_resume') {
-        // The earlier POST may have failed after R2 accepted a multi-GB MP4.
-        // Never require another upload, or blindly enqueue without checking
-        // both the staged object and the current signed Worker status.
-        $size = $http === 200 ? (int) wp_remote_retrieve_header($head, 'content-length') : 0;
-        $type = $http === 200
-            ? strtolower(trim((string) wp_remote_retrieve_header($head, 'content-type'))) : '';
-        if ($size < 1024 * 1024 || $size > 5 * 1024 * 1024 * 1024 || $type !== 'video/mp4') {
-            return new WP_Error('podcast_test_staged', 'No valid staged test MP4 was found in R2; do not delete the original sermon.', array('status' => 409));
-        }
-        // Verify credentials without starting FFmpeg; this also protects
-        // against accidental double-submit if a prior job was queued.
-        $previous = surfside_tools_podcast_test_worker($id, true);
-        if (is_wp_error($previous)) return $previous;
-        $status = $previous['status'] ?? '';
-        if (in_array($status, array('queued', 'processing', 'ready'), true) ||
-            !empty($previous['spreaker'])) {
-            return array('verified' => true, 'video_id' => $id,
-                'podcast' => $previous, 'resumed' => false);
-        }
-        if (!in_array($status, array('not_queued', 'failed'), true)) {
-            return new WP_Error('podcast_test_state', 'Test job has an unexpected state. Check Cloudflare before retrying.', array('status' => 409));
-        }
-        $queued = surfside_tools_podcast_test_worker($id, false);
-        if (is_wp_error($queued)) return $queued;
-        if (($queued['status'] ?? '') !== 'queued' &&
-            ($queued['status'] ?? '') !== 'processing' &&
-            ($queued['status'] ?? '') !== 'ready') {
-            return new WP_Error('podcast_test_state', 'Cloudflare did not confirm an accepted test job.', array('status' => 409));
-        }
-        return array('verified' => true, 'video_id' => $id, 'podcast' => $queued, 'resumed' => true);
-    }
-    if ($mode === 'test_complete') {
-        $expected = (int) get_transient($transient);
-        if ($expected <= 0) {
-            return new WP_Error('podcast_test_expired', 'Test upload session expired; restart the test.', array('status' => 409));
-        }
-        if ($http !== 200 ||
-            (int) wp_remote_retrieve_header($head, 'content-length') !== $expected ||
-            strtolower(trim((string) wp_remote_retrieve_header($head, 'content-type'))) !== 'video/mp4') {
-            return new WP_Error('podcast_test_unverified', 'The test MP4 did not pass R2 size and type verification.', array('status' => 409));
-        }
-        $queued = surfside_tools_podcast_test_worker($id, false);
-        if (is_wp_error($queued)) return $queued;
-        delete_transient($transient);
-        return array('verified' => true, 'video_id' => $id, 'podcast' => $queued);
-    }
-    return new WP_Error('podcast_test_mode', 'Unknown test operation.', array('status' => 400));
-}
-
 /**
  * Front-end staff upload authorization.
  *
@@ -330,9 +236,6 @@ function surfside_tools_r2_browser_upload_dispatch($data) {
         return new WP_Error('r2_bad_nonce', 'Upload authorization expired. Reload the Roku Copies page and try again.', array('status' => 403));
     }
     $mode = isset($data['mode']) && is_string($data['mode']) ? sanitize_key($data['mode']) : '';
-    if (in_array($mode, array('test_ticket', 'test_complete', 'test_resume', 'test_status', 'test_spreaker_retry'), true)) {
-        return surfside_tools_r2_podcast_test_upload($mode, $data);
-    }
     if (!in_array($mode, array('ticket', 'complete'), true)) {
         return new WP_Error('r2_bad_mode', 'Unknown R2 upload operation.', array('status' => 400));
     }
@@ -671,29 +574,6 @@ function surfside_tools_staff_r2_sermons_shortcode() {
             <p id="surfside-podcast-description" style="white-space:pre-line"></p>
             <p id="surfside-podcast-review" role="status" hidden>Review this title/date before publishing: it does not fully match the expected weekly naming format.</p>
           </div>
-          <?php if (current_user_can('manage_options') && defined('SURFSIDE_SPREAKER_DRAFTS_ENABLED') && SURFSIDE_SPREAKER_DRAFTS_ENABLED === true) : ?>
-          <div style="margin-top:20px;padding-top:15px;border-top:1px solid #d2dce5">
-            <h3>Full pipeline test (admin only)</h3>
-            <p class="surfside-yt-muted">Use an existing YouTube sermon and its original MP4 to test direct R2 upload, verification, FFmpeg, and an unpublished Spreaker draft. This writes to separate test paths and does not replace Roku files or alter scheduled Spreaker episodes.</p>
-            <label for="surfside-podcast-test-file" style="display:block;margin:12px 0 5px">Original sermon MP4</label>
-            <input id="surfside-podcast-test-file" type="file" accept=".mp4,video/mp4">
-            <label style="display:block;margin:12px 0">
-              <input id="surfside-podcast-test-confirm" type="checkbox">
-              I understand this creates an additional unpublished [TEST] Spreaker draft to delete after verifying.
-            </label>
-            <button id="surfside-podcast-test-upload" type="button" disabled>Run end-to-end test</button>
-            <button id="surfside-podcast-test-resume" type="button" disabled style="margin-left:8px">Resume verified test MP4</button>
-            <div style="margin-top:12px">
-              <button id="surfside-podcast-test-spreaker-retry" type="button" disabled>
-                Retry Spreaker TEST draft only
-              </button>
-              <p class="surfside-yt-muted">Use only when the audio test is <strong>ready</strong>, the Spreaker state is <strong>review_required / draft_response_uncertain</strong>, and Cloudflare logs show the unsupported redirect option. This retries Spreaker only; it will not process the MP4 again. Confirm no draft was created first.</p>
-            </div>
-            <p class="surfside-yt-muted">If the MP4 already uploaded but Cloudflare rejected the request, correct the Worker shared secret and choose Resume. Do not upload the MP4 again.</p>
-            <progress id="surfside-podcast-test-progress" max="100" value="0" style="display:none;width:100%;margin-top:12px"></progress>
-            <p id="surfside-podcast-test-status" role="status" aria-live="polite"></p>
-          </div>
-          <?php endif; ?>
         </section>
       <?php endif; ?>
     </div>
