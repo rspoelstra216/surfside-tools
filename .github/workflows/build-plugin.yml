@@ -28,6 +28,11 @@ jobs:
           php -l surfside-tools.php
           find includes -name '*.php' -print0 | xargs -0 -n1 php -l
 
+      - name: Test shared offline announcement slideshow and editor syntax
+        run: |
+          php scripts/test-offline-announcement-slideshow.php
+          node --check assets/js/offline-slideshow.js
+
       - name: Test permanent sermon note archiving
         run: php scripts/test-sermon-archive.php
 
@@ -131,11 +136,6 @@ jobs:
 
       - name: Test consolidated streaming workspace
         run: php scripts/test-streaming-workspace.php
-
-      - name: Test shared offline announcement slideshow and editor syntax
-        run: |
-          php scripts/test-offline-announcement-slideshow.php
-          node --check assets/js/offline-slideshow.js
 
       - name: Test Calendar workspace and independent settings saves
         run: php scripts/test-calendar-workspace.php
