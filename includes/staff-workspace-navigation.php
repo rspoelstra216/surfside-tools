@@ -138,7 +138,7 @@ function surfside_tools_workspace_navigation($groups, $active) {
       <nav id="surfside-workspace-links" aria-label="Management tools">
         <a class="surfside-workspace-home<?php echo $active['label'] === 'Dashboard' ? ' is-active' : ''; ?>" href="<?php echo esc_url(surfside_tools_staff_page_url('')); ?>" <?php if ($active['label'] === 'Dashboard') echo 'aria-current="page"'; ?>>Dashboard</a>
         <?php foreach ($groups as $group) : ?>
-          <div class="surfside-workspace-group" data-ss-group>
+          <div class="surfside-workspace-group" data-ss-group data-ss-group-key="<?php echo esc_attr($group['key']); ?>">
             <h2><?php echo esc_html($group['title']); ?></h2>
             <ul>
               <?php foreach ($group['items'] as $item) :
@@ -161,6 +161,13 @@ function surfside_tools_workspace_wrap_content($content) {
     }
     $groups = surfside_tools_workspace_catalog();
     $active = surfside_tools_workspace_current($groups);
+    $active_group_key = '';
+    foreach ($groups as $key => $group) {
+        if ($group['title'] === $active['group']) {
+            $active_group_key = $key;
+            break;
+        }
+    }
     ob_start(); ?>
     <div class="surfside-workspace" data-surfside-workspace>
       <div class="surfside-workspace-scrim" data-ss-close hidden></div>
@@ -170,7 +177,12 @@ function surfside_tools_workspace_wrap_content($content) {
           <button type="button" class="surfside-workspace-menu" data-ss-open aria-controls="surfside-workspace-sidebar" aria-expanded="false"><span aria-hidden="true">☰</span> Tools & Search</button>
           <nav class="surfside-workspace-breadcrumb" aria-label="Breadcrumb">
             <a href="<?php echo esc_url(surfside_tools_staff_page_url('')); ?>">Dashboard</a>
-            <?php if ($active['group'] !== '') : ?><span aria-hidden="true">›</span><span><?php echo esc_html($active['group']); ?></span><?php endif; ?>
+            <?php if ($active['group'] !== '') : ?>
+              <span aria-hidden="true">›</span>
+              <?php if ($active_group_key !== '') : ?>
+                <button type="button" class="surfside-workspace-breadcrumb-group" data-ss-breadcrumb-group="<?php echo esc_attr($active_group_key); ?>" aria-label="Browse <?php echo esc_attr($active['group']); ?> tools"><?php echo esc_html($active['group']); ?></button>
+              <?php else : ?><span><?php echo esc_html($active['group']); ?></span><?php endif; ?>
+            <?php endif; ?>
             <?php if ($active['label'] !== 'Dashboard') : ?><span aria-hidden="true">›</span><span aria-current="page"><?php echo esc_html($active['label']); ?></span><?php endif; ?>
           </nav>
         </div>
