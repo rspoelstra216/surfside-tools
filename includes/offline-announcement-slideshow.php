@@ -41,6 +41,8 @@ function surfside_tools_offline_slideshow_validate_slides($items) {
 
 /** Published playlist only; no staff-only draft slides or arbitrary supplied URLs. */
 function surfside_tools_offline_slideshow_public_data() {
+    $cached = get_transient('surfside_offline_slideshow_public_v1');
+    if (is_array($cached)) return $cached;
     $settings = surfside_tools_offline_slideshow_settings();
     $slides = array();
     foreach (array_slice($settings['slides'], 0, SURFSIDE_TOOLS_OFFLINE_SLIDESHOW_LIMIT) as $slide) {
@@ -56,11 +58,13 @@ function surfside_tools_offline_slideshow_public_data() {
             'duration_seconds' => $seconds ? max(3, min(60, $seconds)) : $settings['default_duration_seconds'],
         );
     }
-    return array(
+    $result = array(
         'updated_at' => $settings['updated_at'] ? gmdate(DATE_ATOM, $settings['updated_at']) : '',
         'default_duration_seconds' => $settings['default_duration_seconds'],
         'slides' => $slides,
     );
+    set_transient('surfside_offline_slideshow_public_v1', $result, 5 * MINUTE_IN_SECONDS);
+    return $result;
 }
 
 /** Additive API contract: old clients continue using livestream.announcement_video_url. */
@@ -93,6 +97,7 @@ function surfside_tools_offline_slideshow_handle_post() {
         'slides' => surfside_tools_offline_slideshow_validate_slides($submitted),
         'updated_at' => time(),
     ), false);
+    delete_transient('surfside_offline_slideshow_public_v1');
     if (function_exists('surfside_tools_purge_cache')) surfside_tools_purge_cache();
     return array('type' => 'success', 'message' => 'Announcement slideshow published. Existing video-only apps will continue to use the legacy MP4.');
 }
