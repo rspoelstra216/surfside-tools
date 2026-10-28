@@ -32,15 +32,20 @@
         if (replayIntro) replayIntro.hidden = state !== "replay";
         if (liveSlidesController) liveSlidesController.setStreamLive(state === "live");
 
-        const video = block.querySelector(".surfside-watch-live__offline video");
-        if (video) {
-            if (state === "offline") {
-                const play = video.play();
-                if (play && typeof play.catch === "function") {
-                    play.catch(() => {});
+        // The website slideshow manages announcement images, MP4 fallback and
+        // media cleanup. Keep legacy behavior if its optional script is absent.
+        const announcementPlayer = block.surfsideAnnouncementPlayer;
+        if (announcementPlayer) {
+            announcementPlayer.setStreamState(state);
+        } else {
+            const video = block.querySelector(".surfside-watch-live__offline video");
+            if (video) {
+                if (state === "offline") {
+                    const play = video.play();
+                    if (play && typeof play.catch === "function") play.catch(() => {});
+                } else {
+                    video.pause();
                 }
-            } else {
-                video.pause();
             }
         }
 
@@ -96,6 +101,8 @@
         const endpoint = block.dataset.streamEndpoint;
         const liveHost = document.getElementById(playerId);
         const replayHost = block.querySelector("[data-cloudflare-replay]");
+        block.surfsideAnnouncementPlayer = window.SurfsideOfflineAnnouncements
+            ? window.SurfsideOfflineAnnouncements.create(block) : null;
         let mode = "";
         let twitchPlayer = null;
         let twitchStarting = false;
@@ -181,7 +188,11 @@
         refresh();
         window.setInterval(refresh, 60000);
         document.addEventListener("visibilitychange", () => {
+            if (block.surfsideAnnouncementPlayer) block.surfsideAnnouncementPlayer.syncVisibility();
             if (!document.hidden) refresh();
+        });
+        window.addEventListener("pagehide", () => {
+            if (block.surfsideAnnouncementPlayer) block.surfsideAnnouncementPlayer.stop();
         });
     }
 
