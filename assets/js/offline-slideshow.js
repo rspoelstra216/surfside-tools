@@ -200,7 +200,7 @@
         var slide = active[index % active.length];
         index++;
         previewImage.src = slide.url || slide.thumbnail_url || '';
-        previewLabel.textContent = (slide.title || 'Announcement') + ' (' + index % active.length + '/' + active.length + ')';
+        previewLabel.textContent = (slide.title || 'Announcement') + ' (' + (((index - 1) % active.length) + 1) + '/' + active.length + ')';
         var seconds = Number(slide.duration_seconds) || Number(defaultDuration.value) || 8;
         timer = window.setTimeout(showNext, Math.max(3, Math.min(60, seconds)) * 1000);
       }
