@@ -34,6 +34,23 @@ function surfside_tools_firebase_request_is_scoped() {
         }
     }
 
+    // The front-end staff dashboard uses WordPress's built-in media modal.
+    // Its library and uploader use separate wp-admin AJAX endpoints, where
+    // ordinary Surfside staff sessions were not recognized. Scope the virtual
+    // session ONLY to the two core media actions used by that picker; do not
+    // grant general wp-admin, admin-ajax, or async-upload access.
+    $action = isset($_REQUEST['action']) && is_string($_REQUEST['action'])
+        ? sanitize_key(wp_unslash($_REQUEST['action'])) : '';
+    if ('query-attachments' === $action
+        && $path && preg_match('#/wp-admin/admin-ajax\\.php$#', $path)) {
+        return true;
+    }
+    if ('upload-attachment' === $action && $path
+        && (preg_match('#/wp-admin/admin-ajax\\.php$#', $path)
+            || preg_match('#/wp-admin/async-upload\\.php$#', $path))) {
+        return true;
+    }
+
     return false;
 }
 
