@@ -524,7 +524,7 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
             <?php if ($section === 'streaming') : ?>
             <section class="surfside-information-card">
                 <h2>Watch Live Streaming</h2>
-                <p>Control the live Twitch channel and the local announcement video shown whenever Twitch is offline.</p>
+                <p>Control the Twitch channel and the legacy offline video. The managed image slideshow is available below.</p>
                 <div class="surfside-information-grid">
                     <label class="surfside-information-field"><span>Twitch channel</span><input type="text" name="twitch_channel" value="<?php echo esc_attr($streaming['twitch_channel'] ?? 'surfsidecf'); ?>" required><small class="surfside-information-help">Channel name only, such as surfsidecf.</small></label>
                     <div class="surfside-information-field">
