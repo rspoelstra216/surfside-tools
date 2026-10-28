@@ -116,6 +116,13 @@ jobs:
           node --check assets/js/watch-live-stream.js
           node scripts/test-watch-live-slides.js
 
+      - name: Test website offline announcement slideshow and refresh endpoint
+        run: |
+          php scripts/test-watch-live-announcement-markup.php
+          php scripts/test-announcement-refresh-api.php
+          node --check assets/js/watch-live-announcements.js
+          node scripts/test-watch-live-announcements.js
+
       - name: Test Cloudflare live-input status formats
         run: php scripts/test-cloudflare-live-status.php
 
