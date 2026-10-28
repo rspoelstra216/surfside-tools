@@ -103,6 +103,15 @@ check(str_contains($wrapped,'data-surfside-workspace')
     && str_contains($wrapped,'aria-label="Breadcrumb"'),
     'Content shell preserves original rendered editor and provides search/breadcrumb');
 check(substr_count($wrapped,'data-ss-group')===6,'All permitted navigation groups rendered');
+check(str_contains($wrapped, 'data-ss-group-key="media"'),
+    'Breadcrumb categories match the shared, capability-filtered group keys');
+$GLOBALS['ws_uri']='dashboard/site-settings/streaming';
+$streamingWrapped=surfside_tools_workspace_wrap_content('<p>Streaming editor</p>');
+check(str_contains($streamingWrapped, 'data-ss-breadcrumb-group="media"')
+    && str_contains($streamingWrapped, 'aria-label="Browse Messages &amp; Media tools"')
+    && str_contains($streamingWrapped, '<span aria-current="page">Streaming</span>'),
+    'Streaming displays clickable Messages & Media category and non-link current page');
+$GLOBALS['ws_uri']='dashboard';
 check(!str_contains($wrapped,'<form method="post"'),
     'Navigation wrapper creates no new write actions');
 $css = 'assets/css/staff-workspace.css';
