@@ -64,6 +64,7 @@ function surfside_tools_streaming_workspace_secondary() {
           </section>
           <?php echo surfside_tools_streaming_workspace_tabs(); ?>
           <?php echo surfside_tools_staff_site_information_shortcode(array('section' => 'streaming', 'embedded' => true)); ?>
+          <?php if (function_exists('surfside_tools_offline_slideshow_manager')) echo surfside_tools_offline_slideshow_manager(); ?>
         </div>
         <?php return ob_get_clean();
     }
