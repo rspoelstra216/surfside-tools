@@ -256,7 +256,15 @@ function surfside_tools_offline_slideshow_enqueue_assets() {
     $post = get_queried_object();
     if (!($post instanceof WP_Post) || trim((string) get_page_uri($post->ID), '/') !== 'dashboard/site-settings/streaming') return;
     wp_enqueue_media();
-    wp_enqueue_style('surfside-offline-slideshow', SURFSIDE_TOOLS_URL . 'assets/css/offline-slideshow.css', array(), SURFSIDE_TOOLS_VERSION);
-    wp_enqueue_script('surfside-offline-slideshow', SURFSIDE_TOOLS_URL . 'assets/js/offline-slideshow.js', array(), SURFSIDE_TOOLS_VERSION, true);
+    // The plugin version is intentionally stable across builds; changing
+    // upload controls must invalidate browsers' cached editor CSS/JavaScript.
+    $css = 'assets/css/offline-slideshow.css';
+    $js = 'assets/js/offline-slideshow.js';
+    $css_version = function_exists('surfside_tools_workspace_asset_version')
+        ? surfside_tools_workspace_asset_version($css) : SURFSIDE_TOOLS_VERSION;
+    $js_version = function_exists('surfside_tools_workspace_asset_version')
+        ? surfside_tools_workspace_asset_version($js) : SURFSIDE_TOOLS_VERSION;
+    wp_enqueue_style('surfside-offline-slideshow', SURFSIDE_TOOLS_URL . $css, array(), $css_version);
+    wp_enqueue_script('surfside-offline-slideshow', SURFSIDE_TOOLS_URL . $js, array(), $js_version, true);
 }
 add_action('wp_enqueue_scripts', 'surfside_tools_offline_slideshow_enqueue_assets', 20);
