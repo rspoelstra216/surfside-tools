@@ -131,6 +131,9 @@ jobs:
       - name: Test staff dashboard and login cache bypass
         run: php scripts/test-staff-cache.php
 
+      - name: Test front-end staff Media Library AJAX authorization scope
+        run: php scripts/test-staff-media-ajax-scope.php
+
       - name: Test streaming page admin-only provisioning
         run: php scripts/test-streaming-page-provisioning.php
 
