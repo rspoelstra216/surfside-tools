@@ -75,29 +75,43 @@ require dirname(__DIR__) . '/includes/weekly-workspace-ui.php';
 
 $tz = new DateTimeZone('America/New_York');
 function eastern($date) { return (new DateTimeImmutable($date,new DateTimeZone('America/New_York')))->getTimestamp(); }
-$friday=eastern('2026-10-23 13:00:00');
-$saturday=eastern('2026-10-24 17:00:00');
-check(surfside_tools_weekly_next_release_at($friday)===$saturday,'Friday release is Saturday 5 PM');
-check(surfside_tools_weekly_next_release_at(eastern('2026-10-24 16:59:59'))===$saturday,
+// Fixed dates intentionally test weekend boundaries and DST transitions.
+$fixed_friday=eastern('2026-10-23 13:00:00');
+$fixed_saturday=eastern('2026-10-24 17:00:00');
+check(surfside_tools_weekly_next_release_at($fixed_friday)===$fixed_saturday,'Friday release is Saturday 5 PM');
+check(surfside_tools_weekly_next_release_at(eastern('2026-10-24 16:59:59'))===$fixed_saturday,
     'Before 5 PM on Saturday is still this Saturday');
-check(surfside_tools_weekly_next_release_at($saturday)===eastern('2026-10-31 17:00:00'),
+check(surfside_tools_weekly_next_release_at($fixed_saturday)===eastern('2026-10-31 17:00:00'),
     'At exactly 5 PM Saturday moves to next weekend');
 check(surfside_tools_weekly_next_release_at(eastern('2026-11-01 08:00:00'))===eastern('2026-11-07 17:00:00'),
     'Fall DST uses Eastern wall clock for following Saturday');
 check(surfside_tools_weekly_next_release_at(eastern('2027-03-13 18:00:00'))===eastern('2027-03-20 17:00:00'),
     'Spring DST uses Eastern wall clock for following Saturday');
-check(strpos(surfside_tools_weekly_release_label($saturday),'5:00 PM EDT')!==false,'Schedule label includes EDT');
+check(strpos(surfside_tools_weekly_release_label($fixed_saturday),'5:00 PM EDT')!==false,'Schedule label includes EDT');
 
-$old_ann=array('announcement_date'=>'October 17/18, 2026','items'=>array('Previous announcement'),
+// The staged/publication scenario must be in the future relative to the CI runner.
+// Public getters deliberately call maybe_activate() with real time(), whereas
+// explicit scheduling tests pass $GLOBALS['test_now']. Fixed October 2026
+// staging dates started publishing themselves once that weekend had passed.
+// Keep the real-time fallback intact and instead place the simulated Friday
+// ahead of the current wall clock; all other timestamps derive from it.
+$scenario_friday=(new DateTimeImmutable('next friday',$tz))->setTime(13,0,0);
+$friday=$scenario_friday->getTimestamp();
+$saturday=$scenario_friday->modify('+1 day')->setTime(17,0,0)->getTimestamp();
+$nextSat=$scenario_friday->modify('+8 days')->setTime(17,0,0)->getTimestamp();
+$old_date=$scenario_friday->modify('-6 days')->format('F j, Y');
+$new_date=$scenario_friday->modify('+1 day')->format('F j, Y');
+
+$old_ann=array('announcement_date'=>$old_date,'items'=>array('Previous announcement'),
     'announcements'=>'<ol><li>Previous announcement</li></ol>','timestamp'=>1);
-$old_sermon=array('title'=>'Previous Message','series'=>'Old series','date'=>'October 17, 2026',
+$old_sermon=array('title'=>'Previous Message','series'=>'Old series','date'=>$old_date,
     'main_heading'=>'Old title','notes'=>'Old notes','prayer'=>'Old prayer','timestamp'=>1);
 $GLOBALS['options']['surfside_tools_announcements_current']=$old_ann;
 $GLOBALS['options']['surfside_tools_message_current']=$old_sermon;
 $GLOBALS['test_now']=$friday;
-$queued=surfside_tools_weekly_schedule(array('announcement_date'=>'October 24/25, 2026','items'=>array(
+$queued=surfside_tools_weekly_schedule(array('announcement_date'=>$new_date,'items'=>array(
     'New announcement','  Second announcement  ')),array(
-        'title'=>'Next Message','notes'=>'New notes','date'=>'October 24/25, 2026'),$friday);
+        'title'=>'Next Message','notes'=>'New notes','date'=>$new_date),$friday);
 check(!is_wp_error($queued)&&$queued['publish_at']===$saturday,'Both documents scheduled successfully');
 check($GLOBALS['scheduled'][SURFSIDE_TOOLS_WEEKLY_RELEASE_HOOK]===$saturday,'WP-Cron event set at the release time');
 check(get_option('surfside_tools_announcements_current')===$old_ann
@@ -109,7 +123,7 @@ check($GLOBALS['test_archive_calls']===0 && $GLOBALS['test_purges']===0,
 $staff = surfside_tools_weekly_staff_status_markup($queued, $saturday);
 check(strpos($staff, 'Currently published') !== false &&
       strpos($staff, 'Previous Message') !== false &&
-      strpos($staff, 'October 17/18, 2026') !== false,
+      strpos($staff, $old_date) !== false,
     'Staff clearly sees last week as currently public');
 check(strpos($staff, 'Ready for Saturday') !== false &&
       strpos($staff, 'Next Message') !== false &&
@@ -121,7 +135,7 @@ check(strpos($staff, 'surfside_tools_weekly_cancel_nonce') !== false &&
     'Scheduled cancellation keeps the existing secured form');
 
 $changed=surfside_tools_weekly_schedule(array(
-    'announcement_date'=>'October 24/25, 2026','items'=>array('Corrected announcement')),null,$friday+60);
+    'announcement_date'=>$new_date,'items'=>array('Corrected announcement')),null,$friday+60);
 check($changed['sermon']['title']==='Next Message' &&
     $changed['announcements']['items']===array('Corrected announcement'),
     'Correcting only announcements preserves the staged sermon notes');
@@ -144,7 +158,6 @@ check($GLOBALS['test_archive_calls']===1 && !surfside_tools_weekly_pending() &&
 check(surfside_tools_weekly_maybe_activate($saturday+1)===false &&
     $GLOBALS['test_archive_calls']===1,'Repeat cron/public reads are idempotent');
 
-$nextSat=eastern('2026-10-31 17:00:00');
 $planned=surfside_tools_weekly_schedule(null,array('title'=>'November Sermon','notes'=>'Nov notes'),$saturday+30);
 check($planned['publish_at']===$nextSat,'Another upload following the cutoff targets next weekend');
 check(surfside_tools_weekly_cancel_pending()===true,'Authorized staff can cancel pending release');
