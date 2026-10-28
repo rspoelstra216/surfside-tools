@@ -3,6 +3,12 @@
 .surfside-slideshow-form {display:grid;gap:18px}
 .surfside-slideshow-toolbar {display:flex;align-items:center;flex-wrap:wrap;gap:16px}
 .surfside-slideshow-toolbar label {display:flex;align-items:center;gap:8px;font-weight:700;color:#26323d}
+.surfside-slideshow-upload-label{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border-radius:8px;background:#0b4f9c;color:#fff;font-weight:800;cursor:pointer;position:relative}
+.surfside-slideshow-upload-label input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.surfside-slideshow-upload-label:focus-within{outline:3px solid #8bbaff;outline-offset:2px}
+.surfside-slideshow-file-status{flex-basis:100%;margin:0!important;color:#52627b;font-size:.88rem}
+.surfside-slideshow-file-status:empty{display:none}
+
 .surfside-slideshow-toolbar input {width:86px;min-height:42px;padding:8px;border:1px solid #aeb9c4;border-radius:8px}
 .surfside-slideshow-toolbar>span {flex-basis:100%;font-size:.87rem;color:#687480}
 .surfside-slideshow-list {display:grid;gap:10px}

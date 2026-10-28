@@ -10,6 +10,9 @@
     var empty = manager.querySelector('[data-slideshow-empty]');
     var defaultDuration = manager.querySelector('[data-slideshow-default]');
     var addButton = manager.querySelector('[data-slideshow-add]');
+    var uploadInput = manager.querySelector('[data-slideshow-upload]');
+    var uploadStatus = manager.querySelector('[data-slideshow-file-status]');
+
     var previewButton = manager.querySelector('[data-slideshow-preview-button]');
     var preview = manager.querySelector('[data-slideshow-preview]');
     var previewImage = manager.querySelector('[data-slideshow-preview-image]');
@@ -146,6 +149,21 @@
       previewButton.disabled = !slides.some(function (slide) { return slide.enabled; });
       sync();
     }
+
+    // Matches the Homepage Photos form: uploads happen on Save, using a normal
+    // multipart POST instead of WordPress's admin-ajax media uploader.
+    if (uploadInput && uploadStatus) uploadInput.addEventListener('change', function () {
+      var files = uploadInput.files || [];
+      uploadStatus.textContent = files.length
+        ? files.length + ' new photo' + (files.length === 1 ? '' : 's') +
+          ' queued. Save & publish to upload them; they will appear at the end of the list.'
+        : '';
+      var remaining = Math.max(0, 50 - slides.length);
+      if (files.length > remaining) {
+        uploadStatus.textContent = 'You selected ' + files.length + ' photos, but only ' +
+          remaining + ' slideshow slots remain. Remove some slides or select fewer photos.';
+      }
+    });
 
     addButton.addEventListener('click', function () {
       if (!window.wp || !wp.media) {
