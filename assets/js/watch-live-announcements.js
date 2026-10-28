@@ -33,6 +33,7 @@
         if (!stage || !image) return null;
 
         const video = block.querySelector(".surfside-watch-live__offline video");
+        const badge = block.querySelector("[data-announcement-badge]");
         const offlineMessage = block.querySelector("[data-announcement-fallback-message]");
         const endpoint = block.dataset.announcementEndpoint || "";
         let slides = [];
@@ -62,6 +63,7 @@
         function fallback() {
             clearSlideTimeout();
             stage.hidden = true;
+            if (badge) badge.hidden = !video;
             if (video) {
                 video.hidden = false;
                 if (offlineMessage) offlineMessage.hidden = true;
@@ -90,6 +92,7 @@
             currentIndex = available;
             const slide = slides[currentIndex];
             stage.hidden = false;
+            if (badge) badge.hidden = false;
             if (offlineMessage) offlineMessage.hidden = true;
             if (video) {
                 video.hidden = true;
@@ -148,6 +151,7 @@
             if (next !== "offline") {
                 clearSlideTimeout();
                 stage.hidden = true;
+                if (badge) badge.hidden = true;
                 if (video) {
                     video.hidden = false;
                     video.pause();
