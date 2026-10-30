@@ -82,7 +82,7 @@
 
 /* Use the same on-demand Tools & Search drawer on desktop, tablets and phones. */
 .surfside-workspace{display:block;width:min(1440px,calc(100vw - 32px))}
-  .surfside-workspace-toolbar{position:sticky;top:calc(var(--wp-admin--admin-bar--height, 0px) + 8px);z-index:99;padding:8px 12px;box-shadow:0 3px 10px rgba(7,27,58,.06)}
+  .surfside-workspace-toolbar{position:sticky;top:var(--wp-admin--admin-bar--height, 0px);z-index:99;padding:8px 12px;box-shadow:0 3px 10px rgba(7,27,58,.06)}
   .surfside-workspace-menu{
     display:inline-flex;align-items:center;gap:9px;min-height:43px;
     padding:9px 13px;border:1px solid #bfd0e3;border-radius:9px;
