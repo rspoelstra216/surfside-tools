@@ -18,6 +18,7 @@ $GLOBALS['ws_assets'] = array();
 
 function add_action($hook,$fn,$priority=10) { $GLOBALS['ws_hooks'][$hook] = $fn; }
 function add_filter($hook,$fn,$priority=10) { $GLOBALS['ws_hooks'][$hook] = $fn; }
+function add_shortcode($tag,$fn) { $GLOBALS['ws_shortcodes'][$tag] = $fn; }
 function is_admin() { return $GLOBALS['ws_admin']; }
 function is_page() { return true; }
 function is_user_logged_in() { return $GLOBALS['ws_logged_in']; }
@@ -63,6 +64,7 @@ function wp_enqueue_script($name,$url,$deps,$ver,$footer) { $GLOBALS['ws_assets'
 function check($assertion,$message) { if (!$assertion) throw new RuntimeException($message); }
 
 require dirname(__DIR__) . '/includes/staff-workspace-navigation.php';
+check(isset($GLOBALS['ws_shortcodes']['surfside_workspace_category']), 'Category landing page shortcode registered');
 check(isset($GLOBALS['ws_hooks']['the_content']) && isset($GLOBALS['ws_hooks']['wp_enqueue_scripts']),
     'Registers scoped staff content and asset hooks');
 $GLOBALS['ws_admin']=false;
@@ -107,10 +109,34 @@ check(str_contains($wrapped, 'data-ss-group-key="media"'),
     'Breadcrumb categories match the shared, capability-filtered group keys');
 $GLOBALS['ws_uri']='dashboard/site-settings/streaming';
 $streamingWrapped=surfside_tools_workspace_wrap_content('<p>Streaming editor</p>');
-check(str_contains($streamingWrapped, 'data-ss-breadcrumb-group="media"')
-    && str_contains($streamingWrapped, 'aria-label="Browse Messages &amp; Media tools"')
-    && str_contains($streamingWrapped, '<span aria-current="page">Streaming</span>'),
-    'Streaming displays clickable Messages & Media category and non-link current page');
+check(str_contains($streamingWrapped, 'class="surfside-workspace-breadcrumb-group" href="https://surfsidefellowship.org/dashboard/messages-media/"')
+    && str_contains($streamingWrapped, 'Messages &amp; Media</a>')
+    && str_contains($streamingWrapped, '<span aria-current="page">Streaming</span>')
+    && !str_contains($streamingWrapped, 'data-ss-breadcrumb-group'),
+    'Streaming breadcrumb links to real Messages & Media page; only current tool is inert');
+$GLOBALS['ws_uri']='dashboard/messages-media';
+$categoryActive=surfside_tools_workspace_current($groups);
+check($categoryActive['label']==='Messages & Media' && !empty($categoryActive['is_category']),
+    'Category landing URL resolves to its own breadcrumb state');
+$categoryWrapped=surfside_tools_workspace_wrap_content('<p>Category page</p>');
+check(str_contains($categoryWrapped, '<span aria-current="page">Messages &amp; Media</span>')
+    && !str_contains($categoryWrapped, '<span aria-current="page">Streaming</span>')
+    && !str_contains($categoryWrapped, 'data-ss-breadcrumb-group'),
+    'Category landing displays Dashboard › current category, with no duplicated final crumb');
+$categoryHtml=surfside_tools_workspace_category_shortcode(array('key'=>'media'));
+check(str_contains($categoryHtml, '<h1 id="surfside-workspace-category-title">Messages &amp; Media</h1>')
+    && str_contains($categoryHtml, '>Streaming</strong>')
+    && str_contains($categoryHtml, '>Message Archive</strong>')
+    && str_contains($categoryHtml, 'view=roku-media'),
+    'Overview lists all allowed existing tools without moving them');
+check(!str_contains($categoryHtml, '<form'), 'Category overview is strictly navigation-only');
+foreach (surfside_tools_workspace_category_definitions() as $key => $definition) {
+    check(str_contains($groups[$key]['url'], '/dashboard/' . $definition['slug'] . '/'),
+        'Every category has a real stable landing URL: ' . $key);
+    $html=surfside_tools_workspace_category_shortcode(array('key'=>$key));
+    check(str_contains($html, esc_html($definition['title'])),
+        'Each category has its own landing page: ' . $key);
+}
 $GLOBALS['ws_uri']='dashboard';
 check(!str_contains($wrapped,'<form method="post"'),
     'Navigation wrapper creates no new write actions');
@@ -166,6 +192,16 @@ foreach(array('Integrations','Staff Access','Streaming','Twitch Integration','Co
 }
 check(in_array('Prayer Requests',$staff_labels,true)&&in_array('Weekly Media',$staff_labels,true),
     'Staff retain ordinary tools');
+$mediaStaffHtml=surfside_tools_workspace_category_shortcode(array('key'=>'media'));
+check(!str_contains($mediaStaffHtml, '>Streaming</strong>') && str_contains($mediaStaffHtml, '>Weekly Media</strong>'),
+    'Category landing obeys exactly the same staff permission filter as search and drawer');
+$settingsStaffHtml=surfside_tools_workspace_category_shortcode(array('key'=>'settings'));
+check(!str_contains($settingsStaffHtml, '>Staff Access</strong>'),
+    'Restricted tools cannot leak from the category landing');
+$GLOBALS['ws_logged_in']=false;
+check(!str_contains(surfside_tools_workspace_category_shortcode(array('key'=>'media')), 'Weekly Media'),
+    'Signed-out visitors see no staff tool links');
+$GLOBALS['ws_logged_in']=true;
 $GLOBALS['ws_upload']=false;
 check(!surfside_tools_workspace_is_staff_page(),'No workspace access without upload_files capability');
 check(surfside_tools_workspace_wrap_content('Original')==='Original',

@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-const SURFSIDE_TOOLS_STAFF_PAGES_SCHEMA_VERSION = 3;
+const SURFSIDE_TOOLS_STAFF_PAGES_SCHEMA_VERSION = 4;
 const SURFSIDE_TOOLS_STAFF_PAGES_SCHEMA_OPTION = 'surfside_tools_staff_pages_schema';
 
 /**
@@ -24,6 +24,25 @@ function surfside_tools_staff_page_definitions() {
             'content' => '[surfside_staff_dashboard]',
             'parent' => '',
         ),
+        // True second-level destinations; existing editor URLs stay untouched.
+        'category-content' => array('title' => 'Content & Publishing',
+            'slug' => 'content-publishing', 'content' => '[surfside_workspace_category key="content"]',
+            'parent' => 'dashboard'),
+        'category-media' => array('title' => 'Messages & Media',
+            'slug' => 'messages-media', 'content' => '[surfside_workspace_category key="media"]',
+            'parent' => 'dashboard'),
+        'category-events' => array('title' => 'Events & Serving',
+            'slug' => 'events-serving', 'content' => '[surfside_workspace_category key="events"]',
+            'parent' => 'dashboard'),
+        'category-community' => array('title' => 'Community & Communications',
+            'slug' => 'community-communications', 'content' => '[surfside_workspace_category key="community"]',
+            'parent' => 'dashboard'),
+        'category-appearance' => array('title' => 'Appearance',
+            'slug' => 'appearance-tools', 'content' => '[surfside_workspace_category key="appearance"]',
+            'parent' => 'dashboard'),
+        'category-settings' => array('title' => 'Settings & Access',
+            'slug' => 'settings-access', 'content' => '[surfside_workspace_category key="settings"]',
+            'parent' => 'dashboard'),
         'login' => array(
             'title' => 'Staff Login',
             'slug' => 'login',

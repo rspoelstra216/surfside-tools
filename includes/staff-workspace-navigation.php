@@ -7,6 +7,68 @@
  */
 if (!defined('ABSPATH')) { exit; }
 
+/**
+ * Stable one-level landing pages for dashboard task categories.
+ * Their URLs are independent from legacy editor URLs and remain staff-only.
+ * Keep labels/metadata here so cards, breadcrumbs and provisioning agree.
+ */
+function surfside_tools_workspace_category_definitions() {
+    return array(
+        'content' => array('title' => 'Content & Publishing', 'slug' => 'content-publishing',
+            'description' => 'Prepare and publish weekly content, notes, and featured information.'),
+        'media' => array('title' => 'Messages & Media', 'slug' => 'messages-media',
+            'description' => 'Manage messages, sermon series, media publishing, and streaming.'),
+        'events' => array('title' => 'Events & Serving', 'slug' => 'events-serving',
+            'description' => 'Plan events, organize volunteers, and maintain calendar details.'),
+        'community' => array('title' => 'Community & Communications', 'slug' => 'community-communications',
+            'description' => 'Care for people and manage church communications.'),
+        'appearance' => array('title' => 'Appearance', 'slug' => 'appearance-tools',
+            'description' => 'Maintain the website and app presentation.'),
+        'settings' => array('title' => 'Settings & Access', 'slug' => 'settings-access',
+            'description' => 'Manage shared church information, integrations, and staff access.'),
+    );
+}
+
+function surfside_tools_workspace_category_url($key) {
+    $definitions = surfside_tools_workspace_category_definitions();
+    if (!isset($definitions[$key])) return '';
+    return surfside_tools_staff_page_url($definitions[$key]['slug']);
+}
+
+/** A category index is a destination, not a second copy of the tools. */
+function surfside_tools_workspace_category_shortcode($attributes = array()) {
+    if (!is_user_logged_in() || !current_user_can('upload_files')) {
+        return '<p>Staff login required to view these tools.</p>';
+    }
+    $key = isset($attributes['key']) && is_string($attributes['key'])
+        ? sanitize_key($attributes['key']) : '';
+    $groups = surfside_tools_workspace_catalog();
+    if (!isset($groups[$key])) {
+        return '<p>No tools are available in this category.</p>';
+    }
+    $group = $groups[$key];
+    $definitions = surfside_tools_workspace_category_definitions();
+    $description = isset($definitions[$key]['description']) ? $definitions[$key]['description'] : '';
+    ob_start(); ?>
+    <section class="surfside-workspace-category" aria-labelledby="surfside-workspace-category-title">
+      <header class="surfside-workspace-category-intro">
+        <p class="surfside-workspace-category-eyebrow">Surfside Tools</p>
+        <h1 id="surfside-workspace-category-title"><?php echo esc_html($group['title']); ?></h1>
+        <p><?php echo esc_html($description); ?></p>
+      </header>
+      <ul class="surfside-workspace-category-grid" aria-label="<?php echo esc_attr($group['title']); ?> tools">
+        <?php foreach ($group['items'] as $item) : ?>
+          <li><a href="<?php echo esc_url($item['url']); ?>">
+            <strong><?php echo esc_html($item['label']); ?></strong>
+            <span aria-hidden="true">›</span>
+          </a></li>
+        <?php endforeach; ?>
+      </ul>
+    </section>
+    <?php return ob_get_clean();
+}
+add_shortcode('surfside_workspace_category', 'surfside_tools_workspace_category_shortcode');
+
 /** A single capability-filtered index powers desktop nav, mobile nav and search. */
 function surfside_tools_workspace_catalog() {
     $home = surfside_tools_staff_page_url('');
@@ -65,6 +127,7 @@ function surfside_tools_workspace_catalog() {
 
     foreach ($groups as $key => &$group) {
         $group['key'] = $key;
+        $group['url'] = surfside_tools_workspace_category_url($key);
         $group['items'] = array_values(array_filter($group['items'], function ($item) {
             if (($item['cap'] ?? '') === 'tools_admin') {
                 return function_exists('surfside_tools_current_user_is_tools_admin')
@@ -90,6 +153,12 @@ function surfside_tools_workspace_is_staff_page() {
 
 function surfside_tools_workspace_current($groups) {
     $current_path = (string) wp_parse_url((string) get_permalink(get_queried_object_id()), PHP_URL_PATH);
+    foreach ($groups as $group) {
+        if ((string) wp_parse_url($group['url'], PHP_URL_PATH) === $current_path) {
+            return array('group' => $group['title'], 'label' => $group['title'],
+                'url' => $group['url'], 'is_category' => true);
+        }
+    }
     $current_view = isset($_GET['view']) && is_string($_GET['view']) ? sanitize_key(wp_unslash($_GET['view'])) : '';
     $current_tool = isset($_GET['tool']) && is_string($_GET['tool']) ? sanitize_key(wp_unslash($_GET['tool'])) : '';
     $current_tab = isset($_GET['tab']) && is_string($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
@@ -139,7 +208,7 @@ function surfside_tools_workspace_navigation($groups, $active) {
         <a class="surfside-workspace-home<?php echo $active['label'] === 'Dashboard' ? ' is-active' : ''; ?>" href="<?php echo esc_url(surfside_tools_staff_page_url('')); ?>" <?php if ($active['label'] === 'Dashboard') echo 'aria-current="page"'; ?>>Dashboard</a>
         <?php foreach ($groups as $group) : ?>
           <div class="surfside-workspace-group" data-ss-group data-ss-group-key="<?php echo esc_attr($group['key']); ?>">
-            <h2><?php echo esc_html($group['title']); ?></h2>
+            <h2><a class="surfside-workspace-category-nav<?php echo !empty($active['is_category']) && $active['group'] === $group['title'] ? ' is-active' : ''; ?>" href="<?php echo esc_url($group['url']); ?>" <?php if (!empty($active['is_category']) && $active['group'] === $group['title']) echo 'aria-current="page"'; ?>><?php echo esc_html($group['title']); ?></a></h2>
             <ul>
               <?php foreach ($group['items'] as $item) :
                 $selected = $active['label'] === $item['label'] && $active['group'] === $group['title']; ?>
@@ -179,11 +248,13 @@ function surfside_tools_workspace_wrap_content($content) {
             <a href="<?php echo esc_url(surfside_tools_staff_page_url('')); ?>">Dashboard</a>
             <?php if ($active['group'] !== '') : ?>
               <span aria-hidden="true">›</span>
-              <?php if ($active_group_key !== '') : ?>
-                <button type="button" class="surfside-workspace-breadcrumb-group" data-ss-breadcrumb-group="<?php echo esc_attr($active_group_key); ?>" aria-label="Browse <?php echo esc_attr($active['group']); ?> tools"><?php echo esc_html($active['group']); ?></button>
+              <?php if ($active_group_key !== '' && !empty($active['is_category'])) : ?>
+                <span aria-current="page"><?php echo esc_html($active['group']); ?></span>
+              <?php elseif ($active_group_key !== '') : ?>
+                <a class="surfside-workspace-breadcrumb-group" href="<?php echo esc_url($groups[$active_group_key]['url']); ?>"><?php echo esc_html($active['group']); ?></a>
               <?php else : ?><span><?php echo esc_html($active['group']); ?></span><?php endif; ?>
             <?php endif; ?>
-            <?php if ($active['label'] !== 'Dashboard') : ?><span aria-hidden="true">›</span><span aria-current="page"><?php echo esc_html($active['label']); ?></span><?php endif; ?>
+            <?php if ($active['label'] !== 'Dashboard' && empty($active['is_category'])) : ?><span aria-hidden="true">›</span><span aria-current="page"><?php echo esc_html($active['label']); ?></span><?php endif; ?>
           </nav>
         </div>
         <div class="surfside-workspace-content"><?php echo $content; // Existing shortcode output, already rendered by WordPress. ?></div>

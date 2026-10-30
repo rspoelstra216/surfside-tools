@@ -11,6 +11,8 @@ It gives church staff front-end workflows for routine publishing and management 
 
 ### Staff workflows
 
+The front-end dashboard uses six task categories: **Content & Publishing**, **Messages & Media**, **Events & Serving**, **Community & Communications**, **Appearance**, and **Settings & Access**. Each has a real staff-only landing page with capability-filtered links to its tools. Breadcrumbs navigate Dashboard → category → tool; **Tools & Search** remains an on-demand drawer with direct links and search. Existing editor URLs, form processing, and permissions are unchanged.
+
 - **Weekly Update** — upload the weekly DOCX, review announcements and sermon notes, publish content, and create calendar suggestions.
 - **Calendar Manager** — manage one-time, multi-day, and recurring events, locations, images, public calendar presentation, and independent Ministry/Bible Study classifications.
 - **Manage Website** — maintain website-specific presentation such as navigation and homepage media.
@@ -79,6 +81,9 @@ The repository should not continue cleanup for its own sake. New cleanup work sh
 ## Key staff URLs
 
 - `/dashboard`
+- `/dashboard/content-publishing`, `/dashboard/messages-media`
+- `/dashboard/events-serving`, `/dashboard/community-communications`
+- `/dashboard/appearance-tools`, `/dashboard/settings-access`
 - `/dashboard/weekly-update`
 - `/dashboard/calendar`
 - `/dashboard/homepage`

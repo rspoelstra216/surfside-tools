@@ -14,6 +14,7 @@ assert.match(css, /\.surfside-workspace-sidebar\{[\s\S]*?visibility:hidden;trans
 assert.match(css, /\.surfside-workspace\.is-open \.surfside-workspace-sidebar\{transform:translateX\(0\);visibility:visible\}/);
 assert.match(css, /\.surfside-workspace-menu\{[\s\S]*?display:inline-flex/);
 assert.doesNotMatch(js, /if \(!mobile\.matches\) open = false/);
+assert.doesNotMatch(js, /data-ss-breadcrumb-group/, 'Breadcrumbs are links to pages, not drawer events');
 
 const handlers = Object.create(null);
 const classes = new Set();
@@ -44,8 +45,6 @@ const closeButton = element();
 const search = element();
 const overlay = element();
 const empty = element();
-const categoryButton = element();
-categoryButton.setAttribute('data-ss-breadcrumb-group', 'media');
 const categoryHeading = element();
 categoryHeading.textContent = 'Messages & Media';
 const groupLink = element();
@@ -55,8 +54,6 @@ const categoryGroup = element();
 categoryGroup.setAttribute('data-ss-group-key', 'media');
 categoryGroup.querySelector = selector => selector === 'h2' ? categoryHeading : null;
 categoryGroup.querySelectorAll = selector => selector === '[data-ss-link]' ? [groupLink] : [];
-let scrolledToCategory = false;
-categoryGroup.scrollIntoView = () => { scrolledToCategory = true; };
 const sidebar = element();
 sidebar.querySelectorAll = () => [closeButton, search];
 sidebar.contains = node => node === closeButton || node === search;
@@ -64,7 +61,6 @@ const elems = {
   '#surfside-workspace-sidebar': sidebar,
   '[data-ss-search]': search,
   '[data-ss-open]': openButton,
-  '[data-ss-breadcrumb-group]': categoryButton,
   '[data-ss-empty]': empty,
   '.surfside-workspace-scrim': overlay,
 };
@@ -95,17 +91,6 @@ assert.equal(contextDocument.activeElement, search, 'opening menu focuses search
 closeButton.events.click();
 assert.equal(classes.has('is-open'), false, 'close control hides menu');
 assert.equal(contextDocument.activeElement, openButton, 'closing restores button focus');
-
-search.value = 'hidden from previous search';
-categoryButton.events.click();
-assert.equal(classes.has('is-open'), true, 'category breadcrumb opens drawer');
-assert.equal(openButton.attrs['aria-expanded'], 'true', 'category opening updates menu state');
-assert.equal(search.value, '', 'category breadcrumb clears the old search filter');
-assert.equal(categoryGroup.hidden, false, 'selected group items are visible');
-assert.equal(contextDocument.activeElement, categoryHeading, 'keyboard focus moves to category heading');
-assert.equal(categoryHeading.attrs.tabindex, '-1', 'category heading is programmatically focusable');
-assert.equal(scrolledToCategory, true, 'drawer scrolls directly to selected category');
-closeButton.events.click();
 
 let prevented = false;
 handlers.keydown({

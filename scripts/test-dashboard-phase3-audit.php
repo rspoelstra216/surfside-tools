@@ -78,7 +78,7 @@ function surfside_tools_staff_login_box() { return '<p>Log in to continue.</p>';
 function wp_get_current_user() { return (object)array('first_name'=>'Staff','display_name'=>'Surfside'); }
 function surfside_tools_workspace_catalog() {
     return array(
-        array('title'=>'Content & Publishing','items'=>array(
+        array('title'=>'Content & Publishing','url'=>'https://example.org/dashboard/content-publishing/','items'=>array(
             array('label'=>'Weekly Update','url'=>'https://example.org/dashboard/weekly-update/'),
             array('label'=>'Archived Notes','url'=>'https://example.org/dashboard/?view=sermon-archive'),
             array('label'=>'Featured Announcement','url'=>'https://example.org/dashboard/mobile-app/featured-announcement/'),
@@ -86,7 +86,7 @@ function surfside_tools_workspace_catalog() {
             array('label'=>'Fifth Tool','url'=>'https://example.org/dashboard/fifth/'),
             array('label'=>'Sixth Tool','url'=>'https://example.org/dashboard/sixth/'),
         )),
-        array('title'=>'Events & Serving','items'=>array(
+        array('title'=>'Events & Serving','url'=>'https://example.org/dashboard/events-serving/','items'=>array(
             array('label'=>'Calendar Manager','url'=>'https://example.org/dashboard/calendar/'),
         )),
     );
@@ -186,6 +186,8 @@ check(strpos($markup,'<details class="surfside-dashboard-more-tools">')!==false
     && strpos($markup,'Sixth Tool')!==false
     && strpos($markup,'Calendar Manager')!==false,
     'All authorized task links remain discoverable beyond the first four per group');
+check(strpos($markup, 'class="surfside-dashboard-category-link" href="https://example.org/dashboard/content-publishing/"')!==false,
+    'Dashboard category heading navigates to its real overview');
 check(strpos($markup,'data-surfside-workspace')===false,
     'Dashboard shortcode leaves global staff workspace wrapping to its owner');
 check(strpos($markup,'View Archived Notes')!==false,
