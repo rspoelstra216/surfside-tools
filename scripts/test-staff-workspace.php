@@ -18,6 +18,7 @@ $GLOBALS['ws_assets'] = array();
 
 function add_action($hook,$fn,$priority=10) { $GLOBALS['ws_hooks'][$hook] = $fn; }
 function add_filter($hook,$fn,$priority=10) { $GLOBALS['ws_hooks'][$hook] = $fn; }
+function add_shortcode($tag,$fn) { $GLOBALS['ws_shortcodes'][$tag] = $fn; }
 function is_admin() { return $GLOBALS['ws_admin']; }
 function is_page() { return true; }
 function is_user_logged_in() { return $GLOBALS['ws_logged_in']; }
@@ -63,6 +64,7 @@ function wp_enqueue_script($name,$url,$deps,$ver,$footer) { $GLOBALS['ws_assets'
 function check($assertion,$message) { if (!$assertion) throw new RuntimeException($message); }
 
 require dirname(__DIR__) . '/includes/staff-workspace-navigation.php';
+check(isset($GLOBALS['ws_shortcodes']['surfside_workspace_category']), 'Category landing page shortcode registered');
 check(isset($GLOBALS['ws_hooks']['the_content']) && isset($GLOBALS['ws_hooks']['wp_enqueue_scripts']),
     'Registers scoped staff content and asset hooks');
 $GLOBALS['ws_admin']=false;
