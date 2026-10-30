@@ -37,6 +37,28 @@ function check($value, $description) {
 $definitions = surfside_tools_staff_page_definitions();
 check(SURFSIDE_TOOLS_STAFF_PAGES_SCHEMA_VERSION >= 3,
     'Page schema version must advance to run the new migration');
+check(SURFSIDE_TOOLS_STAFF_PAGES_SCHEMA_VERSION === 4,
+    'Category pages trigger a one-time schema migration after version 3');
+$category_pages = array(
+    'content' => array('content-publishing', 'Content & Publishing'),
+    'media' => array('messages-media', 'Messages & Media'),
+    'events' => array('events-serving', 'Events & Serving'),
+    'community' => array('community-communications', 'Community & Communications'),
+    'appearance' => array('appearance-tools', 'Appearance'),
+    'settings' => array('settings-access', 'Settings & Access'),
+);
+foreach ($category_pages as $key => $meta) {
+    $definition = $definitions['category-' . $key] ?? null;
+    check(is_array($definition) && $definition['parent'] === 'dashboard',
+        'Category landing is a real Dashboard child: ' . $key);
+    check($definition['slug'] === $meta[0] && $definition['title'] === $meta[1],
+        'Category URLs and names match the staff navigation catalog: ' . $key);
+    check($definition['content'] === '[surfside_workspace_category key="' . $key . '"]',
+        'Category page uses an existing shortcode, not duplicated editor content: ' . $key);
+    check(array_search('category-' . $key, array_keys($definitions), true) >
+        array_search('dashboard', array_keys($definitions), true),
+        'Dashboard is provisioned before category: ' . $key);
+}
 check(isset($definitions['streaming-management']), 'Migration must own Streaming Management');
 check($definitions['streaming-management']['parent'] === 'site-settings',
     'Streaming Management parent must be the nested Church Settings page');
