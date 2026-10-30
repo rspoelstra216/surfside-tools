@@ -13,6 +13,10 @@ assert.match(css, /\.surfside-workspace\{display:block;width:min\(1440px/);
 assert.match(css, /\.surfside-workspace-sidebar\{[\s\S]*?visibility:hidden;transform:translateX\(-105%\)/);
 assert.match(css, /\.surfside-workspace\.is-open \.surfside-workspace-sidebar\{transform:translateX\(0\);visibility:visible\}/);
 assert.match(css, /\.surfside-workspace-menu\{[\s\S]*?display:inline-flex/);
+assert.match(css, /\.surfside-workspace-toolbar\{position:sticky;top:var\(--wp-admin--admin-bar--height, 0px\)/,
+  'Sticky toolbar sits flush below any real WordPress admin bar');
+assert.doesNotMatch(css, /--wp-admin--admin-bar--height, 0px\) \+ 8px/,
+  'Sticky toolbar has no unnecessary 8px gap');
 assert.doesNotMatch(js, /if \(!mobile\.matches\) open = false/);
 assert.doesNotMatch(js, /data-ss-breadcrumb-group/, 'Breadcrumbs are links to pages, not drawer events');
 
