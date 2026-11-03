@@ -44,6 +44,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/livestream-notifications.php';
 register_deactivation_hook(__FILE__, 'surfside_tools_live_push_deactivate');
 require_once SURFSIDE_TOOLS_PATH . 'includes/account-deletion-page.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/privacy-policy-page.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/privacy-policy-korean.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/design-system.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/weekend-services.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/contact-details.php';

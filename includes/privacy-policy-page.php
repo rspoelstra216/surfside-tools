@@ -1,5 +1,5 @@
 <?php
-/** Public privacy policy for the Surfside website and mobile app. */
+/** Public privacy policy for Surfside's website, mobile apps and television apps. */
 if (!defined('ABSPATH')) { exit; }
 
 const SURFSIDE_TOOLS_PRIVACY_POLICY_SCHEMA_VERSION = 2;
@@ -9,11 +9,12 @@ function surfside_tools_privacy_policy_shortcode(){
     $support_email='support@surfsidefellowship.org';
     $deletion_url=home_url('/account-deletion/');
     ob_start(); ?>
-    <section class="surfside-privacy-policy alignwide" aria-label="Surfside privacy policy">
+    <section class="surfside-privacy-policy alignwide" lang="en" aria-label="Surfside privacy policy">
       <p class="surfside-privacy-policy__eyebrow">Surfside Community Fellowship</p>
       <h1>Privacy Policy</h1>
-      <p class="surfside-privacy-policy__lead">This Privacy Policy explains how Surfside Community Fellowship collects, uses, shares, protects, retains, and deletes information through the Surfside mobile app and surfsidefellowship.org.</p>
-      <p class="surfside-privacy-policy__date"><strong>Effective date:</strong> September 21, 2026</p>
+      <p class="surfside-privacy-policy__languages"><a href="<?php echo esc_url(home_url('/privacy-policy-ko/')); ?>" hreflang="ko" lang="ko">한국어 개인정보 처리방침</a></p>
+      <p class="surfside-privacy-policy__lead">This Privacy Policy explains how Surfside Community Fellowship collects, uses, shares, protects, retains, and deletes information through our website (surfsidefellowship.org), mobile apps, and television apps.</p>
+      <p class="surfside-privacy-policy__date"><strong>Effective date:</strong> November 2, 2026</p>
 
       <h2>Information we collect</h2>
       <h3>Account and profile information</h3>
@@ -31,10 +32,14 @@ function surfside_tools_privacy_policy_shortcode(){
       <h3>Website security and technical information</h3>
       <p>Our website and service providers may process limited technical information such as IP address, browser or device information, request timestamps, security events, and essential cookies. The website contact form uses Cloudflare Turnstile to prevent automated abuse.</p>
 
+      <h3>Television apps and video streaming</h3>
+      <p>Surfside offers television apps on supported platforms, including Samsung Tizen, Roku, Amazon Fire TV, Apple TV, and Google TV. Our TV apps do not require an account or sign-in, and do not ask viewers to enter a name, email address, phone number, payment information, or other personal details. We do not use these apps to create individualized viewer profiles or for targeted advertising.</p>
+      <p>The TV apps request public church information, events, livestreams, recorded full worship services, and archived sermons from our WordPress services and video delivery providers, including Cloudflare Stream and Cloudflare R2. These services may process technical request information such as IP addresses, device or application details, requested content, request times, and diagnostic or security events. Surfside does not intentionally collect TV viewers' names or contact details through these apps.</p>
+
       <h2>How we use information</h2>
       <ul>
         <li>Provide authentication, account synchronization, saved content, prayer history, and staff-authorized features.</li>
-        <li>Deliver church information, events, Bible content, livestream links, and notifications selected by the user.</li>
+        <li>Deliver church information, events, Bible content, livestreams, recorded worship services, archived sermons, and notifications selected by the user.</li>
         <li>Route contact and prayer messages to the appropriate church staff or prayer team.</li>
         <li>Review and publish Church Prayer List submissions according to the submitter's choices.</li>
         <li>Protect the app, website, accounts, and forms from abuse; diagnose failures; and maintain reliable service.</li>
@@ -46,10 +51,10 @@ function surfside_tools_privacy_policy_shortcode(){
       <ul>
         <li><strong>Church recipients:</strong> Contact and prayer messages are shared with the staff, pastoral staff, or prayer team appropriate to the category and audience you select.</li>
         <li><strong>Church Prayer List:</strong> If you request publication, approved prayer text and either your name or an anonymous label may be shown to app users for the period you select.</li>
-        <li><strong>Service providers:</strong> Google Firebase provides authentication and cloud data storage; Google supports optional Google Sign-In; Expo supports push-notification delivery; our WordPress, hosting, and email providers operate the website and route messages; and Cloudflare Turnstile protects website forms.</li>
+        <li><strong>Service providers:</strong> Google Firebase provides authentication and cloud data storage; Google supports optional Google Sign-In; Expo supports push-notification delivery; our WordPress, hosting, and email providers operate the website and route messages; and Cloudflare protects website forms and provides video streaming and media delivery (including Turnstile, Stream, and R2).</li>
         <li><strong>Legal and safety needs:</strong> We may disclose information when reasonably necessary to comply with law, protect people, investigate abuse, or protect Surfside's rights and services.</li>
       </ul>
-      <p>The app and website may link to services such as YouTube, Twitch, Facebook, Google Maps, YouVersion, and third-party giving pages. Information you provide directly to those services is governed by their own privacy policies.</p>
+      <p>The website and apps may link to services such as YouTube, Twitch, Facebook, Google Maps, YouVersion, and third-party giving pages. Information you provide directly to those services is governed by their own privacy policies. Television platform operators may independently process device or app information under their own privacy policies; Surfside does not control those independent practices.</p>
 
       <h2>Data security</h2>
       <p>We use HTTPS for data in transit, authenticated access and role-based restrictions for protected functions, and access controls provided by our service providers. Access to personal information is limited to people and providers who need it for the purposes described above. No security method is perfect, but we take reasonable steps to protect information against unauthorized access, alteration, disclosure, or destruction.</p>
@@ -71,7 +76,7 @@ function surfside_tools_privacy_policy_shortcode(){
       <p>For access, correction, deletion, or other privacy questions, email <a href="mailto:<?php echo esc_attr($support_email); ?>"><?php echo esc_html($support_email); ?></a>. We may need to verify your identity before acting on a request.</p>
 
       <h2>Children's privacy</h2>
-      <p>The Surfside app and website are intended for a general church audience and are not designed to collect personal information directly from children. A parent or guardian should contact us if they believe a child submitted personal information so we can review and, where appropriate, delete it.</p>
+      <p>The Surfside website and apps are intended for a general church audience and are not designed to collect personal information directly from children. A parent or guardian should contact us if they believe a child submitted personal information so we can review and, where appropriate, delete it.</p>
 
       <h2>Changes to this policy</h2>
       <p>We may update this policy as the app, website, or legal requirements change. We will post the revised policy on this page and update the effective date.</p>
@@ -79,8 +84,14 @@ function surfside_tools_privacy_policy_shortcode(){
       <h2>Contact us</h2>
       <p>Surfside Community Fellowship<br>Email: <a href="mailto:<?php echo esc_attr($support_email); ?>"><?php echo esc_html($support_email); ?></a><br>Phone: <a href="tel:+13216072111">(321) 607-2111</a></p>
     </section>
+    <?php echo surfside_tools_privacy_policy_styles(); ?>
+    <?php return ob_get_clean();
+}
+/** Both language editions use the same layout and colors. */
+function surfside_tools_privacy_policy_styles(){
+    ob_start(); ?>
     <style>
-      .surfside-privacy-policy{width:100%;max-width:var(--wp--style--global--wide-size,80rem);margin-left:auto!important;margin-right:auto!important;padding:clamp(28px,5vw,64px);box-sizing:border-box;border:1px solid #dbe5ea;border-radius:18px;background:#fff;box-shadow:0 12px 35px rgba(24,33,43,.07);color:#293743}.surfside-privacy-policy__eyebrow{margin:0 0 10px;color:#176a9a;font-size:.85rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.surfside-privacy-policy h1{margin:0 0 18px;color:#18212b;font-size:clamp(2.4rem,5vw,4rem);line-height:1.05;letter-spacing:-.035em}.surfside-privacy-policy__lead{max-width:62rem;margin-bottom:14px;color:#4c5c68;font-size:clamp(1.05rem,2vw,1.2rem);line-height:1.7}.surfside-privacy-policy__date{display:inline-block;margin:0 0 14px;padding:7px 12px;border-radius:999px;background:#edf6fa;color:#28556e;font-size:.92rem}.surfside-privacy-policy h2{margin:44px 0 20px;padding-bottom:10px;border-bottom:2px solid #dbeaf1;color:#18384b;font-size:clamp(1.65rem,3vw,2.15rem);line-height:1.2}.surfside-privacy-policy h3{margin:26px 0 10px;color:#18212b;font-size:1.25rem;line-height:1.3}.surfside-privacy-policy p,.surfside-privacy-policy li{line-height:1.7}.surfside-privacy-policy ul{padding-left:1.35rem}.surfside-privacy-policy li+li{margin-top:10px}.surfside-privacy-policy a:not(.surfside-privacy-policy__button){color:#176a9a;text-underline-offset:3px}.surfside-privacy-policy__button{display:inline-block;padding:13px 19px;border-radius:9px;background:#176a9a;color:#fff!important;font-weight:700;text-decoration:none;box-shadow:0 5px 14px rgba(23,106,154,.2)}.surfside-privacy-policy__button:hover,.surfside-privacy-policy__button:focus{background:#0f577f;color:#fff!important}@media(max-width:600px){.surfside-privacy-policy{padding:26px 20px;border-radius:12px}.surfside-privacy-policy h2{margin-top:36px}}
+      .surfside-privacy-policy{width:100%;max-width:var(--wp--style--global--wide-size,80rem);margin-left:auto!important;margin-right:auto!important;padding:clamp(28px,5vw,64px);box-sizing:border-box;border:1px solid #dbe5ea;border-radius:18px;background:#fff;box-shadow:0 12px 35px rgba(24,33,43,.07);color:#293743}.surfside-privacy-policy__eyebrow{margin:0 0 10px;color:#176a9a;font-size:.85rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.surfside-privacy-policy h1{margin:0 0 18px;color:#18212b;font-size:clamp(2.4rem,5vw,4rem);line-height:1.05;letter-spacing:-.035em}.surfside-privacy-policy__languages{margin:0 0 8px;font-size:.96rem;font-weight:700}.surfside-privacy-policy__lead{max-width:62rem;margin-bottom:14px;color:#4c5c68;font-size:clamp(1.05rem,2vw,1.2rem);line-height:1.7}.surfside-privacy-policy__date{display:inline-block;margin:0 0 14px;padding:7px 12px;border-radius:999px;background:#edf6fa;color:#28556e;font-size:.92rem}.surfside-privacy-policy h2{margin:44px 0 20px;padding-bottom:10px;border-bottom:2px solid #dbeaf1;color:#18384b;font-size:clamp(1.65rem,3vw,2.15rem);line-height:1.2}.surfside-privacy-policy h3{margin:26px 0 10px;color:#18212b;font-size:1.25rem;line-height:1.3}.surfside-privacy-policy p,.surfside-privacy-policy li{line-height:1.7}.surfside-privacy-policy ul{padding-left:1.35rem}.surfside-privacy-policy li+li{margin-top:10px}.surfside-privacy-policy a:not(.surfside-privacy-policy__button){color:#176a9a;text-underline-offset:3px}.surfside-privacy-policy__button{display:inline-block;padding:13px 19px;border-radius:9px;background:#176a9a;color:#fff!important;font-weight:700;text-decoration:none;box-shadow:0 5px 14px rgba(23,106,154,.2)}.surfside-privacy-policy__button:hover,.surfside-privacy-policy__button:focus{background:#0f577f;color:#fff!important}@media(max-width:600px){.surfside-privacy-policy{padding:26px 20px;border-radius:12px}.surfside-privacy-policy h2{margin-top:36px}}
     </style>
     <?php return ob_get_clean();
 }
