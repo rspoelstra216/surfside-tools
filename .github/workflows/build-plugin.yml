@@ -81,6 +81,9 @@ jobs:
       - name: Test public YouTube Messages archive
         run: php scripts/test-public-message-archive.php
 
+      - name: Test editable About Surfside settings and public app API
+        run: php scripts/test-site-about-description.php
+
       - name: Test mobile Message Archive REST interface
         run: php scripts/test-mobile-message-archive-api.php
 
