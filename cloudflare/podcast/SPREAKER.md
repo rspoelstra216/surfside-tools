@@ -243,3 +243,35 @@ must remain in manual review to avoid accidentally creating duplicate drafts.
 Do not manually delete status JSON to force retries.
 
 Reference: https://developers.cloudflare.com/workers/runtime-apis/request/
+
+## Standalone sermons and production missing-draft recovery
+
+Weekly sermons do not need a series or week number. A canonical YouTube title
+such as `How Can We Gain God's Perspective - 08 November 2026` is accepted with
+the sermon date and yields the podcast title `How Can We Gain God's Perspective`,
+without fabricated series/week fields. Ambiguous multi-part titles or missing
+dates still require review.
+
+The November 8, 2026 weekly MP4 was uploaded successfully before this support
+was added, so the MP3 may already be ready while no Spreaker job was queued.
+After the WordPress plugin and Cloudflare Worker are deployed:
+
+1. In Cloudflare R2 `surfside-sermons/podcast-jobs/<video-id>.json`, confirm
+   `status: "ready"` and that `podcast-audio/<video-id>.mp3` exists.
+2. In the Spreaker show, verify that no matching draft or published episode
+   exists. **Do not** blindly retry if an episode already exists.
+3. On Surfside Tools → Weekly Media Publishing → Podcast episode preview,
+   select that already-uploaded sermon and, as an administrator, click
+   **Prepare missing Spreaker draft**. Confirm the warning.
+4. WordPress authenticates and signs `POST /recover-spreaker` to Cloudflare.
+   The Worker checks the original MP4, a `ready` audio job, existing MP3,
+   configured Spreaker credentials, and **absence of any existing Spreaker
+   job**; then queues only the unpublished Spreaker draft and its MP3 upload.
+   The MP4 is not re-uploaded, and FFmpeg is not started again.
+5. Watch `podcast-spreaker/<video-id>.json` for `uploaded`; review the
+   unpublished episode in Spreaker and publish manually.
+
+This is an explicit single-sermon, admin-only recovery action, not a bulk
+historical backfill. Existing Spreaker statuses (even `review_required` or
+`queue_unavailable`) block blind recovery to prevent duplicate episodes.
+Never delete a status record to bypass this safety check.
