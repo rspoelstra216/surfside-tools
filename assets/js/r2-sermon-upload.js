@@ -20,6 +20,8 @@
   const podcastReview = root.querySelector("#surfside-podcast-review");
   const podcastRecover = root.querySelector("#surfside-podcast-recover-spreaker");
   const podcastRecoverStatus = root.querySelector("#surfside-podcast-recovery-status");
+  const podcastAudioRetry = root.querySelector("#surfside-podcast-retry-audio");
+  const podcastAudioRetryStatus = root.querySelector("#surfside-podcast-audio-retry-status");
   let active = null;
 
   const showPodcastPreview = () => {
@@ -28,6 +30,13 @@
     const selected = Boolean(option && option.value);
     podcastEmpty.hidden = selected;
     podcastDetails.hidden = !selected;
+    if (podcastAudioRetry) {
+      podcastAudioRetry.disabled = !selected || podcastAudioRetry.dataset.busy === "1";
+    }
+    if (podcastRecover) {
+      podcastRecover.disabled = !selected || option.dataset.podcastReview === "1" ||
+        podcastRecover.dataset.busy === "1";
+    }
     if (!selected) return;
     podcastTitle.textContent = option.dataset.podcastTitle || "";
     podcastDescription.textContent = option.dataset.podcastDescription || "";
@@ -70,6 +79,33 @@
     }
     return body.data;
   };
+
+  // Admin-only retry for a failed Cloudflare audio job. WordPress verifies
+  // the existing MP4 and signs both status and queue requests server-side.
+  if (podcastAudioRetry) podcastAudioRetry.addEventListener("click", async () => {
+    const id = podcastSelect?.value || "";
+    if (!/^[A-Za-z0-9_-]{11}$/.test(id) || podcastAudioRetry.dataset.busy === "1") return;
+    if (!window.confirm("Retry the failed Cloudflare audio-processing job for this sermon using its existing R2 MP4? No video will be re-uploaded. An unpublished Spreaker draft may be created after the audio is ready.")) return;
+    podcastAudioRetry.dataset.busy = "1";
+    podcastAudioRetry.disabled = true;
+    if (podcastAudioRetryStatus) podcastAudioRetryStatus.textContent =
+      "Checking Cloudflare job status and requesting an audio retry…";
+    try {
+      const result = await request("retry_audio", {video_id: id});
+      if (result.status !== "queued") throw new Error("Audio processing was not queued.");
+      if (podcastAudioRetryStatus) podcastAudioRetryStatus.textContent =
+        "Podcast audio retry queued. Check podcast-jobs in Cloudflare R2 for ready." +
+        (result.spreaker_draft_requested
+          ? " An unpublished Spreaker draft is planned after audio processing."
+          : " If no Spreaker draft appears, use Prepare missing Spreaker draft once audio is ready.");
+    } catch (error) {
+      if (podcastAudioRetryStatus) podcastAudioRetryStatus.textContent =
+        error.message || "Could not retry podcast audio.";
+    } finally {
+      delete podcastAudioRetry.dataset.busy;
+      showPodcastPreview();
+    }
+  });
 
   // Admin-only recovery for an uploaded sermon with completed audio but no
   // Spreaker draft. Does not send MP4 bytes or re-run audio extraction.
