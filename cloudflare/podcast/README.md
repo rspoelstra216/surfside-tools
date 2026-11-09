@@ -106,3 +106,25 @@ The Roku MP4 remains intact and is not uploaded again. If retried with only the
 ID, use the staff **Prepare missing Spreaker draft** action after the new audio
 job is `ready`. Never submit a blind retry when `podcast-spreaker/<id>.json`
 already exists; review the Spreaker dashboard to avoid duplicates.
+
+## Recovering a failed weekly audio job from Surfside Tools
+
+If `podcast-jobs/<youtube-id>.json` reports `failed` and the MP3 has
+not been created, sign in to Surfside Tools as a site administrator,
+open **Weekly Media Publishing → Podcast episode preview**, select the
+already-uploaded sermon and click **Retry failed podcast audio**.
+Confirm the prompt.
+
+WordPress validates the video ID against the master Messages playlist and
+checks the verified R2 MP4. It signs a read-only `POST /status` request to
+the Cloudflare Worker and **only** sends a new signed `POST /jobs` when
+the current job reports `failed`. Cloudflare's existing protections
+prevent duplicate queued/processing jobs and re-encoding an existing MP3.
+The Worker shared secret never enters browser JavaScript or PowerShell.
+The MP4 is not re-uploaded.
+
+When the video has valid YouTube metadata and the Spreaker integration is
+enabled, retrying through this button also supplies the usual **unpublished**
+Spreaker draft metadata, so the draft follows audio processing automatically.
+Otherwise, once the audio is `ready`, an administrator can use the separate
+**Prepare missing Spreaker draft** action. No publication is automatic.
