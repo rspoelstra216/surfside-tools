@@ -559,8 +559,8 @@ function surfside_tools_staff_r2_sermons_shortcode() {
             <label for="surfside-r2-id">YouTube message</label>
             <select id="surfside-r2-id" required>
               <option value="">Choose a YouTube video</option>
-              <?php foreach ($rows as $row) : $preview = surfside_tools_podcast_episode_preview($row['title'], $row['sermon_date'], $row['video_id']); ?>
-                <option value="<?php echo esc_attr($row['video_id']); ?>" data-podcast-title="<?php echo esc_attr($preview['title']); ?>" data-podcast-description="<?php echo esc_attr($preview['description']); ?>" data-podcast-review="<?php echo $preview['needs_review'] ? '1' : '0'; ?>" <?php if ($highlight === $row['video_id']) echo 'selected'; ?> <?php disabled(($row['status'] ?? '') === 'ready'); ?>><?php echo esc_html((($row['status'] ?? '') === 'ready' ? '✓ ' : '') . $row['title'] . ' (' . $row['video_id'] . ')'); ?></option>
+              <?php foreach ($rows as $row) : $preview = surfside_tools_podcast_episode_with_notes($row['title'], $row['sermon_date'], $row['video_id']); ?>
+                <option value="<?php echo esc_attr($row['video_id']); ?>" data-podcast-title="<?php echo esc_attr($preview['title']); ?>" data-podcast-description="<?php echo esc_attr($preview['description']); ?>" data-podcast-notes-status="<?php echo esc_attr($preview['notes_status']); ?>" data-podcast-review="<?php echo $preview['needs_review'] ? '1' : '0'; ?>" <?php if ($highlight === $row['video_id']) echo 'selected'; ?> <?php disabled(($row['status'] ?? '') === 'ready'); ?>><?php echo esc_html((($row['status'] ?? '') === 'ready' ? '✓ ' : '') . $row['title'] . ' (' . $row['video_id'] . ')'); ?></option>
               <?php endforeach; ?>
             </select>
             <label for="surfside-r2-file" style="display:block;margin-top:12px">Roku-ready MP4 (H.264/AAC, faststart)</label>
@@ -574,15 +574,15 @@ function surfside_tools_staff_r2_sermons_shortcode() {
         </section>
         <section class="surfside-yt-panel" id="surfside-podcast-preview">
           <h2>Podcast episode preview</h2>
-          <p class="surfside-yt-muted">Preview the title and description from YouTube metadata. New verified weekly uploads generate a Spreaker draft after Cloudflare finishes the MP3. <?php echo defined('SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED') && SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED === true ? 'Automatic publishing is enabled for new sermons after Spreaker audio encoding is ready. Failed or ambiguous jobs remain unpublished for review.' : 'Publishing remains manual in Spreaker unless automatic publication is explicitly enabled.'; ?></p>
+          <p class="surfside-yt-muted">Preview the title and description from YouTube metadata and any matching archived sermon notes. New verified weekly uploads generate a Spreaker draft after Cloudflare finishes the MP3. <?php echo defined('SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED') && SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED === true ? 'Automatic publishing is enabled for new sermons after Spreaker audio encoding is ready. Failed or ambiguous jobs remain unpublished for review.' : 'Publishing remains manual in Spreaker unless automatic publication is explicitly enabled.'; ?></p>
           <label for="surfside-podcast-id">Uploaded sermon</label>
           <select id="surfside-podcast-id">
             <option value="">Choose an uploaded sermon</option>
             <?php $podcast_visible = 0; foreach ($rows as $row) :
               if (($row['status'] ?? '') !== 'ready' || $podcast_visible >= 12) continue;
               ++$podcast_visible;
-              $preview = surfside_tools_podcast_episode_preview($row['title'], $row['sermon_date'], $row['video_id']); ?>
-              <option value="<?php echo esc_attr($row['video_id']); ?>" data-podcast-title="<?php echo esc_attr($preview['title']); ?>" data-podcast-description="<?php echo esc_attr($preview['description']); ?>" data-podcast-review="<?php echo $preview['needs_review'] ? '1' : '0'; ?>" <?php selected($highlight, $row['video_id']); ?>><?php echo esc_html($row['title']); ?></option>
+              $preview = surfside_tools_podcast_episode_with_notes($row['title'], $row['sermon_date'], $row['video_id']); ?>
+              <option value="<?php echo esc_attr($row['video_id']); ?>" data-podcast-title="<?php echo esc_attr($preview['title']); ?>" data-podcast-description="<?php echo esc_attr($preview['description']); ?>" data-podcast-notes-status="<?php echo esc_attr($preview['notes_status']); ?>" data-podcast-review="<?php echo $preview['needs_review'] ? '1' : '0'; ?>" <?php selected($highlight, $row['video_id']); ?>><?php echo esc_html($row['title']); ?></option>
             <?php endforeach; ?>
           </select>
           <p id="surfside-podcast-empty" class="surfside-yt-muted">Select an uploaded sermon to see its proposed podcast metadata.</p>
@@ -590,6 +590,7 @@ function surfside_tools_staff_r2_sermons_shortcode() {
             <p><strong>Proposed episode title:</strong> <span id="surfside-podcast-title"></span></p>
             <p><strong>Proposed description:</strong></p>
             <p id="surfside-podcast-description" style="white-space:pre-line"></p>
+            <p class="surfside-yt-muted" id="surfside-podcast-notes-status" role="status"></p>
             <p id="surfside-podcast-review" role="status" hidden>Review the title and sermon date before publishing: the metadata could not be reliably parsed.</p>
           </div>
           <?php if (current_user_can('manage_options') && defined('SURFSIDE_PODCAST_WORKER_URL') && defined('SURFSIDE_PODCAST_SHARED_SECRET')) : ?>
