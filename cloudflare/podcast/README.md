@@ -80,3 +80,29 @@ job may have retried previously; inspect `podcast-jobs/<id>.json` and
 `podcast-audio/<id>.mp3` first. If MP3 is already present, verify it and
 do not request an unnecessary re-encode. If status is `failed` with no MP3,
 one explicit retry is safe. The verified Roku MP4 and Spreaker remain untouched.
+
+
+## November 8, 2026: Cloudflare container instance cap
+
+Weekly sermon `e0NnCrrshM4` uploaded successfully to R2, but
+`podcast-jobs/e0NnCrrshM4.json` ended with `processing_failed`, and no
+`podcast-audio/e0NnCrrshM4.mp3` was created. Cloudflare Observability logged
+`Maximum number of running container instances exceeded` immediately
+before `POST http://container/process` failed.
+
+Previously each YouTube video ID was used as the named Container Durable Object,
+while `max_instances` was just `1`. A previously running or stopping VM could
+block a different invocation from starting. The processor now shares one stable
+container identity across all sermons and retains single-concurrency Queue
+consumption, with a `max_instances: 2` capacity ceiling to permit one instance
+to finish shutting down during a deployment or restart. This limit is a maximum,
+**not** a standing count of two running containers. The Node server also refuses
+concurrent `/process` work.
+
+After deployment, a **failed job with no MP3** may be explicitly requeued via
+an authenticated, freshly HMAC-signed `POST /jobs` for the existing ID and
+complete Spreaker metadata (if draft creation is desired in the same run).
+The Roku MP4 remains intact and is not uploaded again. If retried with only the
+ID, use the staff **Prepare missing Spreaker draft** action after the new audio
+job is `ready`. Never submit a blind retry when `podcast-spreaker/<id>.json`
+already exists; review the Spreaker dashboard to avoid duplicates.
