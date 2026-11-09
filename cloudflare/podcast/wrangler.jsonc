@@ -24,7 +24,7 @@
       "class_name": "PodcastContainer",
       "image": "./container/Dockerfile",
       "instance_type": "standard-1",
-      "max_instances": 1
+      "max_instances": 2
     }
   ],
   "r2_buckets": [
