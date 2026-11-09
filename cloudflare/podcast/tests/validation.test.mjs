@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { webcrypto } from "node:crypto";
-import { validId, sourceKey, audioKey, statusKey, validStorageAccess, verifiedRequest } from "../src/validation.mjs";
+import { readFileSync } from "node:fs";
+import { PROCESSOR_CONTAINER_ID, validId, sourceKey, audioKey, statusKey, validStorageAccess, verifiedRequest } from "../src/validation.mjs";
 
 globalThis.crypto ??= webcrypto;
 test("YouTube IDs and fixed keys are strict", () => {
@@ -50,4 +51,16 @@ test("isolated end-to-end test paths cannot overwrite canonical Roku or podcast 
   assert.equal(validStorageAccess(audioKey(id, true), "GET"), false);
   assert.equal(validStorageAccess("podcast-test-spreaker/0_QXD1k4fcI.json", "PUT"), false);
   assert.equal(validStorageAccess("podcast-test-input/../../secrets.mp4", "GET"), false);
+});
+
+test("one reusable FFmpeg container handles serialized weekly jobs, with shutdown overlap headroom", () => {
+  assert.equal(PROCESSOR_CONTAINER_ID, "weekly-sermon-audio");
+  const config = JSON.parse(readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
+  assert.equal(config.containers[0].max_instances, 2,
+    "allow old instance shutdown while another starts");
+  assert.equal(config.queues.consumers[0].max_concurrency, 1,
+    "the processing queue must remain serialized to avoid concurrent FFmpeg workloads");
+  const worker = readFileSync(new URL("../src/worker.mjs", import.meta.url), "utf8");
+  assert.match(worker, /getContainer\(env\.PODCAST_CONTAINER, PROCESSOR_CONTAINER_ID\)/,
+    "individual video IDs must not create separate container instances");
 });
