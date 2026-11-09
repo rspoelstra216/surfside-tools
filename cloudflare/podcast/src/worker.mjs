@@ -1,6 +1,6 @@
 import { Container, ContainerProxy, getContainer } from "@cloudflare/containers";
 export { ContainerProxy };
-import { validId, sourceKey, audioKey, statusKey, validStorageAccess, verifiedRequest } from "./validation.mjs";
+import { PROCESSOR_CONTAINER_ID, validId, sourceKey, audioKey, statusKey, validStorageAccess, verifiedRequest } from "./validation.mjs";
 import { uploadAudioToR2 } from "./audio-upload.mjs";
 import { validDraftMetadata, spreakerConfigured, canRetryKnownRedirectFailure, canPrepareMissingDraft, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
 
@@ -183,7 +183,9 @@ export default {
         } else {
           if (!await env.SERMONS_BUCKET.head(sourceKey(id, test))) throw Error("source_missing");
           await state(env, id, "processing", "", test);
-          const result = await getContainer(env.PODCAST_CONTAINER, id).fetch(
+          // Distinct video IDs must not spawn separate idle FFmpeg VMs.
+          // The Queue consumer is single-concurrency and the server guards busy jobs.
+          const result = await getContainer(env.PODCAST_CONTAINER, PROCESSOR_CONTAINER_ID).fetch(
             new Request("http://container/process", {
               method: "POST",
               headers: { "content-type": "application/json" },
