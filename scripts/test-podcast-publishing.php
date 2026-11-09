@@ -81,6 +81,29 @@ $standalone_meta = surfside_tools_podcast_spreaker_metadata('e0NnCrrshM4');
 verify_podcast($standalone_meta['title'] === "How Can We Gain God's Perspective",
     'canonical YouTube standalone metadata is usable for Spreaker');
 
+// Default remains manual: existing deployments cannot silently start
+// publishing episodes merely by deploying the new Cloudflare code.
+verify_podcast(!defined('SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED'),
+    'auto publication is disabled unless explicitly configured');
+$GLOBALS['podcast_response'] = array('status' => 202,
+    'body' => '{"video_id":"e0NnCrrshM4","status":"queued"}');
+$manual = surfside_tools_podcast_queue_verified('e0NnCrrshM4');
+verify_podcast($manual['status'] === 'queued' &&
+    $manual['spreaker_draft_requested'] === true &&
+    empty($manual['spreaker_auto_publish_requested']),
+    'existing draft-only production flow remains default');
+$before = json_decode($GLOBALS['podcast_last_request']['options']['body'], true);
+verify_podcast(!isset($before['auto_publish']),
+    'disabled auto-publication flag never travels to Cloudflare');
+
+define('SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED', true);
+$automatic = surfside_tools_podcast_queue_verified('e0NnCrrshM4');
+$after = json_decode($GLOBALS['podcast_last_request']['options']['body'], true);
+verify_podcast($automatic['spreaker_auto_publish_requested'] === true &&
+    $after['auto_publish'] === true &&
+    $after['spreaker']['title'] === "How Can We Gain God's Perspective",
+    'explicitly enabled weekly upload sends valid metadata and opt-in flag');
+
 $recovery = surfside_tools_podcast_prepare_existing_draft('e0NnCrrshM4');
 verify_podcast($recovery['status'] === 'queued', 'recovery accepted');
 $posted = $GLOBALS['podcast_last_request'];
@@ -92,6 +115,8 @@ verify_podcast($data['video_id'] === 'e0NnCrrshM4' &&
     $data['confirmed_no_draft'] === true &&
     $data['spreaker']['title'] === "How Can We Gain God's Perspective",
     'recovery sends only explicit verified metadata and confirmation');
+verify_podcast(!isset($data['auto_publish']),
+    'manual missing-draft recovery does not activate historical publication');
 verify_podcast(!isset($data['test']) && !isset($data['mp4']),
     'recovery cannot trigger isolated test or media upload');
 verify_podcast(hash_hmac('sha256',
@@ -109,6 +134,8 @@ $GLOBALS['podcast_status_response'] = array(
 $GLOBALS['podcast_response'] = array(
     'status' => 202, 'body' => '{"video_id":"e0NnCrrshM4","status":"queued"}');
 $retry = surfside_tools_podcast_retry_failed_audio('e0NnCrrshM4');
+verify_podcast($retry['spreaker_auto_publish_requested'] === true,
+    'explicitly enabled audio retry may publish its new weekly podcast');
 verify_podcast($retry['status'] === 'queued' && $retry['spreaker_draft_requested'] === true,
     'failed standalone sermon retries MP3 and queues Spreaker metadata');
 verify_podcast(count($GLOBALS['podcast_requests']) === 2,
@@ -127,6 +154,7 @@ foreach ($GLOBALS['podcast_requests'] as $signed) {
 $job_body = json_decode($GLOBALS['podcast_requests'][1]['options']['body'], true);
 verify_podcast($job_body['video_id'] === 'e0NnCrrshM4' &&
     $job_body['spreaker']['title'] === "How Can We Gain God's Perspective" &&
+    $job_body['auto_publish'] === true &&
     !isset($job_body['test']) && !isset($job_body['mp4']),
     'retry preserves canonical Spreaker metadata without a test flag or MP4 body');
 

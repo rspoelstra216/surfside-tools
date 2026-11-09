@@ -98,7 +98,15 @@ function surfside_tools_podcast_queue_verified($id) {
     }
     $data = array('video_id' => $id);
     $spreaker = surfside_tools_podcast_spreaker_metadata($id);
-    if ($spreaker !== null) $data['spreaker'] = $spreaker;
+    if ($spreaker !== null) {
+        $data['spreaker'] = $spreaker;
+        // Explicit opt-in applies to newly verified weekly uploads and
+        // retry jobs only. Existing Spreaker drafts stay unpublished.
+        if (defined('SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED') &&
+            SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED === true) {
+            $data['auto_publish'] = true;
+        }
+    }
     $payload = wp_json_encode($data);
     $timestamp = (string) time();
     $signature = hash_hmac('sha256', $timestamp . '.' . $payload, SURFSIDE_PODCAST_SHARED_SECRET);
@@ -123,6 +131,7 @@ function surfside_tools_podcast_queue_verified($id) {
         'status' => in_array($status, array('queued', 'processing', 'ready'), true)
             ? $status : 'queue_unavailable',
         'spreaker_draft_requested' => $spreaker !== null && $status === 'queued',
+        'spreaker_auto_publish_requested' => !empty($data['auto_publish']) && $status === 'queued',
     );
 }
 
@@ -248,5 +257,6 @@ function surfside_tools_podcast_retry_failed_audio($id) {
         'status' => 'queued',
         'video_id' => $id,
         'spreaker_draft_requested' => !empty($outcome['spreaker_draft_requested']),
+        'spreaker_auto_publish_requested' => !empty($outcome['spreaker_auto_publish_requested']),
     );
 }

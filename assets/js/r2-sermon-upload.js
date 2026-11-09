@@ -95,9 +95,11 @@
       if (result.status !== "queued") throw new Error("Audio processing was not queued.");
       if (podcastAudioRetryStatus) podcastAudioRetryStatus.textContent =
         "Podcast audio retry queued. Check podcast-jobs in Cloudflare R2 for ready." +
-        (result.spreaker_draft_requested
-          ? " An unpublished Spreaker draft is planned after audio processing."
-          : " If no Spreaker draft appears, use Prepare missing Spreaker draft once audio is ready.");
+        (result.spreaker_auto_publish_requested
+          ? " Spreaker will publish automatically after encoding the audio."
+          : result.spreaker_draft_requested
+            ? " An unpublished Spreaker draft is planned after audio processing."
+            : " If no Spreaker draft appears, use Prepare missing Spreaker draft once audio is ready.");
     } catch (error) {
       if (podcastAudioRetryStatus) podcastAudioRetryStatus.textContent =
         error.message || "Could not retry podcast audio.";
@@ -179,9 +181,11 @@
       const podcastStatus = completion.podcast?.status;
       if (podcastStatus === "queued" || podcastStatus === "processing") {
         message("MP4 verified for Roku. Podcast audio processing queued." +
-          (completion.podcast?.spreaker_draft_requested
-            ? " An unpublished Spreaker draft is planned after audio processing."
-            : ""));
+          (completion.podcast?.spreaker_auto_publish_requested
+            ? " Spreaker will publish automatically after audio encoding completes."
+            : completion.podcast?.spreaker_draft_requested
+              ? " An unpublished Spreaker draft is planned after audio processing."
+              : ""));
       } else if (podcastStatus === "ready") {
         message("MP4 verified for Roku. Podcast MP3 is already prepared.");
       } else if (podcastStatus === "queue_unavailable") {
