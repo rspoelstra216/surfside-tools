@@ -45,6 +45,12 @@ function wp_json_encode($v) { return json_encode($v); }
 function untrailingslashit($v) { return rtrim($v, '/'); }
 function wp_remote_post($url, $options) {
     $GLOBALS['podcast_last_request'] = array('url' => $url, 'options' => $options);
+    $GLOBALS['podcast_requests'][] = $GLOBALS['podcast_last_request'];
+    if (substr($url, -7) === '/status') {
+        return $GLOBALS['podcast_status_response'] ?? array(
+            'status' => 200, 'body' => '{"video_id":"e0NnCrrshM4","status":"failed"}'
+        );
+    }
     return $GLOBALS['podcast_response'] ?? array(
         'status' => 202, 'body' => '{"video_id":"OTt1dfYhlDY","status":"queued"}'
     );
@@ -94,4 +100,64 @@ verify_podcast(hash_hmac('sha256',
     $posted['options']['headers']['X-Surfside-Signature'],
     'recovery Worker request uses HMAC');
 
-echo "PASS: podcast previews, standalone Spreaker drafts and recovery safety\n";
+
+// Regression: a failed audio job may be restarted by WordPress without
+// manually handling HMAC credentials in PowerShell or re-uploading media.
+$GLOBALS['podcast_requests'] = array();
+$GLOBALS['podcast_status_response'] = array(
+    'status' => 200, 'body' => '{"video_id":"e0NnCrrshM4","status":"failed"}');
+$GLOBALS['podcast_response'] = array(
+    'status' => 202, 'body' => '{"video_id":"e0NnCrrshM4","status":"queued"}');
+$retry = surfside_tools_podcast_retry_failed_audio('e0NnCrrshM4');
+verify_podcast($retry['status'] === 'queued' && $retry['spreaker_draft_requested'] === true,
+    'failed standalone sermon retries MP3 and queues Spreaker metadata');
+verify_podcast(count($GLOBALS['podcast_requests']) === 2,
+    'retry makes only one status query and one production job request');
+verify_podcast($GLOBALS['podcast_requests'][0]['url'] ===
+    'https://podcast.example.workers.dev/status' &&
+    $GLOBALS['podcast_requests'][1]['url'] ===
+    'https://podcast.example.workers.dev/jobs', 'status verified before new job');
+foreach ($GLOBALS['podcast_requests'] as $signed) {
+    $headers = $signed['options']['headers'];
+    verify_podcast(hash_hmac('sha256',
+        $headers['X-Surfside-Time'] . '.' . $signed['options']['body'],
+        SURFSIDE_PODCAST_SHARED_SECRET) === $headers['X-Surfside-Signature'],
+        'retry request is signed server-side');
+}
+$job_body = json_decode($GLOBALS['podcast_requests'][1]['options']['body'], true);
+verify_podcast($job_body['video_id'] === 'e0NnCrrshM4' &&
+    $job_body['spreaker']['title'] === "How Can We Gain God's Perspective" &&
+    !isset($job_body['test']) && !isset($job_body['mp4']),
+    'retry preserves canonical Spreaker metadata without a test flag or MP4 body');
+
+$GLOBALS['podcast_requests'] = array();
+$GLOBALS['podcast_status_response'] = array(
+    'status' => 200, 'body' => '{"video_id":"e0NnCrrshM4","status":"processing"}');
+$blocked = surfside_tools_podcast_retry_failed_audio('e0NnCrrshM4');
+verify_podcast($blocked instanceof WP_Error && count($GLOBALS['podcast_requests']) === 1,
+    'in-progress audio never creates a duplicate queue job');
+
+$GLOBALS['podcast_requests'] = array();
+$GLOBALS['podcast_status_response'] = array(
+    'status' => 200, 'body' => '{"video_id":"e0NnCrrshM4","status":"ready"}');
+$blocked = surfside_tools_podcast_retry_failed_audio('e0NnCrrshM4');
+verify_podcast($blocked instanceof WP_Error && count($GLOBALS['podcast_requests']) === 1,
+    'ready audio cannot be reprocessed by retry');
+
+$GLOBALS['podcast_requests'] = array();
+$GLOBALS['podcast_status_response'] = array(
+    'status' => 401, 'body' => '{"error":"unauthorized"}');
+$blocked = surfside_tools_podcast_retry_failed_audio('e0NnCrrshM4');
+verify_podcast($blocked instanceof WP_Error && count($GLOBALS['podcast_requests']) === 1,
+    'unauthenticated status check blocks retry');
+
+$GLOBALS['podcast_requests'] = array();
+$GLOBALS['podcast_status_response'] = array(
+    'status' => 200, 'body' => '{"video_id":"someOtherId","status":"failed"}');
+$blocked = surfside_tools_podcast_retry_failed_audio('e0NnCrrshM4');
+verify_podcast($blocked instanceof WP_Error && count($GLOBALS['podcast_requests']) === 1,
+    'mismatched video status never queues a new job');
+
+verify_podcast(surfside_tools_podcast_retry_failed_audio('invalid') instanceof WP_Error,
+    'invalid video ID is rejected by the retry helper');
+echo "PASS: podcast previews, standalone drafts, recovery and signed failed-audio retry safety\n";

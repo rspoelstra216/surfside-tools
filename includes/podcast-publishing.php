@@ -181,3 +181,72 @@ function surfside_tools_podcast_prepare_existing_draft($id) {
     }
     return array('status' => 'queued', 'video_id' => $id);
 }
+
+/**
+ * Administrator-requested retry for a previously failed weekly audio job.
+ * Reuse the successful server-side HMAC authentication path rather than
+ * requiring a staff member to sign a PowerShell request.
+ *
+ * Read the Worker status before queuing. Only a "failed" audio job can be
+ * explicitly restarted; the Worker separately enforces idempotency and
+ * checks for a completed MP3. The usual server-side YouTube metadata is
+ * included in /jobs so a valid sermon also receives an unpublished Spreaker
+ * draft automatically when audio processing succeeds.
+ */
+function surfside_tools_podcast_retry_failed_audio($id) {
+    if (!is_string($id) || !preg_match('/^[A-Za-z0-9_-]{11}$/D', $id)) {
+        return new WP_Error('podcast_invalid_video', 'Invalid YouTube video ID.', array('status' => 400));
+    }
+    if (!defined('SURFSIDE_PODCAST_WORKER_URL') || !defined('SURFSIDE_PODCAST_SHARED_SECRET') ||
+        !is_string(SURFSIDE_PODCAST_WORKER_URL) || !is_string(SURFSIDE_PODCAST_SHARED_SECRET) ||
+        strlen(SURFSIDE_PODCAST_SHARED_SECRET) < 32) {
+        return new WP_Error('podcast_not_configured', 'Podcast Worker is not configured.', array('status' => 409));
+    }
+    $url = untrailingslashit(SURFSIDE_PODCAST_WORKER_URL);
+    if (!preg_match('~^https://[a-z0-9.-]+(?::443)?$~iD', $url)) {
+        return new WP_Error('podcast_invalid_configuration', 'Invalid podcast Worker URL.', array('status' => 409));
+    }
+    $payload = wp_json_encode(array('video_id' => $id));
+    $timestamp = (string) time();
+    $signature = hash_hmac('sha256', $timestamp . '.' . $payload, SURFSIDE_PODCAST_SHARED_SECRET);
+    $response = wp_remote_post($url . '/status', array(
+        'method' => 'POST',
+        'headers' => array(
+            'Content-Type' => 'application/json',
+            'X-Surfside-Time' => $timestamp,
+            'X-Surfside-Signature' => $signature,
+        ),
+        'body' => $payload,
+        'timeout' => 8,
+        'redirection' => 0,
+        'reject_unsafe_urls' => true,
+    ));
+    if (is_wp_error($response)) {
+        return new WP_Error('podcast_status_unavailable', 'Could not read the podcast audio job status.', array('status' => 503));
+    }
+    if ((int) wp_remote_retrieve_response_code($response) !== 200) {
+        return new WP_Error('podcast_status_rejected', 'Cloudflare rejected the audio status check.', array('status' => 409));
+    }
+    $job = json_decode(wp_remote_retrieve_body($response), true);
+    if (!is_array($job) || ($job['video_id'] ?? '') !== $id) {
+        return new WP_Error('podcast_invalid_status', 'Unexpected podcast job response. No retry was queued.', array('status' => 409));
+    }
+    if (($job['status'] ?? '') !== 'failed') {
+        return new WP_Error('podcast_not_failed',
+            'Audio status is ' . sanitize_text_field($job['status'] ?? 'unknown') .
+            '; only failed audio jobs can be retried.', array('status' => 409));
+    }
+
+    $outcome = surfside_tools_podcast_queue_verified($id);
+    if (($outcome['status'] ?? '') !== 'queued') {
+        return new WP_Error('podcast_audio_retry_rejected',
+            'Audio was not requeued (status: ' .
+            sanitize_text_field($outcome['status'] ?? 'unknown') .
+            '). Recheck podcast-jobs before retrying.', array('status' => 409));
+    }
+    return array(
+        'status' => 'queued',
+        'video_id' => $id,
+        'spreaker_draft_requested' => !empty($outcome['spreaker_draft_requested']),
+    );
+}

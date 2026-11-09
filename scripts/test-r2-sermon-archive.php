@@ -222,10 +222,20 @@ assert_r2(strpos($staff_ui, 'surfside-podcast-recover-spreaker') !== false &&
 assert_r2(strpos($test_client, 'request("recover_spreaker"') !== false &&
     strpos($test_client, 'podcastRecover.dataset.busy') !== false,
     'recovery is explicit and guards against double-clicks');
-assert_r2(strpos($source, "if (\$mode === 'recover_spreaker')") !== false &&
+assert_r2(strpos($source, "\$mode === 'recover_spreaker'") !== false &&
     strpos($source, "current_user_can('manage_options')") !== false &&
     strpos($source, 'surfside_tools_r2_object_head($id)') !== false,
     'recovery route requires site administrator and existing verified MP4');
+
+assert_r2(strpos($staff_ui, 'surfside-podcast-retry-audio') !== false &&
+    strpos($staff_ui, 'Retry failed podcast audio') !== false,
+    'admin preview includes failed-audio retry without MP4 reupload');
+assert_r2(strpos($test_client, 'request("retry_audio"') !== false &&
+    strpos($test_client, 'podcastAudioRetry.dataset.busy') !== false,
+    'browser sends only a tiny authenticated retry and guards double-clicks');
+assert_r2(strpos($source, "\$mode === 'retry_audio'") !== false &&
+    strpos($source, 'surfside_tools_podcast_retry_failed_audio($id)') !== false,
+    'retry is routed through the admin-verified MP4 authorization path');
 
 assert_r2(strpos($source, 'function surfside_tools_r2_reconcile_post()') !== false
     && strpos($source, 'function surfside_tools_r2_export_post()') !== false,
