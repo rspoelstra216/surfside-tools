@@ -214,6 +214,19 @@ assert_r2(strpos($source, 'surfside_tools_podcast_queue_verified($id)') !== fals
     strpos($test_client, 'request("complete"') !== false,
     'normal verified weekly upload still queues the production podcast job');
 
+// Standalone sermons and older uploads must be recoverable only by a staff
+// administrator without exposing the Worker shared secret to the browser.
+assert_r2(strpos($staff_ui, 'surfside-podcast-recover-spreaker') !== false &&
+    strpos($staff_ui, 'Prepare missing Spreaker draft') !== false,
+    'existing podcast preview contains missing-draft recovery action');
+assert_r2(strpos($test_client, 'request("recover_spreaker"') !== false &&
+    strpos($test_client, 'podcastRecover.dataset.busy') !== false,
+    'recovery is explicit and guards against double-clicks');
+assert_r2(strpos($source, "if (\$mode === 'recover_spreaker')") !== false &&
+    strpos($source, "current_user_can('manage_options')") !== false &&
+    strpos($source, 'surfside_tools_r2_object_head($id)') !== false,
+    'recovery route requires site administrator and existing verified MP4');
+
 assert_r2(strpos($source, 'function surfside_tools_r2_reconcile_post()') !== false
     && strpos($source, 'function surfside_tools_r2_export_post()') !== false,
     'Maintenance operations remain available for existing imports without on-screen clutter');
