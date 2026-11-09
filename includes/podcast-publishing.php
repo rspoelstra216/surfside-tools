@@ -23,20 +23,21 @@ function surfside_tools_podcast_episode_preview($youtube_title, $sermon_date, $y
     $series = count($series_parts) > 1
         ? trim(array_shift($series_parts)) . ': ' . implode(' - ', $series_parts)
         : trim((string) ($series_parts[0] ?? ''));
-    $recognized = $week !== '' && $message !== '' && $series !== '';
-    // A dated, single-title sermon is valid without a series or week.
-    // Keep malformed multi-part titles in manual review rather than guessing.
-    $standalone = $week === '' && count($parts) === 1 && $message !== '' &&
-        $without_date !== $original;
-    $title = $recognized ? $message . ' | ' . $series . ' (Week ' . $week . ')'
-        : ($standalone ? $message : $original);
-
     $date_text = '';
     $date = is_string($sermon_date)
         ? DateTimeImmutable::createFromFormat('!Y-m-d', $sermon_date) : false;
     if ($date && $date->format('Y-m-d') === $sermon_date) {
         $date_text = $date->format('F j, Y');
     }
+
+    $recognized = $week !== '' && $message !== '' && $series !== '';
+    // A dated, single-title sermon is valid without a series or week.
+    // Require the canonical sermon date so undated titles aren't silently
+    // normalized; keep malformed multi-part titles in review.
+    $standalone = $week === '' && count($parts) === 1 && $message !== '' &&
+        $without_date !== $original && $date_text !== '';
+    $title = $recognized ? $message . ' | ' . $series . ' (Week ' . $week . ')'
+        : ($standalone ? $message : $original);
     $valid_id = is_string($youtube_id) && preg_match('/^[A-Za-z0-9_-]{11}$/D', $youtube_id);
     $description = '"' . (($recognized || $standalone) ? $message : $original) . '" — a sermon from Surfside Community Fellowship.';
     if ($series !== '') $description .= "\nSeries: " . $series;
