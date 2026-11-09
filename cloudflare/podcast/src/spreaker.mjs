@@ -1,4 +1,5 @@
-// Spreaker integration is opt-in and never publishes: only DRAFT episodes are made.
+// Spreaker upload creates only DRAFT episodes. An independently opted-in
+// follow-up queue job may publish after Spreaker encoding is READY.
 // Store a durable per-video episode ID before uploading the audio so a Queue retry
 // reuses the same draft instead of creating a second episode.
 const enc = new TextEncoder();
@@ -89,7 +90,8 @@ export async function processSpreakerDraft(env, id, metadata, fetcher = fetch, t
     return save("review_required", null, "invalid_metadata");
   }
   const previous = await read(env, id, test);
-  if (previous?.status === "uploaded") return previous;
+  if (["uploaded", "encoding_wait", "publishing", "publication_uncertain",
+       "published", "publish_review_required"].includes(previous?.status)) return previous;
   if (previous?.status === "review_required" || previous?.status === "creating") return previous;
   if (!spreakerConfigured(env)) {
     return save("not_configured", previous?.episode_id ?? null);
