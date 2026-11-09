@@ -56,6 +56,141 @@ function surfside_tools_podcast_episode_preview($youtube_title, $sermon_date, $y
 
 
 /**
+ * Archive lookups are restricted to a valid canonical sermon date and exact
+ * normalized message title. A shared date alone is never enough to attach
+ * another sermon or another service's notes.
+ *
+ * Only staff preview/explicit podcast upload paths call this helper. Results
+ * are cached for the current request so the dropdown does not repeatedly
+ * query the archive for sermons with the same date.
+ */
+function surfside_tools_podcast_note_title_key($title) {
+    $text = html_entity_decode(trim((string) $title), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $text = strtolower($text);
+    return trim((string) preg_replace('/\s+/u', ' ',
+        preg_replace('/[^\p{L}\p{N}]+/u', ' ', $text)));
+}
+
+function surfside_tools_podcast_find_archived_notes($message_title, $sermon_date) {
+    if (!function_exists('surfside_tools_sermon_archive_table') ||
+        !defined('SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_OPTION') ||
+        !defined('SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_VERSION') ||
+        (int) get_option(SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_OPTION, 0) <
+            SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_VERSION) {
+        return array('status' => 'archive_unavailable');
+    }
+    $date = is_string($sermon_date)
+        ? DateTimeImmutable::createFromFormat('!Y-m-d', $sermon_date) : false;
+    if (!$date || $date->format('Y-m-d') !== $sermon_date) {
+        return array('status' => 'no_match');
+    }
+    $title_key = surfside_tools_podcast_note_title_key($message_title);
+    if ($title_key === '') return array('status' => 'no_match');
+
+    // Weekly Update's Word documents generally use "November 8, 2026";
+    // retain support for ISO dates and common staff-edited date spellings.
+    $dates = array_values(array_unique(array(
+        $date->format('Y-m-d'), $date->format('F j, Y'),
+        $date->format('F d, Y'), $date->format('F j Y'),
+        $date->format('M j, Y'), $date->format('M. j, Y'),
+        $date->format('M d, Y'), $date->format('n/j/Y'),
+        $date->format('m/d/Y'),
+    )));
+    static $by_date = array();
+    if (!array_key_exists($sermon_date, $by_date)) {
+        global $wpdb;
+        $table = surfside_tools_sermon_archive_table();
+        $placeholders = implode(', ', array_fill(0, count($dates), '%s'));
+        $sql = "SELECT title, message_date, main_heading, notes, prayer
+            FROM {$table} WHERE message_date IN ({$placeholders})
+            ORDER BY id DESC LIMIT 30";
+        $rows = $wpdb->get_results($wpdb->prepare($sql, $dates), ARRAY_A);
+        $by_date[$sermon_date] = is_array($rows) ? $rows : array();
+    }
+
+    $matches = array();
+    foreach ($by_date[$sermon_date] as $record) {
+        // Check the date as well as the title, even if a database adapter
+        // unexpectedly returns more rows than the exact-date SQL requested.
+        if (!in_array((string) ($record['message_date'] ?? ''), $dates, true) ||
+            surfside_tools_podcast_note_title_key($record['title'] ?? '') !== $title_key) {
+            continue;
+        }
+        $matches[] = $record;
+    }
+    if (count($matches) > 1) return array('status' => 'ambiguous');
+    if (!$matches) return array('status' => 'no_match');
+    return array('status' => 'matched', 'record' => $matches[0]);
+}
+
+/** Attach written notes before the existing source links, without changing audio. */
+function surfside_tools_podcast_episode_with_notes($youtube_title, $sermon_date, $youtube_id) {
+    $preview = surfside_tools_podcast_episode_preview($youtube_title, $sermon_date, $youtube_id);
+    $preview['notes_status'] = 'no_match';
+    if ($preview['needs_review']) {
+        $preview['notes_status'] = 'metadata_review';
+        return $preview;
+    }
+
+    // The recognized podcast title begins with the actual message title;
+    // series/week decorations are only for the episode display.
+    $message_title = explode(' | ', $preview['title'], 2)[0];
+    $found = surfside_tools_podcast_find_archived_notes($message_title, $sermon_date);
+    $preview['notes_status'] = $found['status'];
+    if ($found['status'] !== 'matched') return $preview;
+
+    $record = $found['record'];
+    $heading = trim((string) ($record['main_heading'] ?? ''));
+    $notes = trim((string) ($record['notes'] ?? ''));
+    if ($heading !== '' && function_exists('surfside_tools_notes_without_main_heading')) {
+        $notes = trim(surfside_tools_notes_without_main_heading($notes, $heading));
+    }
+    $prayer = trim((string) ($record['prayer'] ?? ''));
+    $parts = array();
+    if ($heading !== '') $parts[] = $heading;
+    if ($notes !== '') $parts[] = $notes;
+    if ($prayer !== '') $parts[] = "Closing Prayer\n" . $prayer;
+    if (!$parts) {
+        $preview['notes_status'] = 'empty';
+        return $preview;
+    }
+
+    $description = $preview['description'];
+    $links_at = strpos($description, "\n\nWatch on YouTube:");
+    if ($links_at === false) {
+        $preview['notes_status'] = 'no_match';
+        return $preview;
+    }
+    $before = substr($description, 0, $links_at);
+    $links = substr($description, $links_at);
+    $prefix = "\n\nSermon Notes\n\n";
+    $body = implode("\n\n", $parts);
+    $room = 8000 - strlen($before) - strlen($links) - strlen($prefix);
+    if ($room < 120) {
+        $preview['notes_status'] = 'too_long';
+        return $preview;
+    }
+    if (strlen($body) > $room) {
+        $marker = "\n\n[Notes shortened to fit the podcast description.]";
+        $excerpt = substr($body, 0, max(0, $room - strlen($marker)));
+        // Preserve valid UTF-8 if the byte cap lands inside a character.
+        while ($excerpt !== '' && !preg_match('//u', $excerpt)) {
+            $excerpt = substr($excerpt, 0, -1);
+        }
+        $whole_words = preg_replace('/\s+\S*$/u', '', $excerpt);
+        if (is_string($whole_words) && $whole_words !== '') $excerpt = $whole_words;
+        $body = rtrim($excerpt) . $marker;
+        $preview['notes_status'] = 'truncated';
+    } else {
+        $preview['notes_status'] = 'added';
+    }
+    $preview['description'] = $before . $prefix . $body . $links;
+    return $preview;
+}
+
+
+
+/**
  * Only weekly verified uploads can opt in to Spreaker draft preparation.
  * The existing YouTube review catalog supplies canonical metadata; ambiguous
  * or excluded sermons are skipped rather than creating a misleading draft.
@@ -72,7 +207,7 @@ function surfside_tools_podcast_spreaker_metadata($id) {
     $video = surfside_tools_youtube_review_video($master, $id);
     if (!is_array($video) || ($video['disposition'] ?? '') === 'exclude') return null;
     $date = $video['effective_date'] ?? $video['sermon_date'] ?? '';
-    $preview = surfside_tools_podcast_episode_preview($video['title'] ?? '', $date, $id);
+    $preview = surfside_tools_podcast_episode_with_notes($video['title'] ?? '', $date, $id);
     if ($preview['needs_review'] || strlen($preview['description']) > 8000) return null;
     return array('title' => $preview['title'], 'description' => $preview['description']);
 }
