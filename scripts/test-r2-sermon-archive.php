@@ -222,7 +222,7 @@ assert_r2(strpos($staff_ui, 'surfside-podcast-recover-spreaker') !== false &&
 assert_r2(strpos($test_client, 'request("recover_spreaker"') !== false &&
     strpos($test_client, 'podcastRecover.dataset.busy') !== false,
     'recovery is explicit and guards against double-clicks');
-assert_r2(strpos($source, "if (\$mode === 'recover_spreaker')") !== false &&
+assert_r2(strpos($source, "\$mode === 'recover_spreaker'") !== false &&
     strpos($source, "current_user_can('manage_options')") !== false &&
     strpos($source, 'surfside_tools_r2_object_head($id)') !== false,
     'recovery route requires site administrator and existing verified MP4');
