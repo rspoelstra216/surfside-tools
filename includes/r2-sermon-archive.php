@@ -236,6 +236,22 @@ function surfside_tools_r2_browser_upload_dispatch($data) {
         return new WP_Error('r2_bad_nonce', 'Upload authorization expired. Reload the Roku Copies page and try again.', array('status' => 403));
     }
     $mode = isset($data['mode']) && is_string($data['mode']) ? sanitize_key($data['mode']) : '';
+    if ($mode === 'recover_spreaker') {
+        if (!current_user_can('manage_options')) {
+            return new WP_Error('podcast_recovery_forbidden', 'Only site administrators may prepare missing Spreaker drafts.', array('status' => 403));
+        }
+        $id = $data['video_id'] ?? '';
+        if (!surfside_tools_r2_video_id($id) || !surfside_tools_r2_is_master_video($id)) {
+            return new WP_Error('podcast_invalid_id', 'Choose a sermon from the master YouTube Messages playlist.', array('status' => 400));
+        }
+        $head = surfside_tools_r2_object_head($id);
+        if (is_wp_error($head)) return $head;
+        if ($head === null || (int) ($head['size'] ?? 0) <= 0 ||
+            ($head['type'] ?? '') !== 'video/mp4') {
+            return new WP_Error('podcast_missing_mp4', 'The verified sermon MP4 is not in R2.', array('status' => 409));
+        }
+        return surfside_tools_podcast_prepare_existing_draft($id);
+    }
     if (!in_array($mode, array('ticket', 'complete'), true)) {
         return new WP_Error('r2_bad_mode', 'Unknown R2 upload operation.', array('status' => 400));
     }
@@ -572,8 +588,15 @@ function surfside_tools_staff_r2_sermons_shortcode() {
             <p><strong>Proposed episode title:</strong> <span id="surfside-podcast-title"></span></p>
             <p><strong>Proposed description:</strong></p>
             <p id="surfside-podcast-description" style="white-space:pre-line"></p>
-            <p id="surfside-podcast-review" role="status" hidden>Review this title/date before publishing: it does not fully match the expected weekly naming format.</p>
+            <p id="surfside-podcast-review" role="status" hidden>Review the title and sermon date before publishing: the metadata could not be reliably parsed.</p>
           </div>
+          <?php if (current_user_can('manage_options') && defined('SURFSIDE_SPREAKER_DRAFTS_ENABLED') && SURFSIDE_SPREAKER_DRAFTS_ENABLED === true) : ?>
+          <div style="margin-top:12px">
+            <button id="surfside-podcast-recover-spreaker" type="button" disabled>Prepare missing Spreaker draft</button>
+            <p class="surfside-yt-muted">Only use when a verified weekly sermon has a completed MP3 but no Spreaker draft. This reuses the existing MP3 and will not re-upload or publish anything.</p>
+            <p id="surfside-podcast-recovery-status" role="status" aria-live="polite"></p>
+          </div>
+          <?php endif; ?>
         </section>
       <?php endif; ?>
     </div>

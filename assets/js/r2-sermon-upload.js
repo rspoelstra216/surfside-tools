@@ -18,6 +18,8 @@
   const podcastTitle = root.querySelector("#surfside-podcast-title");
   const podcastDescription = root.querySelector("#surfside-podcast-description");
   const podcastReview = root.querySelector("#surfside-podcast-review");
+  const podcastRecover = root.querySelector("#surfside-podcast-recover-spreaker");
+  const podcastRecoverStatus = root.querySelector("#surfside-podcast-recovery-status");
   let active = null;
 
   const showPodcastPreview = () => {
@@ -30,6 +32,9 @@
     podcastTitle.textContent = option.dataset.podcastTitle || "";
     podcastDescription.textContent = option.dataset.podcastDescription || "";
     podcastReview.hidden = option.dataset.podcastReview !== "1";
+    if (podcastRecover) {
+      podcastRecover.disabled = option.dataset.podcastReview === "1" || podcastRecover.dataset.busy === "1";
+    }
   };
   if (podcastSelect) {
     podcastSelect.addEventListener("change", showPodcastPreview);
@@ -65,6 +70,31 @@
     }
     return body.data;
   };
+
+  // Admin-only recovery for an uploaded sermon with completed audio but no
+  // Spreaker draft. Does not send MP4 bytes or re-run audio extraction.
+  if (podcastRecover) podcastRecover.addEventListener("click", async () => {
+    const option = podcastSelect?.selectedOptions[0];
+    const id = option?.value || "";
+    if (!/^[A-Za-z0-9_-]{11}$/.test(id) || option.dataset.podcastReview === "1" ||
+        podcastRecover.dataset.busy === "1") return;
+    if (!window.confirm("Only continue if this sermon already has a completed MP3 in R2 AND no Spreaker draft. Check Spreaker first to avoid duplicates. Prepare an unpublished draft now?")) return;
+    podcastRecover.dataset.busy = "1";
+    podcastRecover.disabled = true;
+    if (podcastRecoverStatus) podcastRecoverStatus.textContent = "Checking existing audio and draft status…";
+    try {
+      const result = await request("recover_spreaker", {video_id: id});
+      if (result.status !== "queued") throw new Error("Spreaker draft was not queued.");
+      if (podcastRecoverStatus) podcastRecoverStatus.textContent =
+        "Unpublished Spreaker draft queued from the existing MP3. Check podcast-spreaker in R2 and review the draft in Spreaker.";
+    } catch (error) {
+      if (podcastRecoverStatus) podcastRecoverStatus.textContent =
+        error.message || "Could not prepare the missing Spreaker draft.";
+    } finally {
+      delete podcastRecover.dataset.busy;
+      showPodcastPreview();
+    }
+  });
 
   cancel.addEventListener("click", () => {
     if (active) active.abort();

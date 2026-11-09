@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validDraftMetadata, draftKey, canRetryKnownRedirectFailure, multipartAudioStream, processSpreakerDraft, readDraftState } from "../src/spreaker.mjs";
+import { validDraftMetadata, draftKey, canRetryKnownRedirectFailure, canPrepareMissingDraft, multipartAudioStream, processSpreakerDraft, readDraftState } from "../src/spreaker.mjs";
 
 const id = "0_QXD1k4fcI";
 const meta = { title: "Made to Serve | Made for More Series (Week 6)",
@@ -167,4 +167,18 @@ test("historical redirect preflight error has narrow manual recovery eligibility
     status: "creating", detail: "draft_response_uncertain", episode_id: null,
   }), false);
   assert.equal(canRetryKnownRedirectFailure(null), false);
+});
+
+test("production recovery only accepts ready MP3 with no Spreaker job", () => {
+  const audio = { size: 123456 };
+  assert.equal(canPrepareMissingDraft({ status: "ready" }, audio, null), true);
+  assert.equal(canPrepareMissingDraft({ status: "queued" }, audio, null), false);
+  assert.equal(canPrepareMissingDraft({ status: "processing" }, audio, null), false);
+  assert.equal(canPrepareMissingDraft({ status: "failed" }, audio, null), false);
+  assert.equal(canPrepareMissingDraft({ status: "ready" }, null, null), false);
+  for (const status of ["queued", "creating", "draft_created", "uploaded", "review_required", "queue_unavailable"]) {
+    assert.equal(canPrepareMissingDraft({ status: "ready" }, audio,
+      { status, episode_id: status === "uploaded" ? "123" : null }), false,
+      "must not create a duplicate for existing " + status + " Spreaker state");
+  }
 });

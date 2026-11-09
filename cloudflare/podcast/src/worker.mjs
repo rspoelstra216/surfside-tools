@@ -2,7 +2,7 @@ import { Container, ContainerProxy, getContainer } from "@cloudflare/containers"
 export { ContainerProxy };
 import { validId, sourceKey, audioKey, statusKey, validStorageAccess, verifiedRequest } from "./validation.mjs";
 import { uploadAudioToR2 } from "./audio-upload.mjs";
-import { validDraftMetadata, spreakerConfigured, canRetryKnownRedirectFailure, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
+import { validDraftMetadata, spreakerConfigured, canRetryKnownRedirectFailure, canPrepareMissingDraft, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
 
 const reply = (data, status = 200) => Response.json(data, {
   status,
@@ -47,7 +47,7 @@ PodcastContainer.outboundByHost = {
 
 async function incoming(request, env) {
   const route = new URL(request.url).pathname;
-  if (!["/jobs", "/status", "/retry-test-spreaker"].includes(route) || request.method !== "POST") {
+  if (!["/jobs", "/status", "/retry-test-spreaker", "/recover-spreaker"].includes(route) || request.method !== "POST") {
     return reply({ error: "not_found" }, 404);
   }
   if (!await verifiedRequest(request, env.SURFSIDE_PODCAST_SHARED_SECRET)) {
@@ -63,6 +63,35 @@ async function incoming(request, env) {
   if (route === "/status") {
     const [audio, spreaker] = await Promise.all([readState(env, id, test), readDraftState(env, id, test)]);
     return reply(spreaker ? { ...audio, spreaker } : audio);
+  }
+  if (route === "/recover-spreaker") {
+    // Admin-confirmed production backfill for a weekly upload missing
+    // Spreaker metadata. Never launches FFmpeg and never replays a draft.
+    if (test || data?.confirmed_no_draft !== true || !validDraftMetadata(data?.spreaker)) {
+      return reply({ error: "recovery_requires_confirmation" }, 400);
+    }
+    if (!spreakerConfigured(env)) return reply({ error: "spreaker_not_configured" }, 409);
+    const [audio, storedMp3, storedMp4, existing] = await Promise.all([
+      readState(env, id),
+      env.SERMONS_BUCKET.head(audioKey(id)),
+      env.SERMONS_BUCKET.head(sourceKey(id)),
+      readDraftState(env, id),
+    ]);
+    if (!storedMp4 || !canPrepareMissingDraft(audio, storedMp3, existing)) {
+      return reply({ error: existing ? "spreaker_already_tracked" : "audio_not_ready" }, 409);
+    }
+    await saveDraftState(env, id, "queued");
+    try {
+      await env.PODCAST_QUEUE.send({
+        kind: "spreaker", video_id: id,
+        spreaker: { title: data.spreaker.title, description: data.spreaker.description },
+      });
+      return reply({ video_id: id, status: "queued" }, 202);
+    } catch (error) {
+      console.error("Unable to queue missing production Spreaker draft", id, String(error));
+      await saveDraftState(env, id, "queue_unavailable");
+      return reply({ error: "queue_unavailable" }, 503);
+    }
   }
   if (route === "/retry-test-spreaker") {
     // Strictly a manually confirmed, test-only recovery of the historical

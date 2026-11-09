@@ -11,6 +11,12 @@ export const validDraftMetadata = (data) =>
   data.title.length <= 140 && typeof data.description === "string" &&
   data.description.trim().length > 0 && data.description.length <= 8000;
 
+// A missing production draft can be created from an already-ready MP3.
+// Any existing status is deliberately blocked, even "failed" or
+// "review_required", because it may represent a draft in Spreaker.
+export const canPrepareMissingDraft = (audioState, audioObject, existingDraft) =>
+  audioState?.status === "ready" && Boolean(audioObject) && existingDraft === null;
+
 export const spreakerConfigured = (env) =>
   typeof env.SPREAKER_OAUTH_ACCESS_TOKEN === "string" &&
   env.SPREAKER_OAUTH_ACCESS_TOKEN.length > 20 &&

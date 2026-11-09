@@ -23,17 +23,23 @@ function surfside_tools_podcast_episode_preview($youtube_title, $sermon_date, $y
     $series = count($series_parts) > 1
         ? trim(array_shift($series_parts)) . ': ' . implode(' - ', $series_parts)
         : trim((string) ($series_parts[0] ?? ''));
-    $recognized = $week !== '' && $message !== '' && $series !== '';
-    $title = $recognized ? $message . ' | ' . $series . ' (Week ' . $week . ')' : $original;
-
     $date_text = '';
     $date = is_string($sermon_date)
         ? DateTimeImmutable::createFromFormat('!Y-m-d', $sermon_date) : false;
     if ($date && $date->format('Y-m-d') === $sermon_date) {
         $date_text = $date->format('F j, Y');
     }
+
+    $recognized = $week !== '' && $message !== '' && $series !== '';
+    // A dated, single-title sermon is valid without a series or week.
+    // Require the canonical sermon date so undated titles aren't silently
+    // normalized; keep malformed multi-part titles in review.
+    $standalone = $week === '' && count($parts) === 1 && $message !== '' &&
+        $without_date !== $original && $date_text !== '';
+    $title = $recognized ? $message . ' | ' . $series . ' (Week ' . $week . ')'
+        : ($standalone ? $message : $original);
     $valid_id = is_string($youtube_id) && preg_match('/^[A-Za-z0-9_-]{11}$/D', $youtube_id);
-    $description = '"' . ($recognized ? $message : $original) . '" — a sermon from Surfside Community Fellowship.';
+    $description = '"' . (($recognized || $standalone) ? $message : $original) . '" — a sermon from Surfside Community Fellowship.';
     if ($series !== '') $description .= "\nSeries: " . $series;
     if ($week !== '') $description .= "\nWeek: " . $week;
     if ($date_text !== '') $description .= "\nSermon date: " . $date_text;
@@ -43,7 +49,7 @@ function surfside_tools_podcast_episode_preview($youtube_title, $sermon_date, $y
     return array(
         'title' => $title,
         'description' => $description,
-        'needs_review' => !$recognized || $date_text === '' || !$valid_id || strlen($title) > 140,
+        'needs_review' => !($recognized || $standalone) || $date_text === '' || !$valid_id || strlen($title) > 140,
     );
 }
 
@@ -118,4 +124,60 @@ function surfside_tools_podcast_queue_verified($id) {
             ? $status : 'queue_unavailable',
         'spreaker_draft_requested' => $spreaker !== null && $status === 'queued',
     );
+}
+
+/**
+ * Staff-initiated recovery for a verified weekly sermon that was uploaded
+ * without Spreaker metadata (for example, a standalone sermon before its
+ * title format was supported). Only attaches an already-generated MP3 to
+ * an unpublished draft; Cloudflare enforces completed audio and no prior
+ * Spreaker job. Never initiates FFmpeg or publishes an episode.
+ */
+function surfside_tools_podcast_prepare_existing_draft($id) {
+    if (!is_string($id) || !preg_match('/^[A-Za-z0-9_-]{11}$/D', $id)) {
+        return new WP_Error('podcast_invalid_video', 'Invalid YouTube video ID.', array('status' => 400));
+    }
+    if (!defined('SURFSIDE_PODCAST_WORKER_URL') || !defined('SURFSIDE_PODCAST_SHARED_SECRET') ||
+        !is_string(SURFSIDE_PODCAST_WORKER_URL) || !is_string(SURFSIDE_PODCAST_SHARED_SECRET) ||
+        strlen(SURFSIDE_PODCAST_SHARED_SECRET) < 32) {
+        return new WP_Error('podcast_not_configured', 'The podcast Worker is not configured.', array('status' => 409));
+    }
+    $url = untrailingslashit(SURFSIDE_PODCAST_WORKER_URL);
+    if (!preg_match('~^https://[a-z0-9.-]+(?::443)?$~iD', $url)) {
+        return new WP_Error('podcast_invalid_configuration', 'Invalid podcast Worker URL.', array('status' => 409));
+    }
+    $spreaker = surfside_tools_podcast_spreaker_metadata($id);
+    if ($spreaker === null) {
+        return new WP_Error('podcast_metadata_review', 'A valid sermon title and date are required for the Spreaker draft.', array('status' => 409));
+    }
+    $payload = wp_json_encode(array(
+        'video_id' => $id, 'confirmed_no_draft' => true, 'spreaker' => $spreaker,
+    ));
+    $timestamp = (string) time();
+    $signature = hash_hmac('sha256', $timestamp . '.' . $payload, SURFSIDE_PODCAST_SHARED_SECRET);
+    $result = wp_remote_post($url . '/recover-spreaker', array(
+        'method' => 'POST',
+        'headers' => array(
+            'Content-Type' => 'application/json',
+            'X-Surfside-Time' => $timestamp,
+            'X-Surfside-Signature' => $signature,
+        ),
+        'body' => $payload,
+        'timeout' => 8,
+        'redirection' => 0,
+        'reject_unsafe_urls' => true,
+    ));
+    if (is_wp_error($result)) {
+        return new WP_Error('podcast_worker_unavailable', 'Could not reach the podcast Worker.', array('status' => 503));
+    }
+    $code = (int) wp_remote_retrieve_response_code($result);
+    $body = json_decode(wp_remote_retrieve_body($result), true);
+    if ($code !== 202 || ($body['status'] ?? '') !== 'queued') {
+        $reason = is_array($body) && is_string($body['error'] ?? null)
+            ? $body['error'] : 'HTTP ' . $code;
+        return new WP_Error('podcast_recovery_rejected',
+            'Spreaker draft recovery was not queued (' . sanitize_text_field($reason) .
+            '). Check podcast-spreaker status before retrying.', array('status' => 409));
+    }
+    return array('status' => 'queued', 'video_id' => $id);
 }
