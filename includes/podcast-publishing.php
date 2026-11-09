@@ -24,7 +24,12 @@ function surfside_tools_podcast_episode_preview($youtube_title, $sermon_date, $y
         ? trim(array_shift($series_parts)) . ': ' . implode(' - ', $series_parts)
         : trim((string) ($series_parts[0] ?? ''));
     $recognized = $week !== '' && $message !== '' && $series !== '';
-    $title = $recognized ? $message . ' | ' . $series . ' (Week ' . $week . ')' : $original;
+    // A dated, single-title sermon is valid without a series or week.
+    // Keep malformed multi-part titles in manual review rather than guessing.
+    $standalone = $week === '' && count($parts) === 1 && $message !== '' &&
+        $without_date !== $original;
+    $title = $recognized ? $message . ' | ' . $series . ' (Week ' . $week . ')'
+        : ($standalone ? $message : $original);
 
     $date_text = '';
     $date = is_string($sermon_date)
@@ -33,7 +38,7 @@ function surfside_tools_podcast_episode_preview($youtube_title, $sermon_date, $y
         $date_text = $date->format('F j, Y');
     }
     $valid_id = is_string($youtube_id) && preg_match('/^[A-Za-z0-9_-]{11}$/D', $youtube_id);
-    $description = '"' . ($recognized ? $message : $original) . '" — a sermon from Surfside Community Fellowship.';
+    $description = '"' . (($recognized || $standalone) ? $message : $original) . '" — a sermon from Surfside Community Fellowship.';
     if ($series !== '') $description .= "\nSeries: " . $series;
     if ($week !== '') $description .= "\nWeek: " . $week;
     if ($date_text !== '') $description .= "\nSermon date: " . $date_text;
@@ -43,7 +48,7 @@ function surfside_tools_podcast_episode_preview($youtube_title, $sermon_date, $y
     return array(
         'title' => $title,
         'description' => $description,
-        'needs_review' => !$recognized || $date_text === '' || !$valid_id || strlen($title) > 140,
+        'needs_review' => !($recognized || $standalone) || $date_text === '' || !$valid_id || strlen($title) > 140,
     );
 }
 
