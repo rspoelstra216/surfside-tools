@@ -1,3 +1,5 @@
+// Reuse one processor across weekly video IDs; Queues serializes FFmpeg jobs.
+export const PROCESSOR_CONTAINER_ID = "weekly-sermon-audio";
 export const validId = (id) => typeof id === "string" && /^[A-Za-z0-9_-]{11}$/.test(id);
 // Isolated test paths protect canonical Roku and podcast objects.
 export const sourceKey = (id, test = false) => `${test ? "podcast-test-input" : "sermons"}/${id}.mp4`;
