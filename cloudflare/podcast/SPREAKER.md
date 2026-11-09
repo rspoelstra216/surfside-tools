@@ -1,4 +1,4 @@
-# Spreaker draft integration — weekly publishing only
+# Spreaker weekly publishing — drafts and optional auto-publication
 
 ## Safeguards
 
@@ -9,9 +9,12 @@ titles, series/week, and sermon dates come from the existing WordPress YouTube
 catalog/review data. Ambiguous titles/dates or excluded videos do **not** request
 a Spreaker draft.
 
-The integration **never publishes or schedules** an episode. It uses Spreaker's
-`POST /v2/episodes/drafts` endpoint and uploads audio to the returned draft via
-`POST /v2/episodes/<episode-id>`. Review and publish manually in Spreaker.
+By default, the integration creates only an **unpublished draft**. An
+additional explicit WordPress opt-in automatically publishes **new weekly
+episodes** once Spreaker confirms `encoding_status: READY`. The workflow
+still creates the draft, uploads its audio, and records the episode ID first.
+Existing drafts, historical imports, manual recovery jobs, and test jobs are
+not retroactively published.
 
 A second message on the existing Cloudflare Queue uploads audio to Spreaker;
 it does not hold the FFmpeg processing job open. Spreaker errors never change
@@ -51,6 +54,19 @@ a completed Roku MP4 or R2 podcast MP3 to failed.
    Leave this setting **unset/false** until the Cloudflare secrets exist
    and you're ready for a controlled **new weekly upload** test.
 
+6. To automatically publish **new weekly** episodes after Spreaker encoding,
+   add this separate opt-in to `wp-config.php`:
+
+   ```php
+   define('SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED', true);
+   ```
+
+   Keep `SURFSIDE_SPREAKER_DRAFTS_ENABLED` set to `true`. Setting it to
+   `false` disables Spreaker episode creation entirely. With the new
+   auto-publication constant absent or `false`, publication remains manual.
+   Deploy the Cloudflare Worker before enabling this switch. Existing drafts
+   remain unpublished.
+
 ## Weekly flow
 
 1. Staff select a YouTube message and upload the MP4 using
@@ -66,9 +82,16 @@ a completed Roku MP4 or R2 podcast MP3 to failed.
 4. The Queue receives a **separate** `kind: "spreaker"` message. Cloudflare
    creates a Spreaker `DRAFT`, records its episode ID in R2, and streams the
    finished MP3 directly from R2 to Spreaker as multipart/form-data.
-5. Once Spreaker accepts the upload, the R2 record is marked `uploaded`.
-   Spreaker may still be encoding the audio. Staff must open the Spreaker CMS,
-   confirm audio/metadata, and **publish manually**.
+5. Once Spreaker accepts the upload, R2 status becomes `uploaded`.
+   With auto-publication off, staff review and publish the draft manually.
+6. For an explicitly opted-in new weekly upload, a separate delayed
+   `kind: "publish"` queue job checks the **same** Spreaker episode ID,
+   confirms the correct show and finished R2 MP3, and waits until Spreaker
+   reports encoding `READY`. Pending processing is checked with bounded
+   90-second delayed messages; then Cloudflare sets `published_at` in UTC,
+   verifies `RECORDED` + `PUBLIC`, and saves `published`. Failed,
+   unknown, or ambiguous publication stays in manual review; an uncertain
+   response never causes a blind second publish request.
 
 ## Status and recovery
 
@@ -78,7 +101,8 @@ a completed Roku MP4 or R2 podcast MP3 to failed.
 - `podcast-spreaker/<video-id>.json`: draft state:
   `queued`, `creating`, `draft_created`, `uploaded`,
   `not_configured`, `upload_retry`, `queue_unavailable`, or
-  `review_required`. The record includes the Spreaker episode ID once known;
+  `review_required`, `encoding_wait`, `publishing`, `publication_uncertain`,
+  `publish_review_required`, or `published`. The record includes the Spreaker episode ID once known;
   it contains **no secret/token**.
 - The authenticated Worker `POST /status` also includes a `spreaker`
   object if there is a Spreaker record.
@@ -101,10 +125,11 @@ a completed Roku MP4 or R2 podcast MP3 to failed.
 
 Use a new, not previously uploaded sermon. Verify Roku MP4 first; inspect
 `podcast-jobs/<id>.json` for `ready` and `podcast-spreaker/<id>.json`
-for `uploaded`. Then inspect the matching episode in the **existing**
-Spreaker show; it must be a **draft**, never published. If anything is
-unexpected, remove/disable the WordPress `SURFSIDE_SPREAKER_DRAFTS_ENABLED`
-switch before the next week's upload.
+for `uploaded` (manual mode) or `published` (auto-publication mode).
+Check the episode in the existing Spreaker show and verify title, description,
+and complete playable audio. If auto-publication behaves unexpectedly, set
+`SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED` to `false` before the next upload,
+while leaving the draft integration enabled.
 
 API documentation:
 - https://developers.spreaker.com/guides/authentication/
