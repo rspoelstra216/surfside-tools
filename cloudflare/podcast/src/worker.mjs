@@ -2,6 +2,7 @@ import { Container, ContainerProxy, getContainer } from "@cloudflare/containers"
 export { ContainerProxy };
 import { PROCESSOR_CONTAINER_ID, validId, sourceKey, audioKey, statusKey, validStorageAccess, verifiedRequest } from "./validation.mjs";
 import { uploadAudioToR2 } from "./audio-upload.mjs";
+import { publishReadyEpisode, PUBLISH_CHECK_DELAY_SECONDS, MAX_PUBLISH_CHECKS } from "./spreaker-publication.mjs";
 import { validDraftMetadata, spreakerConfigured, canRetryKnownRedirectFailure, canPrepareMissingDraft, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
 
 const reply = (data, status = 200) => Response.json(data, {
@@ -60,6 +61,8 @@ async function incoming(request, env) {
   if (!validId(id)) return reply({ error: "invalid_video_id" }, 400);
   const test = data?.test === true;
   if (data?.test !== undefined && typeof data.test !== "boolean") return reply({ error: "invalid_test_flag" }, 400);
+  if (data?.auto_publish !== undefined && typeof data.auto_publish !== "boolean")
+    return reply({ error: "invalid_auto_publish_flag" }, 400);
   if (route === "/status") {
     const [audio, spreaker] = await Promise.all([readState(env, id, test), readDraftState(env, id, test)]);
     return reply(spreaker ? { ...audio, spreaker } : audio);
@@ -126,6 +129,8 @@ async function incoming(request, env) {
       return reply({ error: "queue_unavailable" }, 503);
     }
   }
+  if (data?.auto_publish === true && (test || !validDraftMetadata(data?.spreaker)))
+    return reply({ error: "auto_publish_requires_production_metadata" }, 400);
   if (test && (!validDraftMetadata(data?.spreaker) || !spreakerConfigured(env))) return reply({ error: "test_requires_spreaker" }, 409);
   if (!await env.SERMONS_BUCKET.head(sourceKey(id, test))) return reply({ error: "sermon_missing" }, 409);
   if (!await env.SERMONS_BUCKET.head("podcast-assets/intro.mp3") ||
@@ -148,7 +153,7 @@ async function incoming(request, env) {
   } : null;
   await state(env, id, "queued", "", test);
   try {
-    await env.PODCAST_QUEUE.send({ video_id: id, ...(test ? { test: true } : {}), ...(spreaker ? { spreaker } : {}) });
+    await env.PODCAST_QUEUE.send({ video_id: id, ...(test ? { test: true } : {}), ...(spreaker ? { spreaker } : {}), ...(data.auto_publish === true ? { auto_publish: true } : {}) });
     return reply({ video_id: id, status: "queued" }, 202);
   } catch {
     await state(env, id, "failed", "queue_unavailable", test);
@@ -163,10 +168,34 @@ export default {
       const id = message.body?.video_id;
       if (!validId(id)) { message.ack(); continue; }
       const test = message.body?.test === true;
+      if (message.body?.kind === "publish") {
+        // Only production jobs explicitly opted in by WordPress can publish.
+        if (test || message.body?.auto_publish !== true) { message.ack(); continue; }
+        const attempt = message.body?.attempt ?? 0;
+        try {
+          const outcome = await publishReadyEpisode(env, id, attempt);
+          if (outcome.status === "check_again" && attempt < MAX_PUBLISH_CHECKS) {
+            await env.PODCAST_QUEUE.send({ kind: "publish", video_id: id,
+              auto_publish: true, attempt: attempt + 1 },
+              { delaySeconds: PUBLISH_CHECK_DELAY_SECONDS });
+          }
+          message.ack();
+        } catch (error) {
+          console.error("Spreaker publication check failed", id, String(error));
+          message.retry({ delaySeconds: 120 });
+        }
+        continue;
+      }
       if (message.body?.kind === "spreaker") {
         try {
           const outcome = await processSpreakerDraft(env, id, message.body.spreaker, undefined, test);
           if (outcome.status === "upload_retry") throw Error("spreaker_upload_retry");
+          if (!test && message.body?.auto_publish === true &&
+              outcome.status === "uploaded") {
+            // Separate delayed check ensures Spreaker's media encoding is READY.
+            await env.PODCAST_QUEUE.send({ kind: "publish", video_id: id,
+              auto_publish: true, attempt: 0 }, { delaySeconds: PUBLISH_CHECK_DELAY_SECONDS });
+          }
           message.ack();
         } catch (error) {
           console.error("Spreaker draft upload failed", id, String(error));
@@ -203,7 +232,8 @@ export default {
         await state(env, id, "failed", "processing_failed", test);
         message.retry({ delaySeconds: 120 });
       }
-      // A separate Queue job can ONLY create an unpublished Spreaker draft.
+      // A separate Queue job first uploads an unpublished Spreaker draft.
+      // Only an explicit opt-in may schedule its eventual publication.
       // Keep its entire failure path outside the audio job's try/catch.
       const metadata = message.body?.spreaker;
       if (audioReady && validDraftMetadata(metadata)) {
@@ -212,7 +242,8 @@ export default {
           if (!previous || previous.status === "queue_unavailable") {
             await saveDraftState(env, id, "queued", null, "", test);
             await env.PODCAST_QUEUE.send({ kind: "spreaker", video_id: id, ...(test ? { test: true } : {}),
-              spreaker: { title: metadata.title, description: metadata.description } });
+              spreaker: { title: metadata.title, description: metadata.description },
+              ...(message.body?.auto_publish === true && !test ? { auto_publish: true } : {}) });
           }
         } catch (error) {
           console.error("Unable to queue Spreaker draft", id, String(error));
