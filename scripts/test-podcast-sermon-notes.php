@@ -103,14 +103,35 @@ $db->records = array(
         'prayer' => 'Amen.',
     ),
 );
+// Word-import markers and structure are display hints, not podcast text.
+// Keep the point, Scripture and question content, with clear paragraph breaks.
+$raw_notes = "1) WE SEE THE SURFACE; GOD SEES THE HEART\n" .
+    "When they arrived, Samuel saw Eliab.\n" .
+    "1 Samuel 16:6-7 NIV\n" .
+    "– DO I STUDY GOD'S WORD AND ALLOW CHANGE?\n" .
+    '[[CALLOUT]] “David was overlooked, but never overlooked by God.”' . "\n" .
+    '[[PRAYER]] Lord, open our eyes.';
+$formatted = surfside_tools_podcast_format_written_notes($raw_notes);
+podcast_note_check(strpos($formatted, "1. WE SEE THE SURFACE; GOD SEES THE HEART\n\nWhen they arrived") === 0,
+    'Numbered point and Bible text have readable paragraph spacing');
+podcast_note_check(strpos($formatted, "\n\n1 Samuel 16:6-7 NIV\n\n- DO I STUDY") !== false,
+    'Scripture references and questions remain readable in plain text');
+podcast_note_check(strpos($formatted, '[[CALLOUT]]') === false &&
+    strpos($formatted, '[[PRAYER]]') === false &&
+    strpos($formatted, '“David was overlooked') !== false &&
+    strpos($formatted, 'Prayer: Lord, open our eyes.') !== false,
+    'Internal Word markers are not printed, while their original text is preserved');
+podcast_note_check(strpos($formatted, "\n\n\n") === false,
+    'Paragraph spacing does not accumulate extra blank lines');
+
 $id = 'e0NnCrrshM4';
 $sermon = "How Can We Gain God's Perspective - 08 November 2026";
 $notes = surfside_tools_podcast_episode_with_notes($sermon, '2026-11-08', $id);
 podcast_note_check($notes['notes_status'] === 'added', 'Real Saturday/Sunday notes date matches canonical Sunday sermon');
 podcast_note_check(strpos($notes['description'], "Sermon Notes\n\nSeeing things") !== false,
     'Main heading is embedded as plain text');
-podcast_note_check(strpos($notes['description'], 'Seek wisdom in Scripture.') !== false &&
-    strpos($notes['description'], "Closing Prayer\nLord, help us see clearly.") !== false,
+podcast_note_check(strpos($notes['description'], "1. Seek wisdom in Scripture.\n\n2. Trust God’s timing.") !== false &&
+    strpos($notes['description'], "Closing Prayer\n\nLord, help us see clearly.") !== false,
     'Archived notes and closing prayer are embedded');
 podcast_note_check(strpos($notes['description'], 'Wrong notes') === false,
     'Another title on the same weekend cannot leak into the episode');

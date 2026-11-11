@@ -46,3 +46,20 @@ R2 MP4/MP3 storage, Spreaker credentials, or Cloudflare audio processing.
 Existing Spreaker episodes are not retroactively updated; the enhancement
 applies to newly prepared weekly metadata and staff-initiated missing-draft
 recovery.
+
+## Podcast show-note readability
+
+The canonical WordPress archive retains the original text, including separate
+sermon points, Bible references and Word-importer markup. The podcast
+description builder now converts that source into **plain-text paragraphs**,
+keeping numbered points, quoted passages, questions, main headings and
+closing prayers clearly separated. Internal importer tokens such as
+`[[CALLOUT]]` and `[[PRAYER]]` are removed from the rendered description,
+without deleting the quotation or prayer text.
+
+The matching status appears *above* the lengthy description in the Weekly
+Media Publishing preview. Sermons not present in the permanent WordPress
+archive (or without a matching title/date) retain the ordinary description.
+This is intentionally not an automatic historical notes backfill. Existing
+Spreaker episodes are not modified; for newly prepared episodes, the
+automated Cloudflare-to-Spreaker process already uses this same metadata.

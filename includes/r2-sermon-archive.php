@@ -588,9 +588,9 @@ function surfside_tools_staff_r2_sermons_shortcode() {
           <p id="surfside-podcast-empty" class="surfside-yt-muted">Select an uploaded sermon to see its proposed podcast metadata.</p>
           <div id="surfside-podcast-details" hidden>
             <p><strong>Proposed episode title:</strong> <span id="surfside-podcast-title"></span></p>
-            <p><strong>Proposed description:</strong></p>
-            <p id="surfside-podcast-description" style="white-space:pre-line"></p>
             <p class="surfside-yt-muted" id="surfside-podcast-notes-status" role="status"></p>
+            <p><strong>Proposed description:</strong></p>
+            <p id="surfside-podcast-description" style="white-space:pre-wrap"></p>
             <p id="surfside-podcast-review" role="status" hidden>Review the title and sermon date before publishing: the metadata could not be reliably parsed.</p>
           </div>
           <?php if (current_user_can('manage_options') && defined('SURFSIDE_PODCAST_WORKER_URL') && defined('SURFSIDE_PODCAST_SHARED_SECRET')) : ?>
