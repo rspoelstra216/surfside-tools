@@ -143,6 +143,32 @@ function surfside_tools_podcast_find_archived_notes($message_title, $sermon_date
     return array('status' => 'matched', 'record' => $matches[0]);
 }
 
+/**
+ * WordPress retains the source note lines for the on-site HTML renderer.
+ * Spreaker episode descriptions are plain text, so turn these lines into
+ * readable, separated paragraphs without changing the archived notes or
+ * leaking internal [[CALLOUT]] / [[PRAYER]] Word-document markers.
+ */
+function surfside_tools_podcast_format_written_notes($notes) {
+    $lines = preg_split('/\r\n|\r|\n/', (string) $notes);
+    $paragraphs = array();
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '') continue;
+
+        $line = preg_replace('/^\[\[CALLOUT\]\]\s*/iu', '', $line);
+        $line = preg_replace('/^\[\[PRAYER\]\]\s*/iu', 'Prayer: ', $line);
+        // The Word importer marks numbered sermon points with "1)" and
+        // discussion questions with typographic dashes. Keep the content
+        // but use straightforward, portable plain-text bullets.
+        $line = preg_replace('/^(\d{1,2})\)\s*/u', '$1. ', $line);
+        $line = preg_replace('/^[\x{2013}\x{2014}\x{2212}]\s+/u', '- ', $line);
+
+        if ($line !== '') $paragraphs[] = $line;
+    }
+    return implode("\n\n", $paragraphs);
+}
+
 /** Attach written notes before the existing source links, without changing audio. */
 function surfside_tools_podcast_episode_with_notes($youtube_title, $sermon_date, $youtube_id) {
     $preview = surfside_tools_podcast_episode_preview($youtube_title, $sermon_date, $youtube_id);
@@ -168,8 +194,8 @@ function surfside_tools_podcast_episode_with_notes($youtube_title, $sermon_date,
     $prayer = trim((string) ($record['prayer'] ?? ''));
     $parts = array();
     if ($heading !== '') $parts[] = $heading;
-    if ($notes !== '') $parts[] = $notes;
-    if ($prayer !== '') $parts[] = "Closing Prayer\n" . $prayer;
+    if ($notes !== '') $parts[] = surfside_tools_podcast_format_written_notes($notes);
+    if ($prayer !== '') $parts[] = "Closing Prayer\n\n" . $prayer;
     if (!$parts) {
         $preview['notes_status'] = 'empty';
         return $preview;
