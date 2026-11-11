@@ -104,16 +104,30 @@ function surfside_tools_public_messages_featured_heading($title) {
     }
     return array('heading'=>$title, 'context'=>'');
 }
-function surfside_tools_podcast_find_archived_notes($title, $date) {
-    if ($title !== 'Discovering God’s Calling' || $date !== '2026-09-20') {
-        return array('status'=>'no_match');
+function surfside_tools_podcast_episode_preview($title, $date, $id) {
+    if ($title === "How Can We Gain God's Perspective - 08 November 2026") {
+        return array('title'=>"How Can We Gain God's Perspective", 'needs_review'=>false);
     }
-    return array('status'=>'matched', 'record'=>array(
-        'title'=>'Discovering God’s Calling',
-        'main_heading'=>'God calls us with purpose.',
-        'notes'=>"1) Listen for God’s direction\n2) Walk in faith",
-        'prayer'=>'Lord, help us follow where You lead.',
-    ));
+    return array('title'=>$title, 'needs_review'=>true);
+}
+function surfside_tools_podcast_find_archived_notes($title, $date) {
+    if ($title === 'Discovering God’s Calling' && $date === '2026-09-20') {
+        return array('status'=>'matched', 'record'=>array(
+            'title'=>'Discovering God’s Calling',
+            'main_heading'=>'God calls us with purpose.',
+            'notes'=>"1) Listen for God’s direction\n2) Walk in faith",
+            'prayer'=>'Lord, help us follow where You lead.',
+        ));
+    }
+    if ($title === "How Can We Gain God's Perspective" && $date === '2026-11-08') {
+        return array('status'=>'matched', 'record'=>array(
+            'title'=>"How Can We Gain God's Perspective?",
+            'main_heading'=>"HOW CAN WE GAIN GOD'S PERSPECTIVE?",
+            'notes'=>'1) We see the surface; God sees the heart.',
+            'prayer'=>'Help us see from Your perspective.',
+        ));
+    }
+    return array('status'=>'no_match');
 }
 function surfside_tools_public_messages_date_label($date, $source = 'sermon') {
     if (!$date) return 'Date not available';
@@ -210,6 +224,14 @@ check($detail['notes'] === array(
     'notes'=>"1) Listen for God’s direction\n2) Walk in faith",
     'prayer'=>'Lord, help us follow where You lead.',
 ), 'Video detail includes the exact date-and-title matched archived notes');
+$dated_title_notes = surfside_tools_mobile_messages_archived_notes(array(
+    'video_id'=>'latest12345',
+    'title'=>"How Can We Gain God's Perspective - 08 November 2026",
+    'message_date'=>'2026-11-08',
+));
+check(is_array($dated_title_notes)
+    && $dated_title_notes['title'] === "How Can We Gain God's Perspective?",
+    'Trailing service date is removed before exact archived-note matching');
 $published_detail = surfside_tools_mobile_messages_detail(
     new WP_REST_Request(array('video_id'=>'abcdEF12_35')));
 check($published_detail['notes'] === null,
