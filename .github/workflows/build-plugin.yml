@@ -60,9 +60,6 @@ jobs:
       - name: Test weekly podcast metadata preview and queue safety
         run: php scripts/test-podcast-publishing.php
 
-      - name: Test podcast descriptions from archived sermon notes
-        run: php scripts/test-podcast-sermon-notes.php
-
       - name: Check Cloudflare processor source and authorization tests
         run: |
           cd cloudflare/podcast

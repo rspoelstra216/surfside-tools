@@ -28,6 +28,10 @@ verify_podcast(strpos($standalone['description'], 'Series:') === false &&
     'standalone sermon does not invent a series or week');
 verify_podcast(strpos($standalone['description'], 'Sermon date: November 8, 2026') !== false,
     'standalone sermon preserves date');
+verify_podcast(strpos($standalone['description'], 'Sermon Notes') === false &&
+    strpos($standalone['description'], 'Closing Prayer') === false &&
+    strlen($standalone['description']) < 500,
+    'standalone podcast description remains concise without archived sermon notes');
 $unstructured = surfside_tools_podcast_episode_preview(
     'Living Well - Series But No Week - 08 November 2026',
     '2026-11-08', $video);
@@ -80,6 +84,9 @@ function surfside_tools_youtube_review_video($master, $id) {
 $standalone_meta = surfside_tools_podcast_spreaker_metadata('e0NnCrrshM4');
 verify_podcast($standalone_meta['title'] === "How Can We Gain God's Perspective",
     'canonical YouTube standalone metadata is usable for Spreaker');
+verify_podcast($standalone_meta['description'] === $standalone['description'] &&
+    strpos($standalone_meta['description'], 'Sermon Notes') === false,
+    'signed Spreaker metadata uses the same original short description as preview');
 
 // Default remains manual: existing deployments cannot silently start
 // publishing episodes merely by deploying the new Cloudflare code.
