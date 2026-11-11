@@ -4,6 +4,7 @@
  * Run: php scripts/test-sermon-archive.php
  */
 define('ABSPATH', __DIR__ . '/');
+define('ARRAY_A', 'ARRAY_A');
 $GLOBALS['options'] = array();
 $GLOBALS['actions'] = array();
 
@@ -37,7 +38,12 @@ class SermonTestDB {
     public function get_charset_collate() { return 'DEFAULT CHARACTER SET utf8mb4'; }
     public function esc_like($value) { return addcslashes($value, '_%\\'); }
     public function prepare($query, $value) {
-        return str_replace('%s', "'" . str_replace("'", "''", (string) $value) . "'", $query);
+        $values = is_array($value) ? $value : array($value);
+        foreach ($values as $item) {
+            $quoted = "'" . str_replace("'", "''", (string) $item) . "'";
+            $query = preg_replace('/%s/', $quoted, $query, 1);
+        }
+        return $query;
     }
     public function get_var($query) {
         if (strpos($query, 'SHOW TABLES LIKE') === 0) {
@@ -47,6 +53,24 @@ class SermonTestDB {
             return isset($this->records[$matches[1]]) ? $this->records[$matches[1]]['id'] : null;
         }
         throw new RuntimeException('Unexpected SQL: ' . $query);
+    }
+    public function get_results($query, $format = null) {
+        preg_match_all("/'([^']*)'/", $query, $matches);
+        $dates = $matches[1] ?? array();
+        $rows = array();
+        foreach ($this->records as $row) {
+            if (in_array($row['message_date'] ?? '', $dates, true)) {
+                $rows[] = array('id'=>$row['id'], 'video_id'=>$row['video_id'] ?? null);
+            }
+        }
+        return array_slice(array_reverse($rows), 0, 3);
+    }
+    public function get_row($query, $format = null) {
+        if (!preg_match("/WHERE video_id = '([^']+)'/", $query, $match)) return null;
+        foreach ($this->records as $row) {
+            if (($row['video_id'] ?? '') === $match[1]) return $row;
+        }
+        return null;
     }
     public function insert($table, $data) {
         if ($this->fail_writes) return false;
@@ -95,7 +119,7 @@ check(surfside_tools_save_message($incoming) === true, 'Publish succeeds and arc
 check(count($GLOBALS['wpdb']->records) === 3, 'Backup, current, and incoming notes are archived');
 check(get_option('surfside_tools_message_current')['title'] === 'New Message', 'Public current notes updated');
 check(get_option('surfside_tools_message_backup')['title'] === 'Previous Message', 'Rotating backup behavior remains');
-check(get_option(SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_OPTION) === 1, 'Schema migration version recorded');
+check(get_option(SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_OPTION) === 2, 'Schema migration version recorded');
 
 $key = surfside_tools_sermon_archive_key($incoming);
 check(isset($GLOBALS['wpdb']->records[$key]), 'New message is stored under its identity');
@@ -106,6 +130,14 @@ check(surfside_tools_save_message($corrected) === true, 'Republishing a correcti
 check(count($GLOBALS['wpdb']->records) === 3, 'Republishing does not create duplicate archive rows');
 check($GLOBALS['wpdb']->records[$key]['id'] === $id, 'Archive identity remains stable');
 check($GLOBALS['wpdb']->records[$key]['notes'] === 'Corrected message text', 'Corrected notes replace archived text');
+
+check(surfside_tools_sermon_archive_link_video('videoID1234', '2026-10-11') === 'linked',
+    'A unique canonical sermon date links notes to the shared video ID');
+$linked = surfside_tools_sermon_archive_find_by_video('videoID1234');
+check(is_array($linked) && $linked['title'] === 'New Message',
+    'Linked archived notes are retrieved directly by video ID');
+check(surfside_tools_sermon_archive_link_video('otherID1234', '2026-10-11') === 'conflict',
+    'An existing note-to-video relationship cannot be silently replaced');
 
 $before = get_option('surfside_tools_message_current');
 $GLOBALS['wpdb']->fail_writes = true;

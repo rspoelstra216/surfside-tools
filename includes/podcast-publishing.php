@@ -75,8 +75,9 @@ function surfside_tools_podcast_find_archived_notes($message_title, $sermon_date
     if (!function_exists('surfside_tools_sermon_archive_table') ||
         !defined('SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_OPTION') ||
         !defined('SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_VERSION') ||
-        (int) get_option(SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_OPTION, 0) <
-            SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_VERSION) {
+        // Title/date podcast descriptions only require the original archive
+        // columns; the optional video-ID relationship was added in schema v2.
+        (int) get_option(SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_OPTION, 0) < 1) {
         return array('status' => 'archive_unavailable');
     }
     $date = is_string($sermon_date)
