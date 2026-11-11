@@ -364,6 +364,10 @@ function surfside_tools_youtube_import_items($response, $playlist_id, $is_master
                 ? array('published_date' => surfside_tools_youtube_video_published_date($item) ?: null)
                 : array()));
             if ($written === false) return new WP_Error('surfside_youtube_video_write', 'Could not store YouTube video metadata.');
+            if ($date !== '' && function_exists('surfside_tools_sermon_archive_link_video')) {
+                $linked = surfside_tools_sermon_archive_link_video($id, $date);
+                if (is_wp_error($linked)) return $linked;
+            }
         }
         $written = $wpdb->replace($t['members'], array(
             'playlist_id' => $playlist_id,
