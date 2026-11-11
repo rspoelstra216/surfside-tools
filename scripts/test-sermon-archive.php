@@ -66,6 +66,9 @@ class SermonTestDB {
         return array_slice(array_reverse($rows), 0, 3);
     }
     public function get_row($query, $format = null) {
+        if (preg_match("/WHERE message_key = '([a-f0-9]{64})'/", $query, $match)) {
+            return $this->records[$match[1]] ?? null;
+        }
         if (!preg_match("/WHERE video_id = '([^']+)'/", $query, $match)) return null;
         foreach ($this->records as $row) {
             if (($row['video_id'] ?? '') === $match[1]) return $row;
@@ -131,13 +134,16 @@ check(count($GLOBALS['wpdb']->records) === 3, 'Republishing does not create dupl
 check($GLOBALS['wpdb']->records[$key]['id'] === $id, 'Archive identity remains stable');
 check($GLOBALS['wpdb']->records[$key]['notes'] === 'Corrected message text', 'Corrected notes replace archived text');
 
-check(surfside_tools_sermon_archive_link_video('videoID1234', '2026-10-11') === 'linked',
-    'A unique canonical sermon date links notes to the shared video ID');
+check(surfside_tools_sermon_archive_link_message('videoID1234', $incoming) === 'linked',
+    'The staff-selected sermon ID links directly to the current published notes');
 $linked = surfside_tools_sermon_archive_find_by_video('videoID1234');
 check(is_array($linked) && $linked['title'] === 'New Message',
     'Linked archived notes are retrieved directly by video ID');
-check(surfside_tools_sermon_archive_link_video('otherID1234', '2026-10-11') === 'conflict',
+check(surfside_tools_sermon_archive_link_message('otherID1234', $incoming) === 'conflict',
     'An existing note-to-video relationship cannot be silently replaced');
+check(surfside_tools_sermon_archive_link_message('thirdID1234', note('Nov 7/8, 2026',
+    'Weekend Date Format', 'Weekend notes')) === 'linked',
+    'Direct linking does not depend on title or date formatting');
 
 $before = get_option('surfside_tools_message_current');
 $GLOBALS['wpdb']->fail_writes = true;
@@ -145,7 +151,7 @@ $failed = surfside_tools_save_message(note('2026-10-18', 'Next Message', 'Not sa
 check(is_wp_error($failed), 'An archive storage failure is reported');
 check(get_option('surfside_tools_message_current') === $before, 'Archive failure cannot overwrite current notes');
 
-check(!in_array('init', $GLOBALS['actions'], true) || count($GLOBALS['wpdb']->records) === 3,
+check(!in_array('init', $GLOBALS['actions'], true) || count($GLOBALS['wpdb']->records) === 4,
     'Archive does not write during public initialization');
 
 echo "Permanent sermon-note archive regression checks passed.\n";

@@ -145,38 +145,32 @@ function surfside_tools_sermon_archive_on_publish($message) {
 }
 
 
-/** Date spellings accepted by the weekly notes publisher for one canonical sermon date. */
-function surfside_tools_sermon_archive_date_values($sermon_date) {
-    $date = is_string($sermon_date)
-        ? DateTimeImmutable::createFromFormat('!Y-m-d', $sermon_date) : false;
-    if (!$date || $date->format('Y-m-d') !== $sermon_date) return array();
-    return array_values(array_unique(array(
-        $date->format('Y-m-d'), $date->format('F j, Y'), $date->format('F d, Y'),
-        $date->format('F j Y'), $date->format('M j, Y'), $date->format('M. j, Y'),
-        $date->format('M d, Y'), $date->format('n/j/Y'), $date->format('m/d/Y'),
-    )));
-}
-
 /**
- * Persist the shared YouTube identity only when one sermon date identifies one
- * archived notes record. Multiple notes on the same date fail closed.
+ * Persist the exact YouTube identity selected by staff for one published
+ * message. This deliberately does not infer identity from a title or date.
  */
-function surfside_tools_sermon_archive_link_video($video_id, $sermon_date) {
+function surfside_tools_sermon_archive_link_message($video_id, $message) {
     if (!is_string($video_id) || !preg_match('/^[A-Za-z0-9_-]{11}$/D', $video_id)) return 'invalid';
+    if (!is_array($message)) return 'no_notes';
+    $title = trim((string) ($message['title'] ?? ''));
+    $notes = trim((string) ($message['notes'] ?? ''));
+    if ($title === '' && $notes === '') return 'no_notes';
     $ready = surfside_tools_sermon_archive_ensure_table();
     if (is_wp_error($ready)) return $ready;
-    $dates = surfside_tools_sermon_archive_date_values($sermon_date);
-    if (!$dates) return 'no_match';
+
+    $stored = surfside_tools_sermon_archive_store($message);
+    if (is_wp_error($stored)) return $stored;
 
     global $wpdb;
     $table = surfside_tools_sermon_archive_table();
-    $placeholders = implode(', ', array_fill(0, count($dates), '%s'));
-    $rows = $wpdb->get_results($wpdb->prepare(
-        "SELECT id, video_id FROM {$table} WHERE message_date IN ({$placeholders}) ORDER BY id DESC LIMIT 3",
-        $dates
+    $key = surfside_tools_sermon_archive_key($message);
+    $row = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, video_id FROM {$table} WHERE message_key = %s LIMIT 1", $key
     ), ARRAY_A);
-    if (!is_array($rows) || count($rows) !== 1) return count((array) $rows) > 1 ? 'ambiguous' : 'no_match';
-    $row = $rows[0];
+    if (!is_array($row)) return new WP_Error(
+        'surfside_sermon_archive_link_missing',
+        'The current sermon notes were archived but could not be selected for linking.'
+    );
     $existing = (string) ($row['video_id'] ?? '');
     if ($existing !== '' && $existing !== $video_id) return 'conflict';
     if ($existing === $video_id) return 'linked';

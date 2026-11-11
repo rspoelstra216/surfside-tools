@@ -441,7 +441,21 @@ function surfside_tools_r2_youtube_refresh_post() {
         $id = surfside_tools_r2_youtube_id_from_input($raw);
         $result = $id !== '' ? surfside_tools_youtube_quick_import_video($id)
             : new WP_Error('surfside_youtube_invalid_video', 'Paste a valid YouTube video link or 11-character ID.');
-        if (!is_wp_error($result)) $highlight = $id;
+        if (!is_wp_error($result)) {
+            $highlight = $id;
+            if (function_exists('surfside_tools_sermon_archive_link_message')) {
+                $linked = surfside_tools_sermon_archive_link_message($id, surfside_tools_get_message_data());
+                if (is_wp_error($linked)) {
+                    $result = $linked;
+                } elseif ($linked === 'conflict') {
+                    $result = new WP_Error('surfside_sermon_archive_link_conflict',
+                        'The current message notes are already assigned to a different YouTube sermon.');
+                } elseif ($linked !== 'linked') {
+                    $result = new WP_Error('surfside_sermon_archive_link_unavailable',
+                        'The YouTube message was found, but there are no current message notes to assign to it.');
+                }
+            }
+        }
     } elseif ($mode === 'playlist') {
         $result = surfside_tools_youtube_start_master_refresh();
     } else {
@@ -452,7 +466,7 @@ function surfside_tools_r2_youtube_refresh_post() {
     }
     $message = is_wp_error($result) ? $result->get_error_message()
         : ($mode === 'video'
-            ? 'YouTube message added or updated. It is now available for an R2 upload.'
+            ? 'YouTube message added or updated. Current message notes were assigned to this sermon ID, and it is now available for an R2 upload.'
             : 'Master-only YouTube refresh queued. Use Check progress until it completes.');
     set_transient($notice_key, array('text' => $message, 'error' => is_wp_error($result)), 120);
     $destination = surfside_tools_r2_manager_url($highlight !== '' ? array('highlight' => $highlight) : array());
