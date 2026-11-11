@@ -104,16 +104,14 @@ function surfside_tools_public_messages_featured_heading($title) {
     }
     return array('heading'=>$title, 'context'=>'');
 }
-function surfside_tools_podcast_find_archived_notes($title, $date) {
-    if ($title !== 'Discovering God’s Calling' || $date !== '2026-09-20') {
-        return array('status'=>'no_match');
-    }
-    return array('status'=>'matched', 'record'=>array(
+function surfside_tools_sermon_archive_find_by_video($id) {
+    if ($id !== 'abcdEF12_34') return null;
+    return array(
         'title'=>'Discovering God’s Calling',
         'main_heading'=>'God calls us with purpose.',
         'notes'=>"1) Listen for God’s direction\n2) Walk in faith",
         'prayer'=>'Lord, help us follow where You lead.',
-    ));
+    );
 }
 function surfside_tools_public_messages_date_label($date, $source = 'sermon') {
     if (!$date) return 'Date not available';
