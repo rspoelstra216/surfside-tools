@@ -18,7 +18,6 @@
   const podcastTitle = root.querySelector("#surfside-podcast-title");
   const podcastDescription = root.querySelector("#surfside-podcast-description");
   const podcastReview = root.querySelector("#surfside-podcast-review");
-  const podcastNotesStatus = root.querySelector("#surfside-podcast-notes-status");
   const podcastRecover = root.querySelector("#surfside-podcast-recover-spreaker");
   const podcastRecoverStatus = root.querySelector("#surfside-podcast-recovery-status");
   const podcastAudioRetry = root.querySelector("#surfside-podcast-retry-audio");
@@ -42,19 +41,6 @@
     podcastTitle.textContent = option.dataset.podcastTitle || "";
     podcastDescription.textContent = option.dataset.podcastDescription || "";
     podcastReview.hidden = option.dataset.podcastReview !== "1";
-    if (podcastNotesStatus) {
-      const descriptions = {
-        added: "Matching archived sermon notes are included in this description.",
-        truncated: "Matching sermon notes are included, but shortened to fit Spreaker’s description limit.",
-        no_match: "No matching archived notes were found. Older sermons may predate archiving, or the archived title/date may differ. Spreaker will use the standard description.",
-        ambiguous: "Multiple archived notes match this sermon. None were attached to avoid using the wrong notes.",
-        archive_unavailable: "The sermon notes archive is not initialized. Spreaker will use the standard description.",
-        metadata_review: "Review the YouTube title and date before sermon notes can be matched.",
-        empty: "The archived sermon has no written notes or prayer to embed.",
-        too_long: "No notes were attached because the podcast description has insufficient room."
-      };
-      podcastNotesStatus.textContent = descriptions[option.dataset.podcastNotesStatus] || "";
-    }
     if (podcastRecover) {
       podcastRecover.disabled = option.dataset.podcastReview === "1" || podcastRecover.dataset.busy === "1";
     }
@@ -215,7 +201,6 @@
         newOption.textContent = uploadedOption.textContent.replace(/^✓\s*/, "");
         newOption.dataset.podcastTitle = uploadedOption.dataset.podcastTitle || "";
         newOption.dataset.podcastDescription = uploadedOption.dataset.podcastDescription || "";
-        newOption.dataset.podcastNotesStatus = uploadedOption.dataset.podcastNotesStatus || "no_match";
         newOption.dataset.podcastReview = uploadedOption.dataset.podcastReview || "1";
         podcastSelect.appendChild(newOption);
       }
