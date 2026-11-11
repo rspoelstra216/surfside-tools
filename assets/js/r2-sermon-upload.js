@@ -46,7 +46,7 @@
       const descriptions = {
         added: "Matching archived sermon notes are included in this description.",
         truncated: "Matching sermon notes are included, but shortened to fit Spreaker’s description limit.",
-        no_match: "No matching archived notes were found for this sermon. Spreaker will use the standard description.",
+        no_match: "No matching archived notes were found. Older sermons may predate archiving, or the archived title/date may differ. Spreaker will use the standard description.",
         ambiguous: "Multiple archived notes match this sermon. None were attached to avoid using the wrong notes.",
         archive_unavailable: "The sermon notes archive is not initialized. Spreaker will use the standard description.",
         metadata_review: "Review the YouTube title and date before sermon notes can be matched.",
