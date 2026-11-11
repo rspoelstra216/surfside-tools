@@ -171,6 +171,27 @@ function surfside_tools_mobile_messages_series(WP_REST_Request $request) {
     return rest_ensure_response(array('api_version' => 1, 'available' => true, 'series' => $series));
 }
 
+/**
+ * Reuse the established podcast matcher so public mobile notes are attached
+ * only when both the canonical sermon date and normalized message title agree.
+ */
+function surfside_tools_mobile_messages_archived_notes($row) {
+    if (!function_exists('surfside_tools_podcast_find_archived_notes')) return null;
+    $date = (string) ($row['message_date'] ?? '');
+    $heading = surfside_tools_public_messages_featured_heading((string) ($row['title'] ?? ''));
+    $title = trim((string) ($heading['heading'] ?? ''));
+    $found = surfside_tools_podcast_find_archived_notes($title, $date);
+    if (($found['status'] ?? '') !== 'matched' || !is_array($found['record'] ?? null)) return null;
+
+    $record = $found['record'];
+    return array(
+        'title' => sanitize_text_field((string) ($record['title'] ?? '')),
+        'main_heading' => sanitize_text_field((string) ($record['main_heading'] ?? '')),
+        'notes' => sanitize_textarea_field((string) ($record['notes'] ?? '')),
+        'prayer' => sanitize_textarea_field((string) ($record['prayer'] ?? '')),
+    );
+}
+
 /** GET /wp-json/surfside/v1/messages/<youtube-id> */
 function surfside_tools_mobile_messages_detail(WP_REST_Request $request) {
     $id = $request->get_param('video_id');
@@ -203,5 +224,6 @@ function surfside_tools_mobile_messages_detail(WP_REST_Request $request) {
         'api_version' => 1,
         'message' => surfside_tools_mobile_messages_serialize_video($row),
         'series' => $series,
+        'notes' => surfside_tools_mobile_messages_archived_notes($row),
     ));
 }
