@@ -180,6 +180,17 @@ function surfside_tools_mobile_messages_archived_notes($row) {
     $date = (string) ($row['message_date'] ?? '');
     $heading = surfside_tools_public_messages_featured_heading((string) ($row['title'] ?? ''));
     $title = trim((string) ($heading['heading'] ?? ''));
+
+    // Use the same reviewed-title parser as podcast publishing so supported
+    // trailing service dates and series decorations are removed consistently.
+    if (function_exists('surfside_tools_podcast_episode_preview')) {
+        $preview = surfside_tools_podcast_episode_preview(
+            (string) ($row['title'] ?? ''), $date, (string) ($row['video_id'] ?? ''));
+        if (is_array($preview) && empty($preview['needs_review']) && !empty($preview['title'])) {
+            $title = trim(explode(' | ', (string) $preview['title'], 2)[0]);
+        }
+    }
+
     $found = surfside_tools_podcast_find_archived_notes($title, $date);
     if (($found['status'] ?? '') !== 'matched' || !is_array($found['record'] ?? null)) return null;
 
