@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
 }
 
 const SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_OPTION = 'surfside_tools_sermon_archive_schema';
-const SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_VERSION = 1;
+const SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_VERSION = 2;
 
 function surfside_tools_sermon_archive_table() {
     global $wpdb;
@@ -40,10 +40,12 @@ function surfside_tools_sermon_archive_ensure_table() {
         main_heading text NOT NULL,
         notes longtext NOT NULL,
         prayer longtext NOT NULL,
+        video_id varchar(32) DEFAULT NULL,
         created_at datetime NOT NULL,
         updated_at datetime NOT NULL,
         PRIMARY KEY  (id),
         UNIQUE KEY message_key (message_key),
+        UNIQUE KEY video_id (video_id),
         KEY message_date (message_date)
     ) {$collation};");
 
@@ -140,4 +142,59 @@ function surfside_tools_sermon_archive_on_publish($message) {
         }
     }
     return true;
+}
+
+
+/** Date spellings accepted by the weekly notes publisher for one canonical sermon date. */
+function surfside_tools_sermon_archive_date_values($sermon_date) {
+    $date = is_string($sermon_date)
+        ? DateTimeImmutable::createFromFormat('!Y-m-d', $sermon_date) : false;
+    if (!$date || $date->format('Y-m-d') !== $sermon_date) return array();
+    return array_values(array_unique(array(
+        $date->format('Y-m-d'), $date->format('F j, Y'), $date->format('F d, Y'),
+        $date->format('F j Y'), $date->format('M j, Y'), $date->format('M. j, Y'),
+        $date->format('M d, Y'), $date->format('n/j/Y'), $date->format('m/d/Y'),
+    )));
+}
+
+/**
+ * Persist the shared YouTube identity only when one sermon date identifies one
+ * archived notes record. Multiple notes on the same date fail closed.
+ */
+function surfside_tools_sermon_archive_link_video($video_id, $sermon_date) {
+    if (!is_string($video_id) || !preg_match('/^[A-Za-z0-9_-]{11}$/D', $video_id)) return 'invalid';
+    $ready = surfside_tools_sermon_archive_ensure_table();
+    if (is_wp_error($ready)) return $ready;
+    $dates = surfside_tools_sermon_archive_date_values($sermon_date);
+    if (!$dates) return 'no_match';
+
+    global $wpdb;
+    $table = surfside_tools_sermon_archive_table();
+    $placeholders = implode(', ', array_fill(0, count($dates), '%s'));
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, video_id FROM {$table} WHERE message_date IN ({$placeholders}) ORDER BY id DESC LIMIT 3",
+        $dates
+    ), ARRAY_A);
+    if (!is_array($rows) || count($rows) !== 1) return count((array) $rows) > 1 ? 'ambiguous' : 'no_match';
+    $row = $rows[0];
+    $existing = (string) ($row['video_id'] ?? '');
+    if ($existing !== '' && $existing !== $video_id) return 'conflict';
+    if ($existing === $video_id) return 'linked';
+    $written = $wpdb->update($table, array('video_id' => $video_id), array('id' => (int) $row['id']));
+    return $written === false
+        ? new WP_Error('surfside_sermon_archive_link_failed', 'The sermon video could not be linked to its archived notes.')
+        : 'linked';
+}
+
+/** Read an already-linked public sermon note record without title matching. */
+function surfside_tools_sermon_archive_find_by_video($video_id) {
+    if (!is_string($video_id) || !preg_match('/^[A-Za-z0-9_-]{11}$/D', $video_id)) return null;
+    if ((int) get_option(SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_OPTION, 0) < SURFSIDE_TOOLS_SERMON_ARCHIVE_SCHEMA_VERSION) return null;
+    global $wpdb;
+    $table = surfside_tools_sermon_archive_table();
+    $row = $wpdb->get_row($wpdb->prepare(
+        "SELECT title, message_date, main_heading, notes, prayer FROM {$table} WHERE video_id = %s LIMIT 1",
+        $video_id
+    ), ARRAY_A);
+    return is_array($row) ? $row : null;
 }
