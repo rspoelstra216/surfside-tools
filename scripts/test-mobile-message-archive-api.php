@@ -42,6 +42,8 @@ class WP_Error {
     public function get_error_data() { return $this->data; }
 }
 function is_wp_error($v) { return $v instanceof WP_Error; }
+function sanitize_text_field($value) { return trim(strip_tags((string) $value)); }
+function sanitize_textarea_field($value) { return trim(strip_tags((string) $value)); }
 function add_action($hook, $func) { $GLOBALS['hooks'][$hook] = $func; }
 function register_rest_route($namespace, $route, $args) {
     $GLOBALS['routes'][$namespace . $route] = $args;
@@ -101,6 +103,17 @@ function surfside_tools_public_messages_featured_heading($title) {
         return array('heading'=>'Discovering God’s Calling', 'context'=>'Made for More · Week 2');
     }
     return array('heading'=>$title, 'context'=>'');
+}
+function surfside_tools_podcast_find_archived_notes($title, $date) {
+    if ($title !== 'Discovering God’s Calling' || $date !== '2026-09-20') {
+        return array('status'=>'no_match');
+    }
+    return array('status'=>'matched', 'record'=>array(
+        'title'=>'Discovering God’s Calling',
+        'main_heading'=>'God calls us with purpose.',
+        'notes'=>"1) Listen for God’s direction\n2) Walk in faith",
+        'prayer'=>'Lord, help us follow where You lead.',
+    ));
 }
 function surfside_tools_public_messages_date_label($date, $source = 'sermon') {
     if (!$date) return 'Date not available';
@@ -191,6 +204,16 @@ $detail = surfside_tools_mobile_messages_detail(new WP_REST_Request(array('video
 check($detail['message']['id'] === 'abcdEF12_34'
     && $detail['series'] === array(array('id'=>'PLVISIBLE1234','title'=>'Made for More')),
     'Video detail returns one publicly visible message plus permitted series membership');
+check($detail['notes'] === array(
+    'title'=>'Discovering God’s Calling',
+    'main_heading'=>'God calls us with purpose.',
+    'notes'=>"1) Listen for God’s direction\n2) Walk in faith",
+    'prayer'=>'Lord, help us follow where You lead.',
+), 'Video detail includes the exact date-and-title matched archived notes');
+$published_detail = surfside_tools_mobile_messages_detail(
+    new WP_REST_Request(array('video_id'=>'abcdEF12_35')));
+check($published_detail['notes'] === null,
+    'Messages without an exact archived-note match return a safe null notes field');
 $excluded = surfside_tools_mobile_messages_detail(new WP_REST_Request(array('video_id'=>'excluded123')));
 check(is_wp_error($excluded) && $excluded->get_error_data()['status'] === 404,
     'Excluded video ID cannot be opened directly through mobile API');
