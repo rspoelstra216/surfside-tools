@@ -4,6 +4,7 @@
  * Run: php scripts/test-sermon-archive.php
  */
 define('ABSPATH', __DIR__ . '/');
+define('ARRAY_A', 'ARRAY_A');
 $GLOBALS['options'] = array();
 $GLOBALS['actions'] = array();
 
