@@ -47,8 +47,8 @@ $GLOBALS['podcast_archive_ready'] = 1;
 $db = $GLOBALS['wpdb'];
 $db->records = array(
     array(
-        'title' => 'How Can We Gain God’s Perspective',
-        'message_date' => 'November 8, 2026',
+        'title' => 'How Can We Gain God’s Perspective?',
+        'message_date' => 'Nov 7/8, 2026',
         'main_heading' => 'Seeing things from God’s perspective',
         'notes' => "1. Seek wisdom in Scripture.\n2. Trust God’s timing.",
         'prayer' => 'Lord, help us see clearly.',
@@ -58,6 +58,27 @@ $db->records = array(
         'message_date' => 'November 8, 2026',
         'main_heading' => 'Not for the podcast',
         'notes' => 'Wrong notes must never appear.',
+        'prayer' => '',
+    ),
+    array(
+        'title' => 'Another Weekend Sermon',
+        'message_date' => 'Nov 14/15, 2026',
+        'main_heading' => 'A different weekend',
+        'notes' => 'These are not November 8 sermon notes.',
+        'prayer' => '',
+    ),
+    array(
+        'title' => 'Cross Month Sermon',
+        'message_date' => 'Oct 31/Nov 1, 2026',
+        'main_heading' => 'Cross-month notes',
+        'notes' => 'Notes for November 1 only.',
+        'prayer' => '',
+    ),
+    array(
+        'title' => 'Single Day Sermon',
+        'message_date' => 'November 8, 2026',
+        'main_heading' => 'Single-day notes',
+        'notes' => 'Traditional date formatting still works.',
         'prayer' => '',
     ),
     array(
@@ -85,14 +106,14 @@ $db->records = array(
 $id = 'e0NnCrrshM4';
 $sermon = "How Can We Gain God's Perspective - 08 November 2026";
 $notes = surfside_tools_podcast_episode_with_notes($sermon, '2026-11-08', $id);
-podcast_note_check($notes['notes_status'] === 'added', 'Exact title and date match accepted');
+podcast_note_check($notes['notes_status'] === 'added', 'Real Saturday/Sunday notes date matches canonical Sunday sermon');
 podcast_note_check(strpos($notes['description'], "Sermon Notes\n\nSeeing things") !== false,
     'Main heading is embedded as plain text');
 podcast_note_check(strpos($notes['description'], 'Seek wisdom in Scripture.') !== false &&
     strpos($notes['description'], "Closing Prayer\nLord, help us see clearly.") !== false,
     'Archived notes and closing prayer are embedded');
 podcast_note_check(strpos($notes['description'], 'Wrong notes') === false,
-    'A different sermon on the same day cannot leak into the episode');
+    'Another title on the same weekend cannot leak into the episode');
 podcast_note_check(strpos($notes['description'], 'Sermon Notes') <
     strpos($notes['description'], 'Watch on YouTube:'),
     'Written notes appear before the unchanged episode links');
@@ -103,6 +124,20 @@ podcast_note_check($other['notes_status'] === 'no_match' &&
     strpos($other['description'], 'Sermon Notes') === false,
     'No same-day fallback when title does not match');
 podcast_note_check($db->queries === 1, 'Preview reuses per-date lookup within a request');
+$single = surfside_tools_podcast_episode_with_notes(
+    'Single Day Sermon - 08 November 2026', '2026-11-08', $id);
+podcast_note_check($single['notes_status'] === 'added' &&
+    strpos($single['description'], 'Traditional date formatting still works.') !== false,
+    'Existing single-day notes continue matching');
+$cross = surfside_tools_podcast_episode_with_notes(
+    'Cross Month Sermon - 01 November 2026', '2026-11-01', $id);
+podcast_note_check($cross['notes_status'] === 'added' &&
+    strpos($cross['description'], 'Cross-month notes') !== false,
+    'Saturday/Sunday dates match across a month boundary');
+$wrong_week = surfside_tools_podcast_episode_with_notes(
+    'How Can We Gain God\'s Perspective - 15 November 2026', '2026-11-15', $id);
+podcast_note_check($wrong_week['notes_status'] === 'no_match',
+    'The same title cannot match a different weekend');
 $conflicting = surfside_tools_podcast_episode_with_notes(
     'Duplicate Sermon - 15 November 2026', '2026-11-15', $id);
 podcast_note_check($conflicting['notes_status'] === 'ambiguous' &&
@@ -141,4 +176,4 @@ $spreaker = surfside_tools_podcast_spreaker_metadata($id);
 podcast_note_check(is_array($spreaker) &&
     $spreaker['description'] === $notes['description'],
     'Spreaker draft and staff preview use identical archived notes');
-echo "PASS: archived sermon notes appear in safely matched podcast descriptions\n";
+echo "PASS: podcast descriptions match single-day and Saturday/Sunday archive dates\n";

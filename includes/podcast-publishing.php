@@ -88,15 +88,34 @@ function surfside_tools_podcast_find_archived_notes($message_title, $sermon_date
     $title_key = surfside_tools_podcast_note_title_key($message_title);
     if ($title_key === '') return array('status' => 'no_match');
 
-    // Weekly Update's Word documents generally use "November 8, 2026";
-    // retain support for ISO dates and common staff-edited date spellings.
-    $dates = array_values(array_unique(array(
+    // Weekly Update documents may use the Saturday/Sunday service dates
+    // (for example "Nov 7/8, 2026") instead of the canonical YouTube
+    // Sunday date ("2026-11-08"). Generate only that exact weekend's
+    // spellings; do not search neighboring dates or rely on the title alone.
+    $dates = array(
         $date->format('Y-m-d'), $date->format('F j, Y'),
         $date->format('F d, Y'), $date->format('F j Y'),
         $date->format('M j, Y'), $date->format('M. j, Y'),
         $date->format('M d, Y'), $date->format('n/j/Y'),
         $date->format('m/d/Y'),
-    )));
+    );
+    if ($date->format('N') === '7') {
+        $saturday = $date->modify('-1 day');
+        // Handle same-month weekends and month/year boundaries, retaining
+        // both the abbreviated and unabbreviated Word document formats.
+        foreach (array('F', 'M', 'M.') as $month_format) {
+            $first = $saturday->format($month_format . ' j');
+            $last = $saturday->format('Y-m') === $date->format('Y-m')
+                ? $date->format('j')
+                : $date->format($month_format . ' j');
+            foreach (array('/', '-', '–', ' & ', ' and ') as $separator) {
+                $weekend = $first . $separator . $last;
+                $dates[] = $weekend . ', ' . $date->format('Y');
+                $dates[] = $weekend . ' ' . $date->format('Y');
+            }
+        }
+    }
+    $dates = array_values(array_unique($dates));
     static $by_date = array();
     if (!array_key_exists($sermon_date, $by_date)) {
         global $wpdb;

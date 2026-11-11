@@ -28,6 +28,11 @@ shows those notes before the existing YouTube and Surfside links.
 
 Matching is intentionally strict: the canonical YouTube sermon date and the
 normalized **message title** must both match one unique archive record.
+When Weekly Update records a combined Saturday/Sunday service date such as
+`Nov 7/8, 2026`, the matcher recognizes it as the same weekend as canonical
+YouTube date `2026-11-08` (the Sunday). It also accepts the equivalent full-month
+and common separator variants, including dates crossing month boundaries.
+It does not search arbitrary neighboring dates, and title matching is still required.
 Publication saves the newly published sermon in the archive immediately, so
 the weekly podcast does not need to wait for the next set of notes. For a missing,
 uninitialized, empty, or ambiguous archive match, Spreaker still receives the
