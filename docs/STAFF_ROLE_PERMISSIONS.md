@@ -1,40 +1,42 @@
-# Shared Tools Staff permissions
+# Surfside Tools role matrix (PR after #507)
 
-Staff Access (`/dashboard/access/`) now includes **Role Permissions**, a single set of checkboxes for every **Tools Staff** account. **Tools Admin** remains unrestricted within Tools and is the only role allowed to edit these checkboxes. WordPress Site Access is a separate setting.
+Tools staff permissions are independent of WordPress site roles. Staff Access at `/dashboard/access/` is restricted to **Tools Admin**.
 
-## Initial permissions
+## Role model
 
-| Tools Staff permission | Initial value | Areas |
-| --- | --- | --- |
-| Weekly Updates & Featured Announcements | Enabled | Weekly Update, app Featured Announcement |
-| Messages & Media | Enabled | Message archive, sermon notes/series, media management, Live Slides |
-| Calendar & Volunteers | Enabled | Calendar Manager, volunteer needs |
-| Prayers & Communications | Enabled | Prayer Requests, app push notifications |
-| Homepage & App Appearance | Enabled | Homepage images, app Home |
-| Ministries | Enabled | Ministry editor and publishing |
-| Church Information & Navigation | Enabled | Surfside Information and website navigation |
+- **Tools Admin:** protected, full Tools permission set. Cannot be edited or deleted from this screen.
+- **Tools Staff:** existing shared role; each permission starts with the value previously saved through #507's seven group checkboxes. No migration runs on public requests.
+- **Custom Tools roles:** created by a Tools Admin with an individual name, up to 12 custom roles. They begin with zero permissions and can be assigned to WordPress-backed accounts or Google-only identities.
+- **Disabled / Pending:** not active roles and cannot access Tools.
+- **WordPress Site Access:** the existing separate column and WordPress roles remain unchanged.
 
-An existing saved permission selection overrides these defaults. All Tools Staff members receive the same settings; no per-person exceptions.
+All permission decisions are computed from the role's saved matrix (not a person's custom exceptions). Unknown or removed roles fail closed.
 
-**Always admin-only:** Staff Access/role changes, integration settings/API credentials, WordPress configuration, contact routing, saved places, calendar defaults, and streaming destinations. Permission changes do **not** grant a WordPress administrator role or alter WordPress Site Access.
+## Role permissions by area
 
-## Security implementation
+The expandable matrix includes individual rows for Weekly Update, Featured Announcement, Archived Sermon Notes, Message Archive/Sermon Series, Weekly Media, Live Slides, Calendar Manager, Volunteer Needs, Ministries, Prayer Requests, Push Notifications, Homepage Photos, App Home Experience, Surfside Information, and Website Navigation.
 
-- A single server-side permission source gates navigation, direct dashboard routes, and designated shortcodes.
-- The Ministries and Church Information editors check the permission before processing their forms.
-- The streaming section additionally checks Tools Admin for both display and save.
-- The dashboard feature gates are separate from WordPress's global `manage_options` capability. Enabling an editor does not confer general settings access.
-- Permission options are written only from the Tools Admin Staff Access page after nonce validation.
+The matrix also **shows** protected, nondelegable rows for streaming configuration, calendar defaults, saved places, contact routing, design settings, integrations overview/API credentials, Google Maps, YouTube, YouVersion, Giving, Cloudflare Turnstile, and Staff/role management. Only the Tools Admin column is checked for these. Admin-only settings are not turned into global WordPress capabilities.
 
-## Manual verification before merging
+This is an operations permissions matrix, not an arbitrary WordPress capability editor. Some underlying editors also perform their own capability checks, which must remain in place.
 
-1. Sign in as Tools Admin. Open Staff Access, verify the permission explanations, uncheck **Ministries**, save, and reload: the checkbox stays off.
-2. Sign in as Tools Staff. Verify Ministries is missing from workspace navigation and a direct visit to `/dashboard/site-ministries/` returns 403.
-3. Re-enable Ministries as Admin; as Staff verify you can view and save a ministry.
-4. Disable **Church Information & Navigation**; as Staff confirm direct navigation and information links are denied. Re-enable it and confirm edits save.
-5. As Staff try `/dashboard/settings/`, `/dashboard/access/`, and `/dashboard/site-streaming/`; integration, staff authorization and streaming configuration must remain restricted.
-6. Disable and re-enable each existing feature group; check sidebar links, direct URLs, and typical saves for that group.
-7. Verify a Tools Admin is unaffected by Staff role toggles and a user assigned Disabled cannot gain access.
-8. Verify WordPress Site Access selection remains unchanged after any Tools Staff permission edit.
+## Enforcement and continuity
 
-> Note: This PR gates the known Surfside Tools dashboard feature entry points and editor forms. Existing WordPress capability checks still apply inside other modules. Do not assume these checkboxes confer arbitrary WordPress privileges.
+- The Tools role model powers menu/search/landing links, per-feature dashboard URLs and their POSTs, and designated shortcodes; the Ministries and Site Information editors check their role permission before saving.
+- Feature-level controls subdivide #507's former seven groups without losing their current values. The first matrix save stores the new per-role values.
+- Firebase UID authorization accepts assigned custom Tools roles and uses the existing locked staff bridge account; WordPress-credential sessions read the current Tools role. Neither grants `manage_options` to a custom role.
+- Custom roles cannot be deleted while assigned to a WordPress person or Google identity. The built-in Admin role is immutable, and demotion of the last WordPress Tools administrator is blocked.
+- The role editor handles POST requests only on the admin's Staff Access page with WordPress nonces. It does not run database migrations or page-creation checks during general requests.
+
+## Verification checklist (before deployment)
+
+1. Under Staff Access, confirm Tools Admin is fully checked and locked, including all Admin-only entries.
+2. Confirm the Tools Staff column matches the saved #507 permission selections. Change one, save, refresh, and verify persistence.
+3. Add **Ministry Leader**, verify it appears as a column with no permissions. Check Ministries and Calendar, save, and assign it to a test person.
+4. Test WordPress credentials and Google sign-in (including linked identities) with that role; verify granted tools work and forbidden tools are absent and denied on direct URLs.
+5. Test Calendar Defaults, Saved Places, Integrations, Contact Routing and Staff Access with the custom role; all remain Admin-only even if an attacker submits forged form keys.
+6. Reassign a person, then confirm deleting the custom role is refused while assigned and accepted after nobody is assigned. Confirm removed roles no longer authorize.
+7. Verify disabled/pending accounts remain unable to enter Tools and at least one Tools Admin remains.
+8. Confirm WordPress Site Access roles have not changed, and existing public app/website behavior is unaffected.
+
+CI runs `scripts/test-staff-role-matrix.php`, covering legacy permissions, custom role creation/removal, privilege isolation, direct-route checks and default denial.
