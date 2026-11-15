@@ -17,7 +17,7 @@ function surfside_tools_youversion_format_error($result) {
 
 function surfside_tools_youversion_settings_handle_post() {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST['surfside_youversion_settings_action'])) return;
-    if (!current_user_can('manage_options')) return;
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('youversion_integration') : current_user_can('manage_options'))) return;
     if (empty($_POST['surfside_youversion_settings_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['surfside_youversion_settings_nonce'])), 'surfside_youversion_settings')) return;
 
     $action = sanitize_key(wp_unslash($_POST['surfside_youversion_settings_action']));
@@ -97,7 +97,7 @@ function surfside_tools_youversion_settings_handle_post() {
 add_action('template_redirect', 'surfside_tools_youversion_settings_handle_post', 5);
 
 function surfside_tools_youversion_settings_panel() {
-    if (!is_user_logged_in() || !current_user_can('manage_options')) return '';
+    if (!is_user_logged_in() || !(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('youversion_integration') : current_user_can('manage_options'))) return '';
 
     $configured = function_exists('surfside_tools_youversion_is_configured') && surfside_tools_youversion_is_configured();
     $test = get_transient(surfside_tools_youversion_test_transient_key());
