@@ -30,7 +30,9 @@ function current_user_can($cap) {
 function surfside_tools_current_user_is_tools_admin() { return $GLOBALS['ws_tools_admin']; }
 /** Simulate the shared role-permissions service in this standalone navigation test. */
 $GLOBALS['ws_staff_permissions'] = array_fill_keys(array(
-    'weekly', 'messages', 'calendar', 'community', 'appearance', 'ministries', 'information'
+    'weekly', 'featured', 'archived_notes', 'message_archive', 'weekly_media', 'live_slides',
+    'calendar', 'volunteers', 'ministries', 'prayers', 'push', 'homepage', 'app_home',
+    'information', 'website_navigation'
 ), true);
 function surfside_tools_staff_has_permission($key) {
     return $GLOBALS['ws_tools_admin'] || (
@@ -206,6 +208,7 @@ check(in_array('Prayer Requests',$staff_labels,true)&&in_array('Weekly Media',$s
     'Staff inherit enabled role permissions including ministries and church information');
 $GLOBALS['ws_staff_permissions']['ministries'] = false;
 $GLOBALS['ws_staff_permissions']['information'] = false;
+$GLOBALS['ws_staff_permissions']['website_navigation'] = false;
 $restricted_staff=surfside_tools_workspace_catalog();
 $restricted_labels=array();
 foreach($restricted_staff as $section)foreach($section['items'] as $item)$restricted_labels[]=$item['label'];
@@ -215,6 +218,7 @@ foreach(array('Ministries','Surfside Information','Website Navigation') as $hidd
 }
 $GLOBALS['ws_staff_permissions']['ministries'] = true;
 $GLOBALS['ws_staff_permissions']['information'] = true;
+$GLOBALS['ws_staff_permissions']['website_navigation'] = true;
 $mediaStaffHtml=surfside_tools_workspace_category_shortcode(array('key'=>'media'));
 check(!str_contains($mediaStaffHtml, '>Streaming</strong>') && str_contains($mediaStaffHtml, '>Weekly Media</strong>'),
     'Category landing obeys exactly the same staff permission filter as search and drawer');
