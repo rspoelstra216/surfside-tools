@@ -57,7 +57,7 @@ function surfside_tools_staff_permission_for_route($path) {
         'dashboard/site-ministries' => 'ministries',
         'dashboard/surfside-information' => 'information',
         'dashboard/site-navigation' => 'information',
-        'dashboard/site-streaming' => 'information',
+        'dashboard/site-streaming' => 'admin_only',
     );
     if (isset($paths[$path])) {
         return $paths[$path];
