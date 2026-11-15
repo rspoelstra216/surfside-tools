@@ -87,7 +87,7 @@ function surfside_tools_workspace_catalog() {
             array('label' => 'Weekly Update', 'permission' => 'weekly', 'url' => surfside_tools_staff_page_url('weekly-update'), 'search' => 'announcements sermon notes publish documents'),
             array('label' => 'Archived Sermon Notes', 'permission' => 'messages', 'url' => $archive, 'search' => 'past notes search weekly message'),
             array('label' => 'Featured Announcement', 'permission' => 'weekly', 'url' => surfside_tools_staff_page_url('mobile-app/featured-announcement'), 'search' => 'app home feature scheduled banner'),
-            array('label' => 'Ministries', 'permission' => 'ministries', 'url' => surfside_tools_staff_page_url('site-ministries'), 'search' => 'ministry descriptions staff contact groups', ),
+            array('label' => 'Ministries', 'permission' => 'ministries', 'url' => surfside_tools_staff_page_url('site-ministries'), 'search' => 'ministry descriptions staff contact groups'),
         )),
         'media' => array('title' => 'Messages & Media', 'items' => array(
             array('label' => 'Message Archive', 'permission' => 'messages', 'url' => $messages, 'search' => 'YouTube sermons metadata videos review'),
@@ -108,13 +108,13 @@ function surfside_tools_workspace_catalog() {
             array('label' => 'Contact Routing', 'url' => surfside_tools_staff_page_url('contact-routing'), 'search' => 'email recipient website contact form prayer', 'cap' => 'manage_options'),
         )),
         'appearance' => array('title' => 'Appearance', 'items' => array(
-            array('label' => 'Website Navigation', 'permission' => 'information', 'url' => surfside_tools_staff_page_url('site-navigation'), 'search' => 'header footer menus links', ),
+            array('label' => 'Website Navigation', 'permission' => 'information', 'url' => surfside_tools_staff_page_url('site-navigation'), 'search' => 'header footer menus links'),
             array('label' => 'Homepage Photos', 'permission' => 'appearance', 'url' => surfside_tools_staff_page_url('homepage'), 'search' => 'website carousel pictures gallery'),
             array('label' => 'App Home Experience', 'permission' => 'appearance', 'url' => surfside_tools_staff_page_url('mobile-app/home-experience'), 'search' => 'mobile hero image crop zoom'),
             array('label' => 'Reveal & Countdown Styling', 'url' => $settings . '#surfside-focus-reveal-countdown-styling', 'search' => 'visual CSS selectors design', 'cap' => 'manage_options'),
         )),
         'settings' => array('title' => 'Settings & Access', 'items' => array(
-            array('label' => 'Surfside Information', 'permission' => 'information', 'url' => surfside_tools_staff_page_url('surfside-information'), 'search' => 'church identity service times location social links', ),
+            array('label' => 'Surfside Information', 'permission' => 'information', 'url' => surfside_tools_staff_page_url('surfside-information'), 'search' => 'church identity service times location social links'),
             array('label' => 'Integrations', 'url' => $settings, 'search' => 'connections configuration APIs', 'cap' => 'manage_options'),
             array('label' => 'Google Maps', 'url' => $settings . '#surfside-focus-google-maps', 'search' => 'places api key', 'cap' => 'manage_options'),
             array('label' => 'YouTube Integration', 'url' => $settings . '#surfside-focus-youtube-sermon-archive', 'search' => 'data API full sync playlist key', 'cap' => 'manage_options'),
