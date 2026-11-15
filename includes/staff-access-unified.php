@@ -14,9 +14,11 @@ function surfside_tools_wp_tools_role($user) {
     }
 
     $role = sanitize_key((string) get_user_meta($user->ID, surfside_tools_wp_tools_role_meta_key(), true));
-    if (in_array($role, array('admin', 'staff', 'disabled'), true)) {
+    if ($role === 'disabled' || surfside_tools_role_is_assignable($role)) {
         return $role;
     }
+    // A removed/unknown custom role must not silently revert to Staff access.
+    if ($role !== '') return 'disabled';
 
     if (in_array('administrator', (array) $user->roles, true)) {
         $role = 'admin';
@@ -32,10 +34,32 @@ function surfside_tools_wp_tools_role($user) {
 
 function surfside_tools_set_wp_tools_role($user_id, $role) {
     $user = get_user_by('id', absint($user_id));
-    if (!$user instanceof WP_User || !in_array($role, array('admin', 'staff', 'disabled'), true)) {
+    if (!$user instanceof WP_User || !($role === 'disabled' || surfside_tools_role_is_assignable($role))) {
         return false;
     }
 
+    // Preserve a final Tools administrator (separate from WordPress admin count).
+    if ($role !== 'admin' && surfside_tools_wp_tools_role($user) === 'admin') {
+        $other_admin = false;
+        foreach (surfside_tools_wp_real_users() as $candidate) {
+            if ((int) $candidate->ID !== (int) $user->ID && surfside_tools_wp_tools_role($candidate) === 'admin') {
+                $other_admin = true;
+                break;
+            }
+        }
+        if (!$other_admin) {
+            foreach (surfside_tools_get_permissions() as $record) {
+                if (($record['role'] ?? '') === 'admin') {
+                    $linked = surfside_tools_get_linked_wp_user_id($record['uid'] ?? '');
+                    if ((int) $linked !== (int) $user->ID) {
+                        $other_admin = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!$other_admin) return false;
+    }
     update_user_meta($user->ID, surfside_tools_wp_tools_role_meta_key(), $role);
 
     $uid = surfside_tools_permission_uid_for_wp_user($user->ID);
@@ -94,7 +118,7 @@ add_shortcode('surfside_tools_permissions', function () {
         if (wp_verify_nonce($nonce, 'surfside_tools_permissions')) {
             $uid = sanitize_text_field(wp_unslash($_POST['uid'] ?? ''));
             $role = sanitize_key(wp_unslash($_POST['role'] ?? 'disabled'));
-            if ($uid && isset($permissions[$uid]) && in_array($role, array('admin', 'staff', 'disabled'), true)) {
+            if ($uid && isset($permissions[$uid]) && ($role === 'disabled' || surfside_tools_role_is_assignable($role))) {
                 $current = $permissions[$uid];
                 if (($current['role'] ?? '') === 'admin' && $role !== 'admin' && surfside_tools_permissions_count_admins($permissions) <= 1) {
                     $notice = 'Surfside Tools must always have at least one administrator.';
@@ -131,20 +155,6 @@ add_shortcode('surfside_tools_permissions', function () {
         }
     }
 
-    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['surfside_staff_role_permissions_nonce'])) {
-        $nonce = sanitize_text_field(wp_unslash($_POST['surfside_staff_role_permissions_nonce']));
-        if (wp_verify_nonce($nonce, 'surfside_staff_role_permissions') && surfside_tools_current_user_is_tools_admin()) {
-            $submitted = isset($_POST['staff_permissions']) && is_array($_POST['staff_permissions'])
-                ? wp_unslash($_POST['staff_permissions']) : array();
-            $new_permissions = array();
-            foreach (surfside_tools_staff_permission_definitions() as $key => $definition) {
-                $new_permissions[$key] = isset($submitted[$key]) && $submitted[$key] === '1';
-            }
-            update_option('surfside_tools_staff_role_permissions', $new_permissions, false);
-            $notice = 'Shared Tools Staff permissions saved.';
-        }
-    }
-
     $unlinked_permissions = array_filter($permissions, function ($record, $uid) {
         return !surfside_tools_get_linked_wp_user_id($uid);
     }, ARRAY_FILTER_USE_BOTH);
@@ -169,24 +179,7 @@ add_shortcode('surfside_tools_permissions', function () {
             <p class="surfside-staff-muted">Manage each person in one place. WordPress username/password and Google are sign-in sources; Tools access and WordPress site access remain separate permissions.</p>
         </div>
         <?php if ($notice) : ?><div class="surfside-staff-panel"><strong><?php echo esc_html($notice); ?></strong></div><?php endif; ?>
-        <div class="surfside-staff-panel">
-            <h2>Role Permissions</h2>
-            <p class="surfside-staff-muted"><strong>Tools Admin:</strong> Full Surfside Tools access, including integrations and staff management. These permissions cannot be reduced here.</p>
-            <p class="surfside-staff-muted"><strong>Tools Staff:</strong> All staff share the permissions selected below. Integrations, API credentials, contact routing, system configuration and staff management remain admin-only. WordPress site roles are managed separately.</p>
-            <form method="post">
-                <?php wp_nonce_field('surfside_staff_role_permissions', 'surfside_staff_role_permissions_nonce'); ?>
-                <div class="surfside-staff-permission-list" style="display:grid;gap:12px;margin:20px 0">
-                    <?php $staff_role_values = surfside_tools_staff_role_permissions(); ?>
-                    <?php foreach (surfside_tools_staff_permission_definitions() as $permission_key => $permission_definition) : ?>
-                        <label style="display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid #dbe3ec;border-radius:10px">
-                            <input type="checkbox" name="staff_permissions[<?php echo esc_attr($permission_key); ?>]" value="1" <?php checked(!empty($staff_role_values[$permission_key])); ?> style="margin-top:4px">
-                            <span><strong><?php echo esc_html($permission_definition['label']); ?></strong><br><span class="surfside-staff-muted"><?php echo esc_html($permission_definition['description']); ?></span></span>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-                <button class="surfside-staff-button-secondary" type="submit" style="max-width:240px">Save Staff Permissions</button>
-            </form>
-        </div>
+        <?php echo surfside_tools_render_role_permissions_matrix(); ?>
         <div class="surfside-staff-panel">
             <h2>People</h2>
             <p class="surfside-staff-muted">Existing WordPress users are listed here automatically. A Google identity appears after its first sign-in attempt and can be linked to the correct person.</p>
@@ -208,8 +201,7 @@ add_shortcode('surfside_tools_permissions', function () {
                                 <?php wp_nonce_field('surfside_tools_wp_tools', 'surfside_wp_tools_nonce'); ?>
                                 <input type="hidden" name="wp_user_id" value="<?php echo esc_attr($wp_user->ID); ?>">
                                 <select name="tools_role" aria-label="Tools access">
-                                    <option value="admin" <?php selected($tools_role, 'admin'); ?>>Tools Admin</option>
-                                    <option value="staff" <?php selected($tools_role, 'staff'); ?>>Tools Staff</option>
+                                    <?php foreach (surfside_tools_role_definitions() as $role_key => $role_label) : ?><option value="<?php echo esc_attr($role_key); ?>" <?php selected($tools_role, $role_key); ?>><?php echo esc_html($role_label); ?></option><?php endforeach; ?>
                                     <option value="disabled" <?php selected($tools_role, 'disabled'); ?>>Disabled</option>
                                 </select>
                                 <button class="surfside-staff-button-secondary" type="submit">Save</button>
@@ -242,8 +234,7 @@ add_shortcode('surfside_tools_permissions', function () {
                                 <input type="hidden" name="uid" value="<?php echo esc_attr($uid); ?>">
                                 <select name="role" aria-label="Tools access">
                                     <?php if (($record['role'] ?? '') === 'pending') : ?><option value="pending" selected disabled>Pending</option><?php endif; ?>
-                                    <option value="admin" <?php selected($record['role'], 'admin'); ?>>Tools Admin</option>
-                                    <option value="staff" <?php selected($record['role'], 'staff'); ?>>Tools Staff</option>
+                                    <?php foreach (surfside_tools_role_definitions() as $role_key => $role_label) : ?><option value="<?php echo esc_attr($role_key); ?>" <?php selected($record['role'], $role_key); ?>><?php echo esc_html($role_label); ?></option><?php endforeach; ?>
                                     <option value="disabled" <?php selected($record['role'], 'disabled'); ?>>Disabled</option>
                                 </select>
                                 <button class="surfside-staff-button-secondary" type="submit">Save</button>

@@ -28,7 +28,9 @@ function surfside_tools_get_permission($uid) {
 }
 
 function surfside_tools_permission_role_is_active($role) {
-    return in_array($role, array('admin', 'staff'), true);
+    return function_exists('surfside_tools_role_is_assignable')
+        ? surfside_tools_role_is_assignable($role)
+        : in_array($role, array('admin', 'staff'), true);
 }
 
 function surfside_tools_save_permission($uid, $record) {
@@ -42,7 +44,7 @@ function surfside_tools_save_permission($uid, $record) {
         'uid' => $uid,
         'email' => sanitize_email($record['email'] ?? ''),
         'name' => sanitize_text_field($record['name'] ?? ''),
-        'role' => in_array(($record['role'] ?? ''), array('admin', 'staff', 'pending', 'disabled'), true) ? $record['role'] : 'pending',
+        'role' => (surfside_tools_permission_role_is_active($record['role'] ?? '') || in_array(($record['role'] ?? ''), array('pending','disabled'), true)) ? sanitize_key($record['role']) : 'pending',
         'updated' => time(),
     );
     update_option(surfside_tools_permissions_option_name(), $permissions, false);

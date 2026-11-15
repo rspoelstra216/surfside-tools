@@ -43,7 +43,7 @@ function surfside_tools_current_user_is_tools_admin() { return $GLOBALS['can_adm
 function surfside_tools_staff_has_permission($key) {
     if ($GLOBALS['can_admin']) return true;
     return $GLOBALS['logged_in'] && $GLOBALS['can_upload']
-        && $key === 'information' && $GLOBALS['staff_information_enabled'];
+        && in_array($key, array('information','website_navigation'), true) && $GLOBALS['staff_information_enabled'];
 }
 function surfside_tools_prevent_cache(){}
 function surfside_tools_staff_enqueue_styles(){}
