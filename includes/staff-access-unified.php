@@ -14,7 +14,7 @@ function surfside_tools_wp_tools_role($user) {
     }
 
     $role = sanitize_key((string) get_user_meta($user->ID, surfside_tools_wp_tools_role_meta_key(), true));
-    if (in_array($role, array('admin', 'staff', 'disabled'), true)) {
+    if ($role === 'disabled' || surfside_tools_role_is_assignable($role)) {
         return $role;
     }
 
@@ -32,7 +32,7 @@ function surfside_tools_wp_tools_role($user) {
 
 function surfside_tools_set_wp_tools_role($user_id, $role) {
     $user = get_user_by('id', absint($user_id));
-    if (!$user instanceof WP_User || !in_array($role, array('admin', 'staff', 'disabled'), true)) {
+    if (!$user instanceof WP_User || !($role === 'disabled' || surfside_tools_role_is_assignable($role))) {
         return false;
     }
 
@@ -94,7 +94,7 @@ add_shortcode('surfside_tools_permissions', function () {
         if (wp_verify_nonce($nonce, 'surfside_tools_permissions')) {
             $uid = sanitize_text_field(wp_unslash($_POST['uid'] ?? ''));
             $role = sanitize_key(wp_unslash($_POST['role'] ?? 'disabled'));
-            if ($uid && isset($permissions[$uid]) && in_array($role, array('admin', 'staff', 'disabled'), true)) {
+            if ($uid && isset($permissions[$uid]) && ($role === 'disabled' || surfside_tools_role_is_assignable($role))) {
                 $current = $permissions[$uid];
                 if (($current['role'] ?? '') === 'admin' && $role !== 'admin' && surfside_tools_permissions_count_admins($permissions) <= 1) {
                     $notice = 'Surfside Tools must always have at least one administrator.';
