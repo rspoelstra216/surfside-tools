@@ -131,6 +131,20 @@ add_shortcode('surfside_tools_permissions', function () {
         }
     }
 
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['surfside_staff_role_permissions_nonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_POST['surfside_staff_role_permissions_nonce']));
+        if (wp_verify_nonce($nonce, 'surfside_staff_role_permissions') && surfside_tools_current_user_is_tools_admin()) {
+            $submitted = isset($_POST['staff_permissions']) && is_array($_POST['staff_permissions'])
+                ? wp_unslash($_POST['staff_permissions']) : array();
+            $new_permissions = array();
+            foreach (surfside_tools_staff_permission_definitions() as $key => $definition) {
+                $new_permissions[$key] = isset($submitted[$key]) && $submitted[$key] === '1';
+            }
+            update_option('surfside_tools_staff_role_permissions', $new_permissions, false);
+            $notice = 'Shared Tools Staff permissions saved.';
+        }
+    }
+
     $unlinked_permissions = array_filter($permissions, function ($record, $uid) {
         return !surfside_tools_get_linked_wp_user_id($uid);
     }, ARRAY_FILTER_USE_BOTH);
@@ -155,6 +169,24 @@ add_shortcode('surfside_tools_permissions', function () {
             <p class="surfside-staff-muted">Manage each person in one place. WordPress username/password and Google are sign-in sources; Tools access and WordPress site access remain separate permissions.</p>
         </div>
         <?php if ($notice) : ?><div class="surfside-staff-panel"><strong><?php echo esc_html($notice); ?></strong></div><?php endif; ?>
+        <div class="surfside-staff-panel">
+            <h2>Role Permissions</h2>
+            <p class="surfside-staff-muted"><strong>Tools Admin:</strong> Full Surfside Tools access, including integrations and staff management. These permissions cannot be reduced here.</p>
+            <p class="surfside-staff-muted"><strong>Tools Staff:</strong> All staff share the permissions selected below. Integrations, API credentials, contact routing, system configuration and staff management remain admin-only. WordPress site roles are managed separately.</p>
+            <form method="post">
+                <?php wp_nonce_field('surfside_staff_role_permissions', 'surfside_staff_role_permissions_nonce'); ?>
+                <div class="surfside-staff-permission-list" style="display:grid;gap:12px;margin:20px 0">
+                    <?php $staff_role_values = surfside_tools_staff_role_permissions(); ?>
+                    <?php foreach (surfside_tools_staff_permission_definitions() as $permission_key => $permission_definition) : ?>
+                        <label style="display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid #dbe3ec;border-radius:10px">
+                            <input type="checkbox" name="staff_permissions[<?php echo esc_attr($permission_key); ?>]" value="1" <?php checked(!empty($staff_role_values[$permission_key])); ?> style="margin-top:4px">
+                            <span><strong><?php echo esc_html($permission_definition['label']); ?></strong><br><span class="surfside-staff-muted"><?php echo esc_html($permission_definition['description']); ?></span></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+                <button class="surfside-staff-button-secondary" type="submit" style="max-width:240px">Save Staff Permissions</button>
+            </form>
+        </div>
         <div class="surfside-staff-panel">
             <h2>People</h2>
             <p class="surfside-staff-muted">Existing WordPress users are listed here automatically. A Google identity appears after its first sign-in attempt and can be linked to the correct person.</p>
