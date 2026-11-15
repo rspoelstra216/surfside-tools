@@ -24,7 +24,7 @@ function surfside_tools_twitch_save_credentials($id, $secret, $clear) {
 
 function surfside_tools_twitch_settings_handle_post() {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || empty($_POST['surfside_twitch_settings_action'])) return '';
-    if (!current_user_can('manage_options') || empty($_POST['surfside_twitch_settings_nonce']) || !is_string($_POST['surfside_twitch_settings_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['surfside_twitch_settings_nonce'])), 'surfside_twitch_settings')) {
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('streaming') : current_user_can('manage_options')) || empty($_POST['surfside_twitch_settings_nonce']) || !is_string($_POST['surfside_twitch_settings_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['surfside_twitch_settings_nonce'])), 'surfside_twitch_settings')) {
         status_header(403);
         return surfside_tools_frontend_settings_notice('Twitch security check failed. Refresh and try again.', 'error');
     }
@@ -48,7 +48,7 @@ function surfside_tools_twitch_settings_handle_post() {
 }
 
 function surfside_tools_twitch_settings_panel($expanded = false) {
-    if (!is_user_logged_in() || !current_user_can('manage_options')) return '';
+    if (!is_user_logged_in() || !(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('streaming') : current_user_can('manage_options'))) return '';
     $credentials = surfside_tools_twitch_credentials();
     $id_locked = defined('SURFSIDE_TWITCH_CLIENT_ID');
     $secret_locked = defined('SURFSIDE_TWITCH_CLIENT_SECRET');
