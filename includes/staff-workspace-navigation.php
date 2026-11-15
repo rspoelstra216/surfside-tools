@@ -84,37 +84,37 @@ function surfside_tools_workspace_catalog() {
 
     $groups = array(
         'content' => array('title' => 'Content & Publishing', 'items' => array(
-            array('label' => 'Weekly Update', 'url' => surfside_tools_staff_page_url('weekly-update'), 'search' => 'announcements sermon notes publish documents'),
-            array('label' => 'Archived Sermon Notes', 'url' => $archive, 'search' => 'past notes search weekly message'),
-            array('label' => 'Featured Announcement', 'url' => surfside_tools_staff_page_url('mobile-app/featured-announcement'), 'search' => 'app home feature scheduled banner'),
-            array('label' => 'Ministries', 'url' => surfside_tools_staff_page_url('site-ministries'), 'search' => 'ministry descriptions staff contact groups', 'cap' => 'manage_options'),
+            array('label' => 'Weekly Update', 'permission' => 'weekly', 'url' => surfside_tools_staff_page_url('weekly-update'), 'search' => 'announcements sermon notes publish documents'),
+            array('label' => 'Archived Sermon Notes', 'permission' => 'messages', 'url' => $archive, 'search' => 'past notes search weekly message'),
+            array('label' => 'Featured Announcement', 'permission' => 'weekly', 'url' => surfside_tools_staff_page_url('mobile-app/featured-announcement'), 'search' => 'app home feature scheduled banner'),
+            array('label' => 'Ministries', 'permission' => 'ministries', 'url' => surfside_tools_staff_page_url('site-ministries'), 'search' => 'ministry descriptions staff contact groups', ),
         )),
         'media' => array('title' => 'Messages & Media', 'items' => array(
-            array('label' => 'Message Archive', 'url' => $messages, 'search' => 'YouTube sermons metadata videos review'),
-            array('label' => 'Sermon Series', 'url' => add_query_arg('tab', 'series', $messages), 'search' => 'YouTube playlists grouping'),
-            array('label' => 'Weekly Media', 'url' => $roku, 'search' => 'weekly media publishing sermon podcast Spreaker R2 Cloudflare Roku MP4 video audio find this week message'),
+            array('label' => 'Message Archive', 'permission' => 'messages', 'url' => $messages, 'search' => 'YouTube sermons metadata videos review'),
+            array('label' => 'Sermon Series', 'permission' => 'messages', 'url' => add_query_arg('tab', 'series', $messages), 'search' => 'YouTube playlists grouping'),
+            array('label' => 'Weekly Media', 'permission' => 'messages', 'url' => $roku, 'search' => 'weekly media publishing sermon podcast Spreaker R2 Cloudflare Roku MP4 video audio find this week message'),
             array('label' => 'Streaming', 'url' => surfside_tools_staff_page_url('site-settings/streaming'), 'search' => 'Cloudflare live recording exclusions livestream notifications Twitch Facebook YouTube Watch Live announcement video connection settings', 'cap' => 'manage_options'),
-            array('label' => 'Live Slides', 'url' => surfside_tools_staff_page_url('mobile-app/live-slides'), 'search' => 'ProPresenter slides viewer colors fonts'),
+            array('label' => 'Live Slides', 'permission' => 'messages', 'url' => surfside_tools_staff_page_url('mobile-app/live-slides'), 'search' => 'ProPresenter slides viewer colors fonts'),
         )),
         'events' => array('title' => 'Events & Serving', 'items' => array(
-            array('label' => 'Calendar Manager', 'url' => surfside_tools_staff_page_url('calendar'), 'search' => 'events dates recurrence activities'),
-            array('label' => 'Volunteer Needs', 'url' => add_query_arg('tool', 'volunteer-needs', $engagement), 'search' => 'serving opportunities help wanted'),
+            array('label' => 'Calendar Manager', 'permission' => 'calendar', 'url' => surfside_tools_staff_page_url('calendar'), 'search' => 'events dates recurrence activities'),
+            array('label' => 'Volunteer Needs', 'permission' => 'calendar', 'url' => add_query_arg('tool', 'volunteer-needs', $engagement), 'search' => 'serving opportunities help wanted'),
             array('label' => 'Calendar Defaults', 'url' => add_query_arg('view', 'defaults', surfside_tools_staff_page_url('calendar')), 'search' => 'calendar week mode current sunday saturday next seven days duration event defaults', 'cap' => 'manage_options'),
             array('label' => 'Saved Places', 'url' => add_query_arg('view', 'places', surfside_tools_staff_page_url('calendar')), 'search' => 'calendar location saved places addresses remove restore previously used', 'cap' => 'manage_options'),
         )),
         'community' => array('title' => 'Community & Communications', 'items' => array(
-            array('label' => 'Prayer Requests', 'url' => add_query_arg('tool', 'prayer-requests', $engagement), 'search' => 'prayers praises pending review prayer list'),
-            array('label' => 'Push Notifications', 'url' => surfside_tools_staff_page_url('mobile-app/push-notifications'), 'search' => 'app announcements alerts message audience send'),
+            array('label' => 'Prayer Requests', 'permission' => 'community', 'url' => add_query_arg('tool', 'prayer-requests', $engagement), 'search' => 'prayers praises pending review prayer list'),
+            array('label' => 'Push Notifications', 'permission' => 'community', 'url' => surfside_tools_staff_page_url('mobile-app/push-notifications'), 'search' => 'app announcements alerts message audience send'),
             array('label' => 'Contact Routing', 'url' => surfside_tools_staff_page_url('contact-routing'), 'search' => 'email recipient website contact form prayer', 'cap' => 'manage_options'),
         )),
         'appearance' => array('title' => 'Appearance', 'items' => array(
-            array('label' => 'Website Navigation', 'url' => surfside_tools_staff_page_url('site-navigation'), 'search' => 'header footer menus links', 'cap' => 'manage_options'),
-            array('label' => 'Homepage Photos', 'url' => surfside_tools_staff_page_url('homepage'), 'search' => 'website carousel pictures gallery'),
-            array('label' => 'App Home Experience', 'url' => surfside_tools_staff_page_url('mobile-app/home-experience'), 'search' => 'mobile hero image crop zoom'),
+            array('label' => 'Website Navigation', 'permission' => 'information', 'url' => surfside_tools_staff_page_url('site-navigation'), 'search' => 'header footer menus links', ),
+            array('label' => 'Homepage Photos', 'permission' => 'appearance', 'url' => surfside_tools_staff_page_url('homepage'), 'search' => 'website carousel pictures gallery'),
+            array('label' => 'App Home Experience', 'permission' => 'appearance', 'url' => surfside_tools_staff_page_url('mobile-app/home-experience'), 'search' => 'mobile hero image crop zoom'),
             array('label' => 'Reveal & Countdown Styling', 'url' => $settings . '#surfside-focus-reveal-countdown-styling', 'search' => 'visual CSS selectors design', 'cap' => 'manage_options'),
         )),
         'settings' => array('title' => 'Settings & Access', 'items' => array(
-            array('label' => 'Surfside Information', 'url' => surfside_tools_staff_page_url('surfside-information'), 'search' => 'church identity service times location social links', 'cap' => 'manage_options'),
+            array('label' => 'Surfside Information', 'permission' => 'information', 'url' => surfside_tools_staff_page_url('surfside-information'), 'search' => 'church identity service times location social links', ),
             array('label' => 'Integrations', 'url' => $settings, 'search' => 'connections configuration APIs', 'cap' => 'manage_options'),
             array('label' => 'Google Maps', 'url' => $settings . '#surfside-focus-google-maps', 'search' => 'places api key', 'cap' => 'manage_options'),
             array('label' => 'YouTube Integration', 'url' => $settings . '#surfside-focus-youtube-sermon-archive', 'search' => 'data API full sync playlist key', 'cap' => 'manage_options'),
@@ -129,6 +129,9 @@ function surfside_tools_workspace_catalog() {
         $group['key'] = $key;
         $group['url'] = surfside_tools_workspace_category_url($key);
         $group['items'] = array_values(array_filter($group['items'], function ($item) {
+            if (!empty($item['permission']) && !surfside_tools_staff_has_permission($item['permission'])) {
+                return false;
+            }
             if (($item['cap'] ?? '') === 'tools_admin') {
                 return function_exists('surfside_tools_current_user_is_tools_admin')
                     && surfside_tools_current_user_is_tools_admin();
