@@ -22,7 +22,7 @@ function surfside_tools_site_information_manager_handle_post() {
         return '';
     }
 
-    if (!current_user_can(surfside_tools_site_information_capability())) {
+    if (!(current_user_can(surfside_tools_site_information_capability()) || surfside_tools_staff_has_permission('information'))) {
         return surfside_tools_site_information_manager_notice('You do not have permission to update Surfside Information.', 'error');
     }
 
@@ -131,7 +131,7 @@ function surfside_tools_site_information_manager_handle_post() {
 }
 
 function surfside_tools_site_information_manager_media_assets() {
-    if (!is_user_logged_in() || !current_user_can(surfside_tools_site_information_capability())) {
+    if (!is_user_logged_in() || !(current_user_can(surfside_tools_site_information_capability()) || surfside_tools_staff_has_permission('information'))) {
         return;
     }
 
@@ -436,7 +436,7 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
             : '<p>Please log in.</p>';
     }
 
-    if (!current_user_can(surfside_tools_site_information_capability())) {
+    if (!(current_user_can(surfside_tools_site_information_capability()) || surfside_tools_staff_has_permission('information'))) {
         return '<div class="surfside-staff-shell"><p>You do not have permission to manage Surfside Information.</p></div>';
     }
 
