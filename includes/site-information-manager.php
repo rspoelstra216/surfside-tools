@@ -22,7 +22,7 @@ function surfside_tools_site_information_manager_handle_post() {
         return '';
     }
 
-    if (!current_user_can(surfside_tools_site_information_capability())) {
+    if (!(current_user_can(surfside_tools_site_information_capability()) || surfside_tools_staff_has_permission('information'))) {
         return surfside_tools_site_information_manager_notice('You do not have permission to update Surfside Information.', 'error');
     }
 
@@ -91,6 +91,9 @@ function surfside_tools_site_information_manager_handle_post() {
     $section = isset($_POST['surfside_information_section'])
         ? sanitize_key(wp_unslash($_POST['surfside_information_section']))
         : 'information';
+    if ($section === 'streaming' && !surfside_tools_current_user_is_tools_admin()) {
+        return surfside_tools_site_information_manager_notice('Only Tools Admin can change streaming destinations.', 'error');
+    }
     $updated_information = surfside_tools_get_site_information();
 
     if ($section === 'information') {
@@ -131,7 +134,7 @@ function surfside_tools_site_information_manager_handle_post() {
 }
 
 function surfside_tools_site_information_manager_media_assets() {
-    if (!is_user_logged_in() || !current_user_can(surfside_tools_site_information_capability())) {
+    if (!is_user_logged_in() || !(current_user_can(surfside_tools_site_information_capability()) || surfside_tools_staff_has_permission('information'))) {
         return;
     }
 
@@ -423,6 +426,9 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
         $section = 'information';
     }
     $section_config = $sections[$section];
+    if ($section === 'streaming' && !surfside_tools_current_user_is_tools_admin()) {
+        return '<p>Only Tools Admin can manage streaming destinations.</p>';
+    }
     if (function_exists('surfside_tools_prevent_cache')) {
         surfside_tools_prevent_cache();
     }
@@ -436,7 +442,7 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
             : '<p>Please log in.</p>';
     }
 
-    if (!current_user_can(surfside_tools_site_information_capability())) {
+    if (!(current_user_can(surfside_tools_site_information_capability()) || surfside_tools_staff_has_permission('information'))) {
         return '<div class="surfside-staff-shell"><p>You do not have permission to manage Surfside Information.</p></div>';
     }
 

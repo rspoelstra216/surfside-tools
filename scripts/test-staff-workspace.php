@@ -28,6 +28,16 @@ function current_user_can($cap) {
     return false;
 }
 function surfside_tools_current_user_is_tools_admin() { return $GLOBALS['ws_tools_admin']; }
+/** Simulate the shared role-permissions service in this standalone navigation test. */
+$GLOBALS['ws_staff_permissions'] = array_fill_keys(array(
+    'weekly', 'messages', 'calendar', 'community', 'appearance', 'ministries', 'information'
+), true);
+function surfside_tools_staff_has_permission($key) {
+    return $GLOBALS['ws_tools_admin'] || (
+        $GLOBALS['ws_logged_in'] && $GLOBALS['ws_upload']
+        && !empty($GLOBALS['ws_staff_permissions'][$key])
+    );
+}
 function get_queried_object_id() { return 100; }
 function get_the_ID() { return 100; }
 function get_page_uri($id) { return $GLOBALS['ws_uri']; }
@@ -187,11 +197,24 @@ $staff=surfside_tools_workspace_catalog();
 $staff_labels=array();
 foreach($staff as $section)foreach($section['items'] as $item)$staff_labels[]=$item['label'];
 foreach(array('Integrations','Staff Access','Streaming','Twitch Integration','Contact Routing',
-    'YouTube Integration','Saved Places','Ministries') as $hidden) {
+    'YouTube Integration','Saved Places') as $hidden) {
     check(!in_array($hidden,$staff_labels,true),'Privileged tool hidden from staff search: '.$hidden);
 }
-check(in_array('Prayer Requests',$staff_labels,true)&&in_array('Weekly Media',$staff_labels,true),
-    'Staff retain ordinary tools');
+check(in_array('Prayer Requests',$staff_labels,true)&&in_array('Weekly Media',$staff_labels,true)
+    && in_array('Ministries',$staff_labels,true)
+    && in_array('Surfside Information',$staff_labels,true),
+    'Staff inherit enabled role permissions including ministries and church information');
+$GLOBALS['ws_staff_permissions']['ministries'] = false;
+$GLOBALS['ws_staff_permissions']['information'] = false;
+$restricted_staff=surfside_tools_workspace_catalog();
+$restricted_labels=array();
+foreach($restricted_staff as $section)foreach($section['items'] as $item)$restricted_labels[]=$item['label'];
+foreach(array('Ministries','Surfside Information','Website Navigation') as $hidden) {
+    check(!in_array($hidden,$restricted_labels,true),
+        'Disabled shared staff permission removes navigation and search item: '.$hidden);
+}
+$GLOBALS['ws_staff_permissions']['ministries'] = true;
+$GLOBALS['ws_staff_permissions']['information'] = true;
 $mediaStaffHtml=surfside_tools_workspace_category_shortcode(array('key'=>'media'));
 check(!str_contains($mediaStaffHtml, '>Streaming</strong>') && str_contains($mediaStaffHtml, '>Weekly Media</strong>'),
     'Category landing obeys exactly the same staff permission filter as search and drawer');

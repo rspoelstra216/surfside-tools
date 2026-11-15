@@ -7,7 +7,7 @@ function surfside_tools_staff_ministries_manager_shortcode() {
     if (function_exists('surfside_tools_staff_enqueue_styles')) surfside_tools_staff_enqueue_styles();
     if (function_exists('surfside_tools_site_information_manager_assets')) surfside_tools_site_information_manager_assets();
     if (!is_user_logged_in()) return function_exists('surfside_tools_staff_login_box') ? surfside_tools_staff_login_box('Please log in to manage ministries.') : '<p>Please log in.</p>';
-    if (!current_user_can('manage_options')) return '<div class="surfside-staff-shell"><p>You do not have permission to manage ministries.</p></div>';
+    if (!surfside_tools_staff_has_permission('ministries')) return '<div class="surfside-staff-shell"><p>You do not have permission to manage ministries.</p></div>';
 
     $notice = '';
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['surfside_ministries_nonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['surfside_ministries_nonce'])), 'surfside_ministries_save')) {
