@@ -14,8 +14,8 @@ function surfside_tools_staff_permission_definitions() {
         'calendar' => array('label' => 'Calendar & Volunteers', 'description' => 'Manage calendar events and volunteer needs. Calendar defaults and saved-place administration stay admin-only.', 'default' => true),
         'community' => array('label' => 'Prayers & Communications', 'description' => 'Review prayer requests and send app push notifications. Contact routing stays admin-only.', 'default' => true),
         'appearance' => array('label' => 'Homepage & App Appearance', 'description' => 'Manage homepage photos and the app Home experience. Global website navigation stays separately controlled.', 'default' => true),
-        'ministries' => array('label' => 'Ministries', 'description' => 'Create, edit and publish ministries shown on the website and app.', 'default' => false),
-        'information' => array('label' => 'Church Information & Navigation', 'description' => 'Edit church information, service details and website navigation. Does not grant integrations, API keys, or general WordPress settings.', 'default' => false),
+        'ministries' => array('label' => 'Ministries', 'description' => 'Create, edit and publish ministries shown on the website and app.', 'default' => true),
+        'information' => array('label' => 'Church Information & Navigation', 'description' => 'Edit church information, service details and website navigation. Does not grant integrations, API keys, or general WordPress settings.', 'default' => true),
     );
 }
 
