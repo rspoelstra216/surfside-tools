@@ -48,7 +48,7 @@ function surfside_tools_role_management_handle_post() {
         foreach (surfside_tools_role_definitions() as $role => $name) {
             if ($role === 'admin') continue;
             $matrix[$role] = array();
-            foreach (surfside_tools_staff_permission_definitions() as $permission => $definition) {
+            foreach (surfside_tools_staff_all_permission_definitions() as $permission => $definition) {
                 $matrix[$role][$permission] = !empty($submitted[$role][$permission])
                     && $submitted[$role][$permission] === '1';
             }
@@ -64,7 +64,7 @@ function surfside_tools_render_role_permissions_matrix() {
     $notice = surfside_tools_role_management_handle_post();
     $roles = surfside_tools_role_definitions();
     $sections = array();
-    foreach (surfside_tools_staff_permission_definitions() as $key => $definition) {
+    foreach (surfside_tools_staff_all_permission_definitions() as $key => $definition) {
         $definition['key'] = $key;
         $definition['locked'] = false;
         $sections[$definition['group']][] = $definition;
@@ -102,7 +102,7 @@ function surfside_tools_render_role_permissions_matrix() {
     <div class="surfside-staff-panel surfside-role-management">
       <h2>Role Permissions</h2>
       <p class="surfside-staff-muted"><strong>Tools Admin</strong> is the protected full-access role. Configure any number of Staff and custom-role permissions below (up to 12 custom roles). Existing Staff permissions are preserved.</p>
-      <p class="surfside-staff-muted">Integration credentials, contact routing, staff access and other protected settings are displayed for clarity but cannot be delegated through this screen. WordPress site roles remain separate.</p>
+      <p class="surfside-staff-muted">Every permission except Staff Access &amp; Role Management can be assigned to Staff or a custom role. Granting All Integrations also grants each listed integration. WordPress site roles stay separate.</p>
       <?php if ($notice) : ?><p role="status"><strong><?php echo esc_html($notice); ?></strong></p><?php endif; ?>
       <form method="post" class="surfside-role-matrix-form">
         <?php wp_nonce_field('surfside_role_matrix', 'surfside_role_matrix_nonce'); ?>
@@ -142,7 +142,7 @@ function surfside_tools_render_role_permissions_matrix() {
             </tbody>
           </table>
         </div>
-        <p class="surfside-staff-muted">Unchecked items are denied. All people assigned to a role share its permissions.</p>
+        <p class="surfside-staff-muted">Unchecked items are denied unless All Integrations is enabled. All people assigned to a role share its permissions.</p>
         <button class="surfside-staff-button-secondary" type="submit" style="max-width:240px">Save Role Permissions</button>
       </form>
       <div class="surfside-role-creator">
