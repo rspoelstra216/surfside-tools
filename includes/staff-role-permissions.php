@@ -36,7 +36,12 @@ function surfside_tools_staff_protected_permission_definitions() {
         'saved_places' => array('label'=>'Saved Places Administration', 'group'=>'Events & Serving', 'description'=>'Saved location management.'),
         'contact_routing' => array('label'=>'Contact Routing', 'group'=>'Community & Communications', 'description'=>'Recipient addresses for contact and prayer forms.'),
         'design_settings' => array('label'=>'Reveal & Countdown Styling', 'group'=>'Appearance', 'description'=>'Global design settings.'),
-        'integrations' => array('label'=>'Integrations & API Credentials', 'group'=>'Administration & Integrations', 'description'=>'Integrations, Google Maps, YouTube, YouVersion, Giving and Cloudflare Turnstile.'),
+        'integrations' => array('label'=>'Integrations Overview & API Credentials', 'group'=>'Administration & Integrations', 'description'=>'Service connections and shared API secrets.'),
+        'google_maps' => array('label'=>'Google Maps / Places', 'group'=>'Administration & Integrations', 'description'=>'Maps API keys and location configuration.'),
+        'youtube_integration' => array('label'=>'YouTube Integration', 'group'=>'Administration & Integrations', 'description'=>'YouTube API keys and archive integration settings.'),
+        'youversion_integration' => array('label'=>'YouVersion Integration', 'group'=>'Administration & Integrations', 'description'=>'Bible API and translation integration configuration.'),
+        'giving' => array('label'=>'Giving Settings', 'group'=>'Administration & Integrations', 'description'=>'Donation destinations and giving integrations.'),
+        'turnstile' => array('label'=>'Cloudflare Turnstile', 'group'=>'Administration & Integrations', 'description'=>'Bot protection and verification keys.'),
         'staff_access' => array('label'=>'Staff Access & Role Management', 'group'=>'Administration & Integrations', 'description'=>'Assign roles, manage identities and edit permission policies.'),
     );
 }
