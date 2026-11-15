@@ -14,7 +14,7 @@ function surfside_tools_staff_site_settings_shortcode() {
             ? surfside_tools_staff_login_box('Please log in to manage church settings.')
             : '<p>Please log in.</p>';
     }
-    if (!current_user_can('manage_options')) {
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('site_settings_page') : current_user_can('manage_options'))) {
         return '<div class="surfside-staff-shell"><p>You do not have permission to manage Church Settings.</p></div>';
     }
 
@@ -62,6 +62,8 @@ function surfside_tools_staff_site_settings_shortcode() {
         </section>
         <div class="surfside-staff-grid">
             <?php foreach ($cards as $card) : ?>
+                <?php $required = array('surfside-information'=>'information','site-ministries'=>'ministries','contact-routing'=>'contact_routing','site-settings/streaming'=>'streaming','settings'=>'integrations_page');
+                    if (function_exists('surfside_tools_staff_has_permission') && !surfside_tools_staff_has_permission($required[$card['path']] ?? 'staff_access')) continue; ?>
                 <article class="surfside-staff-card">
                     <span class="surfside-staff-icon"><?php echo surfside_tools_staff_icon($card['icon']); ?></span>
                     <h2><?php echo esc_html($card['title']); ?></h2>
