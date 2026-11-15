@@ -91,6 +91,9 @@ function surfside_tools_site_information_manager_handle_post() {
     $section = isset($_POST['surfside_information_section'])
         ? sanitize_key(wp_unslash($_POST['surfside_information_section']))
         : 'information';
+    if ($section === 'streaming' && !surfside_tools_current_user_is_tools_admin()) {
+        return surfside_tools_site_information_manager_notice('Only Tools Admin can change streaming destinations.', 'error');
+    }
     $updated_information = surfside_tools_get_site_information();
 
     if ($section === 'information') {
@@ -423,6 +426,9 @@ function surfside_tools_staff_site_information_shortcode($attributes = array()) 
         $section = 'information';
     }
     $section_config = $sections[$section];
+    if ($section === 'streaming' && !surfside_tools_current_user_is_tools_admin()) {
+        return '<p>Only Tools Admin can manage streaming destinations.</p>';
+    }
     if (function_exists('surfside_tools_prevent_cache')) {
         surfside_tools_prevent_cache();
     }
