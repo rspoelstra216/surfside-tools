@@ -17,6 +17,8 @@ function surfside_tools_wp_tools_role($user) {
     if ($role === 'disabled' || surfside_tools_role_is_assignable($role)) {
         return $role;
     }
+    // A removed/unknown custom role must not silently revert to Staff access.
+    if ($role !== '') return 'disabled';
 
     if (in_array('administrator', (array) $user->roles, true)) {
         $role = 'admin';
@@ -36,6 +38,28 @@ function surfside_tools_set_wp_tools_role($user_id, $role) {
         return false;
     }
 
+    // Preserve a final Tools administrator (separate from WordPress admin count).
+    if ($role !== 'admin' && surfside_tools_wp_tools_role($user) === 'admin') {
+        $other_admin = false;
+        foreach (surfside_tools_wp_real_users() as $candidate) {
+            if ((int) $candidate->ID !== (int) $user->ID && surfside_tools_wp_tools_role($candidate) === 'admin') {
+                $other_admin = true;
+                break;
+            }
+        }
+        if (!$other_admin) {
+            foreach (surfside_tools_get_permissions() as $record) {
+                if (($record['role'] ?? '') === 'admin') {
+                    $linked = surfside_tools_get_linked_wp_user_id($record['uid'] ?? '');
+                    if ((int) $linked !== (int) $user->ID) {
+                        $other_admin = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!$other_admin) return false;
+    }
     update_user_meta($user->ID, surfside_tools_wp_tools_role_meta_key(), $role);
 
     $uid = surfside_tools_permission_uid_for_wp_user($user->ID);
