@@ -259,6 +259,10 @@ function surfside_tools_staff_calendar_shortcode() {
 
     $view = function_exists('surfside_tools_calendar_workspace_view')
         ? surfside_tools_calendar_workspace_view() : 'events';
+    if ($view === 'events' && function_exists('surfside_tools_staff_has_permission')
+        && !surfside_tools_staff_has_permission('calendar')) {
+        return '<div class="surfside-staff-shell"><p>You do not have permission to manage calendar events.</p></div>';
+    }
     if ($view !== 'events' && !(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission($view === 'defaults' ? 'calendar_defaults' : 'saved_places') : current_user_can('manage_options'))) {
         return '<div class="surfside-staff-shell"><p>You do not have permission to manage calendar settings.</p></div>';
     }
