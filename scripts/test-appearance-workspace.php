@@ -37,6 +37,14 @@ function add_shortcode(...$args){}
 function is_user_logged_in(){return $GLOBALS['logged_in'];}
 function current_user_can($cap) {return $cap==='upload_files'?$GLOBALS['can_upload']:$GLOBALS['can_admin'];}
 function surfside_tools_staff_login_box($m=''){return '<p>Login required</p>';}
+/** Standalone permission fixture: Tools Staff uses shared feature toggles. */
+$GLOBALS['staff_information_enabled'] = true;
+function surfside_tools_current_user_is_tools_admin() { return $GLOBALS['can_admin']; }
+function surfside_tools_staff_has_permission($key) {
+    if ($GLOBALS['can_admin']) return true;
+    return $GLOBALS['logged_in'] && $GLOBALS['can_upload']
+        && $key === 'information' && $GLOBALS['staff_information_enabled'];
+}
 function surfside_tools_prevent_cache(){}
 function surfside_tools_staff_enqueue_styles(){}
 function surfside_tools_staff_page_url($path=''){return 'https://surfsidefellowship.org/dashboard/'.trim($path,'/').'/';}
@@ -186,9 +194,14 @@ check(strpos($blocked,'do not have permission')!==false,
     'Nonstaff may not access App Home editor');
 $GLOBALS['can_upload']=true;
 $GLOBALS['can_admin']=false;
+$staffNavigation=surfside_tools_staff_site_information_shortcode(array('section'=>'navigation'));
+check(strpos($staffNavigation,'do not have permission')===false
+    && strpos($staffNavigation,'Save Navigation')!==false,
+    'Staff with Church Information permission can access website navigation');
+$GLOBALS['staff_information_enabled']=false;
 $blocked=surfside_tools_staff_site_information_shortcode(array('section'=>'navigation'));
 check(strpos($blocked,'do not have permission')!==false,
-    'Website Navigation retains admin-only permission gate');
+    'Website Navigation is denied when shared staff permission is disabled');
 
 $css=file_get_contents(dirname(__DIR__).'/assets/css/appearance-workspace.css');
 $loader=file_get_contents(dirname(__DIR__).'/includes/staff-workspace-navigation.php');
