@@ -181,6 +181,16 @@ function surfside_tools_render_role_permissions_matrix() {
     // integration permissions in its own role column.
     document.addEventListener('change', function (event) {
       var box = event.target;
+      if (box.matches('.surfside-role-matrix [data-tools-integration-child]')) {
+        // Selecting All Integrations must not override a deliberately revoked
+        // individual service permission.
+        if (!box.checked) {
+          document.querySelectorAll('.surfside-role-matrix [data-tools-all-integrations]').forEach(function (all) {
+            if (all.getAttribute('data-tools-role') === box.getAttribute('data-tools-role')) all.checked = false;
+          });
+        }
+        return;
+      }
       if (!box.matches('.surfside-role-matrix [data-tools-all-integrations]')) return;
       var role = box.getAttribute('data-tools-role');
       document.querySelectorAll('.surfside-role-matrix [data-tools-integration-child]').forEach(function (child) {
