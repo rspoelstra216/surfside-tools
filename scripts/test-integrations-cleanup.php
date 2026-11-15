@@ -183,8 +183,10 @@ check(strpos($youversion, 'name="surfside_youversion_settings_action" value="sav
 check(strpos($visual, 'Save Visual CSS') !== false &&
       strpos($visual, "'surfside_visual_css_settings'") !== false,
     'Visual CSS nonce and save remain');
-check(strpos($shared, 'Save Giving &amp; Turnstile') !== false &&
-      strpos($shared, "'surfside_church_integrations_save'") !== false,
-    'Shared service save and nonce remain');
+check(strpos($shared, "wp_nonce_field('surfside_church_integrations_save'") !== false &&
+      strpos($shared, 'if ($can_giving)') !== false &&
+      strpos($shared, 'if ($can_turnstile)') !== false &&
+      strpos($shared, "Save <?php echo $can_giving") !== false,
+    'Shared service nonce and independent Giving/Turnstile saves remain');
 
 echo "PASS: Integrations grouping, local saves, old-link redirects, permissions and options\n";
