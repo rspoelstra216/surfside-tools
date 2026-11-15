@@ -22,7 +22,11 @@ function surfside_tools_site_information_manager_handle_post() {
         return '';
     }
 
-    if (!surfside_tools_staff_has_permission($section === 'navigation' ? 'website_navigation' : 'information')) {
+    $section = isset($_POST['surfside_information_section'])
+        ? sanitize_key(wp_unslash($_POST['surfside_information_section'])) : 'information';
+    $required = $section === 'streaming' ? 'streaming'
+        : ($section === 'navigation' ? 'website_navigation' : 'information');
+    if (!surfside_tools_staff_has_permission($required)) {
         return surfside_tools_site_information_manager_notice('You do not have permission to update Surfside Information.', 'error');
     }
 
