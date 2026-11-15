@@ -29,7 +29,7 @@ function wp_json_encode($v) { return json_encode($v); }
 function wp_unslash($v) { return $v; }
 function wp_verify_nonce($token, $action) { return $token === 'good' && $action === 'surfside_information_update'; }
 function current_user_can($capability) { return $capability === 'manage_options'; }
-function surfside_tools_staff_has_permission($key) { return false; }
+function surfside_tools_staff_has_permission($key) { return in_array($key, array('information','website_navigation'), true); }
 function esc_attr($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 function esc_html($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 function esc_textarea($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
