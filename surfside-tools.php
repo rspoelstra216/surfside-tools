@@ -62,6 +62,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-admin-push.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/mobile-admin-featured-announcement.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-access-wordpress.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-role-permissions.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/staff-roles-ui.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-access-unified.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/firebase-staff-login.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/staff-login-wordpress.php';
