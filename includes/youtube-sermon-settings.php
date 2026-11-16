@@ -13,7 +13,7 @@ function surfside_tools_youtube_settings_notice($message, $type = 'success') {
 }
 
 function surfside_tools_youtube_settings_action() {
-    if (!current_user_can('manage_options')) wp_die('You do not have permission to manage YouTube integration.', '', array('response' => 403));
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('youtube_integration') : current_user_can('manage_options'))) wp_die('You do not have permission to manage YouTube integration.', '', array('response' => 403));
     check_admin_referer('surfside_youtube_settings', 'surfside_youtube_nonce');
 
     $action = isset($_POST['youtube_action']) && is_string($_POST['youtube_action'])
@@ -102,7 +102,7 @@ function surfside_tools_youtube_settings_frontend_post() {
 add_action('template_redirect', 'surfside_tools_youtube_settings_frontend_post', 1);
 
 function surfside_tools_youtube_settings_panel() {
-    if (!is_user_logged_in() || !current_user_can('manage_options')) return '';
+    if (!is_user_logged_in() || !(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('youtube_integration') : current_user_can('manage_options'))) return '';
     $config = surfside_tools_youtube_config();
     $configured = surfside_tools_youtube_api_key() !== '' && $config['channel_ref'] !== '';
     $state = surfside_tools_youtube_state();

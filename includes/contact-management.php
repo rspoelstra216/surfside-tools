@@ -29,7 +29,7 @@ function surfside_tools_contact_recipient($category){$settings=surfside_tools_co
 function surfside_tools_staff_contact_management_shortcode(){
     surfside_tools_prevent_cache(); surfside_tools_staff_enqueue_styles();
     if(!is_user_logged_in())return surfside_tools_staff_login_box('Please log in to manage contact routing.');
-    if(!current_user_can('manage_options'))return '<div class="surfside-staff-shell"><p>You do not have permission to manage contact routing.</p></div>';
+    if(!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('contact_routing') : current_user_can('manage_options')))return '<div class="surfside-staff-shell"><p>You do not have permission to manage contact routing.</p></div>';
     $saved=false;
     if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['surfside_contact_nonce'])&&wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['surfside_contact_nonce'])),'surfside_contact_save')){
         $existing=get_option('surfside_tools_contact_settings',array()); $existing=is_array($existing)?$existing:array();

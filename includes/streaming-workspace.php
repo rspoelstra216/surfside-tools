@@ -41,7 +41,7 @@ function surfside_tools_streaming_workspace_tabs() {
 
 /** Existing site-information and Twitch editors handle their own authorized POSTs. */
 function surfside_tools_streaming_workspace_secondary() {
-    if (!is_user_logged_in() || !current_user_can('manage_options')) {
+    if (!is_user_logged_in() || !(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('streaming') : current_user_can('manage_options'))) {
         return '<p>You do not have permission to manage streaming.</p>';
     }
     if (function_exists('surfside_tools_prevent_cache')) surfside_tools_prevent_cache();
@@ -93,7 +93,7 @@ function surfside_tools_streaming_workspace_secondary() {
 
 /** WordPress media picker must be enqueued before page output on Watch Live. */
 function surfside_tools_streaming_workspace_watch_media_assets() {
-    if (!is_user_logged_in() || !current_user_can('manage_options')) return;
+    if (!is_user_logged_in() || !(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('streaming') : current_user_can('manage_options'))) return;
     if (!is_page() || surfside_tools_streaming_workspace_tab() !== 'watch') return;
     $post = get_queried_object();
     if (!($post instanceof WP_Post) || trim((string) get_page_uri($post->ID), '/') !== 'dashboard/site-settings/streaming') return;
@@ -102,7 +102,7 @@ function surfside_tools_streaming_workspace_watch_media_assets() {
 add_action('wp_enqueue_scripts', 'surfside_tools_streaming_workspace_watch_media_assets', 20);
 
 function surfside_tools_streaming_workspace_styles() {
-    if (!is_user_logged_in() || !current_user_can('manage_options') || !is_page()) return;
+    if (!is_user_logged_in() || !(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('streaming') : current_user_can('manage_options')) || !is_page()) return;
     $post = get_queried_object();
     if (!($post instanceof WP_Post) || trim((string) get_page_uri($post->ID), '/') !== 'dashboard/site-settings/streaming') return;
     wp_enqueue_style('surfside-streaming-workspace', SURFSIDE_TOOLS_URL . 'assets/css/streaming-workspace.css', array(), SURFSIDE_TOOLS_VERSION);

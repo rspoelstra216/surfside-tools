@@ -9,7 +9,11 @@ function surfside_tools_church_settings_shared_save() {
     ) {
         return '';
     }
-    if (!current_user_can('manage_options')) {
+    $can_giving = function_exists('surfside_tools_staff_has_permission')
+        ? surfside_tools_staff_has_permission('giving') : current_user_can('manage_options');
+    $can_turnstile = function_exists('surfside_tools_staff_has_permission')
+        ? surfside_tools_staff_has_permission('turnstile') : current_user_can('manage_options');
+    if (!$can_giving && !$can_turnstile) {
         return '<div class="surfside-front-settings-notice surfside-front-settings-error">You do not have permission to change integration settings.</div>';
     }
     $nonce = isset($_POST['surfside_church_integrations_nonce']) ? sanitize_text_field(wp_unslash($_POST['surfside_church_integrations_nonce'])) : '';
@@ -17,24 +21,32 @@ function surfside_tools_church_settings_shared_save() {
         return '<div class="surfside-front-settings-notice surfside-front-settings-error">Security check failed. Please refresh and try again.</div>';
     }
 
-    $app = function_exists('surfside_tools_app_settings') ? surfside_tools_app_settings() : array();
-    $app['giving_url'] = esc_url_raw(trim((string) wp_unslash($_POST['giving_url'] ?? '')));
-    update_option('surfside_tools_app_settings', $app);
-
-    $contact = get_option('surfside_tools_contact_settings', array());
-    $contact = is_array($contact) ? $contact : array();
-    $contact['recipients'] = is_array($contact['recipients'] ?? null) ? $contact['recipients'] : array();
-    $contact['turnstile_site_key'] = sanitize_text_field(wp_unslash($_POST['turnstile_site_key'] ?? ''));
-    $secret = sanitize_text_field(wp_unslash($_POST['turnstile_secret_key'] ?? ''));
-    if ($secret !== '') {
-        $contact['turnstile_secret_key'] = $secret;
+    // Save only fields explicitly allowed for this role. One integration form
+    // must never clear the credentials or destination of another integration.
+    if ($can_giving) {
+        $app = function_exists('surfside_tools_app_settings') ? surfside_tools_app_settings() : array();
+        $app['giving_url'] = esc_url_raw(trim((string) wp_unslash($_POST['giving_url'] ?? '')));
+        update_option('surfside_tools_app_settings', $app);
     }
-    update_option('surfside_tools_contact_settings', $contact);
+    if ($can_turnstile) {
+        $contact = get_option('surfside_tools_contact_settings', array());
+        $contact = is_array($contact) ? $contact : array();
+        $contact['recipients'] = is_array($contact['recipients'] ?? null) ? $contact['recipients'] : array();
+        $contact['turnstile_site_key'] = sanitize_text_field(wp_unslash($_POST['turnstile_site_key'] ?? ''));
+        $secret = sanitize_text_field(wp_unslash($_POST['turnstile_secret_key'] ?? ''));
+        if ($secret !== '') $contact['turnstile_secret_key'] = $secret;
+        update_option('surfside_tools_contact_settings', $contact);
+    }
 
     return '<div class="surfside-front-settings-notice surfside-front-settings-success">Integration settings saved.</div>';
 }
 
 function surfside_tools_church_settings_shared_integrations_panel() {
+    $can_giving = function_exists('surfside_tools_staff_has_permission')
+        ? surfside_tools_staff_has_permission('giving') : current_user_can('manage_options');
+    $can_turnstile = function_exists('surfside_tools_staff_has_permission')
+        ? surfside_tools_staff_has_permission('turnstile') : current_user_can('manage_options');
+    if (!$can_giving && !$can_turnstile) return '';
     $app = function_exists('surfside_tools_app_settings') ? surfside_tools_app_settings() : array();
     $giving_url = esc_url($app['giving_url'] ?? '');
     $contact = function_exists('surfside_tools_contact_settings') ? surfside_tools_contact_settings() : array();
@@ -49,6 +61,7 @@ function surfside_tools_church_settings_shared_integrations_panel() {
         <?php wp_nonce_field('surfside_church_integrations_save', 'surfside_church_integrations_nonce'); ?>
         <input type="hidden" name="surfside_church_integrations_action" value="save_shared_integrations">
 
+        <?php if ($can_giving) : ?>
         <details class="surfside-front-settings-card surfside-integration-card">
             <summary><span>Giving</span><span class="surfside-integration-status"><?php echo esc_html($giving_status); ?></span></summary>
             <div class="surfside-integration-body">
@@ -59,6 +72,8 @@ function surfside_tools_church_settings_shared_integrations_panel() {
             </div>
         </details>
 
+        <?php endif; ?>
+        <?php if ($can_turnstile) : ?>
         <details class="surfside-front-settings-card surfside-integration-card">
             <summary><span>Cloudflare Turnstile</span><span class="surfside-integration-status"><?php echo esc_html($turnstile_status); ?></span></summary>
             <div class="surfside-integration-body">
@@ -71,7 +86,8 @@ function surfside_tools_church_settings_shared_integrations_panel() {
             </div>
         </details>
 
-        <p class="surfside-shared-integrations-save"><button type="submit" class="surfside-front-primary-button">Save Giving &amp; Turnstile</button></p>
+        <?php endif; ?>
+        <p class="surfside-shared-integrations-save"><button type="submit" class="surfside-front-primary-button">Save <?php echo $can_giving && $can_turnstile ? 'Giving &amp; Turnstile' : ($can_giving ? 'Giving' : 'Turnstile'); ?></button></p>
     </form>
     <?php
     return ob_get_clean();

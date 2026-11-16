@@ -48,7 +48,7 @@ function surfside_tools_role_management_handle_post() {
         foreach (surfside_tools_role_definitions() as $role => $name) {
             if ($role === 'admin') continue;
             $matrix[$role] = array();
-            foreach (surfside_tools_staff_permission_definitions() as $permission => $definition) {
+            foreach (surfside_tools_staff_all_permission_definitions() as $permission => $definition) {
                 $matrix[$role][$permission] = !empty($submitted[$role][$permission])
                     && $submitted[$role][$permission] === '1';
             }
@@ -64,7 +64,7 @@ function surfside_tools_render_role_permissions_matrix() {
     $notice = surfside_tools_role_management_handle_post();
     $roles = surfside_tools_role_definitions();
     $sections = array();
-    foreach (surfside_tools_staff_permission_definitions() as $key => $definition) {
+    foreach (surfside_tools_staff_all_permission_definitions() as $key => $definition) {
         $definition['key'] = $key;
         $definition['locked'] = false;
         $sections[$definition['group']][] = $definition;
@@ -102,7 +102,7 @@ function surfside_tools_render_role_permissions_matrix() {
     <div class="surfside-staff-panel surfside-role-management">
       <h2>Role Permissions</h2>
       <p class="surfside-staff-muted"><strong>Tools Admin</strong> is the protected full-access role. Configure any number of Staff and custom-role permissions below (up to 12 custom roles). Existing Staff permissions are preserved.</p>
-      <p class="surfside-staff-muted">Integration credentials, contact routing, staff access and other protected settings are displayed for clarity but cannot be delegated through this screen. WordPress site roles remain separate.</p>
+      <p class="surfside-staff-muted">Every permission except Staff Access &amp; Role Management can be assigned to Staff or a custom role. Granting All Integrations also grants each listed integration. WordPress site roles stay separate.</p>
       <?php if ($notice) : ?><p role="status"><strong><?php echo esc_html($notice); ?></strong></p><?php endif; ?>
       <form method="post" class="surfside-role-matrix-form">
         <?php wp_nonce_field('surfside_role_matrix', 'surfside_role_matrix_nonce'); ?>
@@ -128,10 +128,18 @@ function surfside_tools_render_role_permissions_matrix() {
                           <input type="checkbox" checked disabled aria-label="<?php echo esc_attr($label . ': ' . $definition['label'] . ' (always allowed)'); ?>">
                         <?php elseif ($definition['locked']) : ?>
                           <span class="surfside-role-locked" title="Reserved for Tools Admin">—</span>
-                        <?php else : ?>
+                        <?php else :
+                          $is_service = in_array($definition['key'], array('google_maps','youtube_integration',
+                              'youversion_integration','giving','turnstile'), true);
+                          $effective_checked = !empty($values[$role][$definition['key']])
+                              || ($is_service && !empty($values[$role]['integrations']));
+                        ?>
                           <input type="checkbox"
                             name="role_permissions[<?php echo esc_attr($role); ?>][<?php echo esc_attr($definition['key']); ?>]" value="1"
-                            <?php checked(!empty($values[$role][$definition['key']])); ?>
+                            data-tools-role="<?php echo esc_attr($role); ?>"
+                            <?php if ($definition['key'] === 'integrations') : ?>data-tools-all-integrations="1"<?php endif; ?>
+                            <?php if ($is_service) : ?>data-tools-integration-child="1"<?php endif; ?>
+                            <?php checked($effective_checked); ?>
                             aria-label="<?php echo esc_attr($label . ': ' . $definition['label']); ?>">
                         <?php endif; ?>
                       </td>
@@ -142,7 +150,7 @@ function surfside_tools_render_role_permissions_matrix() {
             </tbody>
           </table>
         </div>
-        <p class="surfside-staff-muted">Unchecked items are denied. All people assigned to a role share its permissions.</p>
+        <p class="surfside-staff-muted">Unchecked items are denied unless All Integrations is enabled. All people assigned to a role share its permissions.</p>
         <button class="surfside-staff-button-secondary" type="submit" style="max-width:240px">Save Role Permissions</button>
       </form>
       <div class="surfside-role-creator">
@@ -169,6 +177,26 @@ function surfside_tools_render_role_permissions_matrix() {
       </div>
     </div>
     <script>
+    // "All Integrations" is an explicit select/deselect-all control for the
+    // integration permissions in its own role column.
+    document.addEventListener('change', function (event) {
+      var box = event.target;
+      if (box.matches('.surfside-role-matrix [data-tools-integration-child]')) {
+        // Selecting All Integrations must not override a deliberately revoked
+        // individual service permission.
+        if (!box.checked) {
+          document.querySelectorAll('.surfside-role-matrix [data-tools-all-integrations]').forEach(function (all) {
+            if (all.getAttribute('data-tools-role') === box.getAttribute('data-tools-role')) all.checked = false;
+          });
+        }
+        return;
+      }
+      if (!box.matches('.surfside-role-matrix [data-tools-all-integrations]')) return;
+      var role = box.getAttribute('data-tools-role');
+      document.querySelectorAll('.surfside-role-matrix [data-tools-integration-child]').forEach(function (child) {
+        if (child.getAttribute('data-tools-role') === role) child.checked = box.checked;
+      });
+    });
     document.addEventListener('click', function (event) {
       var button = event.target.closest('.surfside-role-group button');
       if (!button) return;

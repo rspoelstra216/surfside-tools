@@ -18,11 +18,13 @@ function surfside_tools_frontend_settings_handle_post() {
         return '';
     }
 
-    if (!current_user_can('manage_options')) {
+    $action = sanitize_key(wp_unslash($_POST['surfside_front_settings_action']));
+    $required = $action === 'save_settings' ? 'google_maps'
+        : (in_array($action, array('delete_saved_place','hide_calendar_place','restore_calendar_place'), true)
+            ? 'saved_places' : 'integrations');
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission($required) : current_user_can('manage_options'))) {
         return surfside_tools_frontend_settings_notice('You do not have permission to change these settings.', 'error');
     }
-
-    $action = sanitize_key(wp_unslash($_POST['surfside_front_settings_action']));
     if (empty($_POST['surfside_front_settings_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['surfside_front_settings_nonce'])), 'surfside_front_settings')) {
         return surfside_tools_frontend_settings_notice('Security check failed. Please refresh and try again.', 'error');
     }
@@ -91,7 +93,7 @@ function surfside_tools_staff_settings_shortcode() {
     if (!is_user_logged_in()) {
         return function_exists('surfside_tools_staff_login_box') ? surfside_tools_staff_login_box('Please log in to access settings.') : '<p>Please log in.</p>';
     }
-    if (!current_user_can('manage_options')) {
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('integrations_page') : current_user_can('manage_options'))) {
         return '<div class="surfside-staff-shell"><p>You do not have permission to manage Surfside Tools settings.</p></div>';
     }
 
@@ -103,7 +105,8 @@ function surfside_tools_staff_settings_shortcode() {
     // render the current Twitch editor in the Streaming workspace.
     $twitch_notice = surfside_tools_twitch_settings_handle_post();
     $settings = get_option('surfside_tools_settings', array());
-    $api_key = (string) ($settings['google_maps_api_key'] ?? '');
+    $can_maps = function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('google_maps') : current_user_can('manage_options');
+    $api_key = $can_maps ? (string) ($settings['google_maps_api_key'] ?? '') : '';
     $church_settings_url = function_exists('surfside_tools_staff_page_url')
         ? surfside_tools_staff_page_url('site-settings')
         : home_url('/dashboard/site-settings/');
@@ -133,6 +136,7 @@ function surfside_tools_staff_settings_shortcode() {
             <h2 id="surfside-integrations-connections">External connections</h2>
             <p>API credentials and metadata synchronization for content and locations.</p>
           </div>
+        <?php if ($can_maps) : ?>
         <form method="post" class="surfside-front-settings-form">
             <?php wp_nonce_field('surfside_front_settings', 'surfside_front_settings_nonce'); ?>
             <input type="hidden" name="surfside_front_settings_action" value="save_settings">
@@ -154,6 +158,7 @@ function surfside_tools_staff_settings_shortcode() {
             <p><button type="submit" class="surfside-front-primary-button">Save Google Maps Settings</button></p>
         </form>
 
+        <?php endif; ?>
         <?php if (function_exists('surfside_tools_youtube_settings_panel')) echo surfside_tools_youtube_settings_panel(); ?>
         <?php if (function_exists('surfside_tools_youversion_settings_panel')) echo surfside_tools_youversion_settings_panel(); ?>
         </section>

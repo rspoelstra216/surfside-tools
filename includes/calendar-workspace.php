@@ -22,10 +22,8 @@ function surfside_tools_calendar_workspace_url($view = 'events') {
 function surfside_tools_calendar_workspace_tabs() {
     $active = surfside_tools_calendar_workspace_view();
     $tabs = array('events' => 'Manage Events');
-    if (current_user_can('manage_options')) {
-        $tabs['defaults'] = 'Calendar Defaults';
-        $tabs['places'] = 'Saved Places';
-    }
+    if (function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('calendar_defaults') : current_user_can('manage_options')) $tabs['defaults'] = 'Calendar Defaults';
+    if (function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('saved_places') : current_user_can('manage_options')) $tabs['places'] = 'Saved Places';
     ob_start(); ?>
     <nav class="surfside-calendar-workspace-tabs" aria-label="Calendar management">
       <?php foreach ($tabs as $view => $label) : ?>
@@ -44,7 +42,7 @@ function surfside_tools_calendar_workspace_tabs() {
 function surfside_tools_calendar_defaults_handle_post() {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' ||
         !isset($_POST['surfside_calendar_preferences_action'])) return '';
-    if (!current_user_can('manage_options')) {
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('calendar_defaults') : current_user_can('manage_options'))) {
         return surfside_tools_frontend_settings_notice('You do not have permission to change calendar settings.', 'error');
     }
     $nonce = isset($_POST['surfside_calendar_preferences_nonce']) && is_string($_POST['surfside_calendar_preferences_nonce'])
@@ -79,7 +77,7 @@ function surfside_tools_calendar_places_handle_post() {
 }
 
 function surfside_tools_calendar_defaults_panel() {
-    if (!current_user_can('manage_options')) return '<p>You do not have permission to manage calendar defaults.</p>';
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('calendar_defaults') : current_user_can('manage_options'))) return '<p>You do not have permission to manage calendar defaults.</p>';
     $notice = surfside_tools_calendar_defaults_handle_post();
     $stored = get_option('surfside_tools_settings', array());
     $settings = is_array($stored) ? $stored : array();
@@ -113,7 +111,7 @@ function surfside_tools_calendar_defaults_panel() {
 }
 
 function surfside_tools_calendar_places_panel() {
-    if (!current_user_can('manage_options')) return '<p>You do not have permission to manage saved places.</p>';
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('saved_places') : current_user_can('manage_options'))) return '<p>You do not have permission to manage saved places.</p>';
     $notice = surfside_tools_calendar_places_handle_post();
     list($saved, $calendar_places) = surfside_tools_frontend_saved_places_data();
     $hidden = function_exists('surfside_tools_get_hidden_place_names')

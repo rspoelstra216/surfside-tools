@@ -189,7 +189,7 @@ function surfside_tools_handle_visual_css_settings() {
         return;
     }
 
-    if (!is_user_logged_in() || !current_user_can('manage_options')) {
+    if (!is_user_logged_in() || !(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('design_settings') : current_user_can('manage_options'))) {
         return;
     }
 
@@ -232,7 +232,7 @@ function surfside_tools_enqueue_visual_custom_css() {
 add_action('wp_enqueue_scripts', 'surfside_tools_enqueue_visual_custom_css', 30);
 
 function surfside_tools_visual_css_settings_panel() {
-    if (!is_user_logged_in() || !current_user_can('manage_options')) {
+    if (!is_user_logged_in() || !(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('design_settings') : current_user_can('manage_options'))) {
         return '';
     }
 

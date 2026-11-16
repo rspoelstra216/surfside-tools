@@ -30,9 +30,10 @@ require dirname(__DIR__) . '/includes/staff-roles-ui.php';
 verify_role(surfside_tools_role_definitions() === array('admin'=>'Tools Admin','staff'=>'Tools Staff'),
     'Built-in Tools roles remain intact');
 verify_role(count(surfside_tools_staff_permission_definitions()) >= 15, 'All feature-level permissions available');
-verify_role(count(surfside_tools_staff_protected_permission_definitions()) >= 7, 'Sensitive admin-only tools visible in matrix');
+verify_role(count(surfside_tools_staff_advanced_permission_definitions()) >= 11, 'Additional capabilities independently assignable');
+verify_role(count(surfside_tools_staff_protected_permission_definitions()) === 1, 'Role management remains nondelegable');
 verify_role(surfside_tools_staff_has_permission('calendar'), 'Existing Staff features default to allowed');
-verify_role(!surfside_tools_staff_has_permission('integrations'), 'Sensitive settings are not delegated to Staff');
+verify_role(!surfside_tools_staff_has_permission('integrations') && !surfside_tools_staff_has_permission('saved_places'), 'Advanced permissions remain disabled by default');
 
 $GLOBALS['role_options']['surfside_tools_staff_role_permissions'] = array(
     'weekly'=>false, 'messages'=>true, 'information'=>false
@@ -51,21 +52,31 @@ verify_role(surfside_tools_role_is_assignable('calendar-editor'), 'New role beco
 $_POST = array('surfside_role_matrix_nonce'=>'valid',
     'role_permissions'=>array(
         'staff'=>array('weekly'=>'1', 'calendar'=>'1'),
-        'calendar-editor'=>array('calendar'=>'1', 'volunteers'=>'1', 'integrations'=>'1')
+        'calendar-editor'=>array('calendar'=>'1', 'volunteers'=>'1', 'integrations'=>'1', 'staff_access'=>'1')
     ));
 verify_role(str_contains(surfside_tools_role_management_handle_post(), 'saved'), 'Admin saves matrix');
 $GLOBALS['role_firebase'] = array('role'=>'calendar-editor');
 verify_role(surfside_tools_staff_has_permission('calendar'), 'Custom role receives allowed calendar feature');
 verify_role(surfside_tools_staff_has_permission('volunteers'), 'Custom role receives allowed volunteers feature');
 verify_role(!surfside_tools_staff_has_permission('weekly'), 'Custom role does not inherit Staff permissions');
-verify_role(!surfside_tools_staff_has_permission('integrations'), 'Forged admin-only permission is not accepted');
+verify_role(surfside_tools_staff_has_permission('integrations'), 'Assigned role can receive All Integrations');
+verify_role(surfside_tools_staff_has_permission('youtube_integration') && surfside_tools_staff_has_permission('giving'),
+    'All Integrations grants its service-specific permissions');
 verify_role(!surfside_tools_staff_has_permission('not_a_permission'), 'Unknown permissions denied');
 verify_role(!surfside_tools_staff_has_permission('staff_access'), 'Staff management protected');
+
+// A role with just one integration can open its page without other credentials.
+$GLOBALS['role_options']['surfside_tools_role_matrix']['staff']['google_maps'] = true;
+$GLOBALS['role_firebase'] = array('role'=>'staff');
+verify_role(surfside_tools_staff_has_permission('google_maps') && surfside_tools_staff_has_permission('integrations_page'),
+    'Maps-only role can access the relevant Integrations editor');
+verify_role(!surfside_tools_staff_has_permission('youtube_integration') && !surfside_tools_staff_has_permission('turnstile'),
+    'Maps-only permission does not unlock other integration credentials');
 
 $GLOBALS['role_firebase'] = array('role'=>'admin');
 verify_role(surfside_tools_staff_has_permission('integrations'), 'Admin retains integrations');
 verify_role(surfside_tools_staff_has_permission('staff_access'), 'Admin retains staff management');
-verify_role(surfside_tools_staff_permission_for_route('dashboard/settings')==='integrations',
+verify_role(surfside_tools_staff_permission_for_route('dashboard/settings')==='integrations_page',
     'Settings direct URL protected');
 verify_role(surfside_tools_staff_permission_for_route('dashboard/access')==='staff_access',
     'Staff management direct URL protected');

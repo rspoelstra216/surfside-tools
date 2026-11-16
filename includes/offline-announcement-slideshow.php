@@ -157,7 +157,7 @@ function surfside_tools_offline_slideshow_upload_images($field_name, $available_
 
 function surfside_tools_offline_slideshow_handle_post() {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !isset($_POST['surfside_slideshow_action'])) return '';
-    if (!current_user_can('manage_options')) return array('type' => 'error', 'message' => 'You do not have permission to publish announcement slides.');
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('streaming') : current_user_can('manage_options'))) return array('type' => 'error', 'message' => 'You do not have permission to publish announcement slides.');
     $nonce = isset($_POST['surfside_slideshow_nonce']) && is_string($_POST['surfside_slideshow_nonce'])
         ? sanitize_text_field(wp_unslash($_POST['surfside_slideshow_nonce'])) : '';
     if (!wp_verify_nonce($nonce, 'surfside_slideshow_save')) {
@@ -205,7 +205,7 @@ function surfside_tools_offline_slideshow_handle_post() {
 
 /** Separate form is rendered after Watch Live's existing settings form, never nested. */
 function surfside_tools_offline_slideshow_manager() {
-    if (!is_user_logged_in() || !current_user_can('manage_options')) return '';
+    if (!is_user_logged_in() || !(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('streaming') : current_user_can('manage_options'))) return '';
     $notice = surfside_tools_offline_slideshow_handle_post();
     $settings = surfside_tools_offline_slideshow_settings();
     $editor_slides = array();
@@ -265,7 +265,7 @@ function surfside_tools_offline_slideshow_manager() {
 
 /** Load editor assets only for the authorized Watch Live staff page. */
 function surfside_tools_offline_slideshow_enqueue_assets() {
-    if (!is_user_logged_in() || !current_user_can('manage_options') || !is_page()) return;
+    if (!is_user_logged_in() || !(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('streaming') : current_user_can('manage_options')) || !is_page()) return;
     if (!function_exists('surfside_tools_streaming_workspace_tab') || surfside_tools_streaming_workspace_tab() !== 'watch') return;
     $post = get_queried_object();
     if (!($post instanceof WP_Post) || trim((string) get_page_uri($post->ID), '/') !== 'dashboard/site-settings/streaming') return;

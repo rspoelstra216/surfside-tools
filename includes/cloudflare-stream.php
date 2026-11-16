@@ -100,7 +100,7 @@ function surfside_tools_staff_stream_shortcode() {
     surfside_tools_prevent_cache();
     surfside_tools_staff_enqueue_styles();
     if (!is_user_logged_in()) return surfside_tools_staff_login_box('Please log in to manage streaming.');
-    if (!current_user_can('manage_options')) return '<p>You do not have permission to manage streaming.</p>';
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('streaming') : current_user_can('manage_options'))) return '<p>You do not have permission to manage streaming.</p>';
     // Reuse the existing, vetted Cloudflare form on its original URL.
     // The other tabs reuse their established save/nonce handlers.
     if (function_exists('surfside_tools_streaming_workspace_tab') &&

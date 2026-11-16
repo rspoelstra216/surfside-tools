@@ -166,7 +166,7 @@ function surfside_tools_saved_places_redirect($message) {
 }
 
 function surfside_tools_delete_saved_place() {
-    if (!current_user_can('manage_options')) {
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('saved_places') : current_user_can('manage_options'))) {
         wp_die('You do not have permission to manage saved places.');
     }
 
@@ -178,7 +178,7 @@ function surfside_tools_delete_saved_place() {
 add_action('admin_post_surfside_delete_saved_place', 'surfside_tools_delete_saved_place');
 
 function surfside_tools_hide_calendar_place() {
-    if (!current_user_can('manage_options')) {
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('saved_places') : current_user_can('manage_options'))) {
         wp_die('You do not have permission to manage saved places.');
     }
 
@@ -190,7 +190,7 @@ function surfside_tools_hide_calendar_place() {
 add_action('admin_post_surfside_hide_calendar_place', 'surfside_tools_hide_calendar_place');
 
 function surfside_tools_restore_calendar_place() {
-    if (!current_user_can('manage_options')) {
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('saved_places') : current_user_can('manage_options'))) {
         wp_die('You do not have permission to manage saved places.');
     }
 
@@ -202,7 +202,7 @@ function surfside_tools_restore_calendar_place() {
 add_action('admin_post_surfside_restore_calendar_place', 'surfside_tools_restore_calendar_place');
 
 function surfside_tools_saved_places_settings_card() {
-    if (!current_user_can('manage_options')) {
+    if (!(function_exists('surfside_tools_staff_has_permission') ? surfside_tools_staff_has_permission('saved_places') : current_user_can('manage_options'))) {
         return;
     }
 
