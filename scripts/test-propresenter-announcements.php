@@ -111,6 +111,11 @@ check(!is_wp_error($updated) && count($GLOBALS['remote_calls']) === 2 &&
     'Edited text regenerates on schedule without re-emailing');
 
 $GLOBALS['api_status'] = 429;
+$failed_regeneration = surfside_tools_propresenter_sync(
+    $changed, 'November 21/22, 2026', 'scheduled', true);
+check(is_wp_error($failed_regeneration) &&
+    count(surfside_tools_propresenter_record()['slides']) === 2,
+    'A failed manual regeneration preserves previously reviewed slides');
 $error = surfside_tools_propresenter_sync(array('Entirely different announcement'), 'November 28/29, 2026');
 check(is_wp_error($error) && strpos($error->get_error_message(), '429') !== false,
     'API rate limiting is reported, never fatal');
