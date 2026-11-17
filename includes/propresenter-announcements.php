@@ -352,17 +352,29 @@ function surfside_tools_propresenter_workspace_markup() {
     $can_email = !empty($settings['recipients']);
     ob_start();
     ?>
-    <section class="surfside-propresenter" id="surfside-propresenter"
+    <details class="surfside-propresenter" id="surfside-propresenter"
         data-ajax-url="<?php echo esc_url(admin_url('admin-ajax.php')); ?>"
         data-nonce="<?php echo esc_attr(wp_create_nonce('surfside_propresenter')); ?>"
         data-source-hash="<?php echo esc_attr($record['source_hash'] ?? ''); ?>">
-        <header class="surfside-propresenter-header">
-            <div>
+        <summary class="surfside-propresenter-toggle">
+            <span class="surfside-propresenter-toggle-label">
                 <span class="surfside-propresenter-eyebrow">ProPresenter preparation</span>
-                <h3>Announcement slides</h3>
-                <p>Generated during Upload &amp; Review. These drafts are staff-only and do not affect Saturday publication.</p>
-            </div>
-        </header>
+                <strong>Announcement slides</strong>
+            </span>
+            <span class="surfside-propresenter-toggle-status">
+                <?php
+                if ($slides) {
+                    echo esc_html(count($slides) . (count($slides) === 1 ? ' slide ready' : ' slides ready'));
+                } elseif (!empty($record['source_items'])) {
+                    echo 'Needs attention';
+                } else {
+                    echo 'No slides yet';
+                }
+                ?>
+            </span>
+        </summary>
+        <div class="surfside-propresenter-body">
+            <p class="surfside-propresenter-intro">Generated during Upload &amp; Review. These drafts are staff-only and do not affect Saturday publication.</p>
         <?php if (surfside_tools_propresenter_api_key() === '') : ?>
             <p class="surfside-propresenter-warning">AI generation is not configured. Add
             <code>SURFSIDE_TOOLS_OPENAI_API_KEY</code> to the site's wp-config.php, or save an API key under Church Settings &rarr; Integrations &rarr; OpenAI, then upload or regenerate.</p>
@@ -425,7 +437,8 @@ function surfside_tools_propresenter_workspace_markup() {
                 <button type="button" class="surfside-staff-button-secondary" data-propresenter-action="settings">Save email settings</button>
             </details>
         <?php endif; ?>
-    </section>
+        </div>
+    </details>
     <?php
     return ob_get_clean();
 }
