@@ -45,6 +45,7 @@ jobs:
       - name: Test immediate AI ProPresenter announcement preparation
         run: |
           php scripts/test-propresenter-announcements.php
+          php scripts/test-openai-integration.php
           node --check assets/js/propresenter-announcements.js
 
       - name: Test archived sermon viewer access and queries
