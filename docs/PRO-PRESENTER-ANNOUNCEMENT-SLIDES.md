@@ -6,8 +6,12 @@ The secretary continues using **Staff Dashboard → Weekly Update → Upload & R
 When the announcements DOCX parses successfully, Surfside Tools immediately calls
 OpenAI to create a staff-only ProPresenter summary for every announcement.
 
-The ProPresenter preparation card on /dashboard/weekly-update/ displays the
-result, **before** the document is scheduled for Saturday. Staff can:
+The compact **Announcement slides** section appears at the **bottom** of
+/dashboard/weekly-update/, beneath Upload & Review and the Schedule button.
+It starts collapsed to keep the regular weekly workflow short. Its header
+shows the slide count or whether attention is needed; staff can expand it to
+review slides **immediately after upload**, before scheduling for Saturday.
+Staff can:
 
 - Review and edit each slide title and body (one to three body lines).
 - **Save edits** without changing the underlying church announcements.

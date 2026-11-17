@@ -133,6 +133,21 @@ $markup = surfside_tools_propresenter_workspace_markup();
 check(strpos($markup, 'Announcement slides') !== false &&
     strpos($markup, 'Regenerate AI slides') !== false,
     'Staff card is available after upload even on generation failure');
+check(strpos($markup, '<details class="surfside-propresenter"') !== false &&
+    strpos($markup, '<summary class="surfside-propresenter-toggle">') !== false &&
+    strpos($markup, '<div class="surfside-propresenter-body">') !== false &&
+    strpos($markup, 'open>') === false,
+    'Slide preparation is collapsed by default and can be expanded accessibly');
+check(strpos($markup, 'Needs attention') !== false,
+    'Closed slide section communicates whether a preview needs attention');
+$weekly_markup = file_get_contents(dirname(__DIR__) . '/includes/core-weekly-tools.php');
+$schedule_pos = strpos($weekly_markup, 'Schedule for Saturday at 5 PM <span');
+$slides_pos = strpos($weekly_markup, 'echo surfside_tools_propresenter_workspace_markup();');
+$end_schedule_form = $schedule_pos === false ? false : strpos($weekly_markup, '</form>', $schedule_pos);
+check($schedule_pos !== false && $slides_pos !== false &&
+    substr_count($weekly_markup, 'echo surfside_tools_propresenter_workspace_markup();') === 1 &&
+    $end_schedule_form !== false && $slides_pos > $end_schedule_form,
+    'ProPresenter preview is rendered once and after the intact Schedule form');
 check(strpos($markup, 'sk-test-never-printed') === false,
     'API secret is never rendered into the staff card');
 $GLOBALS['can_upload'] = false;

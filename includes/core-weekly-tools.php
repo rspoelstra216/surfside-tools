@@ -2336,10 +2336,6 @@ function surfside_tools_weekly_update_shortcode() {
             <?php echo surfside_tools_weekly_staff_status_markup($scheduled, $next_release); ?>
         <?php endif; ?>
 
-        <?php if (function_exists('surfside_tools_propresenter_workspace_markup')) : ?>
-            <?php echo surfside_tools_propresenter_workspace_markup(); ?>
-        <?php endif; ?>
-
         <nav class="surfside-weekly-flow" aria-label="Weekly Update steps">
             <div class="surfside-weekly-flow-step <?php echo !$reviewing ? 'is-current' : 'is-complete'; ?>"
                 <?php if (!$reviewing) : ?>aria-current="step"<?php endif; ?>>
@@ -2500,6 +2496,11 @@ function surfside_tools_weekly_update_shortcode() {
                 </div>
             </form>
             </section>
+        <?php endif; ?>
+
+        <?php // Slide preparation is optional and must never interrupt Upload & Review or the Schedule button. ?>
+        <?php if (function_exists('surfside_tools_propresenter_workspace_markup')) : ?>
+            <?php echo surfside_tools_propresenter_workspace_markup(); ?>
         <?php endif; ?>
     </div>
     <?php
