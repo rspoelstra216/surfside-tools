@@ -105,6 +105,10 @@
         slides.forEach(function (slide, index) {
             slideContainer.appendChild(createSlide(index, slide));
         });
+        const empty = root.querySelector('[data-propresenter-empty]');
+        if (empty) empty.hidden = slides.length > 0;
+        const previousError = root.querySelector('[data-propresenter-generation-error]');
+        if (previousError && slides.length) previousError.hidden = true;
         actions.querySelectorAll('[data-propresenter-action="copy-all"],' +
             '[data-propresenter-action="save"],[data-propresenter-action="email"]')
             .forEach(function (button) {
