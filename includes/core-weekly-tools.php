@@ -2184,6 +2184,17 @@ function surfside_tools_weekly_update_shortcode() {
                     esc_html(surfside_tools_weekly_release_label($result['publish_at'])) .
                     '. The current documents stay visible until then.', 'success'
                 );
+                // If the secretary edited announcements during review, refresh slides
+                // to match the approved version. Identical sources reuse existing edits.
+                if ($staged_announcements !== null && function_exists('surfside_tools_propresenter_sync')) {
+                    $slide_result = surfside_tools_propresenter_sync(
+                        $staged_announcements['items'], $staged_announcements['announcement_date'], 'scheduled');
+                    if (is_wp_error($slide_result)) {
+                        $message .= surfside_tools_importer_notice(
+                            'The weekly update was scheduled, but ProPresenter slides need attention: ' .
+                            esc_html($slide_result->get_error_message()), 'error');
+                    }
+                }
                 // No need to keep the previous editor form on screen after the
                 // scheduled version is stored; staff can upload replacements.
                 $announcements_items = array();
@@ -2242,6 +2253,17 @@ function surfside_tools_weekly_update_shortcode() {
                         $announcements_items = $result['items'];
                         $announcement_date_value = isset($result['date']) ? $result['date'] : '';
                         $announcement_preview_html = surfside_tools_build_announcements_html($announcements_items);
+                        // Prepare staff-only slides immediately on DOCX upload, before scheduling.
+                        // Any model failure must not interrupt the existing weekly workflow.
+                        if (function_exists('surfside_tools_propresenter_sync')) {
+                            $slide_result = surfside_tools_propresenter_sync(
+                                $announcements_items, $announcement_date_value, 'uploaded');
+                            if (is_wp_error($slide_result)) {
+                                $errors[] = 'ProPresenter slides could not be generated: ' .
+                                    $slide_result->get_error_message() .
+                                    ' The announcements can still be scheduled.';
+                            }
+                        }
                         $parsed_any = true;
                     } else {
                         $errors[] = 'No numbered announcements were found.';
@@ -2311,6 +2333,10 @@ function surfside_tools_weekly_update_shortcode() {
 
         <?php if (function_exists('surfside_tools_weekly_staff_status_markup')) : ?>
             <?php echo surfside_tools_weekly_staff_status_markup($scheduled, $next_release); ?>
+        <?php endif; ?>
+
+        <?php if (function_exists('surfside_tools_propresenter_workspace_markup')) : ?>
+            <?php echo surfside_tools_propresenter_workspace_markup(); ?>
         <?php endif; ?>
 
         <nav class="surfside-weekly-flow" aria-label="Weekly Update steps">
