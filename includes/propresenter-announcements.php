@@ -12,7 +12,8 @@ const SURFSIDE_PROPRESENTER_EMAIL_OPTION = 'surfside_tools_propresenter_email_se
 const SURFSIDE_PROPRESENTER_MODEL = 'gpt-5.4-mini';
 
 function surfside_tools_propresenter_api_key() {
-    if (defined('SURFSIDE_TOOLS_OPENAI_API_KEY') && is_string(SURFSIDE_TOOLS_OPENAI_API_KEY)) {
+    if (defined('SURFSIDE_TOOLS_OPENAI_API_KEY') && is_string(SURFSIDE_TOOLS_OPENAI_API_KEY) &&
+        trim(SURFSIDE_TOOLS_OPENAI_API_KEY) !== '') {
         return trim(SURFSIDE_TOOLS_OPENAI_API_KEY);
     }
     return function_exists('surfside_tools_openai_stored_api_key')
