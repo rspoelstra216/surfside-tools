@@ -12,10 +12,12 @@ const SURFSIDE_PROPRESENTER_EMAIL_OPTION = 'surfside_tools_propresenter_email_se
 const SURFSIDE_PROPRESENTER_MODEL = 'gpt-5.4-mini';
 
 function surfside_tools_propresenter_api_key() {
-    if (defined('SURFSIDE_TOOLS_OPENAI_API_KEY') && is_string(SURFSIDE_TOOLS_OPENAI_API_KEY)) {
+    if (defined('SURFSIDE_TOOLS_OPENAI_API_KEY') && is_string(SURFSIDE_TOOLS_OPENAI_API_KEY) &&
+        trim(SURFSIDE_TOOLS_OPENAI_API_KEY) !== '') {
         return trim(SURFSIDE_TOOLS_OPENAI_API_KEY);
     }
-    return '';
+    return function_exists('surfside_tools_openai_stored_api_key')
+        ? surfside_tools_openai_stored_api_key() : '';
 }
 
 /** Only reviewed/staff announcements are ever sent to the model. */
@@ -363,7 +365,7 @@ function surfside_tools_propresenter_workspace_markup() {
         </header>
         <?php if (surfside_tools_propresenter_api_key() === '') : ?>
             <p class="surfside-propresenter-warning">AI generation is not configured. Add
-            <code>SURFSIDE_TOOLS_OPENAI_API_KEY</code> to the site's wp-config.php, then upload or regenerate.</p>
+            <code>SURFSIDE_TOOLS_OPENAI_API_KEY</code> to the site's wp-config.php, or save an API key under Church Settings &rarr; Integrations &rarr; OpenAI, then upload or regenerate.</p>
         <?php endif; ?>
         <?php if (!empty($record['last_error'])) : ?>
             <p class="surfside-propresenter-warning" data-propresenter-generation-error><?php echo esc_html($record['last_error']); ?></p>

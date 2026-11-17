@@ -38,20 +38,41 @@ archive, backup rotation, mobile API or public announcements display. A
 missing API key, timeout, rate limit, malformed response, or failed email is
 reported in the staff UI without blocking Upload & Review or Schedule.
 
-## Server-side API key
+## OpenAI API key setup
 
-An administrator must configure an OpenAI API key in the server's
-wp-config.php, before the WordPress stop-editing line:
+Recommended: Go to **Staff Dashboard → Church Settings → Integrations →
+OpenAI — ProPresenter Announcements**, paste the API key, and click
+**Save OpenAI Key**. Then select **Test OpenAI Connection**.
+
+The password field is always blank on page load; a saved key is indicated
+only by status text. Leaving the input blank preserves the existing value.
+Administrators can explicitly remove a saved key. WordPress users without
+the native `manage_options` permission cannot view, save, test, or remove
+credentials.
+
+The key is stored as a non-autoloaded WordPress option and is retrieved only
+on the PHP server to authenticate OpenAI calls. Unlike wp-config.php, WordPress
+database storage requires protecting database backups and administrator
+access. The key is never rendered back into the dashboard or public pages.
+
+**Alternative:** An administrator can explicitly set the key in wp-config.php
+before the WordPress stop-editing line:
 
     define('SURFSIDE_TOOLS_OPENAI_API_KEY', 'YOUR_SECRET_OPENAI_API_KEY');
 
-For safer secret management, use a server environment variable if available:
+Or with a server environment variable:
 
     define('SURFSIDE_TOOLS_OPENAI_API_KEY', getenv('SURFSIDE_TOOLS_OPENAI_API_KEY') ?: '');
 
+A nonempty server constant overrides the dashboard-stored key and disables
+saving or removing it through the dashboard. An empty constant allows the
+dashboard key to be used.
+
 Never commit a live key to GitHub or place it in public HTML, an app bundle,
 WordPress page content, or JavaScript. OpenAI API use is billed separately
-from ChatGPT. The default model is gpt-5.4-mini.
+from ChatGPT. The default model is gpt-5.4-mini. The connection test checks
+authorization and access to that model; it does **not** verify remaining
+billing credits or generate a sample summary.
 
 The request uses the Chat Completions API with strict structured JSON output,
 store false, a bounded output budget and no web lookup. The model receives the
@@ -79,7 +100,7 @@ upload reuse, changed-source regeneration, and staff-only rendering.
 
 Manual production smoke test:
 
-1. Add the API key and confirm sufficient API credits.
+1. Add the API key in Church Settings → Integrations → OpenAI, test access, and confirm sufficient API credits.
 2. Upload sample announcements DOCX using Upload & Review. Verify slides
    appear immediately, **before** clicking Schedule.
 3. Compare each summary with the original dates, times, and locations.

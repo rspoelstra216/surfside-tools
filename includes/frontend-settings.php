@@ -98,6 +98,8 @@ function surfside_tools_staff_settings_shortcode() {
     }
 
     $notice = surfside_tools_frontend_settings_handle_post();
+    $openai_notice = function_exists('surfside_tools_openai_integration_handle_post')
+        ? surfside_tools_openai_integration_handle_post() : '';
     $shared_notice = function_exists('surfside_tools_church_settings_shared_save')
         ? surfside_tools_church_settings_shared_save()
         : '';
@@ -129,6 +131,7 @@ function surfside_tools_staff_settings_shortcode() {
         </section>
 
         <?php echo $notice; ?>
+        <?php echo $openai_notice; ?>
         <?php echo $shared_notice; ?>
         <?php echo $twitch_notice; ?>
         <section class="surfside-integrations-section" aria-labelledby="surfside-integrations-connections">
@@ -159,6 +162,7 @@ function surfside_tools_staff_settings_shortcode() {
         </form>
 
         <?php endif; ?>
+        <?php if (function_exists('surfside_tools_openai_integration_panel')) echo surfside_tools_openai_integration_panel(); ?>
         <?php if (function_exists('surfside_tools_youtube_settings_panel')) echo surfside_tools_youtube_settings_panel(); ?>
         <?php if (function_exists('surfside_tools_youversion_settings_panel')) echo surfside_tools_youversion_settings_panel(); ?>
         </section>

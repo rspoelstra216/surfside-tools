@@ -17,6 +17,7 @@ require_once SURFSIDE_TOOLS_PATH . 'includes/sermon-archive.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/weekly-schedule.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/weekly-workspace-ui.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/propresenter-announcements.php';
+require_once SURFSIDE_TOOLS_PATH . 'includes/openai-integration.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/youtube-sermon-archive.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/youtube-sermon-settings.php';
 require_once SURFSIDE_TOOLS_PATH . 'includes/site-information.php';
