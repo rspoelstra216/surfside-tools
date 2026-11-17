@@ -42,6 +42,11 @@ jobs:
       - name: Test Saturday Weekly Update staging and publishing
         run: php scripts/test-weekly-schedule.php
 
+      - name: Test immediate AI ProPresenter announcement preparation
+        run: |
+          php scripts/test-propresenter-announcements.php
+          node --check assets/js/propresenter-announcements.js
+
       - name: Test archived sermon viewer access and queries
         run: php scripts/test-sermon-archive-viewer.php
 
