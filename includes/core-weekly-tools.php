@@ -2246,6 +2246,10 @@ function surfside_tools_weekly_update_shortcode() {
                     $errors[] = 'Announcements upload error: ' . esc_html($upload['error']);
                 } else {
                     $result = surfside_tools_extract_numbered_announcements_from_docx($upload['file']);
+                    // Remove the uploaded source before any remote AI request.
+                    if (!empty($upload['file']) && file_exists($upload['file'])) {
+                        @unlink($upload['file']);
+                    }
 
                     if (is_wp_error($result)) {
                         $errors[] = 'Announcements error: ' . $result->get_error_message();
@@ -2269,9 +2273,6 @@ function surfside_tools_weekly_update_shortcode() {
                         $errors[] = 'No numbered announcements were found.';
                     }
 
-                    if (!empty($upload['file']) && file_exists($upload['file'])) {
-                        @unlink($upload['file']);
-                    }
                 }
             }
         }
