@@ -177,6 +177,9 @@
     }
 }
 @media (max-width: 480px) {
+    .surfside-propresenter-toggle { flex-wrap: wrap; gap: 8px 12px; }
+    .surfside-propresenter-toggle-status { margin-left: 0; }
+    .surfside-propresenter-toggle:after { margin-left: auto; }
     .surfside-propresenter-actions button {
         flex: 1 1 100%;
         width: 100%;
