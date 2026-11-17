@@ -219,6 +219,12 @@ function surfside_tools_propresenter_sync($items, $date, $phase = 'uploaded', $f
     update_option(SURFSIDE_PROPRESENTER_OPTION, $record, false);
     $slides = surfside_tools_propresenter_generate($source['items'], $source['date']);
     if (is_wp_error($slides)) {
+        // A failed manual regeneration should not destroy already edited slides.
+        // A *new* source still clears stale slides from the prior announcement set.
+        if ($force && ($previous['source_hash'] ?? '') === $source['hash'] &&
+            !empty($previous['slides'])) {
+            $record = $previous;
+        }
         $record['last_error'] = $slides->get_error_message();
         update_option(SURFSIDE_PROPRESENTER_OPTION, $record, false);
         return $slides;
