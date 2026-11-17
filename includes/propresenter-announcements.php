@@ -374,12 +374,10 @@ function surfside_tools_propresenter_workspace_markup() {
             </p>
             <div class="surfside-propresenter-actions">
                 <button type="button" data-propresenter-action="regenerate" class="surfside-staff-button-secondary">Regenerate AI slides</button>
-                <?php if ($slides) : ?>
-                    <button type="button" data-propresenter-action="copy-all" class="surfside-staff-button-secondary">Copy all</button>
-                    <button type="button" data-propresenter-action="save" class="surfside-staff-button-secondary">Save edits</button>
-                    <?php if ($can_email) : ?>
-                        <button type="button" data-propresenter-action="email" class="surfside-staff-button-secondary">Email slides</button>
-                    <?php endif; ?>
+                <button type="button" data-propresenter-action="copy-all" class="surfside-staff-button-secondary" <?php if (!$slides) echo 'disabled'; ?>>Copy all</button>
+                <button type="button" data-propresenter-action="save" class="surfside-staff-button-secondary" <?php if (!$slides) echo 'disabled'; ?>>Save edits</button>
+                <?php if ($can_email) : ?>
+                    <button type="button" data-propresenter-action="email" class="surfside-staff-button-secondary" <?php if (!$slides) echo 'disabled'; ?>>Email slides</button>
                 <?php endif; ?>
             </div>
             <div id="surfside-propresenter-slides" class="surfside-propresenter-slides">
