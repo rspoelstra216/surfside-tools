@@ -366,7 +366,7 @@ function surfside_tools_propresenter_workspace_markup() {
             <code>SURFSIDE_TOOLS_OPENAI_API_KEY</code> to the site's wp-config.php, then upload or regenerate.</p>
         <?php endif; ?>
         <?php if (!empty($record['last_error'])) : ?>
-            <p class="surfside-propresenter-warning"><?php echo esc_html($record['last_error']); ?></p>
+            <p class="surfside-propresenter-warning" data-propresenter-generation-error><?php echo esc_html($record['last_error']); ?></p>
         <?php endif; ?>
         <?php if (!empty($record['email_error'])) : ?>
             <p class="surfside-propresenter-warning"><?php echo esc_html($record['email_error']); ?></p>
@@ -403,7 +403,7 @@ function surfside_tools_propresenter_workspace_markup() {
                 <?php endforeach; ?>
             </div>
             <?php if (!$slides) : ?>
-                <p>There is no generated slide preview yet. Configure the API key and select Regenerate AI slides.</p>
+                <p data-propresenter-empty>There is no generated slide preview yet. Configure the API key and select Regenerate AI slides.</p>
             <?php endif; ?>
             <p class="surfside-propresenter-help">Review names, dates and times before use. Copy All separates slides with a line of three dashes.</p>
         <?php else : ?>
