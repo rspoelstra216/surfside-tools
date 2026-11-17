@@ -1,0 +1,145 @@
+/* Isolated styles for the staff-only ProPresenter preparation card. */
+.surfside-staff-weekly .surfside-propresenter {
+    margin: 22px 0 28px;
+    border: 1px solid #c6d9ed;
+    border-radius: 16px;
+    padding: clamp(18px, 2.6vw, 28px);
+    background: #f7faff;
+    box-shadow: 0 8px 22px rgba(12, 38, 68, .045);
+    color: #23364b;
+}
+.surfside-propresenter-header h3 {
+    font-size: clamp(20px, 2.4vw, 26px);
+    margin: 4px 0 8px;
+    color: #0c385e;
+}
+.surfside-propresenter-header p {
+    margin: 0 0 14px;
+    max-width: 720px;
+    line-height: 1.5;
+}
+.surfside-propresenter-eyebrow {
+    color: #145a95;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .065em;
+}
+.surfside-propresenter-meta {
+    font-weight: 650;
+    margin: 10px 0;
+}
+.surfside-propresenter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 16px 0;
+}
+.surfside-propresenter-actions button,
+.surfside-propresenter-slide-heading button {
+    cursor: pointer;
+}
+.surfside-propresenter-actions button:disabled,
+.surfside-propresenter-slide-heading button:disabled {
+    opacity: .55;
+    cursor: wait;
+}
+.surfside-propresenter-slides {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+.surfside-propresenter-slide {
+    border-radius: 12px;
+    border: 1px solid #ccd9e7;
+    background: #fff;
+    padding: 16px;
+    min-width: 0;
+}
+.surfside-propresenter-slide-heading {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.surfside-propresenter-slide label,
+.surfside-propresenter-email-settings label {
+    display: block;
+    font-weight: 650;
+    color: #243f5e;
+    margin: 10px 0;
+}
+.surfside-propresenter-slide input,
+.surfside-propresenter-slide textarea,
+.surfside-propresenter-email-settings textarea {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 5px;
+    padding: 11px;
+    border: 1px solid #b7c9dc;
+    border-radius: 8px;
+    background: #fff;
+    font: inherit;
+    color: #182d40;
+}
+.surfside-propresenter-slide textarea {
+    min-height: 98px;
+    resize: vertical;
+    line-height: 1.45;
+}
+.surfside-propresenter-warning {
+    border-left: 4px solid #bb6b27;
+    padding: 10px 12px;
+    background: #fff6e9;
+    color: #663b14;
+}
+.surfside-propresenter-status:not(:empty) {
+    margin: 12px 0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: #e8f5eb;
+    color: #20532f;
+}
+.surfside-propresenter-status.is-error:not(:empty) {
+    background: #fff0ee;
+    color: #912d22;
+}
+.surfside-propresenter-help {
+    margin: 16px 0 0;
+    font-size: 13px;
+    color: #425873;
+}
+.surfside-propresenter-email-settings {
+    margin-top: 20px;
+    border-top: 1px solid #cad7e6;
+    padding-top: 15px;
+}
+.surfside-propresenter-email-settings summary {
+    cursor: pointer;
+    font-weight: 750;
+    color: #164e80;
+}
+.surfside-propresenter-email-settings .surfside-propresenter-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.surfside-propresenter-check input {
+    width: auto;
+    height: 18px;
+    margin: 0;
+}
+@media (max-width: 780px) {
+    .surfside-propresenter-slides {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+@media (max-width: 480px) {
+    .surfside-propresenter-actions button {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+}
