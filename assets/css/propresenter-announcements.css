@@ -1,19 +1,58 @@
-/* Isolated styles for the staff-only ProPresenter preparation card. */
+/* Staff-only slide preparation belongs after the Schedule button.
+ * Keep the optional editor collapsed so the primary weekly workflow stays short. */
 .surfside-staff-weekly .surfside-propresenter {
     margin: 22px 0 28px;
     border: 1px solid #c6d9ed;
     border-radius: 16px;
-    padding: clamp(18px, 2.6vw, 28px);
+    padding: 0;
+    overflow: hidden;
     background: #f7faff;
     box-shadow: 0 8px 22px rgba(12, 38, 68, .045);
     color: #23364b;
 }
-.surfside-propresenter-header h3 {
-    font-size: clamp(20px, 2.4vw, 26px);
-    margin: 4px 0 8px;
-    color: #0c385e;
+.surfside-propresenter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: space-between;
+    padding: 16px 20px;
+    cursor: pointer;
+    list-style: none;
 }
-.surfside-propresenter-header p {
+.surfside-propresenter-toggle::-webkit-details-marker { display: none; }
+.surfside-propresenter-toggle::marker { content: ''; }
+.surfside-propresenter-toggle:focus-visible {
+    outline: 3px solid #125c9f;
+    outline-offset: -3px;
+}
+.surfside-propresenter-toggle:after {
+    content: '+';
+    font-size: 24px;
+    font-weight: 400;
+    color: #145a95;
+    flex: none;
+}
+.surfside-propresenter[open] > .surfside-propresenter-toggle:after { content: '−'; }
+.surfside-propresenter[open] > .surfside-propresenter-toggle {
+    border-bottom: 1px solid #c6d9ed;
+}
+.surfside-propresenter-toggle-label { display: grid; gap: 3px; }
+.surfside-propresenter-toggle-label strong {
+    color: #0c385e;
+    font-size: 19px;
+    line-height: 1.25;
+}
+.surfside-propresenter-toggle-status {
+    margin-left: auto;
+    font-size: 13px;
+    font-weight: 700;
+    color: #425873;
+    white-space: nowrap;
+}
+.surfside-propresenter-body {
+    padding: clamp(18px, 2.6vw, 28px);
+}
+.surfside-propresenter-intro {
     margin: 0 0 14px;
     max-width: 720px;
     line-height: 1.5;
