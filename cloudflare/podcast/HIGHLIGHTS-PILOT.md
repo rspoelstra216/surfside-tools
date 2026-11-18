@@ -99,3 +99,27 @@ video ID again returns the existing result, not the new selection logic. To test
 these improvements, choose a different verified sermon video ID rather than
 deleting existing production R2 records. Podcast output, Spreaker publishing,
 and the manual-only processing policy remain unchanged.
+
+## Troubleshooting `invalid_chunk_manifest`
+
+A manual highlight job may report `failed` if the Container's audio chunk metadata
+is rejected by the Worker before transcription. The protected status endpoint now
+returns the specific validation reason, for example
+`invalid_chunk_manifest:chunk_duration_at_5`, while Cloudflare logs retain
+the full error. This diagnostic does **not** relax MP3 duration, chunk count,
+R2 key, or timestamp validation.
+
+Check that the updated Worker and Container deployments are both active before
+retrying a failed sermon. Do not repeatedly enqueue while the Queue still has
+automatic retries pending. Existing canonical sermon MP4s and published podcast
+episodes remain untouched by this diagnosis.
+
+### Root cause confirmed for November 15 retry
+
+PR #516 changed `prepareHighlightChunks()` from returning a chunks array to
+returning `{ chunks, pauses }`. The HTTP handler still wrapped that return value
+inside another `chunks` property, causing the Worker to receive
+`{ chunks: { chunks: [...], pauses: [...] } }` instead of the expected array.
+PR #517 corrects the Container response envelope and adds an end-to-end shape
+regression test against the Worker's manifest validator. No source audio or
+clip timestamps are modified by this fix.

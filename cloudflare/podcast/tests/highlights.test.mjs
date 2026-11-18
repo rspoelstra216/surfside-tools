@@ -7,6 +7,8 @@ import {
   parseHighlightCandidates, selectHighlights,
 } from "../src/highlight-selection.mjs";
 import { refineHighlightCandidates } from "../src/highlight-refinement.mjs";
+import { validateChunkManifest } from "../src/highlight-chunk-manifest.mjs";
+import { highlightChunkResponse } from "../container/sermon-audio.mjs";
 
 const segments = [
   { start: 0, end: 15, text: "We face uncertainty." },
@@ -124,4 +126,50 @@ test("strong clips are spread across sermon regions rather than clustered at the
   assert.ok(result.some((c) => c.start >= 1700));
   assert.ok(result.every((c) => c.score >= 3));
   assert.deepEqual(result.map((c) => c.number), [1, 2, 3, 4, 5]);
+});
+
+test("realistic eleven-chunk private manifest passes unchanged", () => {
+  const id = "AjkoDHgFdeA";
+  const chunks = Array.from({ length: 11 }, (_, i) => ({
+    key: "sermon-highlights/chunks/" + id + "/" + String(i).padStart(3, "0") + ".mp3",
+    offset: i * 180,
+    duration: i === 10 ? 75.33 : 180.02,
+  }));
+  const pauses = [{ start: 31.4, end: 31.9 }, { start: -1, end: 2 }];
+  const parsed = validateChunkManifest({ ok: true, chunks, pauses }, id);
+  assert.equal(parsed.chunks.length, 11);
+  assert.deepEqual(parsed.pauses, [{ start: 31.4, end: 31.9 }]);
+});
+
+test("manifest validation identifies missing or incorrect fields without exposing source data", () => {
+  const id = "AjkoDHgFdeA";
+  const valid = { key: "sermon-highlights/chunks/" + id + "/000.mp3", offset: 0, duration: 180.02 };
+  const invalid = [
+    [{ chunks: null }, "chunks_not_array"],
+    [{ chunks: [] }, "chunk_count"],
+    [{ chunks: [null] }, "chunk_not_object_at_0"],
+    [{ chunks: [{ ...valid, key: "sermons/" + id + ".mp4" }] }, "chunk_key_at_0"],
+    [{ chunks: [{ ...valid, offset: null }] }, "chunk_offset_at_0"],
+    [{ chunks: [{ ...valid, duration: 191 }] }, "chunk_duration_at_0"],
+  ];
+  for (const [data, code] of invalid)
+    assert.throws(() => validateChunkManifest(data, id),
+      (error) => error.message === "invalid_chunk_manifest:" + code);
+});
+
+test("container response keeps chunks as top-level array when pauses are included", () => {
+  const id = "AjkoDHgFdeA";
+  const chunks = [{
+    key: "sermon-highlights/chunks/" + id + "/000.mp3",
+    offset: 0, duration: 180.01,
+  }];
+  const response = highlightChunkResponse({
+    chunks, pauses: [{ start: 45, end: 45.5 }],
+  });
+  assert.equal(response.ok, true);
+  assert.ok(Array.isArray(response.chunks), "must not double-wrap chunks");
+  assert.deepEqual(validateChunkManifest(JSON.parse(JSON.stringify(response)), id),
+    { chunks, pauses: [{ start: 45, end: 45.5 }] });
+  const server = readFileSync(new URL("../container/server.mjs", import.meta.url), "utf8");
+  assert.match(server, /JSON\.stringify\(highlightChunkResponse\(manifest\)\)/);
 });
