@@ -6,6 +6,7 @@ import {
   normalizeSegments, transcriptWindows, formatTime, highlightPrompt,
   parseHighlightCandidates, selectHighlights,
 } from "../src/highlight-selection.mjs";
+import { refineHighlightCandidates } from "../src/highlight-refinement.mjs";
 
 const segments = [
   { start: 0, end: 15, text: "We face uncertainty." },
@@ -73,4 +74,54 @@ test("highlights remain manual and the podcast worker retains its existing proce
   assert.match(worker, /kind === "highlights"/);
   assert.match(container, /"\/highlights\/chunks"/);
   assert.match(container, /await produce\(id, test\)/);
+});
+
+test("transcript refinement includes nearby fragments but never invents words", () => {
+  const transcript = [
+    { start: 10, end: 18, text: "The challenge is that" },
+    { start: 18, end: 45, text: "we need God's perspective" },
+    { start: 45, end: 51, text: "as we read Scripture." },
+    { start: 51, end: 61, text: "Here is a new point." },
+  ];
+  const [candidate] = refineHighlightCandidates([{
+    start: 18, end: 45, title: "Perspective", reason: "Whole thought",
+    score: 5, excerpt: "we need God's perspective",
+  }], transcript);
+  assert.equal(candidate.start, 10);
+  assert.equal(candidate.end, 51);
+  assert.equal(candidate.excerpt, transcript.slice(0, 3).map((s) => s.text).join(" "));
+  assert.equal(candidate.boundary_review.transcript_sentence_complete, true);
+  assert.equal(candidate.boundary_review.manual_review_required, true);
+});
+
+test("refinement chooses a following speech break without including the next phrase", () => {
+  const transcript = [
+    { start: 0, end: 30, text: "We can trust God." },
+    { start: 35, end: 52, text: "Now a different thought." },
+  ];
+  const [candidate] = refineHighlightCandidates([{
+    start: 0, end: 30, title: "Trust", reason: "Encouragement",
+    score: 5, excerpt: "We can trust God.",
+  }], transcript, [{ start: 31.3, end: 31.85 }, { start: 36, end: 36.5 }]);
+  assert.equal(candidate.end, 31.3);
+  assert.equal(candidate.boundary_review.original_end, 30);
+  assert.equal(candidate.boundary_review.used_audio_pauses, true);
+});
+
+test("strong clips are spread across sermon regions rather than clustered at the beginning", () => {
+  const candidates = [
+    { start: 20, end: 70, score: 5, title: "God's Perspective" },
+    { start: 85, end: 135, score: 5, title: "Need for God's Perspective" },
+    { start: 600, end: 650, score: 4, title: "Scripture" },
+    { start: 1100, end: 1150, score: 4, title: "Mercy" },
+    { start: 1700, end: 1750, score: 4, title: "Serving Others" },
+    { start: 2160, end: 2220, score: 4, title: "Love of Christ" },
+    { start: 2200, end: 2250, score: 2, title: "Weak Closing" },
+  ];
+  const result = selectHighlights(candidates, 5, { duration: 2400 });
+  assert.equal(result.length, 5);
+  assert.equal(result.filter((c) => c.start < 140).length, 1);
+  assert.ok(result.some((c) => c.start >= 1700));
+  assert.ok(result.every((c) => c.score >= 3));
+  assert.deepEqual(result.map((c) => c.number), [1, 2, 3, 4, 5]);
 });
