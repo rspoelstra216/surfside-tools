@@ -1,7 +1,7 @@
 import http from "node:http";
 import { spawn } from "node:child_process";
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdtemp, rm, stat } from "node:fs/promises";
+import { mkdtemp, rm, stat, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
@@ -72,11 +72,89 @@ async function produce(id, test = false) {
   }
 }
 
+
+function runCommand(command, args, timeoutMs = 11 * 60 * 1000) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "", stderr = "", settled = false;
+    const timer = setTimeout(() => child.kill("SIGKILL"), timeoutMs);
+    child.stdout.on("data", (data) => { stdout = (stdout + data.toString()).slice(-2048); });
+    child.stderr.on("data", (data) => { stderr = (stderr + data.toString()).slice(-2048); });
+    child.once("error", (error) => {
+      if (!settled) { settled = true; clearTimeout(timer); reject(error); }
+    });
+    child.once("close", (code) => {
+      if (settled) return;
+      settled = true; clearTimeout(timer);
+      if (code === 0) resolve(stdout);
+      else reject(Error(command + "_failed: " + stderr.slice(-160)));
+    });
+  });
+}
+
+async function durationOf(file) {
+  const output = await runCommand("ffprobe", [
+    "-v", "error", "-show_entries", "format=duration",
+    "-of", "default=noprint_wrappers=1:nokey=1", file
+  ], 30_000);
+  const seconds = Number(output.trim());
+  if (!Number.isFinite(seconds) || seconds <= 0) throw Error("invalid_audio_duration");
+  return seconds;
+}
+
+// Manual highlights pilot: create short, playable audio chunks from the SOURCE MP4.
+// The podcast MP3 is deliberately not used because its intro shifts timestamps.
+async function prepareHighlightChunks(id) {
+  const dir = await mkdtemp(path.join(tmpdir(), "surfside-highlights-"));
+  try {
+    const source = path.join(dir, "sermon.mp4");
+    await download("sermons/" + id + ".mp4", source);
+    const duration = await durationOf(source);
+    if (duration > 72 * 60) throw Error("highlight_source_too_long");
+    const pattern = path.join(dir, "chunk-%03d.mp3");
+    await runCommand("ffmpeg", [
+      "-hide_banner", "-nostdin", "-loglevel", "error", "-y",
+      "-i", source, "-map", "0:a:0", "-vn", "-ac", "1", "-ar", "16000",
+      "-c:a", "libmp3lame", "-b:a", "48k",
+      "-f", "segment", "-segment_time", "180", "-reset_timestamps", "1",
+      pattern,
+    ]);
+    const names = (await readdir(dir)).filter((name) => /^chunk-[0-9]{3}\.mp3$/.test(name)).sort();
+    if (!names.length || names.length > 24) throw Error("invalid_highlight_chunk_count");
+    const chunks = [];
+    let offset = 0;
+    for (let i = 0; i < names.length; i++) {
+      const file = path.join(dir, names[i]);
+      const bytes = (await stat(file)).size;
+      if (bytes < 1024 || bytes > 3 * 1024 * 1024) throw Error("highlight_chunk_size_invalid");
+      const seconds = await durationOf(file);
+      if (seconds > 185) throw Error("highlight_chunk_duration_invalid");
+      const key = "sermon-highlights/chunks/" + id + "/" + String(i).padStart(3, "0") + ".mp3";
+      const put = await fetch(STORAGE + key, {
+        method: "PUT",
+        headers: { "content-type": "audio/mpeg", "content-length": String(bytes) },
+        body: Readable.toWeb(createReadStream(file)),
+        duplex: "half",
+      });
+      if (!put.ok && put.status !== 409) throw Error("highlight_chunk_upload_failed");
+      chunks.push({
+        key,
+        offset: Math.round(offset * 100) / 100,
+        duration: Math.round(seconds * 100) / 100,
+      });
+      offset += seconds;
+    }
+    return chunks;
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
 http.createServer(async (request, response) => {
   if (request.url === "/health" && request.method === "GET") {
     response.writeHead(200).end("ok"); return;
   }
-  if (request.url !== "/process" || request.method !== "POST") {
+  if (!["/process", "/highlights/chunks"].includes(request.url) || request.method !== "POST") {
     response.writeHead(404).end("not_found"); return;
   }
   if (busy) { response.writeHead(409).end("busy"); return; }
@@ -94,9 +172,18 @@ http.createServer(async (request, response) => {
       response.writeHead(400).end("invalid_test_flag"); return;
     }
     if (!idPattern.test(id)) { response.writeHead(400).end("invalid_id"); return; }
-    const bytes = await produce(id, test);
-    response.writeHead(200, { "content-type": "application/json" })
-      .end(JSON.stringify({ ok: true, bytes }));
+    if (request.url === "/highlights/chunks") {
+      if (test || payload?.test !== undefined) {
+        response.writeHead(400).end("highlight_test_not_supported"); return;
+      }
+      const chunks = await prepareHighlightChunks(id);
+      response.writeHead(200, { "content-type": "application/json" })
+        .end(JSON.stringify({ ok: true, chunks }));
+    } else {
+      const bytes = await produce(id, test);
+      response.writeHead(200, { "content-type": "application/json" })
+        .end(JSON.stringify({ ok: true, bytes }));
+    }
   } catch (error) {
     console.error("Podcast container job failed", String(error));
     response.writeHead(500).end("processing_failed");
