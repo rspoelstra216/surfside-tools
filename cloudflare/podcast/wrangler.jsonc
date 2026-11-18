@@ -27,6 +27,7 @@
       "max_instances": 2
     }
   ],
+  "ai": { "binding": "AI" },
   "r2_buckets": [
     {
       "binding": "SERMONS_BUCKET",

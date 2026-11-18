@@ -4,15 +4,20 @@ export const validId = (id) => typeof id === "string" && /^[A-Za-z0-9_-]{11}$/.t
 // Isolated test paths protect canonical Roku and podcast objects.
 export const sourceKey = (id, test = false) => `${test ? "podcast-test-input" : "sermons"}/${id}.mp4`;
 export const audioKey = (id, test = false) => `${test ? "podcast-test-audio" : "podcast-audio"}/${id}.mp3`;
+export const sermonAudioKey = (id, test = false) => `${test ? "podcast-test-sermon-audio" : "sermon-audio"}/${id}.mp3`;
 export const statusKey = (id, test = false) => `${test ? "podcast-test-jobs" : "podcast-jobs"}/${id}.json`;
 
 export function validStorageAccess(key, method) {
   if (method === "GET") {
     return /^(?:sermons|podcast-test-input)\/[A-Za-z0-9_-]{11}\.mp4$/.test(key) ||
-      key === "podcast-assets/intro.mp3" || key === "podcast-assets/outro.mp3";
+      key === "podcast-assets/intro.mp3" || key === "podcast-assets/outro.mp3" ||
+      /^(?:sermon-audio|podcast-test-sermon-audio)\/[A-Za-z0-9_-]{11}\.mp3$/.test(key);
   }
-  return method === "PUT" &&
-    /^(?:podcast-audio|podcast-test-audio)\/[A-Za-z0-9_-]{11}\.mp3$/.test(key);
+  return method === "PUT" && (
+    /^(?:podcast-audio|podcast-test-audio)\/[A-Za-z0-9_-]{11}\.mp3$/.test(key) ||
+    /^(?:sermon-audio|podcast-test-sermon-audio)\/[A-Za-z0-9_-]{11}\.mp3$/.test(key) ||
+    /^sermon-highlights\/chunks\/[A-Za-z0-9_-]{11}\/[0-9]{3}\.mp3$/.test(key)
+  );
 }
 
 export async function verifiedRequest(request, secret, now = Date.now()) {
