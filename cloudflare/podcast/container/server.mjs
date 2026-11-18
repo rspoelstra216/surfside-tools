@@ -68,22 +68,26 @@ async function produce(id, test = false) {
     await download((test ? "podcast-test-input/" : "sermons/") + id + ".mp4", sermon);
     await download("podcast-assets/intro.mp3", intro);
     await download("podcast-assets/outro.mp3", outro);
+    let sidecarReady = false;
     try {
       // One FFmpeg read of the source MP4 creates the original podcast mix
       // and a small, source-time-aligned sermon-only audio sidecar.
       await processAudio(intro, sermon, outro, output, sermonOnly);
+      sidecarReady = true;
     } catch (error) {
       // A sidecar encoding error must never prevent a playable podcast.
       console.error("Combined podcast/sermon audio processing failed; using original podcast path", String(error));
+      await rm(sermonOnly, { force: true });
       await processAudio(intro, sermon, outro, output);
     }
     // Podcast output is authoritative; a sidecar upload is best effort.
     const bytes = await upload((test ? "podcast-test-audio/" : "podcast-audio/") + id + ".mp3", output);
-    try {
-      if ((await stat(sermonOnly).catch(() => null))?.size >= 1024)
+    if (sidecarReady) {
+      try {
         await upload(sermonAudioKey(id, test), sermonOnly);
-    } catch (error) {
-      console.error("Unable to save optional sermon-only audio", id, String(error));
+      } catch (error) {
+        console.error("Unable to save optional sermon-only audio", id, String(error));
+      }
     }
     return bytes;
   } finally {
