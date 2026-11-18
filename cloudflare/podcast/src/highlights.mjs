@@ -91,7 +91,6 @@ async function prepareChunks(env, id) {
 
 export async function processHighlights(env, id) {
   if (!validId(id)) throw Error("invalid_video_id");
-  if (!env.AI?.run) throw Error("workers_ai_binding_missing");
   if (await env.SERMONS_BUCKET.head(resultKey(id))) {
     await saveStatus(env, id, "ready");
     return;
@@ -99,6 +98,7 @@ export async function processHighlights(env, id) {
   let chunks = [];
   try {
     await saveStatus(env, id, "processing");
+    if (!env.AI?.run) throw Error("workers_ai_binding_missing");
     chunks = await prepareChunks(env, id);
     const segments = [];
     for (const chunk of chunks) {
