@@ -4,6 +4,7 @@ import {
   normalizeSegments, transcriptWindows, highlightPrompt, HIGHLIGHT_SCHEMA,
   parseHighlightCandidates, selectHighlights,
 } from "./highlight-selection.mjs";
+import { refineHighlightCandidates } from "./highlight-refinement.mjs";
 
 // Opt-in, private analysis only. Never schedules a podcast or video publication.
 const prefix = "sermon-highlights/";
@@ -86,7 +87,11 @@ async function prepareChunks(env, id) {
         !Number.isFinite(chunk.duration) || chunk.duration <= 0 || chunk.duration > 185)
       throw Error("invalid_chunk_manifest");
   }
-  return manifest.chunks;
+  // Pause metadata is optional; transcriptions still work without it.
+  const pauses = Array.isArray(manifest.pauses) ? manifest.pauses.filter((p) =>
+    Number.isFinite(p?.start) && Number.isFinite(p?.end) &&
+    p.start >= 0 && p.end > p.start && p.end <= 72 * 60 + 5).slice(0, 3000) : [];
+  return { chunks: manifest.chunks, pauses };
 }
 
 export async function processHighlights(env, id) {
@@ -99,7 +104,9 @@ export async function processHighlights(env, id) {
   try {
     await saveStatus(env, id, "processing");
     if (!env.AI?.run) throw Error("workers_ai_binding_missing");
-    chunks = await prepareChunks(env, id);
+    const prepared = await prepareChunks(env, id);
+    chunks = prepared.chunks;
+    const pauses = prepared.pauses;
     const segments = [];
     for (const chunk of chunks) {
       const object = await env.SERMONS_BUCKET.get(chunk.key);
@@ -136,7 +143,9 @@ export async function processHighlights(env, id) {
       generated_at: new Date().toISOString(),
       model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
       transcript_key: transcriptKey(id),
-      highlights: selectHighlights(candidates),
+      highlights: selectHighlights(
+        refineHighlightCandidates(candidates, segments, pauses), 5,
+        { duration: segments.at(-1).end }),
       note: "AI-generated suggestions for staff review; times refer to the original sermon MP4.",
     };
     await storeJson(env.SERMONS_BUCKET, resultKey(id), result);
