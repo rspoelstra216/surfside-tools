@@ -113,3 +113,13 @@ Check that the updated Worker and Container deployments are both active before
 retrying a failed sermon. Do not repeatedly enqueue while the Queue still has
 automatic retries pending. Existing canonical sermon MP4s and published podcast
 episodes remain untouched by this diagnosis.
+
+### Root cause confirmed for November 15 retry
+
+PR #516 changed `prepareHighlightChunks()` from returning a chunks array to
+returning `{ chunks, pauses }`. The HTTP handler still wrapped that return value
+inside another `chunks` property, causing the Worker to receive
+`{ chunks: { chunks: [...], pauses: [...] } }` instead of the expected array.
+PR #517 corrects the Container response envelope and adds an end-to-end shape
+regression test against the Worker's manifest validator. No source audio or
+clip timestamps are modified by this fix.
