@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import { sermonAudioKey, podcastAudioArgs, extractSermonAudioArgs, chunkSermonAudioArgs } from "./sermon-audio.mjs";
+import { sermonAudioKey, podcastAudioArgs, extractSermonAudioArgs, chunkSermonAudioArgs, highlightChunkResponse } from "./sermon-audio.mjs";
 import { detectSpeechPauses } from "./pause-detection.mjs";
 
 const STORAGE = "http://storage.internal/";
@@ -207,9 +207,9 @@ http.createServer(async (request, response) => {
       if (test || payload?.test !== undefined) {
         response.writeHead(400).end("highlight_test_not_supported"); return;
       }
-      const chunks = await prepareHighlightChunks(id);
+      const manifest = await prepareHighlightChunks(id);
       response.writeHead(200, { "content-type": "application/json" })
-        .end(JSON.stringify({ ok: true, chunks }));
+        .end(JSON.stringify(highlightChunkResponse(manifest)));
     } else {
       const bytes = await produce(id, test);
       response.writeHead(200, { "content-type": "application/json" })
