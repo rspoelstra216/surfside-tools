@@ -1,3 +1,4 @@
+import { previewKey, resolveClipPicks, requestedByteRange } from "../src/highlight-video.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -172,4 +173,43 @@ test("container response keeps chunks as top-level array when pauses are include
     { chunks, pauses: [{ start: 45, end: 45.5 }] });
   const server = readFileSync(new URL("../container/server.mjs", import.meta.url), "utf8");
   assert.match(server, /JSON\.stringify\(highlightChunkResponse\(manifest\)\)/);
+});
+
+test("staff select an existing highlight and override exactly the preview boundaries", () => {
+  const highlights = [
+    { number: 2, title: "Celebrating While Imperfect", start: 457.24, end: 495.24 },
+    { number: 4, title: "Celebrating Faith Steps", start: 952.78, end: 1010.52 },
+  ];
+  const clips = resolveClipPicks(highlights, [
+    { number: 2, start: 456, end: 491 }, { number: 4 },
+  ]);
+  assert.equal(clips[0].start, 456);
+  assert.equal(clips[0].end, 491);
+  assert.equal(clips[1].start, 952.78);
+  assert.equal(previewKey("AjkoDHgFdeA", clips[0]),
+    "sermon-highlights/previews/AjkoDHgFdeA/2-45600-49100.mp4");
+  assert.equal(validStorageAccess(previewKey("AjkoDHgFdeA", clips[0]), "PUT"), true);
+  assert.equal(validStorageAccess("sermons/AjkoDHgFdeA.mp4", "PUT"), false);
+  assert.equal(validStorageAccess("sermon-highlights/previews/../../secret.mp4", "PUT"), false);
+});
+test("manual previews refuse nonexistent clips, overlong requests and duplicate selections", () => {
+  const highlights = [{ number: 2, title: "Test", start: 456, end: 491 }];
+  assert.throws(() => resolveClipPicks(highlights, [{ number: 3 }]), /unknown_highlight_number/);
+  assert.throws(() => resolveClipPicks(highlights,
+    [{ number: 2 }, { number: 2 }]), /invalid_clip_selection/);
+  assert.throws(() => resolveClipPicks(highlights,
+    [{ number: 2, start: 0, end: 1000 }]), /invalid_clip_times/);
+  assert.throws(() => resolveClipPicks(highlights,
+    [{ number: 2, start: 451 }]), /invalid_clip_times/);
+});
+test("video preview range requests support HTML5 seeking and reject malformed ranges", () => {
+  assert.deepEqual(requestedByteRange(null, 1000), null);
+  assert.deepEqual(requestedByteRange("bytes=100-199", 1000),
+    { offset: 100, length: 100, end: 199 });
+  assert.deepEqual(requestedByteRange("bytes=980-", 1000),
+    { offset: 980, length: 20, end: 999 });
+  assert.deepEqual(requestedByteRange("bytes=-50", 1000),
+    { offset: 950, length: 50, end: 999 });
+  assert.equal(requestedByteRange("bytes=1000-1001", 1000), false);
+  assert.equal(requestedByteRange("bytes=1-2,3-4", 1000), false);
 });
