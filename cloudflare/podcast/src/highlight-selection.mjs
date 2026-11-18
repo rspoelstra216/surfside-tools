@@ -103,15 +103,37 @@ export function parseHighlightCandidates(output, window) {
   return candidates;
 }
 
-export function selectHighlights(candidates, limit = 5) {
-  const sorted = [...candidates].sort((a, b) =>
-    b.score - a.score || a.start - b.start);
+// Soft coverage and topical-variety preferences; never force weak clips.
+const titleTokens = (title = "") => new Set(title.toLowerCase()
+  .replace(/[^a-z0-9\s]/g, " ").split(/\s+/)
+  .filter((w) => w.length >= 3 &&
+    !["the", "and", "for", "with", "from", "your", "you", "how", "why", "need", "getting"].includes(w)));
+function titleSimilarity(a, b) {
+  const x = titleTokens(a.title), y = titleTokens(b.title);
+  if (!x.size || !y.size) return 0;
+  const overlap = [...x].filter((w) => y.has(w)).length;
+  return overlap / (x.size + y.size - overlap);
+}
+
+export function selectHighlights(candidates, limit = 5, { duration } = {}) {
+  const qualified = candidates.filter((c) =>
+    Number.isFinite(c.start) && Number.isFinite(c.end) &&
+    c.end > c.start && Number.isFinite(c.score) && c.score >= 3);
+  const total = Number.isFinite(duration) && duration > 0
+    ? duration : Math.max(1, ...qualified.map((c) => c.end));
+  const region = (c) => Math.min(4, Math.floor(5 * c.start / total));
   const chosen = [];
-  for (const candidate of sorted) {
-    if (chosen.some((previous) =>
-      Math.min(previous.end, candidate.end) - Math.max(previous.start, candidate.start) > 10)) continue;
-    chosen.push(candidate);
-    if (chosen.length >= limit) break;
+  while (chosen.length < limit) {
+    const available = qualified.filter((c) =>
+      !chosen.includes(c) && !chosen.some((previous) =>
+        Math.min(previous.end, c.end) - Math.max(previous.start, c.start) > 10));
+    if (!available.length) break;
+    const value = (c) => c.score * 100 -
+      chosen.filter((p) => region(p) === region(c)).length * 115 -
+      chosen.reduce((penalty, p) => penalty + (titleSimilarity(c, p) >= 0.65 ? 65 : 0), 0);
+    available.sort((a, b) => value(b) - value(a) ||
+      b.score - a.score || a.start - b.start);
+    chosen.push(available[0]);
   }
   return chosen.sort((a, b) => a.start - b.start)
     .map((candidate, index) => ({ ...candidate, number: index + 1 }));

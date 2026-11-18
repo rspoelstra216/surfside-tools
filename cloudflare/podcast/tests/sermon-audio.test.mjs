@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { sermonAudioKey, podcastAudioArgs, extractSermonAudioArgs, chunkSermonAudioArgs } from "../container/sermon-audio.mjs";
+import { parseSilenceLog, silenceDetectArgs, detectSpeechPauses } from "../container/pause-detection.mjs";
 import { sermonAudioKey as workerSermonAudioKey, validStorageAccess } from "../src/validation.mjs";
 
 test("source audio sidecar paths are deterministic and test-isolated", () => {
@@ -97,3 +98,33 @@ test("FFmpeg produces bumper-inclusive podcast and bumper-free sermon audio in o
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+test("silence parser returns only complete sufficiently long pause intervals", () => {
+  const log = [
+    "[silencedetect] silence_start: 24.9",
+    "[silencedetect] silence_end: 25.35 | silence_duration: 0.45",
+    "[silencedetect] silence_start: 29.1",
+    "[silencedetect] silence_end: 29.19 | silence_duration: 0.09",
+  ].join("\n");
+  assert.deepEqual(parseSilenceLog(log), [{ start: 24.9, end: 25.35 }]);
+  assert.match(silenceDetectArgs("audio.mp3").join(" "), /silencedetect=noise=-32dB:d=0.30/);
+});
+
+test("FFmpeg detects a genuine pause between two audio passages", { skip: !hasFFmpeg }, async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "surfside-pause-audio-"));
+  try {
+    const audio = path.join(dir, "pause.mp3");
+    run(["-hide_banner", "-loglevel", "error", "-y",
+      "-f", "lavfi", "-i", "sine=frequency=440:duration=1",
+      "-f", "lavfi", "-i", "anullsrc=r=16000:cl=mono:d=1",
+      "-f", "lavfi", "-i", "sine=frequency=440:duration=1",
+      "-filter_complex", "[0:a][1:a][2:a]concat=n=3:v=0:a=1[out]",
+      "-map", "[out]", "-ar", "16000", "-ac", "1",
+      "-c:a", "libmp3lame", audio]);
+    const pauses = await detectSpeechPauses(audio);
+    assert.ok(pauses.some((p) => p.start >= 0.85 && p.start <= 1.2 &&
+      p.end >= 1.8 && p.end <= 2.2), JSON.stringify(pauses));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
