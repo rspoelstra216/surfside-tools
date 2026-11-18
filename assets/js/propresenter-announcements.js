@@ -27,39 +27,6 @@
         return [slide.title].concat(slide.lines).join('\n');
     }
 
-    // Clipboard test: carry the title's bold emphasis without imposing a new
-    // font, color, or slide layout on the existing ProPresenter presentation.
-    // This is intentionally one announcement at a time; a pasted multi-slide
-    // document would shrink to fit one text box and include separators.
-    function formattedSlideHtml(slide) {
-        function escapeHtml(value) {
-            return String(value).replace(/[&<>"']/g, function (char) {
-                return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char];
-            });
-        }
-        const title = '<span style="font-weight:700">' + escapeHtml(slide.title) + '</span>';
-        const body = slide.lines.map(function (line) {
-            return '<span style="font-weight:400">' + escapeHtml(line) + '</span>';
-        });
-        return '<html><body><div style="text-align:center">' +
-            [title].concat(body).join('<br>') + '</div></body></html>';
-    }
-
-    async function copyFormattedSlide(slide) {
-        // Never silently downgrade to plain text; that would make the user
-        // think mixed formatting had reached ProPresenter when it had not.
-        if (!window.isSecureContext || !navigator.clipboard ||
-            typeof navigator.clipboard.write !== 'function' ||
-            typeof window.ClipboardItem !== 'function') {
-            throw new Error('Formatted clipboard is unavailable in this browser. Use Copy slide instead, or try Chrome on the ProPresenter Mac.');
-        }
-        const content = new window.ClipboardItem({
-            'text/html': new Blob([formattedSlideHtml(slide)], { type: 'text/html' }),
-            'text/plain': new Blob([slideText(slide)], { type: 'text/plain' })
-        });
-        await navigator.clipboard.write([content]);
-    }
-
     async function copyText(value) {
         if (navigator.clipboard && window.isSecureContext) {
             await navigator.clipboard.writeText(value);
@@ -111,13 +78,7 @@
         copyButton.className = 'surfside-staff-button-secondary';
         copyButton.dataset.propresenterAction = 'copy-one';
         copyButton.textContent = 'Copy slide';
-        const formattedButton = document.createElement('button');
-        formattedButton.type = 'button';
-        formattedButton.className = 'surfside-staff-button-secondary';
-        formattedButton.dataset.propresenterAction = 'copy-formatted';
-        formattedButton.textContent = 'Copy formatted (test)';
-        formattedButton.title = 'Copy this one slide with a bold title and regular body text';
-        heading.append(label, copyButton, formattedButton);
+        heading.append(label, copyButton);
 
         const titleLabel = document.createElement('label');
         titleLabel.appendChild(document.createTextNode('Title'));
@@ -167,20 +128,17 @@
         buttons.forEach(function (other) { other.disabled = true; });
         announce('');
         try {
-            if (action === 'copy-one' || action === 'copy-formatted') {
+            if (action === 'copy-one') {
                 const article = button.closest('[data-propresenter-slide]');
                 const index = Array.from(slideContainer.children).indexOf(article);
                 if (index < 0 || !slides[index]) throw new Error('Slide unavailable. Refresh the page.');
-                if (action === 'copy-formatted') {
-                    await copyFormattedSlide(slides[index]);
-                    announce('Formatted slide copied. In ProPresenter, use regular Paste (not Paste and Match Style) in one slide. Test whether the bold title is retained.');
-                } else {
-                    await copyText(slideText(slides[index]));
-                    announce('Slide copied.');
-                }
+                await copyText(slideText(slides[index]));
+                announce('Slide copied.');
             } else if (action === 'copy-all') {
-                await copyText(slides.map(slideText).join('\n\n---\n\n'));
-                announce('All slides copied. Separate slides at the --- divider when importing.');
+                // Keep exactly one newline between each announcement. In Reflow,
+                // staff can add slide breaks wherever needed.
+                await copyText(slides.map(slideText).join('\n'));
+                announce('All announcements copied as plain text. Add slide breaks in ProPresenter Reflow.');
             } else if (action === 'save') {
                 const result = await request('save', { slides: JSON.stringify(slides) });
                 announce(result.message || 'Slide edits saved.');
@@ -203,7 +161,7 @@
             announce(error.message || 'An unexpected error occurred.', true);
         } finally {
             buttons.forEach(function (other) {
-                const needsSlides = ['copy-all', 'save', 'email', 'copy-one', 'copy-formatted'].includes(other.dataset.propresenterAction);
+                const needsSlides = ['copy-all', 'save', 'email', 'copy-one'].includes(other.dataset.propresenterAction);
                 other.disabled = needsSlides && !root.querySelector('[data-propresenter-slide]');
             });
         }
