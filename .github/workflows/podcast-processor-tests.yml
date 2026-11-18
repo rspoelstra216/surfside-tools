@@ -1,0 +1,22 @@
+name: Podcast processor syntax and unit tests
+
+on:
+  pull_request:
+    paths:
+      - 'cloudflare/podcast/**'
+      - '.github/workflows/podcast-processor-tests.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check source syntax
+        run: npm run check
+        working-directory: cloudflare/podcast
+      - name: Run Node tests
+        run: npm test
+        working-directory: cloudflare/podcast
