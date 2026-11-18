@@ -188,7 +188,7 @@ function surfside_tools_staff_permission_for_route($path) {
         return 'calendar_landing';
     }
     if ($path === 'dashboard/site-management') {
-        return $view === 'roku-media' ? 'weekly_media' : 'message_archive';
+        return in_array($view, array('roku-media', 'sermon-highlights'), true) ? 'weekly_media' : 'message_archive';
     }
     if ($path === 'dashboard') {
         if ($view === 'sermon-archive') return 'archived_notes';
@@ -211,6 +211,7 @@ add_action('template_redirect', function () {
 add_filter('pre_do_shortcode_tag', function ($result, $tag, $attr = array()) {
     $map = array(
         'surfside_staff_weekly_update'=>'weekly',
+        'surfside_staff_sermon_highlights'=>'weekly_media',
         'surfside_staff_featured_announcement'=>'featured',
         'surfside_staff_live_slides'=>'live_slides',
         'surfside_staff_calendar'=>'calendar_landing',
