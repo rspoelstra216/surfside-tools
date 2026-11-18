@@ -5,7 +5,8 @@ import { uploadAudioToR2 } from "./audio-upload.mjs";
 import { publishReadyEpisode, PUBLISH_CHECK_DELAY_SECONDS, MAX_PUBLISH_CHECKS } from "./spreaker-publication.mjs";
 import { validDraftMetadata, spreakerConfigured, canRetryKnownRedirectFailure, canPrepareMissingDraft, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
 import { enqueueHighlights, highlightStatus, processHighlights } from "./highlights.mjs";
-import { enqueueClips, statusClips, processClipJob, servePreview } from "./highlight-clips.mjs";
+import { enqueueClips, processClipJob } from "./highlight-clips.mjs";
+import { statusClips, servePreview } from "./highlight-clip-preview.mjs";
 
 const reply = (data, status = 200) => Response.json(data, {
   status,
