@@ -76,3 +76,26 @@ A zero-highlight result is possible and should be evaluated rather than silently
 - Automatic Facebook / Instagram / YouTube posting.
 
 If manual review proves the selected moments useful, a later PR can add a staff review interface and a separately approved video rendering step.
+
+## Selection quality improvements
+
+The manual pilot now uses the full sermon duration to favor strong clips from
+different sections rather than picking every score tie from the first few minutes.
+Near-duplicate titles receive a soft penalty; clips scoring below 3/5 are never
+forced into the result just to fill slots.
+
+The FFmpeg Container optionally scans the cached `sermon-audio/<id>.mp3` with
+`silencedetect`. The Worker uses pauses near clip boundaries and adjacent
+timestamped transcript segments to suggest cleaner starts and complete thoughts.
+An audio pause does **not** guarantee the sermon sentence has finished. Each
+refined suggestion includes a `boundary_review` object with the original
+transcript boundaries, whether any pause was used, and
+`manual_review_required: true`. Staff must review the original MP4 before any
+clip is rendered or published. If pause detection fails, transcription and
+highlight selection continue using transcript-only timing.
+
+Results already marked `ready` are intentionally retained. Submitting the same
+video ID again returns the existing result, not the new selection logic. To test
+these improvements, choose a different verified sermon video ID rather than
+deleting existing production R2 records. Podcast output, Spreaker publishing,
+and the manual-only processing policy remain unchanged.
