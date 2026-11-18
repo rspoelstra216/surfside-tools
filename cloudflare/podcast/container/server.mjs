@@ -8,6 +8,7 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { sermonAudioKey, podcastAudioArgs, extractSermonAudioArgs, chunkSermonAudioArgs, highlightChunkResponse } from "./sermon-audio.mjs";
 import { detectSpeechPauses } from "./pause-detection.mjs";
+import { clipVideoArgs, previewKey } from "./highlight-video.mjs";
 
 const STORAGE = "http://storage.internal/";
 const idPattern = /^[A-Za-z0-9_-]{11}$/;
@@ -28,12 +29,12 @@ async function download(key, dest) {
 }
 
 // Sends a file with a known length; R2 is immutable for existing keys.
-async function upload(key, file) {
+async function upload(key, file, contentType = "audio/mpeg") {
   const bytes = (await stat(file)).size;
   if (bytes < 1024 || bytes > 300 * 1024 * 1024) throw Error("output_size_invalid");
   const response = await fetch(STORAGE + key, {
     method: "PUT",
-    headers: { "content-type": "audio/mpeg", "content-length": String(bytes) },
+    headers: { "content-type": contentType, "content-length": String(bytes) },
     body: Readable.toWeb(createReadStream(file)),
     duplex: "half",
   });
@@ -181,11 +182,51 @@ async function prepareHighlightChunks(id) {
   }
 }
 
+
+// Manually approved ranges are re-validated inside the Container. Download the
+// original MP4 once for the batch and render each private review clip accurately.
+async function renderHighlightClips(id, clips) {
+  if (!Array.isArray(clips) || clips.length < 1 || clips.length > 5)
+    throw Error("invalid_clip_batch");
+  const seen = new Set();
+  let totalSeconds = 0;
+  for (const clip of clips) {
+    if (!clip || !Number.isInteger(clip.number) || clip.number < 1 ||
+        clip.number > 5 || seen.has(clip.number) ||
+        !Number.isFinite(clip.start) || !Number.isFinite(clip.end) ||
+        clip.start < 0 || clip.end > 72 * 60 ||
+        clip.end - clip.start < 15 || clip.end - clip.start > 120)
+      throw Error("invalid_clip_selection");
+    seen.add(clip.number);
+    totalSeconds += clip.end - clip.start;
+  }
+  if (totalSeconds > 420) throw Error("clip_batch_too_long");
+  const dir = await mkdtemp(path.join(tmpdir(), "surfside-clips-"));
+  try {
+    const video = path.join(dir, "sermon.mp4");
+    await download("sermons/" + id + ".mp4", video);
+    const duration = await durationOf(video);
+    if (duration > 72 * 60 + 5 ||
+        clips.some((clip) => clip.end > duration + 0.25))
+      throw Error("clip_outside_sermon");
+    for (const clip of clips) {
+      const file = path.join(dir, "clip-" + clip.number + ".mp4");
+      await runCommand("ffmpeg", clipVideoArgs(video, file, clip.start, clip.end),
+        11 * 60 * 1000);
+      await upload(previewKey(id, clip), file, "video/mp4");
+      await rm(file, { force: true });
+    }
+    return clips.map((clip) => ({ number: clip.number, key: previewKey(id, clip) }));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
 http.createServer(async (request, response) => {
   if (request.url === "/health" && request.method === "GET") {
     response.writeHead(200).end("ok"); return;
   }
-  if (!["/process", "/highlights/chunks"].includes(request.url) || request.method !== "POST") {
+  if (!["/process", "/highlights/chunks", "/highlights/render"].includes(request.url) || request.method !== "POST") {
     response.writeHead(404).end("not_found"); return;
   }
   if (busy) { response.writeHead(409).end("busy"); return; }
@@ -194,7 +235,8 @@ http.createServer(async (request, response) => {
     let body = "";
     for await (const chunk of request) {
       body += chunk.toString();
-      if (body.length > 256) throw Error("request_too_large");
+      if (body.length > (request.url === "/highlights/render" ? 4096 : 256))
+        throw Error("request_too_large");
     }
     const payload = JSON.parse(body);
     const id = payload?.video_id;
@@ -210,6 +252,13 @@ http.createServer(async (request, response) => {
       const manifest = await prepareHighlightChunks(id);
       response.writeHead(200, { "content-type": "application/json" })
         .end(JSON.stringify(highlightChunkResponse(manifest)));
+    } else if (request.url === "/highlights/render") {
+      if (test || payload?.test !== undefined) {
+        response.writeHead(400).end("highlight_test_not_supported"); return;
+      }
+      const clips = await renderHighlightClips(id, payload.clips);
+      response.writeHead(200, { "content-type": "application/json" })
+        .end(JSON.stringify({ ok: true, clips }));
     } else {
       const bytes = await produce(id, test);
       response.writeHead(200, { "content-type": "application/json" })
