@@ -8,6 +8,7 @@ import {
 } from "../src/highlight-selection.mjs";
 import { refineHighlightCandidates } from "../src/highlight-refinement.mjs";
 import { validateChunkManifest } from "../src/highlight-chunk-manifest.mjs";
+import { highlightChunkResponse } from "../container/sermon-audio.mjs";
 
 const segments = [
   { start: 0, end: 15, text: "We face uncertainty." },
@@ -154,4 +155,21 @@ test("manifest validation identifies missing or incorrect fields without exposin
   for (const [data, code] of invalid)
     assert.throws(() => validateChunkManifest(data, id),
       (error) => error.message === "invalid_chunk_manifest:" + code);
+});
+
+test("container response keeps chunks as top-level array when pauses are included", () => {
+  const id = "AjkoDHgFdeA";
+  const chunks = [{
+    key: "sermon-highlights/chunks/" + id + "/000.mp3",
+    offset: 0, duration: 180.01,
+  }];
+  const response = highlightChunkResponse({
+    chunks, pauses: [{ start: 45, end: 45.5 }],
+  });
+  assert.equal(response.ok, true);
+  assert.ok(Array.isArray(response.chunks), "must not double-wrap chunks");
+  assert.deepEqual(validateChunkManifest(JSON.parse(JSON.stringify(response)), id),
+    { chunks, pauses: [{ start: 45, end: 45.5 }] });
+  const server = readFileSync(new URL("../container/server.mjs", import.meta.url), "utf8");
+  assert.match(server, /JSON\.stringify\(highlightChunkResponse\(manifest\)\)/);
 });
