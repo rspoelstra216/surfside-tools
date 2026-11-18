@@ -22,8 +22,12 @@ export async function uploadAudioToR2(
   // Start both sides together: waiting for pipeTo first would deadlock because
   // the R2 binding has not yet begun reading from the fixed-length stream.
   const piping = request.body.pipeTo(writable);
+  // The Container can upload only scoped MP3 output and private MP4 previews.
+  // Decide MIME from the server-validated object key, never from client headers.
+  const contentType = /^sermon-highlights\/previews\/[A-Za-z0-9_-]{11}\/[1-5]-[0-9]+-[0-9]+\.mp4$/.test(key)
+    ? "video/mp4" : "audio/mpeg";
   const saving = bucket.put(key, readable, {
-    httpMetadata: { contentType: "audio/mpeg" },
+    httpMetadata: { contentType },
   });
   const [object] = await Promise.all([saving, piping]);
   if (!object) throw Error("audio_object_not_stored");

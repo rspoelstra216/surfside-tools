@@ -87,3 +87,13 @@ test("truncated MP3 is rejected rather than stored", async () => {
   );
   assert.equal(bucket.writes.length, 0);
 });
+
+test("private video preview bytes are stored with video/mp4 metadata", async () => {
+  const bytes = new Uint8Array(2048).fill(42), bucket = fakeBucket();
+  const key = "sermon-highlights/previews/AjkoDHgFdeA/2-45600-49100.mp4";
+  const result = await uploadAudioToR2(
+    request(bytes, bytes.length), bucket, key, TestFixedLengthStream
+  );
+  assert.equal(result.status, 201);
+  assert.equal(bucket.writes[0].options.httpMetadata.contentType, "video/mp4");
+});

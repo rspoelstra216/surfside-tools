@@ -123,3 +123,46 @@ inside another `chunks` property, causing the Worker to receive
 PR #517 corrects the Container response envelope and adds an end-to-end shape
 regression test against the Worker's manifest validator. No source audio or
 clip timestamps are modified by this fix.
+
+## Manual video-first clip previews
+
+**Video previews are never generated automatically** during sermon analysis,
+podcast creation or publication. Once a sermon has a completed private highlight
+analysis, choose only the highlights worth reviewing, optionally override their
+start and end times, then render actual MP4 excerpts from the original sermon
+video. The Container downloads `sermons/<id>.mp4` only once for the batch,
+transcodes accurate-seek H.264/AAC browser-playable review clips and uploads
+them privately to `sermon-highlights/previews/<id>/<number>-<start-centisec>-<end-centisec>.mp4`.
+
+In your GitHub Codespace, with the **existing** `SURFSIDE_PODCAST_WORKER_URL`
+and `SURFSIDE_PODCAST_SHARED_SECRET` securely exported:
+
+```bash
+cd /workspaces/surfside-tools/cloudflare/podcast
+# November 15: keep highlight 2, but use the reviewed 7:36–8:11 video cut;
+# render suggested highlight 4 unchanged; skip highlight 3.
+node scripts/highlight-clips.mjs AjkoDHgFdeA render 2=456-491 4
+node scripts/highlight-clips.mjs AjkoDHgFdeA status
+```
+
+When `status` returns `ready`, it includes **10-minute private preview URLs**
+for each clip. Open those in your browser to watch and download the actual video
+excerpts (with audio) without matching transcript times manually. Run `status`
+again for fresh links if they expire. Preview URLs are HMAC-signed for one
+specific private MP4, support browser byte-range seeking, and never expose
+the shared secret. Do not paste those links publicly.
+
+This pilot permits 1–5 unique selected highlight numbers, either using the
+AI suggestion's original-MP4 timestamps or explicit start and end overrides.
+Each requested clip is 15–120 seconds, and the total batch is at most 420
+seconds. Existing canonical sermon MP4s and podcasts are **read-only**.
+A second manually requested range creates a different private preview key
+rather than overwriting an approved earlier cut. Review remains mandatory:
+there is no social-media publication, captioning, cropping/reframing, or
+WordPress staff UI in this PR.
+
+Render jobs have a separate private status record at
+`sermon-highlights/clip-jobs/<id>.json`, while the original AI highlight analysis
+and transcript remain immutable. A render job may be retried by the existing
+Queue if interrupted; avoid submitting a new render while its status is
+`queued` or `processing`.

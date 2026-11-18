@@ -1,3 +1,5 @@
+import { clipVideoArgs, previewKey as containerPreviewKey } from "../container/highlight-video.mjs";
+import { previewKey as workerPreviewKey } from "../src/highlight-video.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, mkdtempSync, rmSync, statSync } from "node:fs";
@@ -128,3 +130,33 @@ test("FFmpeg detects a genuine pause between two audio passages", { skip: !hasFF
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("container and Worker agree on deterministic immutable video preview keys", () => {
+  const clip = { number: 2, start: 456, end: 491 };
+  assert.equal(containerPreviewKey("AjkoDHgFdeA", clip), workerPreviewKey("AjkoDHgFdeA", clip));
+});
+test("actual FFmpeg produces a precisely sought playable MP4 preview with audio",
+  { skip: !hasFFmpeg }, () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "surfside-video-preview-"));
+    try {
+      const source = path.join(dir, "source.mp4"), output = path.join(dir, "preview.mp4");
+      run(["-hide_banner", "-loglevel", "error", "-y",
+        "-f", "lavfi", "-i", "testsrc2=size=320x180:rate=24:duration=8",
+        "-f", "lavfi", "-i", "sine=frequency=440:duration=8",
+        "-map", "0:v:0", "-map", "1:a:0",
+        "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac",
+        "-shortest", source]);
+      run(clipVideoArgs(source, output, 3.5, 5.5));
+      assert.ok(statSync(output).size > 2048);
+      const length = probe(output);
+      assert.ok(Math.abs(length - 2) < 0.35, "expected a ~2s accurate preview, got " + length);
+      const result = spawnSync("ffprobe", ["-v", "error",
+        "-show_entries", "stream=codec_name", "-of", "csv=p=0", output],
+        { encoding: "utf8" });
+      assert.equal(result.status, 0);
+      assert.match(result.stdout, /h264/);
+      assert.match(result.stdout, /aac/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
