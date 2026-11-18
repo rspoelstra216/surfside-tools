@@ -4,6 +4,7 @@ import { PROCESSOR_CONTAINER_ID, validId, sourceKey, audioKey, statusKey, validS
 import { uploadAudioToR2 } from "./audio-upload.mjs";
 import { publishReadyEpisode, PUBLISH_CHECK_DELAY_SECONDS, MAX_PUBLISH_CHECKS } from "./spreaker-publication.mjs";
 import { validDraftMetadata, spreakerConfigured, canRetryKnownRedirectFailure, canPrepareMissingDraft, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
+import { enqueueHighlights, highlightStatus, processHighlights } from "./highlights.mjs";
 
 const reply = (data, status = 200) => Response.json(data, {
   status,
@@ -48,7 +49,7 @@ PodcastContainer.outboundByHost = {
 
 async function incoming(request, env) {
   const route = new URL(request.url).pathname;
-  if (!["/jobs", "/status", "/retry-test-spreaker", "/recover-spreaker"].includes(route) || request.method !== "POST") {
+  if (!["/jobs", "/status", "/retry-test-spreaker", "/recover-spreaker", "/highlights/jobs", "/highlights/status"].includes(route) || request.method !== "POST") {
     return reply({ error: "not_found" }, 404);
   }
   if (!await verifiedRequest(request, env.SURFSIDE_PODCAST_SHARED_SECRET)) {
@@ -66,6 +67,13 @@ async function incoming(request, env) {
   if (route === "/status") {
     const [audio, spreaker] = await Promise.all([readState(env, id, test), readDraftState(env, id, test)]);
     return reply(spreaker ? { ...audio, spreaker } : audio);
+  }
+  if (route === "/highlights/jobs" || route === "/highlights/status") {
+    // A manual, production-MP4 analysis pilot; no Spreaker/test/publish options.
+    if (Object.keys(data).some((field) => field !== "video_id"))
+      return reply({ error: "unexpected_highlight_option" }, 400);
+    return route === "/highlights/status"
+      ? highlightStatus(env, id) : enqueueHighlights(env, id);
   }
   if (route === "/recover-spreaker") {
     // Admin-confirmed production backfill for a weekly upload missing
@@ -168,6 +176,17 @@ export default {
       const id = message.body?.video_id;
       if (!validId(id)) { message.ack(); continue; }
       const test = message.body?.test === true;
+      if (message.body?.kind === "highlights") {
+        if (test) { message.ack(); continue; }
+        try {
+          await processHighlights(env, id);
+          message.ack();
+        } catch (error) {
+          console.error("Highlight pilot queue job failed", id, String(error));
+          message.retry({ delaySeconds: 120 });
+        }
+        continue;
+      }
       if (message.body?.kind === "publish") {
         // Only production jobs explicitly opted in by WordPress can publish.
         if (test || message.body?.auto_publish !== true) { message.ack(); continue; }
