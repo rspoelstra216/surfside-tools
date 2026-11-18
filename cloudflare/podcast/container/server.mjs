@@ -115,6 +115,7 @@ async function prepareHighlightChunks(id) {
     await runCommand("ffmpeg", [
       "-hide_banner", "-nostdin", "-loglevel", "error", "-y",
       "-i", source, "-map", "0:a:0", "-vn", "-ac", "1", "-ar", "16000",
+      "-af", "aresample=async=1:first_pts=0",
       "-c:a", "libmp3lame", "-b:a", "48k",
       "-f", "segment", "-segment_time", "180", "-reset_timestamps", "1",
       pattern,
