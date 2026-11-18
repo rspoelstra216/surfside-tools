@@ -15,7 +15,11 @@ Staff can:
 
 - Review and edit each slide title and body (one to three body lines).
 - **Save edits** without changing the underlying church announcements.
-- **Copy slide** or **Copy all** (plain text, separated by --- lines).
+- **Copy slide** or **Copy all** (plain text, with --- separators between slides).
+- **Copy formatted (test)** on an individual slide, which copies both HTML
+  and plain-text clipboard representations, marking the title bold and each
+  body line regular. It deliberately does not set font size, color or a
+  background and does not insert --- delimiters.
 - **Regenerate AI slides** if a result needs a new pass. This discards edits.
 - Optionally email new summaries automatically to configured recipients, or
   use **Email slides** manually.
@@ -41,6 +45,35 @@ Nothing in the new feature modifies the Saturday 5 PM Eastern release, sermon
 archive, backup rotation, mobile API or public announcements display. A
 missing API key, timeout, rate limit, malformed response, or failed email is
 reported in the staff UI without blocking Upload & Review or Schedule.
+
+## Clipboard formatting trial
+
+To test mixed title/body formatting without changing the existing ProPresenter
+presentation or writing its internal files:
+
+1. On the ProPresenter Mac, open a **duplicate** of the current announcement
+   presentation and choose a single existing slide with one text box.
+2. From Weekly Update, expand Announcement slides and click **Copy formatted
+   (test)** beside one announcement.
+3. Inside the ProPresenter text box, select the current text and choose
+   **regular Paste**, **not Paste and Match Style** (which intentionally
+   discards the copied formatting).
+4. Confirm whether just the first line is bold, while the other lines remain
+   regular. Check text size, alignment, and line breaks. If formatting is
+   lost, try running the Surfside Tools page in a browser *directly on the
+   ProPresenter Mac* rather than transferring the clipboard through Chrome
+   Remote Desktop.
+5. Use **Copy slide** as the unchanged plain-text fallback.
+
+**Copy All** remains a plain-text export intended for manual separation. It
+cannot turn a multi-announcement paste into several existing ProPresenter
+slides; putting the entire week's text in one slide can cause auto-sizing
+to make text tiny. Formatted copy is deliberately per slide until its behavior
+has been verified in ProPresenter.
+
+Formatted clipboard access requires a secure browser with ClipboardItem and
+text/html support. When unavailable, Tools shows an explicit warning rather
+than silently writing unformatted text.
 
 ## OpenAI API key setup
 
