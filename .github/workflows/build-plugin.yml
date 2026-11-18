@@ -47,6 +47,7 @@ jobs:
           php scripts/test-propresenter-announcements.php
           php scripts/test-openai-integration.php
           node --check assets/js/propresenter-announcements.js
+          node scripts/test-propresenter-clipboard.js
 
       - name: Test archived sermon viewer access and queries
         run: php scripts/test-sermon-archive-viewer.php
