@@ -50,7 +50,8 @@ test("container loads bundled audio helper and retains original podcast fallback
 
 const hasFFmpeg = spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status === 0 &&
   spawnSync("ffprobe", ["-version"], { stdio: "ignore" }).status === 0;
-if (process.env.CI && !hasFFmpeg) throw Error("FFmpeg and ffprobe are required in CI");
+if (process.env.SURFSIDE_REQUIRE_FFMPEG_TESTS === "1" && !hasFFmpeg)
+  throw Error("FFmpeg and ffprobe are required for the dedicated processor tests");
 const run = (args) => {
   const result = spawnSync("ffmpeg", args, { encoding: "utf8", timeout: 30_000 });
   assert.equal(result.status, 0, result.stderr?.slice(-3000));
