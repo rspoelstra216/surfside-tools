@@ -6,32 +6,44 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { sermonAudioKey, podcastAudioArgs, extractSermonAudioArgs, chunkSermonAudioArgs } from "./sermon-audio.mjs";
 
 const STORAGE = "http://storage.internal/";
 const idPattern = /^[A-Za-z0-9_-]{11}$/;
 let busy = false;
 
-async function download(key, dest) {
+async function downloadIfPresent(key, dest) {
   const response = await fetch(STORAGE + key);
+  if (response.status === 404) return false;
   if (!response.ok || !response.body) throw Error("input_not_available");
   await pipeline(Readable.fromWeb(response.body), createWriteStream(dest));
   const size = (await stat(dest)).size;
   if (!size || size > 5 * 1024 ** 3) throw Error("invalid_input_size");
+  return true;
 }
 
-function processAudio(intro, sermon, outro, output) {
+async function download(key, dest) {
+  if (!await downloadIfPresent(key, dest)) throw Error("input_not_available");
+}
+
+// Sends a file with a known length; R2 is immutable for existing keys.
+async function upload(key, file) {
+  const bytes = (await stat(file)).size;
+  if (bytes < 1024 || bytes > 300 * 1024 * 1024) throw Error("output_size_invalid");
+  const response = await fetch(STORAGE + key, {
+    method: "PUT",
+    headers: { "content-type": "audio/mpeg", "content-length": String(bytes) },
+    body: Readable.toWeb(createReadStream(file)),
+    duplex: "half",
+  });
+  if (!response.ok && response.status !== 409)
+    throw Error("r2_output_failed_" + response.status);
+  return bytes;
+}
+
+function processAudio(intro, sermon, outro, output, sermonOnly = null) {
   return new Promise((resolve, reject) => {
-    const args = [
-      "-hide_banner", "-nostdin", "-loglevel", "error", "-y",
-      "-i", intro, "-i", sermon, "-i", outro,
-      "-filter_complex",
-      "[0:a:0]aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo,asetpts=PTS-STARTPTS[a0];" +
-      "[1:a:0]aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo,asetpts=PTS-STARTPTS[a1];" +
-      "[2:a:0]aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo,asetpts=PTS-STARTPTS[a2];" +
-      "[a0][a1][a2]concat=n=3:v=0:a=1,loudnorm=I=-16:TP=-1.5:LRA=11[out]",
-      "-map", "[out]", "-vn", "-c:a", "libmp3lame", "-b:a", "128k",
-      "-ar", "44100", "-ac", "2", output
-    ];
+    const args = podcastAudioArgs(intro, sermon, outro, output, sermonOnly);
     const child = spawn("ffmpeg", args, { stdio: ["ignore", "ignore", "pipe"] });
     let stderr = "";
     child.stderr.on("data", (data) => { stderr = (stderr + data.toString()).slice(-2000); });
@@ -52,20 +64,27 @@ async function produce(id, test = false) {
     const intro = path.join(dir, "intro.mp3");
     const outro = path.join(dir, "outro.mp3");
     const output = path.join(dir, "episode.mp3");
+    const sermonOnly = path.join(dir, "sermon-only.mp3");
     await download((test ? "podcast-test-input/" : "sermons/") + id + ".mp4", sermon);
     await download("podcast-assets/intro.mp3", intro);
     await download("podcast-assets/outro.mp3", outro);
-    await processAudio(intro, sermon, outro, output);
-    const bytes = (await stat(output)).size;
-    if (bytes < 1024 || bytes > 300 * 1024 * 1024) throw Error("output_size_invalid");
-    const response = await fetch(STORAGE + (test ? "podcast-test-audio/" : "podcast-audio/") + id + ".mp3", {
-      method: "PUT",
-      // The Worker needs this exact byte count for R2's fixed-length stream.
-      headers: { "content-type": "audio/mpeg", "content-length": String(bytes) },
-      body: Readable.toWeb(createReadStream(output)),
-      duplex: "half",
-    });
-    if (!response.ok && response.status !== 409) throw Error("r2_output_failed_" + response.status);
+    try {
+      // One FFmpeg read of the source MP4 creates the original podcast mix
+      // and a small, source-time-aligned sermon-only audio sidecar.
+      await processAudio(intro, sermon, outro, output, sermonOnly);
+    } catch (error) {
+      // A sidecar encoding error must never prevent a playable podcast.
+      console.error("Combined podcast/sermon audio processing failed; using original podcast path", String(error));
+      await processAudio(intro, sermon, outro, output);
+    }
+    // Podcast output is authoritative; a sidecar upload is best effort.
+    const bytes = await upload((test ? "podcast-test-audio/" : "podcast-audio/") + id + ".mp3", output);
+    try {
+      if ((await stat(sermonOnly).catch(() => null))?.size >= 1024)
+        await upload(sermonAudioKey(id, test), sermonOnly);
+    } catch (error) {
+      console.error("Unable to save optional sermon-only audio", id, String(error));
+    }
     return bytes;
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -107,19 +126,26 @@ async function durationOf(file) {
 async function prepareHighlightChunks(id) {
   const dir = await mkdtemp(path.join(tmpdir(), "surfside-highlights-"));
   try {
-    const source = path.join(dir, "sermon.mp4");
-    await download("sermons/" + id + ".mp4", source);
-    const duration = await durationOf(source);
-    if (duration > 72 * 60) throw Error("highlight_source_too_long");
+    const audio = path.join(dir, "sermon-only.mp3");
+    // New sermons already have this sidecar from normal podcast production.
+    // Existing sermons are backfilled once, and later runs reuse that MP3.
+    if (!await downloadIfPresent(sermonAudioKey(id), audio)) {
+      const source = path.join(dir, "sermon.mp4");
+      await download("sermons/" + id + ".mp4", source);
+      const sourceDuration = await durationOf(source);
+      if (sourceDuration > 72 * 60) throw Error("highlight_source_too_long");
+      await runCommand("ffmpeg", extractSermonAudioArgs(source, audio));
+      try {
+        await upload(sermonAudioKey(id), audio);
+      } catch (error) {
+        // Transcript analysis can still proceed using this local copy.
+        console.error("Could not cache extracted historical sermon audio", id, String(error));
+      }
+    }
+    const duration = await durationOf(audio);
+    if (duration > 72 * 60 + 5) throw Error("highlight_audio_too_long");
     const pattern = path.join(dir, "chunk-%03d.mp3");
-    await runCommand("ffmpeg", [
-      "-hide_banner", "-nostdin", "-loglevel", "error", "-y",
-      "-i", source, "-map", "0:a:0", "-vn", "-ac", "1", "-ar", "16000",
-      "-af", "aresample=async=1:first_pts=0",
-      "-c:a", "libmp3lame", "-b:a", "48k",
-      "-f", "segment", "-segment_time", "180", "-reset_timestamps", "1",
-      pattern,
-    ]);
+    await runCommand("ffmpeg", chunkSermonAudioArgs(audio, pattern));
     const names = (await readdir(dir)).filter((name) => /^chunk-[0-9]{3}\.mp3$/.test(name)).sort();
     if (!names.length || names.length > 24) throw Error("invalid_highlight_chunk_count");
     const chunks = [];
@@ -131,13 +157,7 @@ async function prepareHighlightChunks(id) {
       const seconds = await durationOf(file);
       if (seconds > 185) throw Error("highlight_chunk_duration_invalid");
       const key = "sermon-highlights/chunks/" + id + "/" + String(i).padStart(3, "0") + ".mp3";
-      const put = await fetch(STORAGE + key, {
-        method: "PUT",
-        headers: { "content-type": "audio/mpeg", "content-length": String(bytes) },
-        body: Readable.toWeb(createReadStream(file)),
-        duplex: "half",
-      });
-      if (!put.ok && put.status !== 409) throw Error("highlight_chunk_upload_failed");
+      await upload(key, file);
       chunks.push({
         key,
         offset: Math.round(offset * 100) / 100,
