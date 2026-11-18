@@ -15,11 +15,9 @@ Staff can:
 
 - Review and edit each slide title and body (one to three body lines).
 - **Save edits** without changing the underlying church announcements.
-- **Copy slide** or **Copy all** (plain text, with --- separators between slides).
-- **Copy formatted (test)** on an individual slide, which copies both HTML
-  and plain-text clipboard representations, marking the title bold and each
-  body line regular. It deliberately does not set font size, color or a
-  background and does not insert --- delimiters.
+- **Copy slide** to copy one announcement or **Copy all** to copy the
+  entire week's announcement text as plain text, with one newline between
+  lines and no extra blank lines or separator markers.
 - **Regenerate AI slides** if a result needs a new pass. This discards edits.
 - Optionally email new summaries automatically to configured recipients, or
   use **Email slides** manually.
@@ -46,34 +44,23 @@ archive, backup rotation, mobile API or public announcements display. A
 missing API key, timeout, rate limit, malformed response, or failed email is
 reported in the staff UI without blocking Upload & Review or Schedule.
 
-## Clipboard formatting trial
+## Copy All for ProPresenter Reflow
 
-To test mixed title/body formatting without changing the existing ProPresenter
-presentation or writing its internal files:
+Copy All exports all generated announcements in order, using plain text.
+Each announcement retains its title and body lines; the next announcement
+starts on the next line with **no blank row or divider** between items.
 
-1. On the ProPresenter Mac, open a **duplicate** of the current announcement
-   presentation and choose a single existing slide with one text box.
-2. From Weekly Update, expand Announcement slides and click **Copy formatted
-   (test)** beside one announcement.
-3. Inside the ProPresenter text box, select the current text and choose
-   **regular Paste**, **not Paste and Match Style** (which intentionally
-   discards the copied formatting).
-4. Confirm whether just the first line is bold, while the other lines remain
-   regular. Check text size, alignment, and line breaks. If formatting is
-   lost, try running the Surfside Tools page in a browser *directly on the
-   ProPresenter Mac* rather than transferring the clipboard through Chrome
-   Remote Desktop.
-5. Use **Copy slide** as the unchanged plain-text fallback.
+1. Expand **Announcement slides** at the bottom of Weekly Update.
+2. Review and optionally edit the announcement text; click **Save edits**
+   if those changes should persist.
+3. Click **Copy all** and paste the text into ProPresenter's Reflow Editor.
+4. Add slide breaks between announcements manually, then apply the existing
+   slide Theme and adjust title emphasis as needed.
 
-**Copy All** remains a plain-text export intended for manual separation. It
-cannot turn a multi-announcement paste into several existing ProPresenter
-slides; putting the entire week's text in one slide can cause auto-sizing
-to make text tiny. Formatted copy is deliberately per slide until its behavior
-has been verified in ProPresenter.
-
-Formatted clipboard access requires a secure browser with ClipboardItem and
-text/html support. When unavailable, Tools shows an explicit warning rather
-than silently writing unformatted text.
+This is an intentionally minimal text-only workflow, not an automated import:
+Copy All does not add slide breaks, change the existing ProPresenter
+presentation, or preserve title/body font styling. Copy slide remains
+available for pasting one announcement at a time.
 
 ## OpenAI API key setup
 
