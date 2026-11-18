@@ -125,8 +125,8 @@ async function durationOf(file) {
   return seconds;
 }
 
-// Manual highlights pilot: create short, playable audio chunks from the SOURCE MP4.
-// The podcast MP3 is deliberately not used because its intro shifts timestamps.
+// Manual highlights pilot: split the reusable sermon-only audio into short chunks.
+// Never use the bumper-inclusive podcast MP3 because it shifts video timestamps.
 async function prepareHighlightChunks(id) {
   const dir = await mkdtemp(path.join(tmpdir(), "surfside-highlights-"));
   try {
