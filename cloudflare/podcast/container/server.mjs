@@ -7,6 +7,7 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { sermonAudioKey, podcastAudioArgs, extractSermonAudioArgs, chunkSermonAudioArgs } from "./sermon-audio.mjs";
+import { detectSpeechPauses } from "./pause-detection.mjs";
 
 const STORAGE = "http://storage.internal/";
 const idPattern = /^[A-Za-z0-9_-]{11}$/;
@@ -169,7 +170,12 @@ async function prepareHighlightChunks(id) {
       });
       offset += seconds;
     }
-    return chunks;
+    // Best-effort silence scan runs on sermon-only audio (not published podcasts).
+    // A failed scan cannot prevent transcription or highlight selection.
+    let pauses = [];
+    try { pauses = await detectSpeechPauses(audio); }
+    catch (error) { console.error("Optional sermon pause scan failed", id, String(error)); }
+    return { chunks, pauses };
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
