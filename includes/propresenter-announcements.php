@@ -406,6 +406,7 @@ function surfside_tools_propresenter_workspace_markup() {
                         <div class="surfside-propresenter-slide-heading">
                             <strong>Slide <?php echo esc_html($index + 1); ?></strong>
                             <button type="button" data-propresenter-action="copy-one" class="surfside-staff-button-secondary">Copy slide</button>
+                            <button type="button" data-propresenter-action="copy-formatted" class="surfside-staff-button-secondary" title="Copy this slide with a bold title and regular body text">Copy formatted (test)</button>
                         </div>
                         <label>Title
                             <input type="text" data-propresenter-title value="<?php echo esc_attr($slide['title']); ?>">
@@ -419,7 +420,7 @@ function surfside_tools_propresenter_workspace_markup() {
             <?php if (!$slides) : ?>
                 <p data-propresenter-empty>There is no generated slide preview yet. Configure the API key and select Regenerate AI slides.</p>
             <?php endif; ?>
-            <p class="surfside-propresenter-help">Review names, dates and times before use. Copy All separates slides with a line of three dashes.</p>
+            <p class="surfside-propresenter-help">Review names, dates and times before use. <strong>Copy formatted (test)</strong> copies one announcement with a bold title and regular body; paste into a single ProPresenter slide with regular Paste, <em>not</em> Paste and Match Style. Clipboard formatting may not transfer through remote desktop. Copy All is unchanged and includes --- dividers for manual splitting.</p>
         <?php else : ?>
             <p>No announcements uploaded yet. When staff selects Upload &amp; Review, summaries will appear here immediately.</p>
         <?php endif; ?>
