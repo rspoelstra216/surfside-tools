@@ -45,3 +45,17 @@ export function chunkSermonAudioArgs(source, pattern) {
     "-f", "segment", "-segment_time", "180", "-reset_timestamps", "1", pattern,
   ];
 }
+
+/**
+ * Expose the prepared chunks and optional pauses at the top level of the
+ * Container API. Do not wrap { chunks, pauses } in another chunks object.
+ */
+export function highlightChunkResponse(manifest) {
+  if (!Array.isArray(manifest?.chunks))
+    throw Error("invalid_highlight_chunk_response");
+  return {
+    ok: true,
+    chunks: manifest.chunks,
+    pauses: Array.isArray(manifest.pauses) ? manifest.pauses : [],
+  };
+}
