@@ -6,6 +6,16 @@ A successful **new weekly MP4 upload from Weekly Media Publishing** now makes on
 
 When explicitly enabled, the optional Spreaker integration now prepares an **unpublished draft with the finished MP3**, using reviewed YouTube metadata provided by WordPress. See [SPREAKER.md](SPREAKER.md) for one-time OAuth configuration and rollout. The Cloudflare processor never publishes an episode or requires a NAS. R2 continues to hold the Roku video under its canonical key.
 
+## Optional sermon-only audio reuse
+
+Alongside the existing podcast episode, the FFmpeg Container now captures the **original sermon audio before intro/outro mixing** in the same encoding operation and caches it privately as `sermon-audio/<youtube-id>.mp3` (or `podcast-test-sermon-audio/<id>.mp3` for isolated test jobs). This extra sidecar is not uploaded to Spreaker and never replaces the podcast MP3.
+
+The established podcast is saved first. If optional dual-output encoding fails, FFmpeg retries the original podcast-only pipeline, and an optional sidecar upload failure does not fail the podcast job.
+
+The **manual** highlight-analysis endpoint reuses the sermon-only MP3, splitting it into short chunks without re-encoding. For old recordings lacking the sidecar, one explicit highlight request extracts and caches it once from the verified original MP4. No historical backfill or automatic highlight generation occurs.
+
+See [HIGHLIGHTS-PILOT.md](HIGHLIGHTS-PILOT.md) for deployment, limitations, and the one-sermon test.
+
 ## Cloudflare side
 
 Code lives under \`cloudflare/podcast/\`. It includes:
