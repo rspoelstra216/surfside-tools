@@ -1,5 +1,5 @@
 /**
- * Test the browser-side clipboard paths without a browser or external APIs.
+ * Regression: Copy All is plain text for manual slide breaks in Reflow.
  * Run: node scripts/test-propresenter-clipboard.js
  */
 'use strict';
@@ -10,118 +10,122 @@ const path = require('node:path');
 
 const source = fs.readFileSync(
     path.join(__dirname, '..', 'assets/js/propresenter-announcements.js'), 'utf8');
+const phpSource = fs.readFileSync(
+    path.join(__dirname, '..', 'includes/propresenter-announcements.php'), 'utf8');
 
-function setup(withHtmlSupport) {
-    let listener;
-    const events = { html: [], plain: [], notices: [] };
-    const article = {
-        querySelector(selector) {
-            if (selector === '[data-propresenter-title]') return { value: 'Christmas <Caroling> & Friends' };
-            if (selector === '[data-propresenter-lines]') return { value: 'Monday, December 7\nLenox Assisted Living\nSign up at Information Table' };
-            throw new Error('Unexpected input ' + selector);
-        }
-    };
-    const slideContainer = { children: [article] };
-    const status = {
-        textContent: '',
-        classList: { toggle() {} }
-    };
-    const controls = [
-        { dataset: { propresenterAction: 'copy-formatted' }, disabled: false },
-        { dataset: { propresenterAction: 'copy-one' }, disabled: false },
-        { dataset: { propresenterAction: 'copy-all' }, disabled: false }
-    ];
-    const root = {
-        dataset: { nonce: 'fake', ajaxUrl: '/wp-admin/admin-ajax.php', sourceHash: 'fixture' },
-        contains() { return true; },
-        querySelector(selector) {
-            if (selector === '#surfside-propresenter-status') return status;
-            if (selector === '#surfside-propresenter-slides') return slideContainer;
-            if (selector === '.surfside-propresenter-actions') return { querySelectorAll() { return controls; } };
-            if (selector === '[data-propresenter-slide]') return article;
-            return null;
-        },
-        querySelectorAll(selector) {
-            if (selector === '[data-propresenter-slide]') return [article];
-            if (selector === '[data-propresenter-action]') return controls;
-            throw new Error('Unexpected selector ' + selector);
-        },
-        addEventListener(name, callback) {
-            assert.equal(name, 'click');
-            listener = callback;
-        }
-    };
-    const window = {
-        isSecureContext: true,
-        ClipboardItem: withHtmlSupport
-            ? class FakeClipboardItem { constructor(data) { this.data = data; } }
-            : undefined
-    };
-    const navigator = { clipboard: {
-        async write(items) { events.html.push(...items); },
-        async writeText(text) { events.plain.push(text); }
-    } };
-    vm.runInNewContext(source, {
-        document: { getElementById() { return root; } },
-        window, navigator, Blob
-    }, { filename: 'propresenter-announcements.js' });
+assert.doesNotMatch(source, /copy-formatted|copyFormattedSlide|formattedSlideHtml|ClipboardItem/,
+    'The experimental rich clipboard feature was removed');
+assert.doesNotMatch(phpSource, /copy-formatted|Copy formatted \(test\)/,
+    'The rendered staff page no longer displays a formatted-copy control');
 
-    async function click(action) {
-        const button = controls.find(item => item.dataset.propresenterAction === action);
-        button.disabled = false;
-        await listener({
-            target: {
-                closest() {
-                    return Object.assign(button, {
-                        closest(selector) {
-                            assert.equal(selector, '[data-propresenter-slide]');
-                            return article;
-                        }
-                    });
-                }
-            }
-        });
-        events.notices.push(status.textContent);
+const announcements = [
+    {
+        title: 'CHRISTMAS CAROLING',
+        lines: ['Monday, December 7 • 5:30 PM', 'Lenox Assisted Living • Merritt Island', 'Sign up at the Information Table']
+    },
+    {
+        title: 'SENIOR LUNCHEON',
+        lines: ['Friday, November 20 • 11:30 AM', 'Fellowship Hall']
     }
-    return { click, events };
+];
+const articles = announcements.map(function (slide) {
+    return {
+        querySelector(selector) {
+            if (selector === '[data-propresenter-title]') return { value: slide.title };
+            if (selector === '[data-propresenter-lines]') return { value: slide.lines.join('\n') };
+            throw new Error('Unexpected field: ' + selector);
+        }
+    };
+});
+const controls = ['copy-one', 'copy-all'].map(function (action) {
+    return { dataset: { propresenterAction: action }, disabled: false };
+});
+const events = { plain: [], messages: [] };
+let onClick;
+const status = { textContent: '', classList: { toggle() {} } };
+const container = { children: articles };
+const root = {
+    dataset: { nonce: 'fake', ajaxUrl: '/wp-admin/admin-ajax.php', sourceHash: 'fixture' },
+    contains() { return true; },
+    querySelector(selector) {
+        if (selector === '#surfside-propresenter-status') return status;
+        if (selector === '#surfside-propresenter-slides') return container;
+        if (selector === '.surfside-propresenter-actions') {
+            return { querySelectorAll() { return controls; } };
+        }
+        if (selector === '[data-propresenter-slide]') return articles[0];
+        return null;
+    },
+    querySelectorAll(selector) {
+        if (selector === '[data-propresenter-slide]') return articles;
+        if (selector === '[data-propresenter-action]') return controls;
+        throw new Error('Unexpected selector: ' + selector);
+    },
+    addEventListener(event, callback) {
+        assert.equal(event, 'click');
+        onClick = callback;
+    }
+};
+vm.runInNewContext(source, {
+    document: { getElementById() { return root; } },
+    window: { isSecureContext: true },
+    navigator: {
+        clipboard: {
+            async writeText(value) { events.plain.push(value); },
+            async write() { throw Error('Rich clipboard must never be used'); }
+        }
+    }
+});
+
+async function click(action, article = articles[0]) {
+    const button = controls.find(control => control.dataset.propresenterAction === action);
+    assert.ok(button, 'Expected control exists: ' + action);
+    button.disabled = false;
+    await onClick({
+        target: {
+            closest() {
+                return Object.assign(button, {
+                    closest(selector) {
+                        assert.equal(selector, '[data-propresenter-slide]');
+                        return article;
+                    }
+                });
+            }
+        }
+    });
+    events.messages.push(status.textContent);
 }
 
 (async function () {
-    const first = setup(true);
-    await first.click('copy-formatted');
-    assert.equal(first.events.plain.length, 0,
-        'Rich clipboard must not silently downgrade to plain text');
-    assert.equal(first.events.html.length, 1);
-    const item = first.events.html[0].data;
-    assert.ok(item['text/html']);
-    assert.ok(item['text/plain']);
-    const html = await item['text/html'].text();
-    const text = await item['text/plain'].text();
-    assert.match(html, /font-weight:700[^>]*>Christmas &lt;Caroling&gt; &amp; Friends<\/span>/);
-    assert.match(html, /font-weight:400[^>]*>Monday, December 7<\/span>/);
-    assert.match(html, /font-weight:400[^>]*>Sign up at Information Table<\/span>/);
-    assert.equal((html.match(/font-weight:700/g) || []).length, 1,
-        'Only the title is bold');
-    assert.doesNotMatch(html, /---|font-size|background|<script|<style/i,
-        'Experimental rich copy must not include separators or overriding slide styles');
-    assert.equal(text, 'Christmas <Caroling> & Friends\nMonday, December 7\nLenox Assisted Living\nSign up at Information Table');
-    assert.match(first.events.notices[0], /regular Paste/);
+    await click('copy-all');
+    const actual = events.plain.at(-1);
+    const expected = [
+        'CHRISTMAS CAROLING',
+        'Monday, December 7 • 5:30 PM',
+        'Lenox Assisted Living • Merritt Island',
+        'Sign up at the Information Table',
+        'SENIOR LUNCHEON',
+        'Friday, November 20 • 11:30 AM',
+        'Fellowship Hall'
+    ].join('\n');
 
-    await first.click('copy-one');
-    assert.equal(first.events.plain.at(-1), text, 'Old plain Copy Slide still works');
+    assert.equal(actual, expected,
+        'Copy All retains title/body lines and uses only one newline between announcements');
+    assert.doesNotMatch(actual, /---|\n\n/,
+        'Copy All adds no horizontal dividers or blank lines');
+    assert.ok(!actual.endsWith('\n'),
+        'Copy All adds no trailing line break');
+    assert.match(events.messages.at(-1), /Reflow/,
+        'Success message explains the manual Reflow slide breaks');
 
-    await first.click('copy-all');
-    assert.equal(first.events.plain.at(-1), text,
-        'A one-slide Copy All contains no additional separator');
+    await click('copy-one', articles[1]);
+    assert.equal(events.plain.at(-1), [
+        'SENIOR LUNCHEON',
+        'Friday, November 20 • 11:30 AM',
+        'Fellowship Hall'
+    ].join('\n'), 'Single slide Copy keeps its existing behavior');
 
-    const unavailable = setup(false);
-    await unavailable.click('copy-formatted');
-    assert.equal(unavailable.events.plain.length, 0,
-        'Rich clipboard failure must not fall back without warning');
-    assert.equal(unavailable.events.html.length, 0);
-    assert.match(unavailable.events.notices[0], /unavailable/);
-
-    console.log('ProPresenter rich clipboard tests passed.');
+    console.log('ProPresenter Reflow clipboard tests passed.');
 })().catch(error => {
     console.error(error);
     process.exitCode = 1;
