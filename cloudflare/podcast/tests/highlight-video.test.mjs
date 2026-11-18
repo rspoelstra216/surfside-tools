@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { statusClips, servePreview } from "../src/highlight-clips.mjs";
+import { statusClips, servePreview } from "../src/highlight-clip-preview.mjs";
 
 test("private preview links are signed for one clip and support browser byte ranges", async () => {
   const id = "AjkoDHgFdeA";
