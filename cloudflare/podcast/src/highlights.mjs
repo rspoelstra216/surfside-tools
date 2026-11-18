@@ -5,6 +5,7 @@ import {
   parseHighlightCandidates, selectHighlights,
 } from "./highlight-selection.mjs";
 import { refineHighlightCandidates } from "./highlight-refinement.mjs";
+import { validateChunkManifest } from "./highlight-chunk-manifest.mjs";
 
 // Opt-in, private analysis only. Never schedules a podcast or video publication.
 const prefix = "sermon-highlights/";
@@ -78,20 +79,7 @@ async function prepareChunks(env, id) {
     }));
   if (!response.ok) throw Error("chunk_preparation_failed");
   const manifest = await response.json();
-  if (!Array.isArray(manifest?.chunks) || manifest.chunks.length < 1 ||
-      manifest.chunks.length > 24) throw Error("invalid_chunk_manifest");
-  for (const chunk of manifest.chunks) {
-    if (typeof chunk.key !== "string" ||
-        !new RegExp("^sermon-highlights/chunks/" + id + "/[0-9]{3}\\.mp3$").test(chunk.key) ||
-        !Number.isFinite(chunk.offset) || chunk.offset < 0 ||
-        !Number.isFinite(chunk.duration) || chunk.duration <= 0 || chunk.duration > 185)
-      throw Error("invalid_chunk_manifest");
-  }
-  // Pause metadata is optional; transcriptions still work without it.
-  const pauses = Array.isArray(manifest.pauses) ? manifest.pauses.filter((p) =>
-    Number.isFinite(p?.start) && Number.isFinite(p?.end) &&
-    p.start >= 0 && p.end > p.start && p.end <= 72 * 60 + 5).slice(0, 3000) : [];
-  return { chunks: manifest.chunks, pauses };
+  return validateChunkManifest(manifest, id);
 }
 
 export async function processHighlights(env, id) {
@@ -152,7 +140,12 @@ export async function processHighlights(env, id) {
     await saveStatus(env, id, "ready");
   } catch (error) {
     console.error("Sermon highlight pilot failed", id, String(error));
-    await saveStatus(env, id, "failed", "analysis_failed");
+    // Authenticated status clients can safely see which metadata field failed.
+    // All other operational errors remain generic; logs hold the full error.
+    const reason = String(error?.message || "");
+    const detail = /^invalid_chunk_manifest:[a-z_0-9]+$/.test(reason)
+      ? reason.slice(0, 100) : "analysis_failed";
+    await saveStatus(env, id, "failed", detail);
     throw error;
   } finally {
     // Ephemeral ASR source chunks are not needed once transcription completes.
