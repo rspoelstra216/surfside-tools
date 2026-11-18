@@ -19,6 +19,8 @@ jobs:
       - name: Check source syntax
         run: npm run check
         working-directory: cloudflare/podcast
-      - name: Run Node tests
+      - name: Run Node tests (including required real FFmpeg smoke test)
         run: npm test
         working-directory: cloudflare/podcast
+        env:
+          SURFSIDE_REQUIRE_FFMPEG_TESTS: '1'
