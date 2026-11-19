@@ -183,7 +183,7 @@ def make_commands(track, output):
             handle.write("0.000 crop@subject x 0;\n")
         return {"mode": mode, "confidence": round(confidence, 3),
                 "face_samples": track["face_samples"],
-                "samples": track["samples"], "crop_width": crop_w}
+                "samples": track["samples"], "crop_width": crop_w, "height": height}
 
     step = 1 / 8
     maximum_x = width - crop_w
@@ -212,7 +212,7 @@ def make_commands(track, output):
             handle.write(f"{seconds:.3f} crop@subject x {x};\n")
     return {"mode": mode, "confidence": round(confidence, 3),
             "face_samples": track["face_samples"],
-            "samples": track["samples"], "crop_width": crop_w}
+            "samples": track["samples"], "crop_width": crop_w, "height": height}
 
 
 def main():
