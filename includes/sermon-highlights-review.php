@@ -128,6 +128,7 @@ function surfside_tools_highlights_saved_review($id) {
 function surfside_tools_highlights_rest_sermons() {
     return rest_ensure_response(array(
         'configured' => surfside_tools_highlights_configured(),
+        'config_protocol' => 'highlights-config-v2',
         'config_checks' => surfside_tools_highlights_config_diagnostics(),
         'sermons' => surfside_tools_highlights_sermon_rows(),
     ));
@@ -336,6 +337,11 @@ function surfside_tools_staff_sermon_highlights_shortcode() {
             'endpoint' => esc_url_raw(add_query_arg('view', 'sermon-highlights',
                 surfside_tools_staff_page_url('site-management'))),
             'nonce' => wp_create_nonce('surfside_highlights_browser_review'),
+            // Capture the same safe booleans at page render time. If they
+            // differ from the authenticated POST response, it is a runtime
+            // or deployment mismatch rather than a bad credential.
+            'configProtocol' => 'highlights-config-v2',
+            'pageChecks' => surfside_tools_highlights_config_diagnostics(),
             'initialId' => isset($_GET['video_id']) && surfside_tools_highlights_valid_id(wp_unslash($_GET['video_id']))
                 ? sanitize_text_field(wp_unslash($_GET['video_id'])) : '',
         )) . ';', 'before');

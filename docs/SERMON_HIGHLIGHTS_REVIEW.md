@@ -126,3 +126,25 @@ normal sermon selection/analysis workflow should be enabled. If the existing
 sermon dropdown is empty even with valid configuration, check the local
 master Messages playlist and verified R2 sermon records separately from
 the Cloudflare connection.
+
+## Diagnostic version consistency
+
+If browser JavaScript is newer than the PHP backing the authenticated
+dashboard POST, an older server response may omit `config_checks`. Previous
+JavaScript incorrectly displayed these missing fields as **No**. The UI now
+displays **Not reported** for missing or non-boolean fields, and includes a
+fixed configuration protocol marker in both the server-rendered page and
+the staff POST response. Staff can compare the two sets of boolean checks:
+
+- **Page render: Yes, dashboard POST: Not reported** suggests an old POST
+  handler or cached/stale PHP code behind the active front-end.
+- **Page render: Yes, dashboard POST: No** suggests a genuine runtime
+  mismatch between the two authenticated WordPress requests.
+- **Both sides: No** means PHP reported the constants undefined in both
+  contexts; investigate server runtime, rather than assuming a malformed URL.
+- **Both sides: Yes** means local Worker configuration is available.
+- **Version mismatch** means the browser must not assume it can use the
+  currently deployed PHP contract.
+
+This does not bypass the existing staff-session authorization. No raw config
+values, paths, lengths or private credentials are returned to the browser.
