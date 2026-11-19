@@ -89,6 +89,29 @@ test("approved exact export rejects fabricated, missing, or out-of-window times"
   ]) assert.throws(() => resolveApprovedExports(highlights, invalid));
 });
 
+test("export status exposes abandoned old queued jobs as retryable", async () => {
+  const env = {
+    SERMONS_BUCKET: {
+      async get(key) {
+        assert.equal(key, "sermon-highlights/export-jobs/" + id + ".json");
+        return { async json() {
+          return {
+            video_id: id, status: "queued",
+            updated_at: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+            clips: [{ number: 2, start: 456.74, end: 491.24 }],
+          };
+        } };
+      },
+    },
+  };
+  const response = await statusExports(
+    new Request("https://example.workers.dev/highlights/exports/status"), env, id);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.status, "stalled");
+  assert.equal(data.detail, "old_export_attempt_stalled");
+});
+
 test("final MP4 download links are scoped, short-lived, private and attachment-only", async () => {
   const clips = resolveApprovedExports(highlights, [{
     number: 4, start: 953.28, end: 1009.52,
