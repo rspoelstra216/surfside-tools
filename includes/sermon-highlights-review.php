@@ -261,7 +261,13 @@ function surfside_tools_highlights_browser_dispatch($data) {
             array('status' => 400));
     }
     if ($mode === 'sermons') {
-        return surfside_tools_highlights_rest_sermons();
+        // rest_ensure_response() returns WP_REST_Response in live WordPress.
+        // As with all other modes below, unwrap before wp_send_json_success().
+        // Otherwise the browser receives a nested response object and cannot
+        // find configured, config_protocol, config_checks or sermon rows.
+        $result = surfside_tools_highlights_rest_sermons();
+        return is_object($result) && method_exists($result, 'get_data')
+            ? $result->get_data() : $result;
     }
     $id = $data['video_id'] ?? null;
     if (!surfside_tools_highlights_valid_id($id)) {
