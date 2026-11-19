@@ -16,8 +16,16 @@
   const exportButton = root.querySelector("#surfside-highlight-export-button");
   const exportMessage = root.querySelector("#surfside-highlight-export-message");
   const exportDownloads = root.querySelector("#surfside-highlight-export-downloads");
+  const verticalPanel = root.querySelector("#surfside-highlight-vertical-panel");
+  const verticalSelect = root.querySelector("#surfside-vertical-number");
+  const verticalAnchor = root.querySelector("#surfside-vertical-anchor");
+  const verticalAnchorValue = root.querySelector("#surfside-vertical-anchor-value");
+  const verticalGenerate = root.querySelector("#surfside-vertical-generate");
+  const verticalMessage = root.querySelector("#surfside-vertical-message");
+  const verticalWrap = root.querySelector("#surfside-vertical-video-wrap");
   let activeId = "", analysis = null, previews = null, exportsState = null, token = 0, timer = null;
   let exportTimer = null, exportBusy = false, busy = false;
+  let verticalTimer = null, verticalBusy = false, verticalState = null;
 
   const fmt = (seconds) => {
     const s = Math.max(0, Math.round(seconds * 100) / 100);
@@ -90,6 +98,11 @@
         (analysis?.result?.highlights?.length || 0) >= 10 ||
         ["queued", "processing"].includes(more?.status) ||
         Number(more?.round || 0) >= 4;
+    }
+    if (verticalGenerate) {
+      verticalGenerate.disabled = !activeId || busy || verticalBusy ||
+        !approvedReviews().length || !verticalSelect?.value ||
+        ["queued", "processing"].includes(verticalState?.status);
     }
     if (exportButton) {
       exportButton.disabled = !activeId || busy || exportBusy ||
@@ -271,7 +284,9 @@
             (decision === "saved" ? "saved" : decision) + " privately. Nothing has been published.");
           exportsState = null;
           renderExportPanel();
+          renderVerticalPanel();
           refreshExports(token);
+          refreshVertical(token);
         } catch (error) {
           note(error.message, true);
         } finally {
@@ -287,6 +302,91 @@
       section.append(card);
     }
     results.append(section);
+  }
+
+  function renderVerticalPanel() {
+    if (!verticalPanel || !verticalSelect || !verticalMessage || !verticalWrap) return;
+    verticalPanel.hidden = analysis?.status !== "ready";
+    if (verticalPanel.hidden) return;
+    const approved = approvedReviews().sort((a, b) => a.number - b.number);
+    const selected = Number(verticalSelect.value);
+    const optionsChanged = approved.length !== verticalSelect.options.length ||
+      approved.some((clip, i) => Number(verticalSelect.options[i]?.value) !== clip.number);
+    if (optionsChanged) {
+      verticalSelect.replaceChildren();
+      for (const clip of approved) {
+        const option = el("option", "", "#" + clip.number + " — " +
+          (analysis?.result?.highlights?.find((h) => h.number === clip.number)?.title || "Approved"));
+        option.value = String(clip.number);
+        verticalSelect.append(option);
+      }
+      const preferred = approved.find((c) => c.number === selected) ||
+        approved.find((c) => c.number === 4) || approved[0];
+      if (preferred) verticalSelect.value = String(preferred.number);
+    }
+    if (verticalAnchorValue) verticalAnchorValue.textContent = verticalAnchor.value + "%";
+    verticalWrap.replaceChildren();
+    if (!approved.length) {
+      verticalMessage.textContent = "Approve a clip above to test moving-speaker tracking.";
+      controls(); return;
+    }
+    const state = verticalState;
+    if (state?.status === "ready") {
+      const clip = state.clip;
+      verticalMessage.textContent = "Vertical result for #" + clip.number +
+        " (" + fmt(clip.start) + "–" + fmt(clip.end) + "), starting focus " +
+        state.anchor + "%. " + (state.mode === "tracked"
+          ? "Moving face tracking used. Check that it follows the pastor throughout."
+          : "Face tracking was unreliable. The whole wide shot is retained inside the vertical frame.");
+      if (state.preview_url) {
+        const player = el("video", "surfside-vertical-video");
+        player.controls = true;
+        player.playsInline = true;
+        player.preload = "metadata";
+        player.src = state.preview_url;
+        player.setAttribute("aria-label", "Experimental vertical phone clip");
+        verticalWrap.append(player);
+      }
+      if (state.download_url) {
+        const link = el("a", "surfside-highlight-download", "Download vertical MP4");
+        link.href = state.download_url;
+        link.download = "surfside-" + activeId + "-vertical-" + clip.number + ".mp4";
+        link.rel = "noreferrer noopener";
+        verticalWrap.append(link);
+        verticalWrap.append(action("Refresh vertical links",
+          () => refreshVertical(token), "surfside-highlight-secondary"));
+      }
+    } else if (["queued", "processing"].includes(state?.status)) {
+      verticalMessage.textContent = "Experimental vertical video " + state.status +
+        ". Face tracking and source-quality encoding run in the background.";
+    } else if (state?.status === "stalled") {
+      verticalMessage.textContent = "The previous vertical job stalled in the queue. Click Generate vertical test to retry.";
+    } else if (state?.status === "outdated") {
+      verticalMessage.textContent = "The approved clip has changed. Generate a new vertical test.";
+    } else if (state?.status === "failed" || state?.status === "incomplete") {
+      verticalMessage.textContent = "Vertical generation failed. The regular clips are unaffected; inspect Cloudflare logs and retry.";
+    } else {
+      verticalMessage.textContent = "Beta: track movement using an offline face detector. " +
+        "Set where the pastor starts, then generate a private portrait MP4.";
+    }
+    controls();
+  }
+
+  async function refreshVertical(currentToken) {
+    if (!activeId || currentToken !== token || analysis?.status !== "ready") return;
+    try {
+      const data = await json("vertical-status", { video_id: activeId });
+      if (currentToken !== token) return;
+      verticalState = data;
+      renderVerticalPanel();
+      if (verticalTimer) clearTimeout(verticalTimer);
+      verticalTimer = null;
+      if (["queued", "processing"].includes(data.status))
+        verticalTimer = setTimeout(() => refreshVertical(currentToken), 5500);
+    } catch (error) {
+      if (currentToken === token && verticalMessage)
+        verticalMessage.textContent = error.message || "Could not retrieve vertical test status.";
+    }
   }
 
   function renderExportPanel() {
@@ -377,6 +477,7 @@
       renderResults();
       showMoreStatus();
       renderExportPanel();
+      renderVerticalPanel();
       controls();
       if (status.status === "queued" || status.status === "processing") {
         note("AI analysis " + status.status + ". Checking for suggestions…");
@@ -385,6 +486,7 @@
         note("AI suggestions ready. Loading private video preview status…");
         await refreshPreviews(currentToken);
         await refreshExports(currentToken);
+        await refreshVertical(currentToken);
         // Keep checking while a second-pass Llama search is running. It does
         // not block playback of the original sermon highlights.
         if (["queued", "processing"].includes(status.more?.status))
@@ -401,9 +503,11 @@
   async function chooseSermon() {
     token += 1; stopPolling();
     if (exportTimer) clearTimeout(exportTimer);
-    exportTimer = null;
+    if (verticalTimer) clearTimeout(verticalTimer);
+    exportTimer = null; verticalTimer = null;
     activeId = sermon.value; analysis = null; previews = null; exportsState = null;
-    results.replaceChildren(); showMoreStatus(); renderExportPanel(); controls();
+    verticalState = null;
+    results.replaceChildren(); showMoreStatus(); renderExportPanel(); renderVerticalPanel(); controls();
     if (!activeId) { note("Choose a verified uploaded sermon."); return; }
     note("Checking AI results for the selected sermon…");
     await refreshAnalysis(token);
@@ -457,6 +561,27 @@
     } finally {
       exportBusy = false; controls();
     }
+  });
+  if (verticalAnchor) verticalAnchor.addEventListener("input", () => {
+    if (verticalAnchorValue) verticalAnchorValue.textContent = verticalAnchor.value + "%";
+  });
+  if (verticalSelect) verticalSelect.addEventListener("change", () => {
+    controls();
+  });
+  if (verticalGenerate) verticalGenerate.addEventListener("click", async () => {
+    if (!activeId || busy || verticalBusy || !verticalSelect.value) return;
+    verticalBusy = true; controls();
+    if (verticalMessage) verticalMessage.textContent = "Queuing experimental moving-speaker portrait…";
+    try {
+      const currentToken = token;
+      await json("vertical", {
+        video_id: activeId, number: verticalSelect.value, anchor: verticalAnchor.value,
+      });
+      await refreshVertical(currentToken);
+    } catch (error) {
+      if (verticalMessage) verticalMessage.textContent =
+        error.message || "Could not start vertical test.";
+    } finally { verticalBusy = false; controls(); }
   });
   sermon.addEventListener("change", chooseSermon);
 

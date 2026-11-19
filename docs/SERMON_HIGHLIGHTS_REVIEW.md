@@ -422,3 +422,89 @@ the same full analysis.
    or overwrite previous results.
 7. If the AI finds no stronger moments, the dashboard should explicitly
    say so; it must never force five low-quality selections.
+
+## PR #528 — Experimental moving-speaker vertical phone export
+
+This is a **manual opt-in pilot**, not automatic weekly social-media output.
+The existing landscape previews and exact approved MP4 exports remain unchanged.
+
+### Staff test using Nov 15 clip #4
+
+1. Merge and deploy the **Cloudflare Worker + Container** from this PR.
+   Container deployment now includes Debian OpenCV, a bundled traditional
+   face detector, and a local Python subject tracker. No new API keys,
+   paid detection provider, external inference call, or WordPress database
+   tables are required.
+2. Deploy the Surfside Tools WordPress plugin.
+3. Open **Messages & Media → Sermon Highlights**, choose the **November 15**
+   sermon, and verify clip **#4 Celebrating Faith Steps** is *Approved*
+   with the correct saved start/end times. Approve it if necessary.
+4. Under **Vertical Phone Clip (experimental)**, choose approved clip #4.
+   Move **Pastor starts (left ↔ right)** toward his starting position
+   (0% left edge, 50% center, 100% right edge).
+5. Click **Generate vertical test**. It queues a single opt-in Container
+   job. The result is not published anywhere.
+6. When ready, play the 9:16 preview to inspect whether the pastor stays
+   in frame throughout, then optionally **Download vertical MP4**.
+   The links are valid for 10 minutes; the dashboard provides
+   **Refresh vertical links** without regenerating the video.
+7. If tracking follows the wrong person, try another starting position and
+   generate another test. If tracking fails often, retain the normal
+   landscape video rather than treating this beta as a final deliverable.
+
+### Algorithm and practical limitations
+
+- The Container reads the original **source MP4** (rather than a lower
+  resolution 720p preview), accurately extracts only the approved time
+  range, then samples the short excerpt at **2 Hz**. Nothing changes the
+  input sermon or audio/podcast files.
+- CPU-only local OpenCV **frontal and profile face cascades** locate
+  candidates. The staff's horizontal starting position and distance to
+  the previously tracked face help maintain continuity. Lucas–Kanade
+  optical flow bridges up to approximately four seconds when the pastor
+  turns his head. The tracker generates smoothed horizontal crop
+  movements (8 updates/sec) with limited panning velocity.
+- FFmpeg follows the time-indexed crop positions and renders **720×1280
+  H.264/AAC**, preserving the original sermon audio. This format is 9:16,
+  appropriate for phones, Reels and Shorts.
+- It is **not facial recognition** and does **not prove who the pastor is**.
+  Multi-person shots, tiny faces, quick cuts, and severe profile angles
+  can confuse a lightweight detector. When detection coverage is too
+  low, it instead renders the **entire wide shot over a blurred vertical
+  background** to avoid completely cropping people out. The dashboard
+  explicitly describes that fallback.
+- CPU tracking, extracting from the original MP4, and a full portrait
+  encode can be slower and incur additional **Cloudflare Container/R2
+  usage**. Only staff-requested clips are processed; do not invoke this
+  for every sermon automatically while evaluating cost/quality.
+
+### Security boundaries
+
+- The **vertical** dashboard POST accepts only a number and bounded
+  horizontal anchor. WordPress reads the exact persisted approved trim
+  from its private review option; the browser cannot override times.
+- The signed Worker checks the chosen range against immutable AI
+  suggestion limits (±5 seconds, 15–120 seconds) before Queue or Container
+  work. A changed/rejected review no longer exposes the old vertical
+  playback/download URLs through WordPress.
+- R2 object names are deterministic and immutable:
+  `sermon-highlights/vertical/<video-id>/<number>-<startcs>-<endcs>-a<anchor>.mp4`.
+  Container storage access is PUT-only for that strict key namespace.
+  Browser preview and attachment downloads use independently signed,
+  10-minute, clip-specific HMAC URLs; private R2 access is never public.
+- Queue status is saved under
+  `sermon-highlights/vertical-jobs/<video-id>.json`, separate from podcast,
+  AI selection, previews and normal approved landscape exports.
+
+### Regression checks
+
+The podcast test workflow installs ffmpeg, python3-opencv and opencv-data.
+It checks the tracker Python syntax, safe no-face behavior, panning
+interpolation, a synthetic actual MP4, H.264/AAC portrait FFmpeg generation,
+R2 private key restrictions, signed URL tamper/expiration and staff-only
+WordPress approval/nonce controls.
+
+This is intentionally an **experiment**. A more reliable person
+detector/tracker can replace the cascade after real on-stage clips show
+where it fails. Do not promise perfect tracking before the November 15
+pilot is reviewed.

@@ -118,6 +118,24 @@ function wp_remote_post($url, $request) {
         return array('status' => 200, 'body' => json_encode(
             array('status' => 'not_queued')));
     }
+    if ($path === '/highlights/vertical/jobs') {
+        $GLOBALS['vertical_clip'] = json_decode($body, true)['clip'];
+        $GLOBALS['vertical_anchor'] = json_decode($body, true)['anchor'];
+        $GLOBALS['vertical_status'] = 'queued';
+        return array('status' => 202, 'body' => json_encode(array('status' => 'queued')));
+    }
+    if ($path === '/highlights/vertical/status') {
+        $state = array('status' => $GLOBALS['vertical_status'] ?? 'not_queued');
+        if (isset($GLOBALS['vertical_clip'])) {
+            $state['clip'] = $GLOBALS['vertical_clip'];
+            $state['anchor'] = $GLOBALS['vertical_anchor'];
+        }
+        if ($state['status'] === 'ready') {
+            $state['preview_url'] = 'https://example.workers.dev/private-vertical-view';
+            $state['download_url'] = 'https://example.workers.dev/private-vertical-download';
+        }
+        return array('status' => 200, 'body' => json_encode($state));
+    }
     if ($path === '/highlights/exports/jobs') {
         $GLOBALS['export_status'] = 'queued';
         $GLOBALS['export_clips'] = json_decode($body, true)['clips'];
@@ -262,6 +280,35 @@ check(is_wp_error(surfside_tools_highlights_browser_dispatch(array(
     'video_id' => 'AjkoDHgFdeA',
 ))), 'Find more cannot bypass staff nonce authentication');
 
+
+$verticalRequest = array_merge($sermonForm, array(
+    'mode' => 'vertical', 'number' => '4', 'anchor' => '50'));
+$portrait = surfside_tools_highlights_browser_dispatch($verticalRequest);
+check($portrait['status'] === 'queued',
+    'Only an approved clip can queue private experimental vertical export');
+$last = end($GLOBALS['worker_calls']);
+check($last['path'] === '/highlights/vertical/jobs' &&
+    $last['request']['clip'] === array('number'=>4, 'start'=>952.78, 'end'=>1010.52) &&
+    $last['request']['anchor'] === 50,
+    'Browser cannot override approved trim times or Worker-protected starting focus');
+check(is_wp_error(surfside_tools_highlights_browser_dispatch(
+    array_merge($verticalRequest, array('number' => '2')))),
+    'A not-yet-approved clip cannot initiate moving-speaker processing');
+check(is_wp_error(surfside_tools_highlights_browser_dispatch(
+    array_merge($verticalRequest, array('anchor' => '101')))),
+    'Portrait starting focus is bounded');
+check(is_wp_error(surfside_tools_highlights_browser_dispatch(
+    array_merge($verticalRequest, array('start' => '0', 'number' => '1')))),
+    'Forged unapproved clip is rejected even if it contains timestamps');
+$GLOBALS['vertical_status'] = 'ready';
+$portraitReady = surfside_tools_highlights_browser_dispatch(array_merge(
+    $sermonForm, array('mode' => 'vertical-status')));
+check($portraitReady['status'] === 'ready' &&
+    isset($portraitReady['preview_url'], $portraitReady['download_url']),
+    'Approved staff can retrieve current private portrait preview/download links');
+check(is_wp_error(surfside_tools_highlights_browser_dispatch(array_merge(
+    $verticalRequest, array('highlight_nonce' => 'bad')))),
+    'Portrait test never bypasses staff nonce permissions');
 
 // Direct REST handler assertions below use their original array-shaped test
 // contract; the browser-dispatch cases above used real response wrappers.

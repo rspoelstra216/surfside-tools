@@ -1,8 +1,8 @@
 FROM node:22-bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates \
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates python3-opencv opencv-data \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY server.mjs sermon-audio.mjs pause-detection.mjs highlight-video.mjs /app/
+COPY server.mjs sermon-audio.mjs pause-detection.mjs highlight-video.mjs vertical-video.mjs track-subject.py /app/
 USER node
 EXPOSE 8080
 CMD ["node", "server.mjs"]
