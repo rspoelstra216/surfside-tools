@@ -12,12 +12,34 @@ function surfside_tools_highlights_can_review() {
             ? surfside_tools_staff_has_permission('weekly_media') : current_user_can('manage_options'));
 }
 
+/**
+ * Safe, staff-only configuration checks. Never serialize raw configuration
+ * values, secret lengths, hashes, or paths to a browser.
+ */
+function surfside_tools_highlights_config_diagnostics() {
+    $url_defined = defined('SURFSIDE_PODCAST_WORKER_URL');
+    $secret_defined = defined('SURFSIDE_PODCAST_SHARED_SECRET');
+    $url_string = $url_defined && is_string(constant('SURFSIDE_PODCAST_WORKER_URL'));
+    $secret_string = $secret_defined && is_string(constant('SURFSIDE_PODCAST_SHARED_SECRET'));
+    $url_valid = $url_string && (bool) preg_match(
+        '~^https://[a-z0-9.-]+(?::443)?$~iD',
+        untrailingslashit(constant('SURFSIDE_PODCAST_WORKER_URL')));
+    $secret_valid = $secret_string && strlen(constant('SURFSIDE_PODCAST_SHARED_SECRET')) >= 32;
+    return array(
+        'worker_url_defined' => $url_defined,
+        'worker_url_string' => $url_string,
+        'worker_url_valid' => $url_valid,
+        'secret_defined' => $secret_defined,
+        'secret_string' => $secret_string,
+        'secret_length_valid' => $secret_valid,
+    );
+}
+
 function surfside_tools_highlights_configured() {
-    if (!defined('SURFSIDE_PODCAST_WORKER_URL') || !defined('SURFSIDE_PODCAST_SHARED_SECRET') ||
-        !is_string(SURFSIDE_PODCAST_WORKER_URL) || !is_string(SURFSIDE_PODCAST_SHARED_SECRET) ||
-        strlen(SURFSIDE_PODCAST_SHARED_SECRET) < 32) return false;
-    return (bool) preg_match('~^https://[a-z0-9.-]+(?::443)?$~iD',
-        untrailingslashit(SURFSIDE_PODCAST_WORKER_URL));
+    foreach (surfside_tools_highlights_config_diagnostics() as $valid) {
+        if (!$valid) return false;
+    }
+    return true;
 }
 
 function surfside_tools_highlights_worker($path, $data) {
@@ -106,6 +128,7 @@ function surfside_tools_highlights_saved_review($id) {
 function surfside_tools_highlights_rest_sermons() {
     return rest_ensure_response(array(
         'configured' => surfside_tools_highlights_configured(),
+        'config_checks' => surfside_tools_highlights_config_diagnostics(),
         'sermons' => surfside_tools_highlights_sermon_rows(),
     ));
 }
