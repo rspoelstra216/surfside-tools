@@ -53,3 +53,36 @@ test("private preview links are signed for one clip and support browser byte ran
   const forbidden = await servePreview(new Request(expired), env);
   assert.equal(forbidden.status, 403);
 });
+
+test("later suggestion #10 gets a private video URL without broadening R2 access", async () => {
+  const id = "AjkoDHgFdeA", secret = "b".repeat(64);
+  const video = { number: 10, title: "New sermon teaching",
+    start: 250, end: 310 };
+  const key = `sermon-highlights/previews/${id}/10-25000-31000.mp4`;
+  const bucket = {
+    async get(path, opts) {
+      if (path === `sermon-highlights/clip-jobs/${id}.json`)
+        return { async json() {
+          return { video_id: id, status: "ready", clips: [video] };
+        } };
+      if (path === key) return { body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(new Uint8Array(opts?.range?.length ?? 200));
+          controller.close();
+        },
+      }) };
+      return null;
+    },
+    async head(path) { return path === key ? { size: 200 } : null; },
+  };
+  const env = { SERMONS_BUCKET: bucket,
+    SURFSIDE_PODCAST_SHARED_SECRET: secret };
+  const status = await statusClips(
+    new Request("https://example.workers.dev/highlights/clips/status"), env, id);
+  const data = await status.json();
+  assert.match(data.clips[0].preview_url,
+    /\/highlights\/clips\/view\/AjkoDHgFdeA\/10-25000-31000\.mp4/);
+  const result = await servePreview(new Request(data.clips[0].preview_url), env);
+  assert.equal(result.status, 200);
+  assert.equal(result.headers.get("content-type"), "video/mp4");
+});
