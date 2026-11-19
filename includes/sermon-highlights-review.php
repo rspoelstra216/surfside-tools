@@ -44,7 +44,8 @@ function surfside_tools_highlights_configured() {
 
 function surfside_tools_highlights_worker($path, $data) {
     $allowed = array('/highlights/jobs', '/highlights/status',
-        '/highlights/clips/jobs', '/highlights/clips/status');
+        '/highlights/clips/jobs', '/highlights/clips/status',
+        '/highlights/exports/jobs', '/highlights/exports/status');
     if (!in_array($path, $allowed, true) || !surfside_tools_highlights_configured()) {
         return new WP_Error('highlights_not_configured',
             'The private highlights service is not configured.', array('status' => 503));
@@ -179,6 +180,73 @@ function surfside_tools_highlights_rest_preview_status($request) {
         '/highlights/clips/status', array('video_id' => $id)));
 }
 
+/**
+ * Export only explicitly approved reviews with their exact, persisted trims.
+ * Draft/saved and rejected suggestions cannot enter a final render job.
+ */
+function surfside_tools_highlights_approved_clips($id) {
+    $reviews = surfside_tools_highlights_saved_review($id);
+    $clips = array();
+    foreach ($reviews as $item) {
+        if (!is_array($item) || ($item['decision'] ?? '') !== 'approved') continue;
+        $number = $item['number'] ?? null;
+        $start = $item['start'] ?? null;
+        $end = $item['end'] ?? null;
+        if (!is_int($number) || $number < 1 || $number > 5 ||
+            !is_numeric($start) || !is_numeric($end)) continue;
+        $clips[] = array('number' => $number,
+            'start' => round((float) $start, 2),
+            'end' => round((float) $end, 2));
+    }
+    usort($clips, static function ($a, $b) {
+        return $a['number'] <=> $b['number'];
+    });
+    return array_slice($clips, 0, 5);
+}
+function surfside_tools_highlights_rest_export($request) {
+    $id = surfside_tools_highlights_request_id($request);
+    if (is_wp_error($id)) return $id;
+    $clips = surfside_tools_highlights_approved_clips($id);
+    if (!$clips) return new WP_Error('highlights_no_approvals',
+        'Approve at least one highlight before exporting.', array('status' => 409));
+    // The signed Worker independently validates every exact trim against
+    // immutable AI timestamps and refuses jobs outside the ±5s edit range.
+    return rest_ensure_response(surfside_tools_highlights_worker(
+        '/highlights/exports/jobs', array('video_id' => $id, 'clips' => $clips)));
+}
+function surfside_tools_highlights_rest_export_status($request) {
+    $id = surfside_tools_highlights_request_id($request);
+    if (is_wp_error($id)) return $id;
+    $result = surfside_tools_highlights_worker(
+        '/highlights/exports/status', array('video_id' => $id));
+    if (is_wp_error($result)) return $result;
+    $approved = surfside_tools_highlights_approved_clips($id);
+    $result['approved_count'] = count($approved);
+    // A later Save/Reject or changed approved trim invalidates old download
+    // links. Keep immutable old R2 objects private, but don't offer them.
+    $current = count($approved) > 0 && isset($result['clips']) &&
+        is_array($result['clips']) && count($approved) === count($result['clips']);
+    if ($current) {
+        foreach ($approved as $i => $clip) {
+            $export = $result['clips'][$i] ?? null;
+            if (!is_array($export) || (int) ($export['number'] ?? 0) !== $clip['number'] ||
+                abs((float) ($export['start'] ?? -9999) - $clip['start']) > 0.001 ||
+                abs((float) ($export['end'] ?? -9999) - $clip['end']) > 0.001) {
+                $current = false; break;
+            }
+        }
+    }
+    $result['matches_current_approvals'] = $current;
+    if (!$current) {
+        unset($result['clips']);
+        if (($result['status'] ?? '') === 'ready') {
+            $result['status'] = 'outdated';
+            $result['detail'] = 'review_changed';
+        }
+    }
+    return rest_ensure_response($result);
+}
+
 /** A review choice affects private staff metadata only; it never publishes clips. */
 function surfside_tools_highlights_rest_decision($request) {
     $id = surfside_tools_highlights_request_id($request);
@@ -254,6 +322,8 @@ function surfside_tools_highlights_browser_dispatch($data) {
         'status' => 'surfside_tools_highlights_rest_status',
         'previews' => 'surfside_tools_highlights_rest_previews',
         'preview-status' => 'surfside_tools_highlights_rest_preview_status',
+        'export' => 'surfside_tools_highlights_rest_export',
+        'export-status' => 'surfside_tools_highlights_rest_export_status',
         'review' => 'surfside_tools_highlights_rest_decision',
     );
     if (!isset($routes[$mode])) {
@@ -371,6 +441,13 @@ function surfside_tools_staff_sermon_highlights_shortcode() {
         <button type="button" id="surfside-highlights-render" disabled>Generate video previews</button>
       </div>
       <p id="surfside-highlights-message" role="status" aria-live="polite">Choose a sermon to begin.</p>
+      <section class="surfside-highlight-export-panel" id="surfside-highlight-export-panel" hidden>
+        <h2>Approved Clips</h2>
+        <p>Approve the clips you want to keep, then generate final MP4 files using your saved trim points. Exported videos stay private until you download and share them.</p>
+        <button type="button" id="surfside-highlight-export-button" disabled>Export approved clips</button>
+        <p id="surfside-highlight-export-message" role="status" aria-live="polite"></p>
+        <div id="surfside-highlight-export-downloads"></div>
+      </section>
       <div id="surfside-highlights-results"></div>
     </div>
     <?php return ob_get_clean();

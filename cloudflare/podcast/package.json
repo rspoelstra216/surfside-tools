@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check src/worker.mjs && node --check src/validation.mjs && node --check src/highlights.mjs && node --check src/highlight-selection.mjs && node --check src/highlight-refinement.mjs && node --check src/highlight-chunk-manifest.mjs && node --check src/highlight-video.mjs && node --check src/highlight-clips.mjs && node --check src/highlight-clip-preview.mjs && node --check scripts/highlights-pilot.mjs && node --check scripts/highlight-clips.mjs && node --check src/spreaker.mjs && node --check src/spreaker-publication.mjs && node --check container/sermon-audio.mjs && node --check container/pause-detection.mjs && node --check container/highlight-video.mjs && node --check container/server.mjs",
+    "check": "node --check src/worker.mjs && node --check src/validation.mjs && node --check src/highlights.mjs && node --check src/highlight-selection.mjs && node --check src/highlight-refinement.mjs && node --check src/highlight-chunk-manifest.mjs && node --check src/highlight-video.mjs && node --check src/highlight-clips.mjs && node --check src/highlight-clip-preview.mjs && node --check src/highlight-export-jobs.mjs && node --check src/highlight-export-downloads.mjs && node --check scripts/highlights-pilot.mjs && node --check scripts/highlight-clips.mjs && node --check src/spreaker.mjs && node --check src/spreaker-publication.mjs && node --check container/sermon-audio.mjs && node --check container/pause-detection.mjs && node --check container/highlight-video.mjs && node --check container/server.mjs",
     "test": "node --test tests/*.test.mjs",
     "deploy": "wrangler deploy"
   },

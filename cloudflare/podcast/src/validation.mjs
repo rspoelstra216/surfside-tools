@@ -17,7 +17,8 @@ export function validStorageAccess(key, method) {
     /^(?:podcast-audio|podcast-test-audio)\/[A-Za-z0-9_-]{11}\.mp3$/.test(key) ||
     /^(?:sermon-audio|podcast-test-sermon-audio)\/[A-Za-z0-9_-]{11}\.mp3$/.test(key) ||
     /^sermon-highlights\/chunks\/[A-Za-z0-9_-]{11}\/[0-9]{3}\.mp3$/.test(key) ||
-    /^sermon-highlights\/previews\/[A-Za-z0-9_-]{11}\/[1-5]-[0-9]+-[0-9]+\.mp4$/.test(key)
+    /^sermon-highlights\/previews\/[A-Za-z0-9_-]{11}\/[1-5]-[0-9]+-[0-9]+\.mp4$/.test(key) ||
+    /^sermon-highlights\/exports\/[A-Za-z0-9_-]{11}\/[1-5]-[0-9]+-[0-9]+\.mp4$/.test(key)
   );
 }
 

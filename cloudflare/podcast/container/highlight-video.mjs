@@ -6,6 +6,10 @@ export const previewKey = (id, clip) => {
   return `sermon-highlights/previews/${id}/${clip.number}-${start}-${end}.mp4`;
 };
 
+// Immutable final export key, distinct from the padded review previews.
+export const exportKey = (id, clip) =>
+  `sermon-highlights/exports/${id}/${clip.number}-${Math.round(clip.start * 100)}-${Math.round(clip.end * 100)}.mp4`;
+
 export function clipVideoArgs(source, output, start, end) {
   if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 ||
       end <= start || end - start > 120 || end > 72 * 60)

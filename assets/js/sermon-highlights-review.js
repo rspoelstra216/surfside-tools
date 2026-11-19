@@ -10,8 +10,12 @@
   const render = root.querySelector("#surfside-highlights-render");
   const message = root.querySelector("#surfside-highlights-message");
   const results = root.querySelector("#surfside-highlights-results");
-  let activeId = "", analysis = null, previews = null, token = 0, timer = null;
-  let busy = false;
+  const exportPanel = root.querySelector("#surfside-highlight-export-panel");
+  const exportButton = root.querySelector("#surfside-highlight-export-button");
+  const exportMessage = root.querySelector("#surfside-highlight-export-message");
+  const exportDownloads = root.querySelector("#surfside-highlight-export-downloads");
+  let activeId = "", analysis = null, previews = null, exportsState = null, token = 0, timer = null;
+  let exportTimer = null, exportBusy = false, busy = false;
 
   const fmt = (seconds) => {
     const s = Math.max(0, Math.round(seconds * 100) / 100);
@@ -78,8 +82,15 @@
     analyze.disabled = !activeId || busy;
     render.disabled = !activeId || busy ||
       analysis?.status !== "ready" || !(analysis?.result?.highlights?.length);
+    if (exportButton) {
+      exportButton.disabled = !activeId || busy || exportBusy ||
+        !approvedReviews().length ||
+        ["queued", "processing"].includes(exportsState?.status);
+    }
   };
   const readReviews = () => analysis?.saved_reviews || {};
+  const approvedReviews = () => Object.values(readReviews())
+    .filter((r) => r?.decision === "approved" && Number.isInteger(r.number));
 
   function makeTrimControl(card, label, original, initial, update) {
     const group = el("div", "surfside-highlight-trim");
@@ -229,6 +240,9 @@
           badge.textContent = decision === "saved" ? "Saved draft" : decision;
           note("Highlight #" + number + " " +
             (decision === "saved" ? "saved" : decision) + " privately. Nothing has been published.");
+          exportsState = null;
+          renderExportPanel();
+          refreshExports(token);
         } catch (error) {
           note(error.message, true);
         } finally {
@@ -244,6 +258,65 @@
       section.append(card);
     }
     results.append(section);
+  }
+
+  function renderExportPanel() {
+    if (!exportPanel || !exportButton || !exportDownloads || !exportMessage) return;
+    const enabled = analysis?.status === "ready";
+    exportPanel.hidden = !enabled;
+    exportDownloads.replaceChildren();
+    if (!enabled) return;
+    const approved = approvedReviews();
+    const state = exportsState;
+    if (!approved.length) {
+      exportMessage.textContent = "No clips approved yet. Saved drafts are not exported; use Approve on clips you want to download.";
+    } else if (state?.status === "ready" && state.matches_current_approvals === true) {
+      exportMessage.textContent = approved.length +
+        " approved clip(s) exported as private MP4s. Links expire after 10 minutes; refresh them below if needed.";
+      for (const clip of state.clips || []) {
+        const row = el("div", "surfside-highlight-download-row");
+        const title = el("span", "", "#" + clip.number + " — " +
+          (clip.title || "Approved highlight") + " (" + fmt(clip.start) + "–" + fmt(clip.end) + ")");
+        const link = el("a", "surfside-highlight-download", "Download MP4");
+        link.href = clip.download_url;
+        link.download = "surfside-" + activeId + "-highlight-" + clip.number + ".mp4";
+        link.rel = "noreferrer noopener";
+        row.append(title, link);
+        exportDownloads.append(row);
+      }
+      exportDownloads.append(action("Refresh download links", () => refreshExports(token),
+        "surfside-highlight-secondary"));
+    } else if (["queued", "processing"].includes(state?.status)) {
+      exportMessage.textContent = "Rendering approved MP4 files (" + state.status +
+        "). Files will appear here when the job finishes.";
+    } else if (state?.status === "outdated" ||
+               (state?.status === "ready" && state.matches_current_approvals === false)) {
+      exportMessage.textContent = "Approvals or trim points changed. Export the current approved clips to generate updated files.";
+    } else if (state?.status === "failed" || state?.status === "incomplete") {
+      exportMessage.textContent = "The export did not finish. Check Cloudflare logs before submitting another export.";
+    } else {
+      exportMessage.textContent = approved.length +
+        " approved clip(s) ready for final MP4 export. Saved drafts and rejected suggestions stay out.";
+    }
+    controls();
+  }
+
+  async function refreshExports(currentToken) {
+    if (!activeId || currentToken !== token || analysis?.status !== "ready") return;
+    try {
+      const data = await json("export-status", { video_id: activeId });
+      if (currentToken !== token) return;
+      exportsState = data;
+      renderExportPanel();
+      if (exportTimer) clearTimeout(exportTimer);
+      exportTimer = null;
+      if (["queued", "processing"].includes(data.status)) {
+        exportTimer = setTimeout(() => refreshExports(currentToken), 5500);
+      }
+    } catch (error) {
+      if (currentToken === token && exportMessage)
+        exportMessage.textContent = error.message || "Cannot retrieve private exports.";
+    }
   }
 
   async function refreshPreviews(currentToken) {
@@ -271,6 +344,7 @@
       if (currentToken !== token) return;
       analysis = status;
       renderResults();
+      renderExportPanel();
       controls();
       if (status.status === "queued" || status.status === "processing") {
         note("AI analysis " + status.status + ". Checking for suggestions…");
@@ -278,6 +352,7 @@
       } else if (status.status === "ready") {
         note("AI suggestions ready. Generate video previews or review existing ones.");
         await refreshPreviews(currentToken);
+        await refreshExports(currentToken);
       } else if (status.status === "failed") {
         note("Analysis failed (" + (status.detail || "unknown error") +
           "). Review Cloudflare logs before retrying.", true);
@@ -289,8 +364,10 @@
 
   async function chooseSermon() {
     token += 1; stopPolling();
-    activeId = sermon.value; analysis = null; previews = null;
-    results.replaceChildren(); controls();
+    if (exportTimer) clearTimeout(exportTimer);
+    exportTimer = null;
+    activeId = sermon.value; analysis = null; previews = null; exportsState = null;
+    results.replaceChildren(); renderExportPanel(); controls();
     if (!activeId) { note("Choose a verified uploaded sermon."); return; }
     note("Checking AI results for the selected sermon…");
     await refreshAnalysis(token);
@@ -315,6 +392,20 @@
       await refreshPreviews(token);
     } catch (error) { note(error.message, true); }
     finally { busy = false; controls(); }
+  });
+  if (exportButton) exportButton.addEventListener("click", async () => {
+    if (!activeId || exportBusy || !approvedReviews().length) return;
+    exportBusy = true; controls();
+    if (exportMessage) exportMessage.textContent = "Queuing exact-trim MP4 exports…";
+    try {
+      const currentToken = token;
+      await json("export", { video_id: activeId });
+      await refreshExports(currentToken);
+    } catch (error) {
+      if (exportMessage) exportMessage.textContent = error.message || "Export request failed.";
+    } finally {
+      exportBusy = false; controls();
+    }
   });
   sermon.addEventListener("change", chooseSermon);
 

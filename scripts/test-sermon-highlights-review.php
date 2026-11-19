@@ -13,6 +13,8 @@ $GLOBALS['options'] = array();
 $GLOBALS['worker_calls'] = array();
 $GLOBALS['known_sermon'] = true;
 $GLOBALS['candidate_status'] = 'ready';
+$GLOBALS['export_status'] = 'not_queued';
+$GLOBALS['export_clips'] = array();
 
 class WP_Error {
     private $code; private $text;
@@ -111,6 +113,23 @@ function wp_remote_post($url, $request) {
         throw new Exception('Secret must not enter request JSON');
     $path = parse_url($url, PHP_URL_PATH);
     $GLOBALS['worker_calls'][] = array('path' => $path, 'request' => json_decode($body, true));
+    if ($path === '/highlights/exports/jobs') {
+        $GLOBALS['export_status'] = 'queued';
+        $GLOBALS['export_clips'] = json_decode($body, true)['clips'];
+        return array('status' => 202, 'body' => json_encode(array('status' => 'queued')));
+    }
+    if ($path === '/highlights/exports/status') {
+        $clips = $GLOBALS['export_clips'];
+        if ($GLOBALS['export_status'] === 'ready') {
+            foreach ($clips as &$clip) {
+                $clip['download_url'] = 'https://example.workers.dev/private-download-test';
+            }
+            unset($clip);
+        }
+        return array('status' => 200, 'body' => json_encode(array(
+            'status' => $GLOBALS['export_status'], 'clips' => $clips,
+        )));
+    }
     if ($path === '/highlights/status') {
         return array('status' => 200, 'body' => json_encode(array(
             'status' => $GLOBALS['candidate_status'],
@@ -208,6 +227,9 @@ $sermonForm = array_merge($payload,
     array('mode' => 'status', 'video_id' => 'AjkoDHgFdeA'));
 $existing = surfside_tools_highlights_browser_dispatch($sermonForm);
 check($existing['status'] === 'ready', 'Browser form status fetch reads existing analysis');
+check(is_wp_error(surfside_tools_highlights_browser_dispatch(array_merge(
+    $sermonForm, array('mode' => 'export')))),
+    'Unapproved saved drafts cannot be exported');
 $decisionForm = array_merge($sermonForm, array(
     'mode' => 'review', 'number' => '4', 'decision' => 'approved',
     'start' => '952.78', 'end' => '1010.52',
@@ -257,6 +279,38 @@ check(abs($saved['review']['start'] - 456.74) < .001,
 $loaded = surfside_tools_highlights_rest_status($id);
 check($loaded['saved_reviews']['2']['decision'] === 'approved',
     'Decisions survive later page loads');
+
+$export = surfside_tools_highlights_browser_dispatch(array_merge(
+    $sermonForm, array('mode' => 'export')));
+check($export['status'] === 'queued', 'Approved MP4 export can be queued privately');
+$last = end($GLOBALS['worker_calls']);
+check($last['path'] === '/highlights/exports/jobs' &&
+    count($last['request']['clips']) === 2,
+    'Only two explicitly approved highlights are sent to the final export Worker');
+check($last['request']['clips'][0] === array('number'=>2, 'start'=>456.74, 'end'=>491.24) &&
+    $last['request']['clips'][1] === array('number'=>4, 'start'=>952.78, 'end'=>1010.52),
+    'Final export uses exact stored trims, not five-second-padded previews');
+$GLOBALS['export_status'] = 'ready';
+$downloads = surfside_tools_highlights_browser_dispatch(array_merge(
+    $sermonForm, array('mode' => 'export-status')));
+check($downloads['matches_current_approvals'] === true &&
+    count($downloads['clips']) === 2,
+    'Only current approvals produce final download links');
+
+$reject = surfside_tools_highlights_rest_decision(new FakeRequest(array_merge(
+    $review, array('decision' => 'rejected'))));
+check($reject['review']['decision'] === 'rejected',
+    'Rejection updates the same per-sermon review record');
+$stale = surfside_tools_highlights_rest_export_status($id);
+check($stale['status'] === 'outdated' && !isset($stale['clips']) &&
+    !$stale['matches_current_approvals'],
+    'Rejecting a formerly approved clip hides outdated private export links');
+$save = surfside_tools_highlights_rest_decision(new FakeRequest(array_merge(
+    $review, array('decision' => 'saved'))));
+check($save['review']['decision'] === 'saved' &&
+    count(surfside_tools_highlights_approved_clips('AjkoDHgFdeA')) === 1,
+    'Save changes alone does not constitute export approval');
+
 
 foreach (array(
     array('start' => 451.74, 'end' => 491.24),

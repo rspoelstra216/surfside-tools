@@ -8,7 +8,7 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { sermonAudioKey, podcastAudioArgs, extractSermonAudioArgs, chunkSermonAudioArgs, highlightChunkResponse } from "./sermon-audio.mjs";
 import { detectSpeechPauses } from "./pause-detection.mjs";
-import { clipVideoArgs, previewKey } from "./highlight-video.mjs";
+import { clipVideoArgs, previewKey, exportKey } from "./highlight-video.mjs";
 
 const STORAGE = "http://storage.internal/";
 const idPattern = /^[A-Za-z0-9_-]{11}$/;
@@ -185,7 +185,8 @@ async function prepareHighlightChunks(id) {
 
 // Manually approved ranges are re-validated inside the Container. Download the
 // original MP4 once for the batch and render each private review clip accurately.
-async function renderHighlightClips(id, clips) {
+async function renderHighlightClips(id, clips, kind = "preview") {
+  if (!["preview", "export"].includes(kind)) throw Error("invalid_clip_type");
   if (!Array.isArray(clips) || clips.length < 1 || clips.length > 5)
     throw Error("invalid_clip_batch");
   const seen = new Set();
@@ -213,10 +214,14 @@ async function renderHighlightClips(id, clips) {
       const file = path.join(dir, "clip-" + clip.number + ".mp4");
       await runCommand("ffmpeg", clipVideoArgs(video, file, clip.start, clip.end),
         11 * 60 * 1000);
-      await upload(previewKey(id, clip), file, "video/mp4");
+      const key = kind === "export" ? exportKey(id, clip) : previewKey(id, clip);
+      await upload(key, file, "video/mp4");
       await rm(file, { force: true });
     }
-    return clips.map((clip) => ({ number: clip.number, key: previewKey(id, clip) }));
+    return clips.map((clip) => ({
+      number: clip.number,
+      key: kind === "export" ? exportKey(id, clip) : previewKey(id, clip),
+    }));
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -226,7 +231,7 @@ http.createServer(async (request, response) => {
   if (request.url === "/health" && request.method === "GET") {
     response.writeHead(200).end("ok"); return;
   }
-  if (!["/process", "/highlights/chunks", "/highlights/render"].includes(request.url) || request.method !== "POST") {
+  if (!["/process", "/highlights/chunks", "/highlights/render", "/highlights/export"].includes(request.url) || request.method !== "POST") {
     response.writeHead(404).end("not_found"); return;
   }
   if (busy) { response.writeHead(409).end("busy"); return; }
@@ -235,7 +240,7 @@ http.createServer(async (request, response) => {
     let body = "";
     for await (const chunk of request) {
       body += chunk.toString();
-      if (body.length > (request.url === "/highlights/render" ? 4096 : 256))
+      if (body.length > (["/highlights/render", "/highlights/export"].includes(request.url) ? 4096 : 256))
         throw Error("request_too_large");
     }
     const payload = JSON.parse(body);
@@ -252,11 +257,12 @@ http.createServer(async (request, response) => {
       const manifest = await prepareHighlightChunks(id);
       response.writeHead(200, { "content-type": "application/json" })
         .end(JSON.stringify(highlightChunkResponse(manifest)));
-    } else if (request.url === "/highlights/render") {
+    } else if (["/highlights/render", "/highlights/export"].includes(request.url)) {
       if (test || payload?.test !== undefined) {
         response.writeHead(400).end("highlight_test_not_supported"); return;
       }
-      const clips = await renderHighlightClips(id, payload.clips);
+      const kind = request.url === "/highlights/export" ? "export" : "preview";
+      const clips = await renderHighlightClips(id, payload.clips, kind);
       response.writeHead(200, { "content-type": "application/json" })
         .end(JSON.stringify({ ok: true, clips }));
     } else {
