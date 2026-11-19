@@ -193,7 +193,7 @@ async function renderHighlightClips(id, clips, kind = "preview") {
   let totalSeconds = 0;
   for (const clip of clips) {
     if (!clip || !Number.isInteger(clip.number) || clip.number < 1 ||
-        clip.number > 5 || seen.has(clip.number) ||
+        clip.number > 10 || seen.has(clip.number) ||
         !Number.isFinite(clip.start) || !Number.isFinite(clip.end) ||
         clip.start < 0 || clip.end > 72 * 60 ||
         clip.end - clip.start < 15 || clip.end - clip.start > 120)
