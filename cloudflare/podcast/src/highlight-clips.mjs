@@ -35,6 +35,9 @@ const mergeClips = (prior, next) => {
 };
 
 export async function enqueueClips(env, id, requested) {
+  // Preview processing is deliberately bounded to five clips per Queue job.
+  if (!Array.isArray(requested) || requested.length < 1 || requested.length > 5)
+    return reply({ error: "invalid_clip_selection" }, 400);
   if (!await env.SERMONS_BUCKET.head(sourceKey(id)))
     return reply({ error: "sermon_missing" }, 409);
   const highlights = await readJson(env.SERMONS_BUCKET, highlightResultKey(id));
