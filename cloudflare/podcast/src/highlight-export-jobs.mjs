@@ -87,7 +87,7 @@ export async function processExportJob(env, id, requested) {
           end: clip.source_preview.end,
         }))));
     const sources = planned.map((clip, i) =>
-      canRead[i] ? clip : exportQueueClips([clip])[0]);
+      canRead[i] ? clip : { number: clip.number, start: clip.start, end: clip.end });
     console.log("Approved highlight export input sources", id, {
       previews: canRead.filter(Boolean).length, original_fallbacks: canRead.filter((v) => !v).length,
     });
