@@ -1,5 +1,5 @@
 import { verticalKey } from "./highlight-vertical-video.mjs";
-import { requestedByteRange } from "./highlight-video.mjs";
+import { requestedByteRange, exportJobStalled } from "./highlight-video.mjs";
 
 // Pure link handlers; separable from the Cloudflare Container Queue.
 const jobKey = (id) => `sermon-highlights/vertical-jobs/${id}.json`;
