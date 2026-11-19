@@ -228,3 +228,35 @@ for each manually requested export batch.
    disappears and the existing WordPress review decision persists.
 7. Verify no other weekly MP4/podcast workflow changes and no public
    R2 objects were created.
+
+## PR #525 — Retry recovery for initial export failures
+
+The first live final-export Queue attempt exposed a contract mismatch:
+`resolveApprovedExports()` returns `title` alongside `number`, `start`
+and `end`, but its strict input parser only accepts the three numeric
+fields. When the full response was sent through `PODCAST_QUEUE` and passed
+back to the parser, it failed with `invalid_clip_times` before the status
+handler's `try/catch`. Some jobs remained in `queued` even after retries.
+
+This fix sends only `number/start/end` in newly queued messages, strips
+only known display-title metadata from legacy queued messages, and still
+validates every chosen time against the original AI suggestion on the
+consumer. All validation errors now save `failed` so a manual retry is
+possible. A job left **queued for more than 20 minutes** displays as
+`stalled` and can be requeued from the existing **Export approved clips**
+button. **Processing** jobs are never auto-marked stalled because FFmpeg
+could still be rendering.
+
+After PR #525 is merged and the Cloudflare Worker is deployed:
+
+1. Return to the same previously reviewed November 15 sermon.
+2. Confirm the saved Approve/Reject decisions and trims still appear.
+3. If the old export is `stalled` or `failed`, click **Export approved clips**
+   once more. Do not re-analyze or regenerate the previews.
+4. The job should progress from queued → processing → ready.
+5. Click **Download MP4** and verify the export uses your approved trim
+   boundaries without the extra preview padding.
+
+**No WordPress plugin redeploy is required for this server-side fix unless
+the site needs the updated stalled-job help text.** The normal sermon/podcast,
+Spreaker publishing, and original R2 MP4 flows are untouched.
