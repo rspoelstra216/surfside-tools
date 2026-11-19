@@ -137,6 +137,10 @@ check(str_contains($GLOBALS['highlight_inline_script'], 'test-nonce') &&
     !str_contains($GLOBALS['highlight_inline_script'], '/wp-json/') &&
     !str_contains($GLOBALS['highlight_inline_script'], SURFSIDE_PODCAST_SHARED_SECRET),
     'Browser receives the correct staff-page endpoint/own nonce but never REST auth or HMAC secrets');
+check(str_contains($GLOBALS['highlight_inline_script'], 'highlights-config-v2') &&
+    str_contains($GLOBALS['highlight_inline_script'], '"pageChecks":') &&
+    !str_contains($GLOBALS['highlight_inline_script'], SURFSIDE_PODCAST_WORKER_URL),
+    'Authorized page markup includes protocol and boolean-only render-time checks');
 
 // Exercise the real browser form transport: WordPress's custom staff cookie
 // works on /dashboard, unlike wp_rest cookie nonce authentication.
@@ -146,6 +150,8 @@ $payload = array(
 $sermons = surfside_tools_highlights_browser_dispatch($payload);
 check(count($sermons['sermons']) === 1 && $sermons['configured'],
     'Front-end staff POST can load the sermon dropdown');
+check(($sermons['config_protocol'] ?? '') === 'highlights-config-v2',
+    'Dashboard request carries a stable protocol to distinguish stale PHP versions');
 $expected_checks = array('worker_url_defined','worker_url_string','worker_url_valid',
     'secret_defined','secret_string','secret_length_valid');
 check(array_keys($sermons['config_checks'] ?? array()) === $expected_checks,
