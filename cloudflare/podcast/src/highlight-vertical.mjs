@@ -1,6 +1,6 @@
 import { getContainer } from "@cloudflare/containers";
 import { PROCESSOR_CONTAINER_ID, sourceKey, validId } from "./validation.mjs";
-import { resolveApprovedExports } from "./highlight-video.mjs";
+import { resolveApprovedExports, exportJobStalled } from "./highlight-video.mjs";
 import { verticalKey, validVerticalClip, sameVerticalJob } from "./highlight-vertical-video.mjs";
 
 const jobKey = (id) => `sermon-highlights/vertical-jobs/${id}.json`;
@@ -37,7 +37,8 @@ export async function queueVertical(env, id, requestClip, anchor) {
   try { clip = await verifiedClip(env, id, requestClip, anchor); }
   catch (error) { return reply({ error: error.message }, 400); }
   const prior = await getJson(env.SERMONS_BUCKET, jobKey(id));
-  if (["queued", "processing"].includes(prior?.status)) {
+  if (["queued", "processing"].includes(prior?.status) &&
+      !exportJobStalled(prior)) {
     if (sameVerticalJob(prior, clip, anchor))
       return reply({ video_id: id, status: prior.status, already_exists: true });
     return reply({ error: "vertical_job_in_progress" }, 409);
