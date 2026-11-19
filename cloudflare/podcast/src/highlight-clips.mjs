@@ -19,6 +19,21 @@ async function writeStatus(env, id, state, clips, detail = "") {
   }), { httpMetadata: { contentType: "application/json" } });
 }
 
+// Keep previously generated preview links available when more suggestions are
+// requested. A later batch renders only the new/changed clips but publishes a
+// combined manifest of completed private preview files.
+const sameClip = (a, b) =>
+  a.number === b.number && a.start === b.start && a.end === b.end;
+const mergeClips = (prior, next) => {
+  const merged = Array.isArray(prior) ? [...prior] : [];
+  for (const clip of next) {
+    const index = merged.findIndex((c) => c.number === clip.number);
+    if (index >= 0) merged[index] = clip;
+    else merged.push(clip);
+  }
+  return merged.sort((a, b) => a.number - b.number);
+};
+
 export async function enqueueClips(env, id, requested) {
   if (!await env.SERMONS_BUCKET.head(sourceKey(id)))
     return reply({ error: "sermon_missing" }, 409);
@@ -29,37 +44,47 @@ export async function enqueueClips(env, id, requested) {
   try { clips = resolveClipPicks(highlights.highlights, requested); }
   catch (error) { return reply({ error: error.message }, 400); }
   const prior = await readJson(env.SERMONS_BUCKET, statusKey(id));
-  const same = Array.isArray(prior?.clips) && prior.clips.length === clips.length &&
-    prior.clips.every((c, i) => {
-      const b = clips[i];
-      return c.number === b.number && c.start === b.start && c.end === b.end;
-    });
   if (prior && ["queued", "processing"].includes(prior.status)) {
-    if (same) return reply({ video_id: id, status: prior.status, already_exists: true });
+    if (clips.every((c) => (prior.clips || []).some((p) => sameClip(p, c))))
+      return reply({ video_id: id, status: prior.status, already_exists: true });
     return reply({ error: "preview_in_progress" }, 409);
   }
-  if (prior?.status === "ready" && same &&
-      (await Promise.all(clips.map((c) =>
-        env.SERMONS_BUCKET.head(previewKey(id, c))))).every(Boolean))
+  const previous = prior?.status === "ready" ? (prior.clips || []) : [];
+  const available = await Promise.all(clips.map(async (clip) =>
+    previous.some((p) => sameClip(p, clip)) &&
+    !!await env.SERMONS_BUCKET.head(previewKey(id, clip))));
+  if (available.every(Boolean))
     return reply({ video_id: id, status: "ready", already_exists: true });
-  await writeStatus(env, id, "queued", clips);
+  const pending = clips.filter((_, i) => !available[i]);
+  // A bounded batch always contains <=5 clips, even after a second pass.
+  const retained = await Promise.all(previous.map(async (clip) =>
+    !!await env.SERMONS_BUCKET.head(previewKey(id, clip))));
+  const priorReady = previous.filter((_, i) => retained[i]);
+  const combined = mergeClips(priorReady, clips);
+  await writeStatus(env, id, "queued", combined);
   try {
-    await env.PODCAST_QUEUE.send({ kind: "highlight_clips", video_id: id, clips });
-    return reply({ video_id: id, status: "queued", clips }, 202);
+    await env.PODCAST_QUEUE.send({
+      kind: "highlight_clips", video_id: id,
+      clips: pending, manifest: combined,
+    });
+    return reply({ video_id: id, status: "queued", clips: combined }, 202);
   } catch (error) {
     console.error("Unable to queue manual clip previews", id, String(error));
     await writeStatus(env, id, "failed", clips, "queue_unavailable");
     return reply({ error: "queue_unavailable" }, 503);
   }
 }
-export async function processClipJob(env, id, clips) {
-  if (!validId(id) || !Array.isArray(clips) || !clips.length) throw Error("invalid_clip_job");
+export async function processClipJob(env, id, clips, manifest = clips) {
+  if (!validId(id) || !Array.isArray(clips) || !clips.length ||
+      clips.length > 5 || !Array.isArray(manifest) ||
+      manifest.length > 10) throw Error("invalid_clip_job");
   // Canonical object names are derived from validated selection, not user paths.
   const clean = clips.map((c) => ({
     number: c.number, title: c.title, start: c.start, end: c.end,
   }));
+  const combined = mergeClips(manifest, clean);
   try {
-    await writeStatus(env, id, "processing", clean);
+    await writeStatus(env, id, "processing", combined);
     const response = await getContainer(env.PODCAST_CONTAINER, PROCESSOR_CONTAINER_ID)
       .fetch(new Request("http://container/highlights/render", {
         method: "POST", headers: { "content-type": "application/json" },
@@ -70,10 +95,10 @@ export async function processClipJob(env, id, clips) {
       if (!await env.SERMONS_BUCKET.head(previewKey(id, clip)))
         throw Error("clip_preview_missing");
     }
-    await writeStatus(env, id, "ready", clean);
+    await writeStatus(env, id, "ready", combined);
   } catch (error) {
     console.error("Manual highlight clip rendering failed", id, String(error));
-    await writeStatus(env, id, "failed", clean, "clip_render_failed");
+    await writeStatus(env, id, "failed", combined, "clip_render_failed");
     throw error;
   }
 }
