@@ -346,3 +346,79 @@ each successful production sermon upload. Jobs are idempotent to prevent
 accidental repeated inference/transcoding. It does consume Cloudflare Workers
 AI, R2 and Container resources; the account's billing and usage limits
 remain applicable. No OpenAI API key is used.
+
+## PR #527 — Find more suggestions (manual second-pass AI search)
+
+Some sermons, including the November 1, 2026 **What We Have Learned**
+sermon, return only one or two initial candidate clips, and staff may find
+none of them editorially useful. **Find more suggestions** now provides a
+manual, private, transcript-only alternative search rather than repeating
+the same full analysis.
+
+### Staff workflow
+
+1. Open **Staff Dashboard → Messages & Media → Sermon Highlights** and
+   select any analyzed sermon (e.g. November 1).
+2. Preview the initial suggestions; reject or save those that are unusable.
+3. Click **Find more suggestions**. The dashboard displays **queued** and
+   **processing** progress and checks the existing signed staff status route.
+4. The existing **Whisper transcript** is reused in R2; only the Llama
+   candidate search runs again, with explicit instructions to avoid earlier
+   suggestions, overlap, announcements, fragmented phrases, and weak context.
+5. If new quality-qualified candidates exist, up to **three** are appended
+   with new stable numbers (up to ten total). The originals and all WordPress
+   per-number review options remain unchanged.
+6. The original/private MP4 previews remain accessible. Only the new
+   suggestions are queued for new five-second-padded preview rendering;
+   the ready manifest combines old and new private video links.
+7. Review and approve any additional suggestions normally, then **Export
+   approved clips**. Exact cuts and private downloads continue to work for
+   original and additional clip numbers.
+8. If there are no suitable new candidates, the dashboard reports zero
+   additions instead of inventing weak suggestions. The action can be
+   retried up to four searches per sermon, with a maximum of ten suggestions
+   overall. This is intentional manual AI use with small additional costs.
+
+### Architecture and safety
+
+- Staff POST `mode=find-more` follows the existing **dashboard-scoped
+  nonce + Weekly Media permissions**. Only WordPress signs the Worker
+  request to `/highlights/more/jobs`. No public admin action, upload, or
+  embedded HMAC secret.
+- The Worker requires an existing, completed analysis and R2 transcript.
+  It queues `kind=highlight_more` with `base_count` and `round`.
+- Queue processing reads R2 `sermon-highlights/transcripts/<id>.json`;
+  it never calls Whisper or re-extracts sermon audio. Llama evaluates
+  timestamped windows, excludes overlap and similar titles, requires
+  a **4/5-or-better AI score**, and chooses up to three alternative
+  standalone excerpts. Original AI suggestions retain their numbers and
+  timestamp ranges. New candidates are appended in the private results
+  JSON only after validation.
+- R2 `sermon-highlights/more-jobs/<id>.json` tracks progress independently
+  of the existing initial analysis and clip-preview jobs. Repeated clicks
+  while queued/processing return the current job; Queue retries reuse any
+  already persisted results instead of duplicating AI calls.
+- Preview jobs remain bounded to **five renders per batch** and aggregate
+  existing validated private clips up to ten across multiple batches.
+  Each private clip/download URL is still HMAC-signed, scoped to one
+  verified R2 object and limited to ten minutes. Original podcast,
+  Spreaker, R2 sermon and livestream flows are untouched.
+- **Analyze / Prepare now** and manual **Generate video previews** can
+  prepare only missing additional previews without repeating AI
+  transcription, preserving previously rendered original videos.
+
+### Verification
+
+1. With November 1 selected, note the initial two clips and any saved
+   decisions.
+2. Click **Find more suggestions**; verify queued → processing → ready.
+3. Confirm existing clips #1/#2 retain their titles/times and new clips
+   get numbers #3 and onward (if Llama finds suitable alternatives).
+4. Confirm up to three new playable previews are automatically generated,
+   while both original preview videos remain available.
+5. Reject/approve and refresh. Check persisted WordPress reviews and
+   downloaded MP4 exports still use their exact adjusted times.
+6. Click the new button again only if necessary; it must not rerun Whisper
+   or overwrite previous results.
+7. If the AI finds no stronger moments, the dashboard should explicitly
+   say so; it must never force five low-quality selections.
