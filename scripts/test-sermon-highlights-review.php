@@ -87,17 +87,16 @@ function untrailingslashit($s) { return rtrim($s, '/'); }
 function wp_json_encode($v) { return json_encode($v); }
 function is_wp_error($v) { return $v instanceof WP_Error; }
 /**
- * Production WordPress rest_ensure_response() wraps arrays in WP_REST_Response,
- * whose serialized body does NOT have the same top-level shape as its data.
- * Earlier tests returned plain arrays and missed the live sermon-list bug.
+ * WordPress rest_ensure_response() returns WP_REST_Response objects rather
+ * than arrays; exercise that type in the browser dispatcher. WordPress
+ * jsonSerialize() returns the underlying data; this normalized PHP return
+ * shape is defensive, while bootstrapping from the page fixes the UI race.
  */
 class WP_REST_Response implements JsonSerializable {
     private $data;
     public function __construct($data) { $this->data = $data; }
     public function get_data() { return $this->data; }
-    public function jsonSerialize(): mixed {
-        return array('data' => $this->data, 'status' => 200, 'headers' => array());
-    }
+    public function jsonSerialize(): mixed { return $this->data; }
 }
 function rest_ensure_response($v) {
     return !empty($GLOBALS['mock_wp_rest_response']) ? new WP_REST_Response($v) : $v;
@@ -154,8 +153,16 @@ check(str_contains($GLOBALS['highlight_inline_script'], 'test-nonce') &&
     'Browser receives the correct staff-page endpoint/own nonce but never REST auth or HMAC secrets');
 check(str_contains($GLOBALS['highlight_inline_script'], 'highlights-config-v2') &&
     str_contains($GLOBALS['highlight_inline_script'], '"pageChecks":') &&
+    str_contains($GLOBALS['highlight_inline_script'], '"configured":true') &&
+    str_contains($GLOBALS['highlight_inline_script'], '"sermons":') &&
+    str_contains($GLOBALS['highlight_inline_script'], 'AjkoDHgFdeA') &&
     !str_contains($GLOBALS['highlight_inline_script'], SURFSIDE_PODCAST_WORKER_URL),
-    'Authorized page markup includes protocol and boolean-only render-time checks');
+    'Authenticated page includes populated sermon list and true Worker configuration without raw secrets');
+$highlight_js = file_get_contents(dirname(__DIR__) . '/assets/js/sermon-highlights-review.js');
+check(is_string($highlight_js) &&
+    str_contains($highlight_js, 'Array.isArray(cfg.sermons)') &&
+    !str_contains($highlight_js, 'json("sermons")'),
+    'Startup uses server-rendered sermons and does not make a second inconsistent config POST');
 
 // Exercise the real browser form transport: WordPress's custom staff cookie
 // works on /dashboard, unlike wp_rest cookie nonce authentication.
