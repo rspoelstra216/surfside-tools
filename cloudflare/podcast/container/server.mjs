@@ -187,7 +187,8 @@ async function prepareHighlightChunks(id) {
 // original MP4 once for the batch and render each private review clip accurately.
 async function renderHighlightClips(id, clips, kind = "preview") {
   if (!["preview", "export"].includes(kind)) throw Error("invalid_clip_type");
-  if (!Array.isArray(clips) || clips.length < 1 || clips.length > 5)
+  if (!Array.isArray(clips) || clips.length < 1 ||
+      clips.length > (kind === "export" ? 10 : 5))
     throw Error("invalid_clip_batch");
   const seen = new Set();
   let totalSeconds = 0;
