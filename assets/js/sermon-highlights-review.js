@@ -143,7 +143,7 @@
     const reviews = readReviews();
     const section = el("div", "surfside-highlights-grid");
 
-    for (const suggestion of highlights.slice(0, 5)) {
+    for (const suggestion of highlights.slice(0, 10)) {
       const number = suggestion.number;
       const saved = reviews[String(number)] || {};
       const baselineStart = Number(suggestion.start), baselineEnd = Number(suggestion.end);
