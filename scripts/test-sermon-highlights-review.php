@@ -86,7 +86,22 @@ function get_current_user_id() { return 42; }
 function untrailingslashit($s) { return rtrim($s, '/'); }
 function wp_json_encode($v) { return json_encode($v); }
 function is_wp_error($v) { return $v instanceof WP_Error; }
-function rest_ensure_response($v) { return $v; }
+/**
+ * Production WordPress rest_ensure_response() wraps arrays in WP_REST_Response,
+ * whose serialized body does NOT have the same top-level shape as its data.
+ * Earlier tests returned plain arrays and missed the live sermon-list bug.
+ */
+class WP_REST_Response implements JsonSerializable {
+    private $data;
+    public function __construct($data) { $this->data = $data; }
+    public function get_data() { return $this->data; }
+    public function jsonSerialize(): mixed {
+        return array('data' => $this->data, 'status' => 200, 'headers' => array());
+    }
+}
+function rest_ensure_response($v) {
+    return !empty($GLOBALS['mock_wp_rest_response']) ? new WP_REST_Response($v) : $v;
+}
 function sanitize_key($v) { return strtolower(preg_replace('/[^a-z0-9_-]/', '', (string) $v)); }
 function wp_remote_post($url, $request) {
     $body = $request['body'];
@@ -147,7 +162,13 @@ check(str_contains($GLOBALS['highlight_inline_script'], 'highlights-config-v2') 
 $payload = array(
     'highlight_nonce' => 'test-nonce', 'mode' => 'sermons',
 );
+// Exercise the real WordPress response-object behavior for all browser modes.
+$GLOBALS['mock_wp_rest_response'] = true;
+check(surfside_tools_highlights_rest_sermons() instanceof WP_REST_Response,
+    'Realistic fixture wraps REST data instead of returning a plain array');
 $sermons = surfside_tools_highlights_browser_dispatch($payload);
+check(is_array($sermons) && !isset($sermons['data']),
+    'The staff page unwraps the sermon-list response before JSON serialization');
 check(count($sermons['sermons']) === 1 && $sermons['configured'],
     'Front-end staff POST can load the sermon dropdown');
 check(($sermons['config_protocol'] ?? '') === 'highlights-config-v2',
@@ -194,6 +215,9 @@ check(is_wp_error(surfside_tools_highlights_browser_dispatch(
     array_merge($decisionForm, array('start' => '940')))),
     'Server checks five-second trim limits even for forged browser requests');
 
+// Direct REST handler assertions below use their original array-shaped test
+// contract; the browser-dispatch cases above used real response wrappers.
+$GLOBALS['mock_wp_rest_response'] = false;
 $id = new FakeRequest(array('video_id' => 'AjkoDHgFdeA'));
 check(!is_wp_error(surfside_tools_highlights_request_id($id)), 'Known ready sermons are eligible');
 $GLOBALS['known_sermon'] = false;
