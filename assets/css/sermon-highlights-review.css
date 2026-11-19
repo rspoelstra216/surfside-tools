@@ -159,3 +159,42 @@
   display: block; width: min(320px, 100%); aspect-ratio: 9 / 16;
   border-radius: 12px; background: #0b1a2a;
 }
+
+/* Tap-to-place speaker focus on the ACTUAL horizontal sermon preview. */
+.surfside-vertical-focus-area[hidden] { display: none !important; }
+.surfside-vertical-focus-area { max-width: 560px; margin: 14px 0; }
+.surfside-vertical-focus-help { margin: 0 0 10px; font-weight: 650; color: #183551; }
+.surfside-vertical-focus-frame {
+  position: relative; width: 100%; aspect-ratio: 16 / 9;
+  overflow: hidden; border-radius: 12px; background: #101d31;
+  border: 1px solid #bacbe0;
+}
+.surfside-vertical-focus-frame video {
+  position: absolute; inset: 0; display: block; width: 100%; height: 100%;
+  object-fit: contain; pointer-events: none;
+}
+#surfside-vertical-focus-picker {
+  position: absolute; inset: 0; display: block; width: 100%; height: 100%;
+  padding: 0; margin: 0; border: 0; background: transparent;
+  cursor: crosshair; touch-action: manipulation;
+}
+#surfside-vertical-focus-picker:focus-visible {
+  outline: 3px solid #5cbbf4; outline-offset: -3px;
+}
+.surfside-vertical-focus-marker {
+  position: absolute; left: 50%; top: 0; height: 100%; width: 2px;
+  background: #5cbbf4; transform: translateX(-50%);
+  box-shadow: 0 0 0 1px #0e2e50, 0 0 8px rgba(0,0,0,.55);
+  pointer-events: none;
+}
+.surfside-vertical-focus-marker::before {
+  content: ""; position: absolute; left: 50%; top: 38%;
+  width: 18px; height: 18px; border: 3px solid #fff; border-radius: 50%;
+  background: #1263b2; transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 2px #1263b2;
+}
+.surfside-vertical-controls { margin: 10px 0; }
+.surfside-vertical-controls output {
+  min-width: 95px; color: #193b5a;
+  font-variant-numeric: tabular-nums;
+}
