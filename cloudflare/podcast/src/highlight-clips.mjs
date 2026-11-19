@@ -52,7 +52,7 @@ export async function enqueueClips(env, id, requested) {
       return reply({ video_id: id, status: prior.status, already_exists: true });
     return reply({ error: "preview_in_progress" }, 409);
   }
-  const previous = prior?.status === "ready" ? (prior.clips || []) : [];
+  const previous = ["ready", "failed"].includes(prior?.status) ? (prior.clips || []) : [];
   const available = await Promise.all(clips.map(async (clip) =>
     previous.some((p) => sameClip(p, clip)) &&
     !!await env.SERMONS_BUCKET.head(previewKey(id, clip))));
