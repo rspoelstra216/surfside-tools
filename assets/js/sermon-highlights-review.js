@@ -292,6 +292,8 @@
     } else if (state?.status === "outdated" ||
                (state?.status === "ready" && state.matches_current_approvals === false)) {
       exportMessage.textContent = "Approvals or trim points changed. Export the current approved clips to generate updated files.";
+    } else if (state?.status === "stalled") {
+      exportMessage.textContent = "The previous export attempt stalled. You can click Export approved clips again to retry the saved approvals.";
     } else if (state?.status === "failed" || state?.status === "incomplete") {
       exportMessage.textContent = "The export did not finish. Check Cloudflare logs before submitting another export.";
     } else {
