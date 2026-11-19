@@ -378,6 +378,14 @@
         (event.clientX - bounds.left) / bounds.width * 100)));
       verticalAnchor.value = String(percent);
       updateFocusMarker();
+      // Mobile browsers can keep a muted, seeked video black until the first
+      // user gesture. Use this tap to unlock the paused frame if necessary.
+      if (verticalFocusVideo?.paused && verticalFocusVideo.readyState >= 1) {
+        verticalFocusVideo.play().then(() => {
+          verticalFocusVideo.pause();
+          verticalFocusVideo.currentTime = focusSeek;
+        }).catch(() => {});
+      }
     });
     verticalFocusPicker.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
