@@ -38,6 +38,8 @@ async function link(request, env, id, clip, anchor, mode) {
 export async function verticalStatus(request, env, id) {
   const state = await getJson(env.SERMONS_BUCKET, jobKey(id)) ||
     { video_id: id, status: "not_queued" };
+  if (exportJobStalled(state))
+    return reply({ ...state, status: "stalled", detail: "old_vertical_queue_stalled" });
   if (state.status !== "ready") return reply(state);
   const clip = state.clip, anchor = state.anchor;
   const object = await env.SERMONS_BUCKET.head(verticalKey(id, clip, anchor));
