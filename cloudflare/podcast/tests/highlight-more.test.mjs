@@ -85,6 +85,18 @@ test("find-more reuses existing transcript and renders only new previews", async
       },
     },
   };
+  const queuePreview = async (_env, videoId, clips) => {
+    const old = saved.get(`sermon-highlights/clip-jobs/${videoId}.json`);
+    if (["queued", "processing"].includes(old?.status) &&
+        clips.every((clip) => old.clips.some((c) => c.number === clip.number)))
+      return Response.json({ status: old.status, already_exists: true });
+    const manifest = [...(old?.clips || []), ...clips].sort(
+      (a, b) => a.number - b.number);
+    saved.set(`sermon-highlights/clip-jobs/${videoId}.json`,
+      { status: "queued", clips: manifest });
+    sent.push({ kind: "highlight_clips", video_id: videoId, clips, manifest });
+    return Response.json({ status: "queued" }, { status: 202 });
+  };
   const queued = await queueMoreHighlights(env, id);
   assert.equal(queued.status, 202);
   assert.equal((await queued.json()).status, "queued");
@@ -92,7 +104,7 @@ test("find-more reuses existing transcript and renders only new previews", async
     kind: "highlight_more", video_id: id, base_count: 2, round: 1,
   });
 
-  await processMoreHighlights(env, id, 2, 1);
+  await processMoreHighlights(env, id, 2, 1, queuePreview);
   const updated = saved.get(`sermon-highlights/results/${id}.json`);
   assert.equal(updated.highlights.length, 3);
   assert.deepEqual(updated.highlights.slice(0, 2), first);
@@ -108,7 +120,7 @@ test("find-more reuses existing transcript and renders only new previews", async
 
   // If a Queue retry arrives, the first result was already saved; do not
   // charge Llama a second time or append another copy of #3.
-  await processMoreHighlights(env, id, 2, 1);
+  await processMoreHighlights(env, id, 2, 1, queuePreview);
   assert.equal(aiCalls.length, 1);
   assert.equal(saved.get(`sermon-highlights/results/${id}.json`).highlights.length, 3);
   assert.equal(sent.length, 2);
