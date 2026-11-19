@@ -346,6 +346,11 @@ function surfside_tools_staff_sermon_highlights_shortcode() {
             // Capture the same safe booleans at page render time. If they
             // differ from the authenticated POST response, it is a runtime
             // or deployment mismatch rather than a bad credential.
+            // Bootstrap from the authenticated PHP page render instead of a
+            // second request. This exact request has the verified Worker
+            // configuration, and the sermon inventory is staff-only.
+            'configured' => surfside_tools_highlights_configured(),
+            'sermons' => surfside_tools_highlights_sermon_rows(),
             'configProtocol' => 'highlights-config-v2',
             'pageChecks' => surfside_tools_highlights_config_diagnostics(),
             'initialId' => isset($_GET['video_id']) && surfside_tools_highlights_valid_id(wp_unslash($_GET['video_id']))
