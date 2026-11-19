@@ -192,7 +192,7 @@ function surfside_tools_highlights_approved_clips($id) {
         $number = $item['number'] ?? null;
         $start = $item['start'] ?? null;
         $end = $item['end'] ?? null;
-        if (!is_int($number) || $number < 1 || $number > 5 ||
+        if (!is_int($number) || $number < 1 || $number > 10 ||
             !is_numeric($start) || !is_numeric($end)) continue;
         $clips[] = array('number' => $number,
             'start' => round((float) $start, 2),
@@ -255,7 +255,7 @@ function surfside_tools_highlights_rest_decision($request) {
     $decision = $request->get_param('decision');
     $start = $request->get_param('start');
     $end = $request->get_param('end');
-    if (!is_int($number) || $number < 1 || $number > 5 ||
+    if (!is_int($number) || $number < 1 || $number > 10 ||
         !in_array($decision, array('saved', 'approved', 'rejected'), true) ||
         !is_numeric($start) || !is_numeric($end)) {
         return new WP_Error('highlights_invalid_review', 'Invalid review decision.', array('status' => 400));
