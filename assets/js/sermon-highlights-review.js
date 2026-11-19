@@ -330,11 +330,14 @@
         option.value = item.video_id;
         sermon.append(option);
       }
-      if (!data.configured) {
-        note("WordPress could not validate the private Cloudflare highlights settings. See the safe checks below.", true);
+      if (!data.configured || data.config_protocol !== cfg.configProtocol) {
+        const isVersionMismatch = data.config_protocol !== cfg.configProtocol;
+        note(isVersionMismatch
+          ? "The highlights page and its server response appear to be different versions. Do not change your Cloudflare credentials."
+          : "The highlights request reports unavailable Cloudflare settings. Compare the safe checks from page load and the server request.", true);
         const report = el("section", "surfside-highlights-diagnostics");
         report.append(el("h2", "", "Configuration checks"));
-        report.append(el("p", "", "These checks show only Yes or No. No secret, URL, length, or server path is displayed."));
+        report.append(el("p", "", "Only Yes, No, or Not reported are shown. No URL, secret, secret length, or server path is displayed."));
         const checks = [
           ["Worker URL defined", "worker_url_defined"],
           ["Worker URL is text", "worker_url_string"],
@@ -343,15 +346,35 @@
           ["Shared secret is text", "secret_string"],
           ["Shared secret meets minimum length", "secret_length_valid"],
         ];
-        const list = el("ul");
-        for (const [label, key] of checks) {
-          const item = el("li", "", label + ": " +
-            (data.config_checks?.[key] === true ? "Yes" : "No"));
-          item.classList.add(data.config_checks?.[key] === true ?
-            "surfside-highlight-check-pass" : "surfside-highlight-check-fail");
-          list.append(item);
+        const statusFor = (values, key) => {
+          if (values && typeof values[key] === "boolean")
+            return values[key] ? "Yes" : "No";
+          return "Not reported";
+        };
+        if (isVersionMismatch) {
+          report.append(el("p", "surfside-highlights-error",
+            "Page/request version mismatch: please verify the complete plugin update and PHP cache before changing wp-config.php."));
         }
-        report.append(list);
+        const grid = el("div", "surfside-highlights-check-grid");
+        for (const [heading, values] of [
+          ["Page render", cfg.pageChecks],
+          ["Dashboard request", data.config_checks],
+        ]) {
+          const group = el("div", "surfside-highlight-check-group");
+          group.append(el("h3", "", heading));
+          const list = el("ul");
+          for (const [label, key] of checks) {
+            const status = statusFor(values, key);
+            const item = el("li", "", label + ": " + status);
+            item.classList.add(status === "Yes" ? "surfside-highlight-check-pass"
+              : status === "No" ? "surfside-highlight-check-fail"
+              : "surfside-highlight-check-unknown");
+            list.append(item);
+          }
+          group.append(list);
+          grid.append(group);
+        }
+        report.append(grid);
         results.replaceChildren(report);
         analyze.disabled = true; render.disabled = true;
         return;
