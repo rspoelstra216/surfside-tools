@@ -4,7 +4,7 @@ export function paddedHighlightPicks(highlights) {
   if (!Array.isArray(highlights)) return [];
   const selected = [], seen = new Set();
   for (const h of highlights.slice(0, 5)) {
-    if (!Number.isInteger(h?.number) || h.number < 1 || h.number > 5 ||
+    if (!Number.isInteger(h?.number) || h.number < 1 || h.number > 10 ||
         seen.has(h.number) || !Number.isFinite(h.start) || !Number.isFinite(h.end))
       continue;
     seen.add(h.number);
