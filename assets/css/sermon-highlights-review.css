@@ -97,3 +97,14 @@
 }
 .surfside-highlight-check-pass { color: #176142; }
 .surfside-highlight-check-fail { color: #a41e28; font-weight: 700; }
+
+.surfside-highlights-check-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px;
+}
+.surfside-highlight-check-group { min-width: 0; }
+.surfside-highlight-check-group h3 { margin: 0 0 8px; font-size: 17px; }
+.surfside-highlight-check-group ul { grid-template-columns: 1fr; }
+.surfside-highlight-check-unknown { color: #7d5521; font-weight: 600; }
+@media (max-width: 650px) {
+  .surfside-highlights-check-grid { grid-template-columns: 1fr; }
+}
