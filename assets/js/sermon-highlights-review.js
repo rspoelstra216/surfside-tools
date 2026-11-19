@@ -3,7 +3,7 @@
   "use strict";
   const root = document.getElementById("surfside-highlights-review");
   const cfg = window.SurfsideHighlightsReview;
-  if (!root || !cfg || !cfg.api || !cfg.nonce) return;
+  if (!root || !cfg || !cfg.endpoint || !cfg.nonce) return;
 
   const sermon = root.querySelector("#surfside-highlights-sermon");
   const analyze = root.querySelector("#surfside-highlights-analyze");
@@ -41,19 +41,38 @@
     stopPolling();
     timer = setTimeout(callback, wait);
   };
-  const json = async (path, body = null) => {
-    const response = await fetch(cfg.api + path, {
-      method: body === null ? "GET" : "POST",
-      credentials: "same-origin",
-      headers: { "X-WP-Nonce": cfg.nonce, ...(body !== null ? { "Content-Type": "application/json" } : {}) },
-      ...(body !== null ? { body: JSON.stringify(body) } : {}),
-      cache: "no-store",
+  const json = async (mode, body = null) => {
+    // The Surfside Tools staff session is scoped to /dashboard/, not to
+    // generic WordPress REST cookie authentication. Like Weekly Media,
+    // authorize via an own-nonce POST to the current signed-in staff page.
+    const fields = new URLSearchParams({
+      action: "surfside_highlights_browser_review",
+      highlight_nonce: cfg.nonce,
+      mode,
     });
-    let data;
-    try { data = await response.json(); }
-    catch { throw Error("The server returned an unreadable response."); }
-    if (!response.ok) throw Error(data?.message || data?.error || "Request failed (" + response.status + ").");
-    return data;
+    if (body) {
+      for (const [key, value] of Object.entries(body)) {
+        if (value !== undefined && value !== null) fields.set(key, String(value));
+      }
+    }
+    let response;
+    try {
+      response = await fetch(cfg.endpoint, {
+        method: "POST",
+        credentials: "same-origin",
+        redirect: "error",
+        cache: "no-store",
+        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+        body: fields.toString(),
+      });
+    } catch {
+      throw Error("The staff authorization request failed. Check your login and connection.");
+    }
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.success !== true) {
+      throw Error(payload.data?.message || "Staff authorization failed (HTTP " + response.status + ").");
+    }
+    return payload.data;
   };
   const controls = () => {
     analyze.disabled = !activeId || busy;
