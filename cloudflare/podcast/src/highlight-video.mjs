@@ -58,3 +58,28 @@ export function requestedByteRange(header, size) {
   }
   return { offset: start, length: end - start + 1, end };
 }
+
+/** Strict final-clip export validation against immutable AI suggestions. */
+export function resolveApprovedExports(highlights, requested) {
+  const clips = resolveClipPicks(highlights, requested);
+  if (requested.some((item) => !Object.hasOwn(item, "start") ||
+        !Object.hasOwn(item, "end")))
+    throw Error("export_requires_exact_times");
+  for (const clip of clips) {
+    const source = highlights.find((h) => h.number === clip.number);
+    if (!Number.isFinite(source?.start) || !Number.isFinite(source?.end) ||
+        Math.abs(clip.start - source.start) > 5.001 ||
+        Math.abs(clip.end - source.end) > 5.001)
+      throw Error("export_outside_review_adjustment");
+  }
+  // Sort for a stable same-selection comparison across requests.
+  return clips.sort((a, b) => a.number - b.number);
+}
+
+export function sameExports(a, b) {
+  return Array.isArray(a) && Array.isArray(b) &&
+    a.length === b.length && a.every((x, i) => {
+      const y = b[i];
+      return y && x.number === y.number && x.start === y.start && x.end === y.end;
+    });
+}
