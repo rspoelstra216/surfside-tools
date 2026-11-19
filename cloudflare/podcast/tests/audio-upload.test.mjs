@@ -97,3 +97,14 @@ test("private video preview bytes are stored with video/mp4 metadata", async () 
   assert.equal(result.status, 201);
   assert.equal(bucket.writes[0].options.httpMetadata.contentType, "video/mp4");
 });
+
+test("private final highlight MP4s retain video/mp4 storage metadata", async () => {
+  const bytes = new Uint8Array(2048).fill(24), bucket = fakeBucket();
+  const key = "sermon-highlights/exports/AjkoDHgFdeA/4-95328-100952.mp4";
+  const result = await uploadAudioToR2(
+    request(bytes, bytes.length), bucket, key, TestFixedLengthStream
+  );
+  assert.equal(result.status, 201);
+  assert.equal(bucket.writes[0].key, key);
+  assert.equal(bucket.writes[0].options.httpMetadata.contentType, "video/mp4");
+});
