@@ -2,6 +2,10 @@
 export const previewKey = (id, clip) =>
   `sermon-highlights/previews/${id}/${clip.number}-${Math.round(clip.start * 100)}-${Math.round(clip.end * 100)}.mp4`;
 
+// Immutable final export key, distinct from the padded review previews.
+export const exportKey = (id, clip) =>
+  `sermon-highlights/exports/${id}/${clip.number}-${Math.round(clip.start * 100)}-${Math.round(clip.end * 100)}.mp4`;
+
 export function resolveClipPicks(highlights, requested) {
   if (!Array.isArray(highlights) || !Array.isArray(requested) ||
       requested.length < 1 || requested.length > 5) throw Error("invalid_clip_selection");
