@@ -46,7 +46,8 @@ function surfside_tools_highlights_worker($path, $data) {
     $allowed = array('/highlights/jobs', '/highlights/status',
         '/highlights/clips/jobs', '/highlights/clips/status',
         '/highlights/exports/jobs', '/highlights/exports/status',
-        '/highlights/more/jobs');
+        '/highlights/more/jobs',
+        '/highlights/vertical/jobs', '/highlights/vertical/status');
     if (!in_array($path, $allowed, true) || !surfside_tools_highlights_configured()) {
         return new WP_Error('highlights_not_configured',
             'The private highlights service is not configured.', array('status' => 503));
@@ -274,6 +275,59 @@ function surfside_tools_highlights_rest_export_status($request) {
     return rest_ensure_response($result);
 }
 
+/**
+ * Experimental portrait export: only a persisted APPROVED clip is eligible.
+ * The browser can choose clip number and initial horizontal focus; exact time
+ * boundaries come from WordPress, then the Worker rechecks the saved AI ranges.
+ */
+function surfside_tools_highlights_rest_vertical($request) {
+    $id = surfside_tools_highlights_request_id($request);
+    if (is_wp_error($id)) return $id;
+    $number = $request->get_param('number');
+    $anchor = $request->get_param('anchor');
+    if (!is_int($number) || $number < 1 || $number > 10 ||
+        !is_int($anchor) || $anchor < 0 || $anchor > 100) {
+        return new WP_Error('highlights_vertical_bad_input',
+            'Choose an approved clip and a valid starting focus.', array('status' => 400));
+    }
+    $approved = surfside_tools_highlights_approved_clips($id);
+    foreach ($approved as $clip) {
+        if ($clip['number'] === $number) {
+            return rest_ensure_response(surfside_tools_highlights_worker(
+                '/highlights/vertical/jobs',
+                array('video_id' => $id, 'clip' => $clip, 'anchor' => $anchor)));
+        }
+    }
+    return new WP_Error('highlights_vertical_not_approved',
+        'Approve this clip before trying the vertical export.',
+        array('status' => 409));
+}
+function surfside_tools_highlights_rest_vertical_status($request) {
+    $id = surfside_tools_highlights_request_id($request);
+    if (is_wp_error($id)) return $id;
+    $status = surfside_tools_highlights_worker(
+        '/highlights/vertical/status', array('video_id' => $id));
+    if (is_wp_error($status)) return $status;
+    if (($status['status'] ?? '') === 'ready') {
+        $approved = surfside_tools_highlights_approved_clips($id);
+        $current = false;
+        foreach ($approved as $clip) {
+            $job = $status['clip'] ?? null;
+            if (is_array($job) && $clip['number'] === ($job['number'] ?? null) &&
+                abs($clip['start'] - (float) ($job['start'] ?? -999)) < 0.001 &&
+                abs($clip['end'] - (float) ($job['end'] ?? -999)) < 0.001) {
+                $current = true; break;
+            }
+        }
+        if (!$current) {
+            unset($status['preview_url'], $status['download_url']);
+            $status['status'] = 'outdated';
+            $status['detail'] = 'approved_trim_changed';
+        }
+    }
+    return rest_ensure_response($status);
+}
+
 /** A review choice affects private staff metadata only; it never publishes clips. */
 function surfside_tools_highlights_rest_decision($request) {
     $id = surfside_tools_highlights_request_id($request);
@@ -352,6 +406,8 @@ function surfside_tools_highlights_browser_dispatch($data) {
         'preview-status' => 'surfside_tools_highlights_rest_preview_status',
         'export' => 'surfside_tools_highlights_rest_export',
         'export-status' => 'surfside_tools_highlights_rest_export_status',
+        'vertical' => 'surfside_tools_highlights_rest_vertical',
+        'vertical-status' => 'surfside_tools_highlights_rest_vertical_status',
         'review' => 'surfside_tools_highlights_rest_decision',
     );
     if (!isset($routes[$mode])) {
@@ -374,12 +430,24 @@ function surfside_tools_highlights_browser_dispatch($data) {
     }
     $request = new WP_REST_Request('POST', '/surfside/v1/highlights/' . $mode);
     $request->set_param('video_id', $id);
+    if ($mode === 'vertical') {
+        $number = $data['number'] ?? null;
+        $anchor = $data['anchor'] ?? null;
+        if (!is_string($number) ||
+            !preg_match('/^(?:[1-9]|10)$/D', $number) ||
+            !is_string($anchor) || !preg_match('/^(?:100|[1-9]?[0-9])$/D', $anchor)) {
+            return new WP_Error('highlights_vertical_bad_input',
+                'Choose a valid approved clip and focus.', array('status' => 400));
+        }
+        $request->set_param('number', (int) $number);
+        $request->set_param('anchor', (int) $anchor);
+    }
     if ($mode === 'review') {
         $number = $data['number'] ?? null;
         $decision = $data['decision'] ?? null;
         $start = $data['start'] ?? null;
         $end = $data['end'] ?? null;
-        if (!is_string($number) || !preg_match('/^[1-5]$/D', $number) ||
+        if (!is_string($number) || !preg_match('/^(?:[1-9]|10)$/D', $number) ||
             !is_string($decision) ||
             !is_string($start) || !is_numeric($start) ||
             !is_string($end) || !is_numeric($end)) {
@@ -477,6 +545,20 @@ function surfside_tools_staff_sermon_highlights_shortcode() {
         <button type="button" id="surfside-highlight-export-button" disabled>Export approved clips</button>
         <p id="surfside-highlight-export-message" role="status" aria-live="polite"></p>
         <div id="surfside-highlight-export-downloads"></div>
+      </section>
+      <section class="surfside-highlight-export-panel" id="surfside-highlight-vertical-panel" hidden>
+        <h2>Vertical Phone Clip <small>(experimental)</small></h2>
+        <p>Track the pastor in a 9:16 video for phones. Choose an approved clip and approximately where he starts in the wide shot. This is a private test and will not publish anything.</p>
+        <div class="surfside-vertical-controls">
+          <label for="surfside-vertical-number">Approved clip</label>
+          <select id="surfside-vertical-number" aria-label="Approved clip for vertical test"></select>
+          <label for="surfside-vertical-anchor">Pastor starts (left ↔ right)</label>
+          <input id="surfside-vertical-anchor" type="range" min="0" max="100" step="5" value="50" />
+          <output id="surfside-vertical-anchor-value" for="surfside-vertical-anchor">50%</output>
+          <button type="button" id="surfside-vertical-generate" disabled>Generate vertical test</button>
+        </div>
+        <p id="surfside-vertical-message" role="status" aria-live="polite"></p>
+        <div id="surfside-vertical-video-wrap"></div>
       </section>
       <div id="surfside-highlights-results"></div>
     </div>
