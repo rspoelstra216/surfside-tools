@@ -300,10 +300,7 @@ async function renderVertical(id, clip, anchor) {
     if (!["tracked", "wide_fallback"].includes(tracking.mode))
       throw Error("vertical_tracking_mode_invalid");
     const filter = verticalFilter(tracking.mode, commands,
-      tracking.crop_width, Number((await new Promise(async (resolve, reject) => {
-        // The tracker returns height/crop width; only bounded values matter.
-        resolve(tracking.height || 0);
-      }))));
+      tracking.crop_width, tracking.height);
     await runCommand("ffmpeg", verticalRenderArgs(short, output, filter),
       11 * 60 * 1000);
     const bytes = await upload(key, output, "video/mp4");
