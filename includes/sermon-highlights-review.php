@@ -200,22 +200,96 @@ function surfside_tools_highlights_rest_decision($request) {
     return rest_ensure_response(array('ok' => true, 'review' => $items[(string) $number]));
 }
 
-add_action('rest_api_init', function () {
-    $routes = array(
-        '/sermons' => array('GET', 'surfside_tools_highlights_rest_sermons'),
-        '/analyze' => array('POST', 'surfside_tools_highlights_rest_analyze'),
-        '/status' => array('POST', 'surfside_tools_highlights_rest_status'),
-        '/previews' => array('POST', 'surfside_tools_highlights_rest_previews'),
-        '/preview-status' => array('POST', 'surfside_tools_highlights_rest_preview_status'),
-        '/review' => array('POST', 'surfside_tools_highlights_rest_decision'),
-    );
-    foreach ($routes as $route => $handler) {
-        register_rest_route('surfside/v1', '/highlights' . $route, array(
-            'methods' => $handler[0], 'callback' => $handler[1],
-            'permission_callback' => 'surfside_tools_highlights_can_review',
-        ));
+/**
+ * The staff website uses scoped Surfside Tools login cookies rather than a
+ * WordPress-authenticated REST session. WordPress REST cookie auth rejects the
+ * resulting wp_rest nonce with "Cookie check failed". Follow the established
+ * Weekly Media / R2 pattern: POST a tiny nonce-verified action to the signed-in
+ * dashboard page, where the scoped Tools session is valid.
+ *
+ * This handler never accepts MP4 bytes or exposes Worker signing credentials.
+ */
+function surfside_tools_highlights_browser_dispatch($data) {
+    if (!surfside_tools_highlights_can_review()) {
+        return new WP_Error('highlights_forbidden',
+            'Sign in with Weekly Media permission to review highlights.',
+            array('status' => 403));
     }
-});
+    $nonce = isset($data['highlight_nonce']) && is_string($data['highlight_nonce'])
+        ? $data['highlight_nonce'] : '';
+    if ($nonce === '' || !wp_verify_nonce($nonce, 'surfside_highlights_browser_review')) {
+        return new WP_Error('highlights_bad_nonce',
+            'Your review session expired. Reload the Sermon Highlights page and try again.',
+            array('status' => 403));
+    }
+    $mode = isset($data['mode']) && is_string($data['mode'])
+        ? sanitize_key($data['mode']) : '';
+    $routes = array(
+        'sermons' => 'surfside_tools_highlights_rest_sermons',
+        'analyze' => 'surfside_tools_highlights_rest_analyze',
+        'status' => 'surfside_tools_highlights_rest_status',
+        'previews' => 'surfside_tools_highlights_rest_previews',
+        'preview-status' => 'surfside_tools_highlights_rest_preview_status',
+        'review' => 'surfside_tools_highlights_rest_decision',
+    );
+    if (!isset($routes[$mode])) {
+        return new WP_Error('highlights_bad_mode', 'Unknown highlight review action.',
+            array('status' => 400));
+    }
+    if ($mode === 'sermons') {
+        return surfside_tools_highlights_rest_sermons();
+    }
+    $id = $data['video_id'] ?? null;
+    if (!surfside_tools_highlights_valid_id($id)) {
+        return new WP_Error('highlights_invalid_video', 'Choose a valid sermon.',
+            array('status' => 400));
+    }
+    $request = new WP_REST_Request('POST', '/surfside/v1/highlights/' . $mode);
+    $request->set_param('video_id', $id);
+    if ($mode === 'review') {
+        $number = $data['number'] ?? null;
+        $decision = $data['decision'] ?? null;
+        $start = $data['start'] ?? null;
+        $end = $data['end'] ?? null;
+        if (!is_string($number) || !preg_match('/^[1-5]$/D', $number) ||
+            !is_string($decision) ||
+            !is_string($start) || !is_numeric($start) ||
+            !is_string($end) || !is_numeric($end)) {
+            return new WP_Error('highlights_invalid_review', 'Invalid review fields.',
+                array('status' => 400));
+        }
+        $request->set_param('number', (int) $number);
+        $request->set_param('decision', $decision);
+        $request->set_param('start', $start);
+        $request->set_param('end', $end);
+    }
+    $handler = $routes[$mode];
+    $result = $handler($request);
+    // REST handlers are internal helpers here, not public REST routes.
+    return is_object($result) && method_exists($result, 'get_data')
+        ? $result->get_data() : $result;
+}
+
+function surfside_tools_highlights_browser_post() {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' ||
+        !is_page('site-management') ||
+        !isset($_GET['view']) || !is_string($_GET['view']) ||
+        sanitize_key(wp_unslash($_GET['view'])) !== 'sermon-highlights' ||
+        !isset($_POST['action']) || !is_string($_POST['action']) ||
+        sanitize_key(wp_unslash($_POST['action'])) !== 'surfside_highlights_browser_review') {
+        return;
+    }
+    nocache_headers();
+    $result = surfside_tools_highlights_browser_dispatch(wp_unslash($_POST));
+    if (is_wp_error($result)) {
+        $details = $result->get_error_data();
+        $status = is_array($details) && isset($details['status'])
+            ? (int) $details['status'] : 400;
+        wp_send_json_error(array('message' => $result->get_error_message()), $status);
+    }
+    wp_send_json_success($result);
+}
+add_action('template_redirect', 'surfside_tools_highlights_browser_post', 1);
 
 /** Routed from the existing /dashboard/site-management?view=sermon-highlights workspace. */
 function surfside_tools_staff_sermon_highlights_shortcode() {
@@ -236,8 +310,9 @@ function surfside_tools_staff_sermon_highlights_shortcode() {
         file_exists($script) ? filemtime($script) : SURFSIDE_TOOLS_VERSION, true);
     wp_add_inline_script('surfside-sermon-highlights-review', 'window.SurfsideHighlightsReview=' .
         wp_json_encode(array(
-            'api' => esc_url_raw(rest_url('surfside/v1/highlights/')),
-            'nonce' => wp_create_nonce('wp_rest'),
+            'endpoint' => esc_url_raw(add_query_arg('view', 'sermon-highlights',
+                surfside_tools_staff_page_url('site-management'))),
+            'nonce' => wp_create_nonce('surfside_highlights_browser_review'),
             'initialId' => isset($_GET['video_id']) && surfside_tools_highlights_valid_id(wp_unslash($_GET['video_id']))
                 ? sanitize_text_field(wp_unslash($_GET['video_id'])) : '',
         )) . ';', 'before');
