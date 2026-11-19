@@ -83,6 +83,7 @@ def tracked_centers(video, anchor_pct):
     times, centers = [], []
     face_samples = 0
     feature_samples = 0
+    missed_face_steps = 0
     attempts = max(1, int(math.ceil(duration * SAMPLE_RATE)))
 
     try:
@@ -97,6 +98,7 @@ def tracked_centers(video, anchor_pct):
             gray = cv2.equalizeHist(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
             target = previous_x
             flowed = False
+            flow_points = None
 
             # Optical flow bridges speaker movement through profile turns.
             if prior_gray is not None and points is not None and len(points) >= 6:
@@ -115,6 +117,7 @@ def tracked_centers(video, anchor_pct):
                             if abs(dx) <= work_w * 0.22:
                                 target = max(0, min(work_w, target + dx))
                                 flowed = True
+                                flow_points = updated.reshape(-1, 1, 2).astype(np.float32)
                 except cv2.error:
                     pass
 
@@ -128,16 +131,21 @@ def tracked_centers(video, anchor_pct):
                 candidate = faces[0]
                 candidate_x = candidate[0] + candidate[2] / 2
                 # A sudden faraway face is probably a different person.
-                if i == 0 or abs(candidate_x - target) < work_w * 0.34:
+                if abs(candidate_x - target) < work_w * 0.34:
                     chosen = candidate
                     target = candidate_x
                     face_samples += 1
-            if flowed and chosen is None:
-                feature_samples += 1
+            if chosen is not None:
+                missed_face_steps = 0
+            else:
+                missed_face_steps += 1
+                if flowed and missed_face_steps <= 8:
+                    feature_samples += 1
 
-            # Refresh tracker features around the chosen face. If the face is
-            # missing, retain last detection and smoothly interpolate instead.
-            points = None
+            # Refresh features when face returns; retain the last tracked
+            # points through short profile turns, but expire them after four
+            # seconds to prevent gradually drifting to somebody else.
+            points = flow_points if flowed and missed_face_steps <= 8 else None
             if chosen is not None:
                 x, y, w, h = (int(z) for z in chosen)
                 pad = max(6, int(w * 0.4))
@@ -174,7 +182,8 @@ def make_commands(track, output):
     crop_w = max(2, int(height * 9 / 16) // 2 * 2)
     if crop_w >= width:
         raise RuntimeError("vertical_source_already_narrow")
-    confidence = track["face_samples"] / max(1, track["samples"])
+    confidence = (track["face_samples"] +
+                  0.5 * track.get("feature_samples", 0)) / max(1, track["samples"])
     mode = "tracked" if confidence >= 0.12 else "wide_fallback"
     # Avoid a static crop if the visual detector cannot reliably identify
     # the moving subject. Full-width-in-portrait is the safe beta fallback.
