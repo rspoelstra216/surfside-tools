@@ -87,12 +87,14 @@ check(array_keys($groups)===array('content','media','events','community','appear
 $labels=array();
 foreach($groups as $section)foreach($section['items'] as $item)$labels[$item['label']]=$item['url'];
 foreach(array('Weekly Update','Archived Sermon Notes','Message Archive','Sermon Series',
-    'Weekly Media','Calendar Manager','Volunteer Needs','Prayer Requests',
+    'Weekly Media','Sermon Highlights','Calendar Manager','Volunteer Needs','Prayer Requests',
     'Push Notifications','Website Navigation','YouVersion Integration','Staff Access') as $label) {
     check(isset($labels[$label]),'Search/navigation indexes '.$label);
 }
 check(str_contains($labels['Weekly Media'],'/dashboard/site-management/?view=roku-media'),
     'Weekly Media preserves the established ?view= route');
+check(str_contains($labels['Sermon Highlights'], '/dashboard/site-management/?view=sermon-highlights'),
+    'New highlight editor has a stable staff-only deep link');
 check(isset($labels['Streaming']) &&
     $labels['Streaming'] === 'https://surfsidefellowship.org/dashboard/site-settings/streaming/',
     'All streaming operations share one canonical management URL');
@@ -100,8 +102,10 @@ check(!isset($labels['Watch Live Settings']) && !isset($labels['Streaming Manage
     'Legacy streaming editors do not appear as separate navigation entries');
 check(!isset($labels['Twitch Integration']),
     'Twitch does not appear in a second settings category');
-check(str_contains($groups['media']['items'][3]['search'], 'Twitch'),
-    'Searching for Twitch finds the unified Streaming tool');
+$streaming = array_values(array_filter($groups['media']['items'],
+    static function ($item) { return $item['label'] === 'Streaming'; }));
+check(count($streaming) === 1 && str_contains($streaming[0]['search'], 'Twitch'),
+    'Searching for Twitch finds the unified Streaming tool regardless of tool order');
 check(str_contains($labels['Prayer Requests'],'view=member-engagement')
     && str_contains($labels['Prayer Requests'],'tool=prayer-requests'),
     'Prayer review preserves deep links from existing email');

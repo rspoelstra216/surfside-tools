@@ -20,6 +20,12 @@ function surfside_tools_staff_site_management_shortcode() {
         return surfside_tools_staff_r2_sermons_shortcode();
     }
 
+    if (isset($_GET['view']) && is_string($_GET['view'])
+        && sanitize_key(wp_unslash($_GET['view'])) === 'sermon-highlights'
+        && function_exists('surfside_tools_staff_sermon_highlights_shortcode')) {
+        return surfside_tools_staff_sermon_highlights_shortcode();
+    }
+
     $can_configure=current_user_can('manage_options');
     $cards=array();
     if($can_configure){
