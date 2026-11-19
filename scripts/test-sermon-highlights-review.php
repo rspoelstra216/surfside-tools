@@ -34,8 +34,29 @@ class FakeDb {
 }
 $GLOBALS['wpdb'] = new FakeDb();
 define('ARRAY_A', 'ARRAY_A');
-function add_action(...$args) {}
+function add_action($hook, $callback, ...$rest) {
+    if ($hook === 'rest_api_init') $GLOBALS['highlight_routes_setup'] = $callback;
+}
 function add_shortcode(...$args) {}
+function register_rest_route($namespace, $route, $options) {
+    $GLOBALS['highlight_routes'][$namespace . $route] = $options;
+}
+function surfside_tools_prevent_cache() {}
+function surfside_tools_staff_enqueue_styles() {}
+function surfside_tools_staff_login_box($message = '') { return 'STAFF LOGIN REQUIRED'; }
+function surfside_tools_staff_page_url($path = '') {
+    return 'https://example.test/dashboard/' . trim($path, '/') . '/';
+}
+function wp_enqueue_style(...$args) {}
+function wp_enqueue_script(...$args) {}
+function wp_add_inline_script($handle, $script, $position = 'after') {
+    $GLOBALS['highlight_inline_script'] = $script;
+}
+function esc_url($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); }
+function esc_url_raw($v) { return (string) $v; }
+function rest_url($path) { return 'https://example.test/wp-json/' . ltrim($path, '/'); }
+function wp_create_nonce($action) { return 'test-nonce'; }
+function sanitize_text_field($v) { return (string) $v; }
 function is_user_logged_in() { return $GLOBALS['logged']; }
 function current_user_can($cap) { return $cap === 'upload_files' && $GLOBALS['cap']; }
 function surfside_tools_staff_has_permission($key) {
@@ -81,6 +102,15 @@ function wp_remote_retrieve_body($r) { return $r['body']; }
 function check($ok, $msg) { if (!$ok) throw new RuntimeException($msg); }
 require dirname(__DIR__) . '/includes/sermon-highlights-review.php';
 
+($GLOBALS['highlight_routes_setup'])();
+check(count($GLOBALS['highlight_routes']) === 6, 'Only six staff-only review routes are registered');
+foreach ($GLOBALS['highlight_routes'] as $route => $config) {
+    check($config['permission_callback'] === 'surfside_tools_highlights_can_review',
+        'Every REST action is protected by the existing Weekly Media permission');
+}
+check(str_contains(surfside_tools_staff_sermon_highlights_shortcode(), 'STAFF LOGIN REQUIRED'),
+    'Anonymous users cannot see the editor or secret configuration');
+
 check(!surfside_tools_highlights_can_review(), 'Anonymous users cannot review');
 $GLOBALS['logged'] = true;
 check(!surfside_tools_highlights_can_review(), 'Login without upload capability is insufficient');
@@ -88,6 +118,15 @@ $GLOBALS['cap'] = true;
 check(!surfside_tools_highlights_can_review(), 'Upload capability without Tools media role is insufficient');
 $GLOBALS['role'] = true;
 check(surfside_tools_highlights_can_review(), 'Authorized staff may review');
+$_GET = array();
+$html = surfside_tools_staff_sermon_highlights_shortcode();
+check(str_contains($html, 'Sermon Highlights') &&
+    str_contains($html, 'Generate video previews') &&
+    str_contains($html, 'Nothing publishes automatically'),
+    'Staff editor exposes private video review tools');
+check(str_contains($GLOBALS['highlight_inline_script'], 'test-nonce') &&
+    !str_contains($GLOBALS['highlight_inline_script'], SURFSIDE_PODCAST_SHARED_SECRET),
+    'Browser JavaScript receives its WP nonce but never the Worker HMAC secret');
 
 $id = new FakeRequest(array('video_id' => 'AjkoDHgFdeA'));
 check(!is_wp_error(surfside_tools_highlights_request_id($id)), 'Known ready sermons are eligible');
