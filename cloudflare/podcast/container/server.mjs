@@ -202,22 +202,58 @@ async function renderHighlightClips(id, clips, kind = "preview") {
     totalSeconds += clip.end - clip.start;
   }
   if (totalSeconds > 420) throw Error("clip_batch_too_long");
+  const usingPreviews = kind === "export" && clips.some((c) => c.source_preview);
+  for (const clip of clips) {
+    if (clip.source_preview !== undefined) {
+      const source = clip.source_preview;
+      if (kind !== "export" || !source || Array.isArray(source) ||
+          typeof source !== "object" ||
+          Object.keys(source).some((key) => !["start", "end"].includes(key)) ||
+          !Number.isFinite(source.start) || !Number.isFinite(source.end) ||
+          source.start < 0 || source.end > 4320 || source.end <= source.start ||
+          source.end - source.start > 120 ||
+          source.start > clip.start + 0.001 || source.end < clip.end - 0.001)
+        throw Error("invalid_preview_source");
+    }
+  }
   const dir = await mkdtemp(path.join(tmpdir(), "surfside-clips-"));
   try {
+    const needsOriginal = kind === "preview" ||
+      clips.some((clip) => !clip.source_preview);
     const video = path.join(dir, "sermon.mp4");
-    await download("sermons/" + id + ".mp4", video);
-    const duration = await durationOf(video);
-    if (duration > 72 * 60 + 5 ||
-        clips.some((clip) => clip.end > duration + 0.25))
-      throw Error("clip_outside_sermon");
+    if (needsOriginal) {
+      await download("sermons/" + id + ".mp4", video);
+      const duration = await durationOf(video);
+      if (duration > 72 * 60 + 5 ||
+          clips.some((clip) => !clip.source_preview &&
+            clip.end > duration + 0.25))
+        throw Error("clip_outside_sermon");
+    }
     for (const clip of clips) {
+      let sourceFile = video;
+      let start = clip.start, end = clip.end;
+      if (kind === "export" && clip.source_preview) {
+        const padded = clip.source_preview;
+        sourceFile = path.join(dir, "preview-" + clip.number + ".mp4");
+        // Only fetch a deterministic, validated clip key; never a URL or
+        // arbitrary file path supplied by a browser.
+        await download(previewKey(id, {
+          number: clip.number, start: padded.start, end: padded.end,
+        }), sourceFile);
+        const duration = await durationOf(sourceFile);
+        start = Math.max(0, Math.round((clip.start - padded.start) * 100) / 100);
+        end = Math.round((clip.end - padded.start) * 100) / 100;
+        if (end > duration + 0.25) throw Error("preview_source_too_short");
+      }
       const file = path.join(dir, "clip-" + clip.number + ".mp4");
-      await runCommand("ffmpeg", clipVideoArgs(video, file, clip.start, clip.end),
+      await runCommand("ffmpeg", clipVideoArgs(sourceFile, file, start, end),
         11 * 60 * 1000);
       const key = kind === "export" ? exportKey(id, clip) : previewKey(id, clip);
       await upload(key, file, "video/mp4");
       await rm(file, { force: true });
+      if (sourceFile !== video) await rm(sourceFile, { force: true });
     }
+    if (usingPreviews) console.log("Private padded preview source reused for export", id);
     return clips.map((clip) => ({
       number: clip.number,
       key: kind === "export" ? exportKey(id, clip) : previewKey(id, clip),
