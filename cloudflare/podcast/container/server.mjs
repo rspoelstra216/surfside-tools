@@ -278,6 +278,7 @@ async function renderVertical(id, clip, anchor) {
     throw Error("invalid_vertical_request");
   const key = `sermon-highlights/vertical/${id}/${clip.number}-${Math.round(clip.start * 100)}-${Math.round(clip.end * 100)}-a${anchor}.mp4`;
   const dir = await mkdtemp(path.join(tmpdir(), "surfside-vertical-"));
+  let stage = "source";
   try {
     const original = path.join(dir, "sermon.mp4");
     const short = path.join(dir, "approved.mp4");
@@ -288,10 +289,12 @@ async function renderVertical(id, clip, anchor) {
     await download("sermons/" + id + ".mp4", original);
     const length = await durationOf(original);
     if (clip.end > length + 0.25) throw Error("vertical_cut_outside_sermon");
+    stage = "extraction";
     await runCommand("ffmpeg",
       verticalExtractArgs(original, short, clip.start, clip.end), 11 * 60 * 1000);
     // Full source is no longer needed after the accurate short extraction.
     await rm(original, { force: true });
+    stage = "tracking";
     const outputText = await runCommand("/usr/bin/python3",
       ["/app/track-subject.py", short, commands, String(anchor)], 5 * 60 * 1000);
     let tracking;
@@ -301,11 +304,20 @@ async function renderVertical(id, clip, anchor) {
       throw Error("vertical_tracking_mode_invalid");
     const filter = verticalFilter(tracking.mode, commands,
       tracking.crop_width, tracking.height);
+    stage = "encoding";
     await runCommand("ffmpeg", verticalRenderArgs(short, output, filter),
       11 * 60 * 1000);
+    stage = "upload";
     const bytes = await upload(key, output, "video/mp4");
     return { key, mode: tracking.mode, confidence: tracking.confidence,
       face_samples: tracking.face_samples, samples: tracking.samples, bytes };
+  } catch (error) {
+    // Detailed stderr stays in Cloudflare logs. The UI receives only a safe
+    // bounded stage code, never internal file paths, command lines or secrets.
+    console.error("Experimental vertical pipeline failed", id, stage, String(error));
+    const wrapped = Error("vertical_render_stage_failed");
+    wrapped.verticalStage = stage;
+    throw wrapped;
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -363,7 +375,14 @@ http.createServer(async (request, response) => {
     }
   } catch (error) {
     console.error("Podcast container job failed", String(error));
-    response.writeHead(500).end("processing_failed");
+    if (request.url === "/highlights/vertical/render") {
+      const stage = ["source", "extraction", "tracking", "encoding", "upload"]
+        .includes(error?.verticalStage) ? error.verticalStage : "unknown";
+      response.writeHead(500, { "content-type": "application/json" })
+        .end(JSON.stringify({ error: "vertical_render_failed", stage }));
+    } else {
+      response.writeHead(500).end("processing_failed");
+    }
   } finally {
     busy = false;
   }
