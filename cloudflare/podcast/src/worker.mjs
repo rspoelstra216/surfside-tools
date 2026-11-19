@@ -225,7 +225,8 @@ export default {
       if (message.body?.kind === "highlight_more") {
         if (test) { message.ack(); continue; }
         try {
-          await processMoreHighlights(env, id, message.body.base_count, message.body.round);
+          await processMoreHighlights(env, id, message.body.base_count,
+            message.body.round, enqueueClips);
           message.ack();
         } catch (error) {
           console.error("Additional highlight search Queue job failed", id, String(error));
