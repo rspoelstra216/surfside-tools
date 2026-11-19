@@ -11,7 +11,8 @@ export function validStorageAccess(key, method) {
   if (method === "GET") {
     return /^(?:sermons|podcast-test-input)\/[A-Za-z0-9_-]{11}\.mp4$/.test(key) ||
       key === "podcast-assets/intro.mp3" || key === "podcast-assets/outro.mp3" ||
-      /^(?:sermon-audio|podcast-test-sermon-audio)\/[A-Za-z0-9_-]{11}\.mp3$/.test(key);
+      /^(?:sermon-audio|podcast-test-sermon-audio)\/[A-Za-z0-9_-]{11}\.mp3$/.test(key) ||
+      /^sermon-highlights\/previews\/[A-Za-z0-9_-]{11}\/[1-5]-[0-9]+-[0-9]+\.mp4$/.test(key);
   }
   return method === "PUT" && (
     /^(?:podcast-audio|podcast-test-audio)\/[A-Za-z0-9_-]{11}\.mp3$/.test(key) ||

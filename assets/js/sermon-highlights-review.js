@@ -352,14 +352,14 @@
         note("AI analysis " + status.status + ". Checking for suggestions…");
         poll(() => refreshAnalysis(currentToken));
       } else if (status.status === "ready") {
-        note("AI suggestions ready. Generate video previews or review existing ones.");
+        note("AI suggestions ready. Loading private video preview status…");
         await refreshPreviews(currentToken);
         await refreshExports(currentToken);
       } else if (status.status === "failed") {
         note("Analysis failed (" + (status.detail || "unknown error") +
           "). Review Cloudflare logs before retrying.", true);
       } else {
-        note("No AI analysis for this sermon yet. Select Analyze sermon to begin.");
+        note("No analysis found. New weekly uploads start automatically; use Analyze / Prepare now for older sermons or testing.");
       }
     } catch (error) { if (currentToken === token) note(error.message, true); }
   }
@@ -380,7 +380,9 @@
     busy = true; controls();
     try {
       const data = await json("analyze", { video_id: activeId });
-      note("Analysis " + data.status + ". The original sermon and podcast are unchanged.");
+      note(data.already_analyzed
+        ? "Existing AI analysis reused. Video previews: " + (data.previews || "checking") + "."
+        : "AI analysis " + data.status + ". Private video previews will queue automatically afterward.");
       await refreshAnalysis(token);
     } catch (error) { note(error.message, true); }
     finally { busy = false; controls(); }

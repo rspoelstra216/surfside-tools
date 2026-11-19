@@ -432,12 +432,12 @@ function surfside_tools_staff_sermon_highlights_shortcode() {
       <section class="surfside-staff-hero">
         <p class="surfside-staff-eyebrow">Messages &amp; Media</p>
         <h1>Sermon Highlights</h1>
-        <p class="surfside-staff-muted">Review up to five AI suggestions in the actual sermon video. Adjust each edge by five seconds, approve or reject, and save private review decisions. Nothing publishes automatically.</p>
+        <p class="surfside-staff-muted">New weekly sermon uploads automatically prepare AI highlights and private video previews alongside podcast processing. Review up to five clips, adjust each edge by five seconds, and approve or reject. Nothing publishes automatically.</p>
       </section>
       <div class="surfside-highlights-toolbar">
         <label for="surfside-highlights-sermon">Uploaded sermon</label>
         <select id="surfside-highlights-sermon"><option value="">Loading verified sermon videos…</option></select>
-        <button type="button" id="surfside-highlights-analyze">Analyze sermon</button>
+        <button type="button" id="surfside-highlights-analyze">Analyze / Prepare now</button>
         <button type="button" id="surfside-highlights-render" disabled>Generate video previews</button>
       </div>
       <p id="surfside-highlights-message" role="status" aria-live="polite">Choose a sermon to begin.</p>

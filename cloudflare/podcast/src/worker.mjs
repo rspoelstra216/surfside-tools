@@ -4,7 +4,8 @@ import { PROCESSOR_CONTAINER_ID, validId, sourceKey, audioKey, statusKey, validS
 import { uploadAudioToR2 } from "./audio-upload.mjs";
 import { publishReadyEpisode, PUBLISH_CHECK_DELAY_SECONDS, MAX_PUBLISH_CHECKS } from "./spreaker-publication.mjs";
 import { validDraftMetadata, spreakerConfigured, canRetryKnownRedirectFailure, canPrepareMissingDraft, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
-import { enqueueHighlights, highlightStatus, processHighlights } from "./highlights.mjs";
+import { highlightStatus, processHighlights } from "./highlights.mjs";
+import { requestHighlightPreparation, queueAutomaticPreviews } from "./highlight-workflow.mjs";
 import { enqueueClips, processClipJob } from "./highlight-clips.mjs";
 import { statusClips, servePreview } from "./highlight-clip-preview.mjs";
 import { queueExports, processExportJob } from "./highlight-export-jobs.mjs";
@@ -84,7 +85,7 @@ async function incoming(request, env) {
     if (Object.keys(data).some((field) => field !== "video_id"))
       return reply({ error: "unexpected_highlight_option" }, 400);
     return route === "/highlights/status"
-      ? highlightStatus(env, id) : enqueueHighlights(env, id);
+      ? highlightStatus(env, id) : requestHighlightPreparation(env, id);
   }
   if (route === "/highlights/clips/status" || route === "/highlights/clips/jobs") {
     if (Object.keys(data).some((field) =>
@@ -229,6 +230,9 @@ export default {
         if (test) { message.ack(); continue; }
         try {
           await processHighlights(env, id);
+          // Analysis is independent of podcast publication. Queue padded
+          // video previews after the private AI result is complete.
+          await queueAutomaticPreviews(env, id);
           message.ack();
         } catch (error) {
           console.error("Highlight pilot queue job failed", id, String(error));
@@ -317,6 +321,19 @@ export default {
           console.error("Unable to queue Spreaker draft", id, String(error));
           try { await saveDraftState(env, id, "queue_unavailable", null, "", test); }
           catch (saveError) { console.error("Unable to save Spreaker queue status", id, String(saveError)); }
+        }
+      }
+      // Weekly production podcasts initiate private highlight preparation
+      // automatically after the MP3 exists. Queueing cannot make podcast
+      // creation, Spreaker draft/upload or auto-publication fail.
+      // Test uploads never trigger AI/video processing.
+      if (audioReady && !test) {
+        try {
+          const prepared = await requestHighlightPreparation(env, id);
+          if (!prepared.ok)
+            console.error("Automatic sermon highlight request declined", id, prepared.status);
+        } catch (error) {
+          console.error("Optional weekly highlights queue failed", id, String(error));
         }
       }
     }
