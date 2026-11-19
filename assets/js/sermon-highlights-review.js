@@ -359,6 +359,8 @@
     } else if (["queued", "processing"].includes(state?.status)) {
       verticalMessage.textContent = "Experimental vertical video " + state.status +
         ". Face tracking and source-quality encoding run in the background.";
+    } else if (state?.status === "stalled") {
+      verticalMessage.textContent = "The previous vertical job stalled in the queue. Click Generate vertical test to retry.";
     } else if (state?.status === "outdated") {
       verticalMessage.textContent = "The approved clip has changed. Generate a new vertical test.";
     } else if (state?.status === "failed" || state?.status === "incomplete") {
