@@ -48,10 +48,14 @@ belongs to a later PR.
 
 ## Security and architecture
 
-- The browser calls authenticated, nonce-protected WordPress REST endpoints
-  under `/wp-json/surfside/v1/highlights/*`. Requests require an authorized
-  WordPress staff session, `upload_files` capability and the **Weekly Media**
-  Tools permission.
+- The browser makes small, nonce-verified POST requests to the **existing
+  staff dashboard page** at `/dashboard/site-management/?view=sermon-highlights`.
+  The staff session is valid in the `/dashboard` scope, unlike standard
+  WordPress REST cookie auth. This follows the proven Weekly Media/R2 upload
+  authorization pattern and avoids the REST "Cookie check failed" response.
+  Requests require a logged-in authorized staff session, `upload_files`
+  capability and the **Weekly Media** Tools permission. No public REST route
+  or general REST authentication bypass is created.
 - WordPress constructs its own HMAC request with the existing
   `SURFSIDE_PODCAST_WORKER_URL` and `SURFSIDE_PODCAST_SHARED_SECRET` from
   production `wp-config.php`. No secret, credentials or signing inputs
@@ -63,7 +67,10 @@ belongs to a later PR.
   each edge must stay within ±5 seconds; clips must remain 15–120 seconds.
   The backend revalidates on Save/Approve/Reject rather than trusting
   JavaScript sliders. Padded previews remain unpublished private assets.
-- Remote requests allow only four explicit highlights routes. The podcast
+- The dashboard action dispatcher accepts only six supported review modes
+  (`sermons`, `analyze`, `status`, `previews`, `preview-status`, `review`).
+  WordPress forwards only four explicitly approved highlights Worker routes.
+  The podcast
   `/jobs`, Spreaker draft/publish, livestream and public sermon APIs
   remain untouched.
 
