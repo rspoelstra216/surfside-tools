@@ -113,6 +113,11 @@ function wp_remote_post($url, $request) {
         throw new Exception('Secret must not enter request JSON');
     $path = parse_url($url, PHP_URL_PATH);
     $GLOBALS['worker_calls'][] = array('path' => $path, 'request' => json_decode($body, true));
+    if ($path === '/highlights/clips/status') {
+        // No private preview batch exists yet for this manual render test.
+        return array('status' => 200, 'body' => json_encode(
+            array('status' => 'not_queued')));
+    }
     if ($path === '/highlights/exports/jobs') {
         $GLOBALS['export_status'] = 'queued';
         $GLOBALS['export_clips'] = json_decode($body, true)['clips'];
