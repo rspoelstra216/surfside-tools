@@ -11,7 +11,8 @@ import { enqueueClips, processClipJob } from "./highlight-clips.mjs";
 import { statusClips, servePreview } from "./highlight-clip-preview.mjs";
 import { queueExports, processExportJob } from "./highlight-export-jobs.mjs";
 import { statusExports, serveExportDownload } from "./highlight-export-downloads.mjs";
-import { queueVertical, processVertical, verticalStatus, serveVertical } from "./highlight-vertical.mjs";
+import { queueVertical, processVertical } from "./highlight-vertical.mjs";
+import { verticalStatus, serveVertical } from "./highlight-vertical-downloads.mjs";
 
 const reply = (data, status = 200) => Response.json(data, {
   status,
