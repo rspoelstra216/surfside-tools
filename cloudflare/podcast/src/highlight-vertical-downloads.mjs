@@ -54,7 +54,7 @@ export async function serveVertical(request, env) {
   const match = pathPattern.exec(url.pathname);
   if (!match || request.method !== "GET")
     return reply({ error: "not_found" }, 404);
-  const [, mode, id, filename, numberText, startText, endText, anchorText] = match;
+  const [, mode, id, filename, startText, endText, anchorText] = match;
   const clip = {
     number: Number(filename.split("-")[0]),
     start: Number(startText) / 100, end: Number(endText) / 100,
