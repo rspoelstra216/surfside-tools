@@ -11,6 +11,7 @@ import { enqueueClips, processClipJob } from "./highlight-clips.mjs";
 import { statusClips, servePreview } from "./highlight-clip-preview.mjs";
 import { queueExports, processExportJob } from "./highlight-export-jobs.mjs";
 import { statusExports, serveExportDownload } from "./highlight-export-downloads.mjs";
+import { queueVertical, processVertical, verticalStatus, serveVertical } from "./highlight-vertical.mjs";
 
 const reply = (data, status = 200) => Response.json(data, {
   status,
@@ -60,10 +61,14 @@ async function incoming(request, env) {
     return servePreview(request, env);
   if (route.startsWith("/highlights/exports/download/"))
     return serveExportDownload(request, env);
+  if (route.startsWith("/highlights/vertical/view/") ||
+      route.startsWith("/highlights/vertical/download/"))
+    return serveVertical(request, env);
   if (!["/jobs", "/status", "/retry-test-spreaker", "/recover-spreaker", "/highlights/jobs", "/highlights/status",
         "/highlights/clips/jobs", "/highlights/clips/status",
         "/highlights/exports/jobs", "/highlights/exports/status",
-        "/highlights/more/jobs"].includes(route) || request.method !== "POST") {
+        "/highlights/more/jobs",
+        "/highlights/vertical/jobs", "/highlights/vertical/status"].includes(route) || request.method !== "POST") {
     return reply({ error: "not_found" }, 404);
   }
   if (!await verifiedRequest(request, env.SURFSIDE_PODCAST_SHARED_SECRET)) {
@@ -88,6 +93,14 @@ async function incoming(request, env) {
       return reply({ error: "unexpected_highlight_option" }, 400);
     return route === "/highlights/status"
       ? highlightStatus(env, id) : requestHighlightPreparation(env, id);
+  }
+  if (route === "/highlights/vertical/jobs" || route === "/highlights/vertical/status") {
+    if (Object.keys(data).some((field) =>
+      !["video_id", ...(route.endsWith("/jobs") ? ["clip", "anchor"] : [])].includes(field)))
+      return reply({ error: "unexpected_vertical_option" }, 400);
+    return route.endsWith("/jobs")
+      ? queueVertical(env, id, data.clip, data.anchor)
+      : verticalStatus(request, env, id);
   }
   if (route === "/highlights/more/jobs") {
     if (Object.keys(data).some((field) => field !== "video_id"))
@@ -211,6 +224,17 @@ export default {
       const id = message.body?.video_id;
       if (!validId(id)) { message.ack(); continue; }
       const test = message.body?.test === true;
+      if (message.body?.kind === "highlight_vertical") {
+        if (test) { message.ack(); continue; }
+        try {
+          await processVertical(env, id, message.body.clip, message.body.anchor);
+          message.ack();
+        } catch (error) {
+          console.error("Experimental vertical highlight job failed", id, String(error));
+          message.retry({ delaySeconds: 120 });
+        }
+        continue;
+      }
       if (message.body?.kind === "highlight_exports") {
         if (test) { message.ack(); continue; }
         try {
