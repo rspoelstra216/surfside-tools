@@ -49,7 +49,7 @@ export function selectAdditionalHighlights(candidates, existing, duration, maxNe
     Number.isFinite(candidate.start) && Number.isFinite(candidate.end) &&
     candidate.end - candidate.start >= 25 &&
     candidate.end - candidate.start <= 105 &&
-    Number(candidate.score) >= 3 &&
+    Number(candidate.score) >= 4 &&
     !existing.some((previous) =>
       Math.min(previous.end, candidate.end) -
         Math.max(previous.start, candidate.start) > 10 ||
