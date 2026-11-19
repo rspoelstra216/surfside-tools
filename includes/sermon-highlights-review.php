@@ -45,7 +45,8 @@ function surfside_tools_highlights_configured() {
 function surfside_tools_highlights_worker($path, $data) {
     $allowed = array('/highlights/jobs', '/highlights/status',
         '/highlights/clips/jobs', '/highlights/clips/status',
-        '/highlights/exports/jobs', '/highlights/exports/status');
+        '/highlights/exports/jobs', '/highlights/exports/status',
+        '/highlights/more/jobs');
     if (!in_array($path, $allowed, true) || !surfside_tools_highlights_configured()) {
         return new WP_Error('highlights_not_configured',
             'The private highlights service is not configured.', array('status' => 503));
@@ -138,6 +139,12 @@ function surfside_tools_highlights_rest_analyze($request) {
     $id = surfside_tools_highlights_request_id($request);
     return is_wp_error($id) ? $id : rest_ensure_response(surfside_tools_highlights_worker('/highlights/jobs', array('video_id' => $id)));
 }
+/** Request alternative transcript-backed suggestions without rerunning Whisper. */
+function surfside_tools_highlights_rest_find_more($request) {
+    $id = surfside_tools_highlights_request_id($request);
+    return is_wp_error($id) ? $id : rest_ensure_response(surfside_tools_highlights_worker(
+        '/highlights/more/jobs', array('video_id' => $id)));
+}
 function surfside_tools_highlights_rest_status($request) {
     $id = surfside_tools_highlights_request_id($request);
     if (is_wp_error($id)) return $id;
@@ -157,19 +164,39 @@ function surfside_tools_highlights_rest_previews($request) {
     if (($status['status'] ?? '') !== 'ready' || !is_array($suggestions) || !$suggestions) {
         return new WP_Error('highlights_not_ready', 'Analyze the sermon first.', array('status' => 409));
     }
+    // Refresh only missing padded previews, up to five per batch. This
+    // supports extra suggestions #6–#10 without replacing prior previews.
+    $prior = surfside_tools_highlights_worker('/highlights/clips/status',
+        array('video_id' => $id));
+    if (is_wp_error($prior)) return $prior;
+    if (in_array(($prior['status'] ?? ''), array('queued', 'processing'), true)) {
+        return rest_ensure_response(array('status' => $prior['status'], 'already_exists' => true));
+    }
+    $known = ($prior['status'] ?? '') === 'ready' && isset($prior['clips']) &&
+        is_array($prior['clips']) ? $prior['clips'] : array();
     $clips = array();
-    foreach (array_slice($suggestions, 0, 5) as $highlight) {
+    foreach ($suggestions as $highlight) {
         if (!isset($highlight['number'], $highlight['start'], $highlight['end']) ||
             !is_numeric($highlight['start']) || !is_numeric($highlight['end'])) continue;
         $start = max(0, round((float) $highlight['start'] - 5, 2));
         $end = min(72 * 60, round((float) $highlight['end'] + 5, 2));
         // The existing video renderer requires 15–120 seconds per preview.
         if ($end - $start < 15 || $end - $start > 120) continue;
+        $already = false;
+        foreach ($known as $clip) {
+            if (isset($clip['number'], $clip['start'], $clip['end']) &&
+                (int) $clip['number'] === (int) $highlight['number'] &&
+                abs((float) $clip['start'] - $start) < 0.01 &&
+                abs((float) $clip['end'] - $end) < 0.01) {
+                $already = true; break;
+            }
+        }
+        if ($already) continue;
         $clips[] = array('number' => (int) $highlight['number'], 'start' => $start, 'end' => $end);
+        if (count($clips) >= 5) break;
     }
     if (!$clips) {
-        return new WP_Error('highlights_no_previews',
-            'No suggestions have valid preview boundaries.', array('status' => 409));
+        return rest_ensure_response(array('status' => 'ready', 'already_exists' => true));
     }
     return rest_ensure_response(surfside_tools_highlights_worker('/highlights/clips/jobs',
         array('video_id' => $id, 'clips' => $clips)));
@@ -192,7 +219,7 @@ function surfside_tools_highlights_approved_clips($id) {
         $number = $item['number'] ?? null;
         $start = $item['start'] ?? null;
         $end = $item['end'] ?? null;
-        if (!is_int($number) || $number < 1 || $number > 5 ||
+        if (!is_int($number) || $number < 1 || $number > 10 ||
             !is_numeric($start) || !is_numeric($end)) continue;
         $clips[] = array('number' => $number,
             'start' => round((float) $start, 2),
@@ -201,7 +228,7 @@ function surfside_tools_highlights_approved_clips($id) {
     usort($clips, static function ($a, $b) {
         return $a['number'] <=> $b['number'];
     });
-    return array_slice($clips, 0, 5);
+    return array_slice($clips, 0, 10);
 }
 function surfside_tools_highlights_rest_export($request) {
     $id = surfside_tools_highlights_request_id($request);
@@ -255,7 +282,7 @@ function surfside_tools_highlights_rest_decision($request) {
     $decision = $request->get_param('decision');
     $start = $request->get_param('start');
     $end = $request->get_param('end');
-    if (!is_int($number) || $number < 1 || $number > 5 ||
+    if (!is_int($number) || $number < 1 || $number > 10 ||
         !in_array($decision, array('saved', 'approved', 'rejected'), true) ||
         !is_numeric($start) || !is_numeric($end)) {
         return new WP_Error('highlights_invalid_review', 'Invalid review decision.', array('status' => 400));
@@ -319,6 +346,7 @@ function surfside_tools_highlights_browser_dispatch($data) {
     $routes = array(
         'sermons' => 'surfside_tools_highlights_rest_sermons',
         'analyze' => 'surfside_tools_highlights_rest_analyze',
+        'find-more' => 'surfside_tools_highlights_rest_find_more',
         'status' => 'surfside_tools_highlights_rest_status',
         'previews' => 'surfside_tools_highlights_rest_previews',
         'preview-status' => 'surfside_tools_highlights_rest_preview_status',
@@ -439,8 +467,10 @@ function surfside_tools_staff_sermon_highlights_shortcode() {
         <select id="surfside-highlights-sermon"><option value="">Loading verified sermon videos…</option></select>
         <button type="button" id="surfside-highlights-analyze">Analyze / Prepare now</button>
         <button type="button" id="surfside-highlights-render" disabled>Generate video previews</button>
+        <button type="button" id="surfside-highlights-find-more" disabled>Find more suggestions</button>
       </div>
       <p id="surfside-highlights-message" role="status" aria-live="polite">Choose a sermon to begin.</p>
+      <p id="surfside-highlights-more-message" role="status" aria-live="polite"></p>
       <section class="surfside-highlight-export-panel" id="surfside-highlight-export-panel" hidden>
         <h2>Approved Clips</h2>
         <p>Approve the clips you want to keep, then generate final MP4 files using your saved trim points. Exported videos stay private until you download and share them.</p>

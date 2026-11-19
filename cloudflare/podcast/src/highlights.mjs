@@ -6,6 +6,7 @@ import {
 } from "./highlight-selection.mjs";
 import { refineHighlightCandidates } from "./highlight-refinement.mjs";
 import { validateChunkManifest } from "./highlight-chunk-manifest.mjs";
+import { moreHighlightStatus } from "./highlight-more.mjs";
 
 // Opt-in, private analysis only. Never schedules a podcast or video publication.
 const prefix = "sermon-highlights/";
@@ -36,8 +37,11 @@ export async function highlightStatus(env, id) {
   const job = await readJson(env.SERMONS_BUCKET, statusKey(id)) ||
     { video_id: id, status: "not_queued" };
   if (job.status !== "ready") return reply(job);
-  const result = await readJson(env.SERMONS_BUCKET, resultKey(id));
-  return reply(result ? { ...job, result } : { ...job, status: "result_missing" });
+  const [result, more] = await Promise.all([
+    readJson(env.SERMONS_BUCKET, resultKey(id)), moreHighlightStatus(env, id),
+  ]);
+  return reply(result ? { ...job, result, more } :
+    { ...job, status: "result_missing", more });
 }
 
 export async function enqueueHighlights(env, id) {

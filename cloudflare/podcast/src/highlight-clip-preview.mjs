@@ -23,7 +23,7 @@ const signedMessage = (key, exp) => `surfside-private-clip\n${exp}\n${key}`;
 async function signedPreviewLink(request, env, key) {
   const exp = Math.floor(Date.now() / 1000) + ttlSeconds;
   const sig = await hmac(env.SURFSIDE_PODCAST_SHARED_SECRET, signedMessage(key, exp));
-  const parts = key.match(/^sermon-highlights\/previews\/([A-Za-z0-9_-]{11})\/([1-5]-\d+-\d+\.mp4)$/);
+  const parts = key.match(/^sermon-highlights\/previews\/([A-Za-z0-9_-]{11})\/((?:[1-9]|10)-\d+-\d+\.mp4)$/);
   if (!parts) throw Error("invalid_clip_preview_key");
   const url = new URL(request.url);
   url.pathname = `/highlights/clips/view/${parts[1]}/${parts[2]}`;
@@ -43,7 +43,7 @@ export async function statusClips(request, env, id) {
 // including seeking, without making the sermon R2 bucket public.
 export async function servePreview(request, env) {
   const url = new URL(request.url);
-  const match = url.pathname.match(/^\/highlights\/clips\/view\/([A-Za-z0-9_-]{11})\/([1-5]-\d+-\d+\.mp4)$/);
+  const match = url.pathname.match(/^\/highlights\/clips\/view\/([A-Za-z0-9_-]{11})\/((?:[1-9]|10)-\d+-\d+\.mp4)$/);
   if (!match || request.method !== "GET")
     return reply({ error: "not_found" }, 404);
   const expText = url.searchParams.get("exp") || "";

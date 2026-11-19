@@ -113,6 +113,11 @@ function wp_remote_post($url, $request) {
         throw new Exception('Secret must not enter request JSON');
     $path = parse_url($url, PHP_URL_PATH);
     $GLOBALS['worker_calls'][] = array('path' => $path, 'request' => json_decode($body, true));
+    if ($path === '/highlights/clips/status') {
+        // No private preview batch exists yet for this manual render test.
+        return array('status' => 200, 'body' => json_encode(
+            array('status' => 'not_queued')));
+    }
     if ($path === '/highlights/exports/jobs') {
         $GLOBALS['export_status'] = 'queued';
         $GLOBALS['export_clips'] = json_decode($body, true)['clips'];
@@ -227,6 +232,15 @@ $sermonForm = array_merge($payload,
     array('mode' => 'status', 'video_id' => 'AjkoDHgFdeA'));
 $existing = surfside_tools_highlights_browser_dispatch($sermonForm);
 check($existing['status'] === 'ready', 'Browser form status fetch reads existing analysis');
+$more = surfside_tools_highlights_browser_dispatch(array_merge(
+    $sermonForm, array('mode' => 'find-more')));
+check($more['status'] === 'queued',
+    'Authorized staff can request additional transcript-only suggestions');
+$last = end($GLOBALS['worker_calls']);
+check($last['path'] === '/highlights/more/jobs' &&
+    $last['request'] === array('video_id' => 'AjkoDHgFdeA'),
+    'Find more sends only a verified video ID through the signed Worker');
+
 check(is_wp_error(surfside_tools_highlights_browser_dispatch(array_merge(
     $sermonForm, array('mode' => 'export')))),
     'Unapproved saved drafts cannot be exported');
@@ -243,6 +257,11 @@ check(is_wp_error(surfside_tools_highlights_browser_dispatch(
 check(is_wp_error(surfside_tools_highlights_browser_dispatch(
     array_merge($decisionForm, array('start' => '940')))),
     'Server checks five-second trim limits even for forged browser requests');
+check(is_wp_error(surfside_tools_highlights_browser_dispatch(array(
+    'highlight_nonce' => 'wrong', 'mode' => 'find-more',
+    'video_id' => 'AjkoDHgFdeA',
+))), 'Find more cannot bypass staff nonce authentication');
+
 
 // Direct REST handler assertions below use their original array-shaped test
 // contract; the browser-dispatch cases above used real response wrappers.

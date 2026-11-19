@@ -73,7 +73,7 @@ test("only bounded private final export keys are permitted to Container", () => 
     "sermon-highlights/exports/AjkoDHgFdeA/4-95278-101052.mp4", "GET"), false);
   for (const key of ["sermons/AjkoDHgFdeA.mp4",
     "sermon-highlights/exports/../../private.mp4",
-    "sermon-highlights/exports/AjkoDHgFdeA/6-95278-101052.mp4"])
+    "sermon-highlights/exports/AjkoDHgFdeA/11-95278-101052.mp4"])
     assert.equal(validStorageAccess(key, "PUT"), false);
 });
 

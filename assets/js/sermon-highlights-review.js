@@ -8,6 +8,8 @@
   const sermon = root.querySelector("#surfside-highlights-sermon");
   const analyze = root.querySelector("#surfside-highlights-analyze");
   const render = root.querySelector("#surfside-highlights-render");
+  const findMore = root.querySelector("#surfside-highlights-find-more");
+  const moreMessage = root.querySelector("#surfside-highlights-more-message");
   const message = root.querySelector("#surfside-highlights-message");
   const results = root.querySelector("#surfside-highlights-results");
   const exportPanel = root.querySelector("#surfside-highlight-export-panel");
@@ -82,6 +84,13 @@
     analyze.disabled = !activeId || busy;
     render.disabled = !activeId || busy ||
       analysis?.status !== "ready" || !(analysis?.result?.highlights?.length);
+    if (findMore) {
+      const more = analysis?.more;
+      findMore.disabled = !activeId || busy || analysis?.status !== "ready" ||
+        (analysis?.result?.highlights?.length || 0) >= 10 ||
+        ["queued", "processing"].includes(more?.status) ||
+        Number(more?.round || 0) >= 4;
+    }
     if (exportButton) {
       exportButton.disabled = !activeId || busy || exportBusy ||
         !approvedReviews().length ||
@@ -123,13 +132,33 @@
     return { slider, time };
   }
 
+  function showMoreStatus() {
+    if (!moreMessage) return;
+    const more = analysis?.more;
+    if (!activeId || analysis?.status !== "ready") {
+      moreMessage.textContent = ""; return;
+    }
+    if (["queued", "processing"].includes(more?.status)) {
+      moreMessage.textContent = "Finding different sermon moments from the saved transcript (" +
+        more.status + "). Existing clips and approvals are unchanged.";
+    } else if (more?.status === "ready") {
+      moreMessage.textContent = more.added > 0
+        ? "Found " + more.added + " additional suggestion(s). Their private previews will prepare automatically."
+        : "No additional strong moments found in that pass. Existing suggestions remain available.";
+    } else if (more?.status === "failed") {
+      moreMessage.textContent = "Additional suggestion search failed. Existing clips are safe; you can retry.";
+    } else {
+      moreMessage.textContent = "Didn't like the AI choices? Find more uses the saved transcript without rerunning transcription.";
+    }
+  }
+
   function renderResults() {
     results.replaceChildren();
     const highlights = analysis?.result?.highlights;
     if (!Array.isArray(highlights) || !highlights.length) return;
     const intro = el("div", "surfside-highlights-intro");
     intro.append(el("h2", "", "Suggested clips"));
-    intro.append(el("p", "", "All timestamps refer to the original MP4. Adjust each edge up to five seconds. Changes apply instantly within the padded preview; use Save, Approve, or Reject to record your decision."));
+    intro.append(el("p", "", "All timestamps refer to the original MP4. Adjust each edge up to five seconds. Additional AI suggestions appear after the original clips, without replacing saved reviews. Use Save, Approve, or Reject to record your decision."));
     if (previews?.status === "ready") {
       intro.append(action("Refresh preview links", () => refreshPreviews(token),
         "surfside-highlight-secondary"));
@@ -143,7 +172,7 @@
     const reviews = readReviews();
     const section = el("div", "surfside-highlights-grid");
 
-    for (const suggestion of highlights.slice(0, 5)) {
+    for (const suggestion of highlights.slice(0, 10)) {
       const number = suggestion.number;
       const saved = reviews[String(number)] || {};
       const baselineStart = Number(suggestion.start), baselineEnd = Number(suggestion.end);
@@ -346,6 +375,7 @@
       if (currentToken !== token) return;
       analysis = status;
       renderResults();
+      showMoreStatus();
       renderExportPanel();
       controls();
       if (status.status === "queued" || status.status === "processing") {
@@ -355,6 +385,10 @@
         note("AI suggestions ready. Loading private video preview status…");
         await refreshPreviews(currentToken);
         await refreshExports(currentToken);
+        // Keep checking while a second-pass Llama search is running. It does
+        // not block playback of the original sermon highlights.
+        if (["queued", "processing"].includes(status.more?.status))
+          poll(() => refreshAnalysis(currentToken));
       } else if (status.status === "failed") {
         note("Analysis failed (" + (status.detail || "unknown error") +
           "). Review Cloudflare logs before retrying.", true);
@@ -369,7 +403,7 @@
     if (exportTimer) clearTimeout(exportTimer);
     exportTimer = null;
     activeId = sermon.value; analysis = null; previews = null; exportsState = null;
-    results.replaceChildren(); renderExportPanel(); controls();
+    results.replaceChildren(); showMoreStatus(); renderExportPanel(); controls();
     if (!activeId) { note("Choose a verified uploaded sermon."); return; }
     note("Checking AI results for the selected sermon…");
     await refreshAnalysis(token);
@@ -386,6 +420,19 @@
       await refreshAnalysis(token);
     } catch (error) { note(error.message, true); }
     finally { busy = false; controls(); }
+  });
+  if (findMore) findMore.addEventListener("click", async () => {
+    if (!activeId || busy || analysis?.status !== "ready") return;
+    busy = true; controls();
+    try {
+      const data = await json("find-more", { video_id: activeId });
+      if (moreMessage) moreMessage.textContent =
+        "Additional AI suggestions " + data.status + ". Original clips and saved decisions are preserved.";
+      await refreshAnalysis(token);
+    } catch (error) {
+      if (moreMessage) moreMessage.textContent = error.message ||
+        "Could not start the additional suggestion search.";
+    } finally { busy = false; controls(); }
   });
   render.addEventListener("click", async () => {
     if (!activeId || busy) return;
