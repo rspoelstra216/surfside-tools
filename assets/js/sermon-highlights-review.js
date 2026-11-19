@@ -331,7 +331,28 @@
         sermon.append(option);
       }
       if (!data.configured) {
-        note("The private Cloudflare highlights service is not configured on WordPress.", true);
+        note("WordPress could not validate the private Cloudflare highlights settings. See the safe checks below.", true);
+        const report = el("section", "surfside-highlights-diagnostics");
+        report.append(el("h2", "", "Configuration checks"));
+        report.append(el("p", "", "These checks show only Yes or No. No secret, URL, length, or server path is displayed."));
+        const checks = [
+          ["Worker URL defined", "worker_url_defined"],
+          ["Worker URL is text", "worker_url_string"],
+          ["Worker HTTPS URL accepted", "worker_url_valid"],
+          ["Shared secret defined", "secret_defined"],
+          ["Shared secret is text", "secret_string"],
+          ["Shared secret meets minimum length", "secret_length_valid"],
+        ];
+        const list = el("ul");
+        for (const [label, key] of checks) {
+          const item = el("li", "", label + ": " +
+            (data.config_checks?.[key] === true ? "Yes" : "No"));
+          item.classList.add(data.config_checks?.[key] === true ?
+            "surfside-highlight-check-pass" : "surfside-highlight-check-fail");
+          list.append(item);
+        }
+        report.append(list);
+        results.replaceChildren(report);
         analyze.disabled = true; render.disabled = true;
         return;
       }
