@@ -146,6 +146,20 @@ $payload = array(
 $sermons = surfside_tools_highlights_browser_dispatch($payload);
 check(count($sermons['sermons']) === 1 && $sermons['configured'],
     'Front-end staff POST can load the sermon dropdown');
+$expected_checks = array('worker_url_defined','worker_url_string','worker_url_valid',
+    'secret_defined','secret_string','secret_length_valid');
+check(array_keys($sermons['config_checks'] ?? array()) === $expected_checks,
+    'Only six narrow boolean diagnostic check names are returned');
+check(count(array_filter($sermons['config_checks'])) === 6,
+    'Properly configured Worker and 64-character test secret pass every check');
+foreach ($sermons['config_checks'] as $value) {
+    check(is_bool($value), 'Diagnostics must expose only boolean values');
+}
+$public_json = wp_json_encode($sermons);
+check(strpos($public_json, SURFSIDE_PODCAST_SHARED_SECRET) === false &&
+    strpos($public_json, SURFSIDE_PODCAST_WORKER_URL) === false &&
+    strpos($public_json, '64 characters') === false,
+    'Browser responses must not reveal Worker address, secret, or secret length');
 check(is_wp_error(surfside_tools_highlights_browser_dispatch(array(
     'highlight_nonce' => 'wrong', 'mode' => 'sermons',
 ))), 'Forged browser action nonce is rejected');
