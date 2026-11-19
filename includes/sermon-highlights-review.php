@@ -441,7 +441,6 @@ function surfside_tools_staff_sermon_highlights_shortcode() {
         <button type="button" id="surfside-highlights-render" disabled>Generate video previews</button>
       </div>
       <p id="surfside-highlights-message" role="status" aria-live="polite">Choose a sermon to begin.</p>
-      <div id="surfside-highlights-results"></div>
       <section class="surfside-highlight-export-panel" id="surfside-highlight-export-panel" hidden>
         <h2>Approved Clips</h2>
         <p>Approve the clips you want to keep, then generate final MP4 files using your saved trim points. Exported videos stay private until you download and share them.</p>
@@ -449,6 +448,7 @@ function surfside_tools_staff_sermon_highlights_shortcode() {
         <p id="surfside-highlight-export-message" role="status" aria-live="polite"></p>
         <div id="surfside-highlight-export-downloads"></div>
       </section>
+      <div id="surfside-highlights-results"></div>
     </div>
     <?php return ob_get_clean();
 }
