@@ -101,3 +101,28 @@ node --check assets/js/sermon-highlights-review.js
 
 All application behavior remains a manual pilot until production validation;
 there is no automatic share/export pipeline.
+
+## Configuration-check troubleshooting
+
+If the Sermon Highlights staff screen says Cloudflare configuration is not
+available, the verified staff-only `sermons` response now includes six
+**booleans only**, displayed as Yes/No:
+
+- Worker URL defined
+- Worker URL is text
+- Worker HTTPS URL accepted
+- Shared secret defined
+- Shared secret is text
+- Shared secret meets minimum length (32+ characters)
+
+No raw URL, secret bytes, secret prefix, actual secret length, hashes, or
+WordPress filesystem paths are exposed. This diagnostic runs locally in
+WordPress and does not call Cloudflare or alter Spreaker configuration.
+
+Do **not** regenerate credentials to troubleshoot this message. Confirm
+which check is No from the deployed dashboard, then investigate only that
+condition. If all six are Yes, Cloudflare validation is available and the
+normal sermon selection/analysis workflow should be enabled. If the existing
+sermon dropdown is empty even with valid configuration, check the local
+master Messages playlist and verified R2 sermon records separately from
+the Cloudflare connection.
