@@ -11,7 +11,7 @@ export function resolveClipPicks(highlights, requested) {
       requested.length < 1 || requested.length > 5) throw Error("invalid_clip_selection");
   const seen = new Set();
   const resolved = requested.map((item) => {
-    if (!item || !Number.isInteger(item.number) || item.number < 1 || item.number > 5 ||
+    if (!item || !Number.isInteger(item.number) || item.number < 1 || item.number > 10 ||
         seen.has(item.number)) throw Error("invalid_clip_selection");
     seen.add(item.number);
     const original = highlights.find((h) => h.number === item.number);
