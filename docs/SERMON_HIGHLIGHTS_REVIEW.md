@@ -508,3 +508,39 @@ This is intentionally an **experiment**. A more reliable person
 detector/tracker can replace the cascade after real on-stage clips show
 where it fails. Do not promise perfect tracking before the November 15
 pilot is reviewed.
+
+## PR #529 — Visual pastor starting point + actionable portrait failures
+
+On mobile, the original `Pastor starts (left ↔ right)` percentage slider
+had no visual context; staff could not tell whether 50% was actually on the
+pastor. The vertical dashboard now displays the **already-generated, private
+landscape MP4 preview paused at the approved start time**. Staff tap/click
+the pastor in that video frame. A visible blue marker tracks the chosen
+horizontal location; the range slider remains below for keyboard users
+and fine adjustment. The same approved timestamps and bounded 0–100 integer
+starting anchor continue to be sent to the WordPress+Cloudflare API; the
+private preview never makes the original sermon public.
+
+The focus still is available only when a matching padded MP4 preview exists
+and its expiring private link is valid. Use **Refresh preview links** if the
+video frame cannot load. On mobile browsers that do not display a seeked
+frame until a user gesture, tapping the frame unlocks muted playback and
+pauses at the approved start. This change does **not** introduce an identity
+recognition model; it only makes the existing initial position usable.
+
+The first live vertical job showed `Vertical generation failed` with no
+stage indication. This PR does **not** claim to have identified its root
+cause from the screenshot alone. It adds bounded stage diagnostics:
+`source` (original MP4 download), `extraction` (approved MP4 cut),
+`tracking` (offline OpenCV), `encoding` (9:16 H.264/AAC render), and
+`upload` (private R2). Container error details remain in Cloudflare logs;
+the Worker only records the safe failure stage in the vertical job status,
+and the dashboard describes it in plain language. Podcast and all
+existing landscape highlight processing keep their original error paths.
+
+After merge and Worker+Container deployment, staff can retry clip #4,
+view the failure stage if it still fails, and capture the **Podcast
+container job failed** / **Experimental vertical pipeline failed** Cloudflare
+Observability event corresponding to the request. On the frontend,
+the focus picker is mobile-friendly and no longer asks staff to guess
+horizontal percentages without showing the source frame.
