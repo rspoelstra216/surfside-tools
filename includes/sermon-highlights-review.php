@@ -261,7 +261,13 @@ function surfside_tools_highlights_browser_dispatch($data) {
             array('status' => 400));
     }
     if ($mode === 'sermons') {
-        return surfside_tools_highlights_rest_sermons();
+        // rest_ensure_response() returns WP_REST_Response in live WordPress.
+        // As with all other modes below, unwrap before wp_send_json_success().
+        // Otherwise the browser receives a nested response object and cannot
+        // find configured, config_protocol, config_checks or sermon rows.
+        $result = surfside_tools_highlights_rest_sermons();
+        return is_object($result) && method_exists($result, 'get_data')
+            ? $result->get_data() : $result;
     }
     $id = $data['video_id'] ?? null;
     if (!surfside_tools_highlights_valid_id($id)) {
@@ -340,6 +346,11 @@ function surfside_tools_staff_sermon_highlights_shortcode() {
             // Capture the same safe booleans at page render time. If they
             // differ from the authenticated POST response, it is a runtime
             // or deployment mismatch rather than a bad credential.
+            // Bootstrap from the authenticated PHP page render instead of a
+            // second request. This exact request has the verified Worker
+            // configuration, and the sermon inventory is staff-only.
+            'configured' => surfside_tools_highlights_configured(),
+            'sermons' => surfside_tools_highlights_sermon_rows(),
             'configProtocol' => 'highlights-config-v2',
             'pageChecks' => surfside_tools_highlights_config_diagnostics(),
             'initialId' => isset($_GET['video_id']) && surfside_tools_highlights_valid_id(wp_unslash($_GET['video_id']))

@@ -148,3 +148,25 @@ the staff POST response. Staff can compare the two sets of boolean checks:
 
 This does not bypass the existing staff-session authorization. No raw config
 values, paths, lengths or private credentials are returned to the browser.
+
+## Sermon dropdown startup fix
+
+The original staff editor made a second `sermons` POST immediately after
+rendering the authorized WordPress page. In production, this request supplied
+an inconsistent response shape: the page-render PHP checks for the existing
+Cloudflare Worker and HMAC secret were all **Yes**, while the JavaScript
+received no matching configuration fields from the second request. This
+incorrectly blocked the entire editor.
+
+To eliminate the extra initialization boundary, the logged-in PHP page now
+embeds the **eligible, verified sermon list and configuration boolean** in
+the same inline startup data as the nonce and dashboard URL. The secret,
+Worker address, and raw configuration values are still never emitted. The
+browser no longer makes a `sermons` request at startup and relies on the
+known-valid PHP page context. Normal server-authorized POSTs continue to
+handle analysis, status, MP4 previews and review decisions, using the
+existing nonce, staff role and HMAC checks.
+
+This change does not touch the established MP4 upload, podcast queue,
+Cloudflare Worker, Spreaker or sermon source files. Re-test using the
+already-analyzed November 15 sermon; there is no need to re-upload it.
