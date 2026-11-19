@@ -160,3 +160,33 @@ test("actual FFmpeg produces a precisely sought playable MP4 preview with audio"
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+test("real FFmpeg accurate final export from padded preview keeps video and sound",
+  { skip: !hasFFmpeg }, () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "surfside-fast-export-"));
+    try {
+      const source = path.join(dir, "full.mp4");
+      const preview = path.join(dir, "padded-preview.mp4");
+      const approved = path.join(dir, "approved.mp4");
+      run(["-hide_banner", "-loglevel", "error", "-y",
+        "-f", "lavfi", "-i", "testsrc2=size=320x180:rate=24:duration=10",
+        "-f", "lavfi", "-i", "sine=frequency=440:duration=10",
+        "-map", "0:v:0", "-map", "1:a:0", "-c:v", "libx264",
+        "-preset", "ultrafast", "-c:a", "aac", "-shortest", source]);
+      // Pretend this 6-second clip is an already prepared review preview.
+      run(clipVideoArgs(source, preview, 2, 8));
+      // The approved global source time is 3-6 seconds; only the preview
+      // is used as input, with offset 1-4 seconds.
+      run(clipVideoArgs(preview, approved, 1, 4));
+      assert.ok(statSync(approved).size > 2048);
+      assert.ok(Math.abs(probe(approved) - 3) < 0.35);
+      const result = spawnSync("ffprobe", ["-v", "error",
+        "-show_entries", "stream=codec_name", "-of", "csv=p=0", approved],
+        { encoding: "utf8" });
+      assert.equal(result.status, 0);
+      assert.match(result.stdout, /h264/);
+      assert.match(result.stdout, /aac/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
