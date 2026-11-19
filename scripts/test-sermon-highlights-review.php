@@ -20,9 +20,13 @@ class WP_Error {
     public function get_error_message() { return $this->text; }
 }
 class FakeRequest {
-    private $params;
+    protected $params;
     public function __construct($p) { $this->params = $p; }
     public function get_param($k) { return $this->params[$k] ?? null; }
+}
+class WP_REST_Request extends FakeRequest {
+    public function __construct($method, $path) { parent::__construct(array()); }
+    public function set_param($key, $value) { $this->params[$key] = $value; }
 }
 class FakeDb {
     public function prepare($query, $args) { return $query; }
@@ -35,11 +39,18 @@ class FakeDb {
 $GLOBALS['wpdb'] = new FakeDb();
 define('ARRAY_A', 'ARRAY_A');
 function add_action($hook, $callback, ...$rest) {
-    if ($hook === 'rest_api_init') $GLOBALS['highlight_routes_setup'] = $callback;
+    if ($hook === 'template_redirect') $GLOBALS['highlight_page_dispatch'] = $callback;
+    if ($hook === 'rest_api_init') throw new RuntimeException('No public REST routes should be used');
 }
 function add_shortcode(...$args) {}
 function register_rest_route($namespace, $route, $options) {
-    $GLOBALS['highlight_routes'][$namespace . $route] = $options;
+    throw new RuntimeException('The editor must use scoped staff page POST, not REST cookie auth');
+}
+function add_query_arg($key, $value, $url) {
+    return $url . '?'. http_build_query(array($key => $value));
+}
+function wp_verify_nonce($nonce, $action) {
+    return $nonce === 'test-nonce' && $action === 'surfside_highlights_browser_review';
 }
 function surfside_tools_prevent_cache() {}
 function surfside_tools_staff_enqueue_styles() {}
@@ -102,12 +113,8 @@ function wp_remote_retrieve_body($r) { return $r['body']; }
 function check($ok, $msg) { if (!$ok) throw new RuntimeException($msg); }
 require dirname(__DIR__) . '/includes/sermon-highlights-review.php';
 
-($GLOBALS['highlight_routes_setup'])();
-check(count($GLOBALS['highlight_routes']) === 6, 'Only six staff-only review routes are registered');
-foreach ($GLOBALS['highlight_routes'] as $route => $config) {
-    check($config['permission_callback'] === 'surfside_tools_highlights_can_review',
-        'Every REST action is protected by the existing Weekly Media permission');
-}
+check(is_callable($GLOBALS['highlight_page_dispatch'] ?? null),
+    'Highlights request handler registered on authenticated dashboard page');
 check(str_contains(surfside_tools_staff_sermon_highlights_shortcode(), 'STAFF LOGIN REQUIRED'),
     'Anonymous users cannot see the editor or secret configuration');
 
@@ -125,8 +132,47 @@ check(str_contains($html, 'Sermon Highlights') &&
     str_contains($html, 'Nothing publishes automatically'),
     'Staff editor exposes private video review tools');
 check(str_contains($GLOBALS['highlight_inline_script'], 'test-nonce') &&
+    str_contains($GLOBALS['highlight_inline_script'], 'site-management') &&
+    str_contains($GLOBALS['highlight_inline_script'], 'sermon-highlights') &&
+    !str_contains($GLOBALS['highlight_inline_script'], '/wp-json/') &&
     !str_contains($GLOBALS['highlight_inline_script'], SURFSIDE_PODCAST_SHARED_SECRET),
-    'Browser JavaScript receives its WP nonce but never the Worker HMAC secret');
+    'Browser receives the correct staff-page endpoint/own nonce but never REST auth or HMAC secrets');
+
+// Exercise the real browser form transport: WordPress's custom staff cookie
+// works on /dashboard, unlike wp_rest cookie nonce authentication.
+$payload = array(
+    'highlight_nonce' => 'test-nonce', 'mode' => 'sermons',
+);
+$sermons = surfside_tools_highlights_browser_dispatch($payload);
+check(count($sermons['sermons']) === 1 && $sermons['configured'],
+    'Front-end staff POST can load the sermon dropdown');
+check(is_wp_error(surfside_tools_highlights_browser_dispatch(array(
+    'highlight_nonce' => 'wrong', 'mode' => 'sermons',
+))), 'Forged browser action nonce is rejected');
+check(is_wp_error(surfside_tools_highlights_browser_dispatch(array(
+    'highlight_nonce' => 'test-nonce', 'mode' => 'publish',
+))), 'No publication actions exist');
+$GLOBALS['role'] = false;
+check(is_wp_error(surfside_tools_highlights_browser_dispatch($payload)),
+    'Browser dispatcher fails closed for a staff member without Weekly Media permission');
+$GLOBALS['role'] = true;
+$sermonForm = array_merge($payload,
+    array('mode' => 'status', 'video_id' => 'AjkoDHgFdeA'));
+$existing = surfside_tools_highlights_browser_dispatch($sermonForm);
+check($existing['status'] === 'ready', 'Browser form status fetch reads existing analysis');
+$decisionForm = array_merge($sermonForm, array(
+    'mode' => 'review', 'number' => '4', 'decision' => 'approved',
+    'start' => '952.78', 'end' => '1010.52',
+));
+$choice = surfside_tools_highlights_browser_dispatch($decisionForm);
+check($choice['review']['decision'] === 'approved' && $choice['review']['number'] === 4,
+    'Encoded HTML form string fields safely convert into typed internal review requests');
+check(is_wp_error(surfside_tools_highlights_browser_dispatch(
+    array_merge($decisionForm, array('number' => '4.0')))),
+    'Malformed numeric form fields do not bypass canonical validation');
+check(is_wp_error(surfside_tools_highlights_browser_dispatch(
+    array_merge($decisionForm, array('start' => '940')))),
+    'Server checks five-second trim limits even for forged browser requests');
 
 $id = new FakeRequest(array('video_id' => 'AjkoDHgFdeA'));
 check(!is_wp_error(surfside_tools_highlights_request_id($id)), 'Known ready sermons are eligible');
