@@ -105,7 +105,9 @@ export function exportQueueClips(clips) {
 // All configured Queue retries have elapsed by this point. An old deployment
 // could leave the status queued forever when validation threw before its catch.
 export function exportJobStalled(job, now = Date.now()) {
-  if (!job || !["queued", "processing"].includes(job.status)) return false;
+  // A running FFmpeg batch may legitimately last longer than the timeout.
+  // Only queued jobs are recoverable automatically; never duplicate active renders.
+  if (!job || job.status !== "queued") return false;
   const timestamp = Date.parse(job.updated_at || "");
   return Number.isFinite(timestamp) && now - timestamp > 20 * 60 * 1000;
 }
