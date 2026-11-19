@@ -320,24 +320,28 @@
 
   (async () => {
     try {
-      const data = await json("sermons");
+      // Use the same authenticated PHP response that rendered this page.
+      // The prior second "sermons" POST produced an inconsistent response
+      // envelope even while page-render checks were all valid.
+      if (!Array.isArray(cfg.sermons) || typeof cfg.configured !== "boolean") {
+        note("Sermon Highlights startup data is missing. Confirm the full WordPress plugin update and reload the page.", true);
+        analyze.disabled = true; render.disabled = true;
+        return;
+      }
       sermon.replaceChildren();
       const blank = el("option", "", "Choose an uploaded sermon");
       blank.value = ""; sermon.append(blank);
-      for (const item of data.sermons || []) {
+      for (const item of cfg.sermons) {
         const option = el("option", "",
           (item.sermon_date || "No date") + " — " + (item.title || item.video_id));
         option.value = item.video_id;
         sermon.append(option);
       }
-      if (!data.configured || data.config_protocol !== cfg.configProtocol) {
-        const isVersionMismatch = data.config_protocol !== cfg.configProtocol;
-        note(isVersionMismatch
-          ? "The highlights page and its server response appear to be different versions. Do not change your Cloudflare credentials."
-          : "The highlights request reports unavailable Cloudflare settings. Compare the safe checks from page load and the server request.", true);
+      if (!cfg.configured) {
+        note("WordPress could not validate the private Cloudflare highlights settings on this page.", true);
         const report = el("section", "surfside-highlights-diagnostics");
         report.append(el("h2", "", "Configuration checks"));
-        report.append(el("p", "", "Only Yes, No, or Not reported are shown. No URL, secret, secret length, or server path is displayed."));
+        report.append(el("p", "", "Only safe Yes/No checks are shown; no credentials or URLs."));
         const checks = [
           ["Worker URL defined", "worker_url_defined"],
           ["Worker URL is text", "worker_url_string"],
@@ -346,44 +350,27 @@
           ["Shared secret is text", "secret_string"],
           ["Shared secret meets minimum length", "secret_length_valid"],
         ];
-        const statusFor = (values, key) => {
-          if (values && typeof values[key] === "boolean")
-            return values[key] ? "Yes" : "No";
-          return "Not reported";
-        };
-        if (isVersionMismatch) {
-          report.append(el("p", "surfside-highlights-error",
-            "Page/request version mismatch: please verify the complete plugin update and PHP cache before changing wp-config.php."));
+        const list = el("ul");
+        for (const [label, key] of checks) {
+          const status = typeof cfg.pageChecks?.[key] === "boolean"
+            ? (cfg.pageChecks[key] ? "Yes" : "No") : "Not reported";
+          const item = el("li", "", label + ": " + status);
+          item.classList.add(status === "Yes" ? "surfside-highlight-check-pass"
+            : status === "No" ? "surfside-highlight-check-fail"
+            : "surfside-highlight-check-unknown");
+          list.append(item);
         }
-        const grid = el("div", "surfside-highlights-check-grid");
-        for (const [heading, values] of [
-          ["Page render", cfg.pageChecks],
-          ["Dashboard request", data.config_checks],
-        ]) {
-          const group = el("div", "surfside-highlight-check-group");
-          group.append(el("h3", "", heading));
-          const list = el("ul");
-          for (const [label, key] of checks) {
-            const status = statusFor(values, key);
-            const item = el("li", "", label + ": " + status);
-            item.classList.add(status === "Yes" ? "surfside-highlight-check-pass"
-              : status === "No" ? "surfside-highlight-check-fail"
-              : "surfside-highlight-check-unknown");
-            list.append(item);
-          }
-          group.append(list);
-          grid.append(group);
-        }
-        report.append(grid);
+        report.append(list);
         results.replaceChildren(report);
         analyze.disabled = true; render.disabled = true;
         return;
       }
-      if (!data.sermons?.length) {
+      if (!cfg.sermons.length) {
         note("No verified sermon MP4s were found in the Messages playlist.", true);
+        analyze.disabled = true; render.disabled = true;
         return;
       }
-      if (cfg.initialId && (data.sermons || []).some(item => item.video_id === cfg.initialId)) {
+      if (cfg.initialId && cfg.sermons.some(item => item.video_id === cfg.initialId)) {
         sermon.value = cfg.initialId;
         await chooseSermon();
       } else {
