@@ -1,6 +1,7 @@
 import { getContainer } from "@cloudflare/containers";
 import { PROCESSOR_CONTAINER_ID, sourceKey, validId } from "./validation.mjs";
-import { exportKey, resolveApprovedExports, sameExports, exportQueueClips, exportJobStalled } from "./highlight-video.mjs";
+import { exportKey, previewKey, resolveApprovedExports, sameExports, exportQueueClips, exportJobStalled } from "./highlight-video.mjs";
+import { exportPreviewPlan } from "./highlight-automation.mjs";
 
 // Final export jobs are strictly separate from 5-second-padded review previews.
 // Output keys are immutable and contain exact reviewed source-MP4 timestamps.
@@ -70,10 +71,30 @@ export async function processExportJob(env, id, requested) {
     const clean = exportQueueClips(requested);
     clips = resolveApprovedExports(analysis?.highlights, clean);
     await save(env, id, "processing", clips);
+    // Prefer the already-encoded, private five-second-padded previews for
+    // final trims. This avoids downloading the entire sermon MP4 again.
+    // For an older sermon with missing/insufficient previews, preserve the
+    // original-MP4 fallback rather than breaking previously approved cuts.
+    const previewJob = await getJson(env.SERMONS_BUCKET,
+      `sermon-highlights/clip-jobs/${id}.json`);
+    const available = previewJob?.status === "ready" ? previewJob.clips : [];
+    const planned = exportPreviewPlan(clean, available);
+    const canRead = await Promise.all(planned.map(async (clip) =>
+      !clip.source_preview ? false :
+        !!await env.SERMONS_BUCKET.head(previewKey(id, {
+          number: clip.number,
+          start: clip.source_preview.start,
+          end: clip.source_preview.end,
+        }))));
+    const sources = planned.map((clip, i) =>
+      canRead[i] ? clip : exportQueueClips([clip])[0]);
+    console.log("Approved highlight export input sources", id, {
+      previews: canRead.filter(Boolean).length, original_fallbacks: canRead.filter((v) => !v).length,
+    });
     const response = await getContainer(env.PODCAST_CONTAINER, PROCESSOR_CONTAINER_ID)
       .fetch(new Request("http://container/highlights/export", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ video_id: id, clips: clean }),
+        body: JSON.stringify({ video_id: id, clips: sources }),
       }));
     if (!response.ok) throw Error("export_container_failed");
     for (const clip of clips) {
