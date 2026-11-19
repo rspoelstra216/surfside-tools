@@ -20,9 +20,6 @@ async function writeStatus(env, id, state, clips, detail = "") {
 }
 
 export async function enqueueClips(env, id, requested) {
-  const prior = await readJson(env.SERMONS_BUCKET, statusKey(id));
-  if (prior && ["queued", "processing"].includes(prior.status))
-    return reply({ video_id: id, status: prior.status, already_exists: true });
   if (!await env.SERMONS_BUCKET.head(sourceKey(id)))
     return reply({ error: "sermon_missing" }, 409);
   const highlights = await readJson(env.SERMONS_BUCKET, highlightResultKey(id));
@@ -31,6 +28,20 @@ export async function enqueueClips(env, id, requested) {
   let clips;
   try { clips = resolveClipPicks(highlights.highlights, requested); }
   catch (error) { return reply({ error: error.message }, 400); }
+  const prior = await readJson(env.SERMONS_BUCKET, statusKey(id));
+  const same = Array.isArray(prior?.clips) && prior.clips.length === clips.length &&
+    prior.clips.every((c, i) => {
+      const b = clips[i];
+      return c.number === b.number && c.start === b.start && c.end === b.end;
+    });
+  if (prior && ["queued", "processing"].includes(prior.status)) {
+    if (same) return reply({ video_id: id, status: prior.status, already_exists: true });
+    return reply({ error: "preview_in_progress" }, 409);
+  }
+  if (prior?.status === "ready" && same &&
+      (await Promise.all(clips.map((c) =>
+        env.SERMONS_BUCKET.head(previewKey(id, c))))).every(Boolean))
+    return reply({ video_id: id, status: "ready", already_exists: true });
   await writeStatus(env, id, "queued", clips);
   try {
     await env.PODCAST_QUEUE.send({ kind: "highlight_clips", video_id: id, clips });
