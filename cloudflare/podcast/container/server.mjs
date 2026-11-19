@@ -9,6 +9,7 @@ import { pipeline } from "node:stream/promises";
 import { sermonAudioKey, podcastAudioArgs, extractSermonAudioArgs, chunkSermonAudioArgs, highlightChunkResponse } from "./sermon-audio.mjs";
 import { detectSpeechPauses } from "./pause-detection.mjs";
 import { clipVideoArgs, previewKey, exportKey } from "./highlight-video.mjs";
+import { verticalExtractArgs, verticalFilter, verticalRenderArgs } from "./vertical-video.mjs";
 
 const STORAGE = "http://storage.internal/";
 const idPattern = /^[A-Za-z0-9_-]{11}$/;
@@ -264,11 +265,60 @@ async function renderHighlightClips(id, clips, kind = "preview") {
   }
 }
 
+// Experimental, manual-only portrait conversion. The subject detector is
+// offline and never uploads frames, metadata about faces, or source images.
+async function renderVertical(id, clip, anchor) {
+  if (!clip || Object.keys(clip).some((key) =>
+        !["number", "start", "end"].includes(key)) ||
+      !Number.isInteger(clip.number) || clip.number < 1 || clip.number > 10 ||
+      !Number.isFinite(clip.start) || !Number.isFinite(clip.end) ||
+      clip.start < 0 || clip.end > 4320 ||
+      clip.end - clip.start < 15 || clip.end - clip.start > 120 ||
+      !Number.isInteger(anchor) || anchor < 0 || anchor > 100)
+    throw Error("invalid_vertical_request");
+  const key = `sermon-highlights/vertical/${id}/${clip.number}-${Math.round(clip.start * 100)}-${Math.round(clip.end * 100)}-a${anchor}.mp4`;
+  const dir = await mkdtemp(path.join(tmpdir(), "surfside-vertical-"));
+  try {
+    const original = path.join(dir, "sermon.mp4");
+    const short = path.join(dir, "approved.mp4");
+    const commands = path.join(dir, "tracking.txt");
+    const output = path.join(dir, "portrait.mp4");
+    // Use original MP4, not compressed 720p review footage; portrait cropping
+    // only retains about one third of a wide image's horizontal pixels.
+    await download("sermons/" + id + ".mp4", original);
+    const length = await durationOf(original);
+    if (clip.end > length + 0.25) throw Error("vertical_cut_outside_sermon");
+    await runCommand("ffmpeg",
+      verticalExtractArgs(original, short, clip.start, clip.end), 11 * 60 * 1000);
+    // Full source is no longer needed after the accurate short extraction.
+    await rm(original, { force: true });
+    const outputText = await runCommand("/usr/bin/python3",
+      ["/app/track-subject.py", short, commands, String(anchor)], 5 * 60 * 1000);
+    let tracking;
+    try { tracking = JSON.parse(outputText.trim()); }
+    catch { throw Error("vertical_tracking_response_invalid"); }
+    if (!["tracked", "wide_fallback"].includes(tracking.mode))
+      throw Error("vertical_tracking_mode_invalid");
+    const filter = verticalFilter(tracking.mode, commands,
+      tracking.crop_width, Number((await new Promise(async (resolve, reject) => {
+        // The tracker returns height/crop width; only bounded values matter.
+        resolve(tracking.height || 0);
+      }))));
+    await runCommand("ffmpeg", verticalRenderArgs(short, output, filter),
+      11 * 60 * 1000);
+    const bytes = await upload(key, output, "video/mp4");
+    return { key, mode: tracking.mode, confidence: tracking.confidence,
+      face_samples: tracking.face_samples, samples: tracking.samples, bytes };
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
 http.createServer(async (request, response) => {
   if (request.url === "/health" && request.method === "GET") {
     response.writeHead(200).end("ok"); return;
   }
-  if (!["/process", "/highlights/chunks", "/highlights/render", "/highlights/export"].includes(request.url) || request.method !== "POST") {
+  if (!["/process", "/highlights/chunks", "/highlights/render", "/highlights/export", "/highlights/vertical/render"].includes(request.url) || request.method !== "POST") {
     response.writeHead(404).end("not_found"); return;
   }
   if (busy) { response.writeHead(409).end("busy"); return; }
@@ -277,7 +327,7 @@ http.createServer(async (request, response) => {
     let body = "";
     for await (const chunk of request) {
       body += chunk.toString();
-      if (body.length > (["/highlights/render", "/highlights/export"].includes(request.url) ? 4096 : 256))
+      if (body.length > (["/highlights/render", "/highlights/export", "/highlights/vertical/render"].includes(request.url) ? 4096 : 256))
         throw Error("request_too_large");
     }
     const payload = JSON.parse(body);
@@ -294,6 +344,13 @@ http.createServer(async (request, response) => {
       const manifest = await prepareHighlightChunks(id);
       response.writeHead(200, { "content-type": "application/json" })
         .end(JSON.stringify(highlightChunkResponse(manifest)));
+    } else if (request.url === "/highlights/vertical/render") {
+      if (test || payload?.test !== undefined) {
+        response.writeHead(400).end("highlight_test_not_supported"); return;
+      }
+      const result = await renderVertical(id, payload.clip, payload.anchor);
+      response.writeHead(200, { "content-type": "application/json" })
+        .end(JSON.stringify({ ok: true, ...result }));
     } else if (["/highlights/render", "/highlights/export"].includes(request.url)) {
       if (test || payload?.test !== undefined) {
         response.writeHead(400).end("highlight_test_not_supported"); return;
