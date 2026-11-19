@@ -163,17 +163,20 @@ export async function processMoreHighlights(env, id, baseCount, round) {
         await writeJson(env.SERMONS_BUCKET, resultKey(id), result);
       }
     }
-    await writeStatus(env, id, {
-      status: "ready", base_count: baseCount, round, added: added.length,
-    });
+    let previewState = "not_needed";
     if (added.length) {
       const picks = paddedHighlightPicks(added);
       if (picks.length) {
         const queued = await enqueueClips(env, id, picks);
+        previewState = queued.ok ? (await queued.json()).status : "pending_retry";
         if (!queued.ok)
           console.error("Additional clip previews not queued", id, queued.status);
       }
     }
+    await writeStatus(env, id, {
+      status: "ready", base_count: baseCount, round, added: added.length,
+      previews: previewState,
+    });
   } catch (error) {
     console.error("Additional sermon highlight search failed", id, String(error));
     await writeStatus(env, id, {
