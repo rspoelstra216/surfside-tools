@@ -5,6 +5,7 @@ import { uploadAudioToR2 } from "./audio-upload.mjs";
 import { publishReadyEpisode, PUBLISH_CHECK_DELAY_SECONDS, MAX_PUBLISH_CHECKS } from "./spreaker-publication.mjs";
 import { validDraftMetadata, spreakerConfigured, canRetryKnownRedirectFailure, canPrepareMissingDraft, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
 import { highlightStatus, processHighlights } from "./highlights.mjs";
+import { queueMoreHighlights, processMoreHighlights } from "./highlight-more.mjs";
 import { requestHighlightPreparation, queueAutomaticPreviews } from "./highlight-workflow.mjs";
 import { enqueueClips, processClipJob } from "./highlight-clips.mjs";
 import { statusClips, servePreview } from "./highlight-clip-preview.mjs";
@@ -61,7 +62,8 @@ async function incoming(request, env) {
     return serveExportDownload(request, env);
   if (!["/jobs", "/status", "/retry-test-spreaker", "/recover-spreaker", "/highlights/jobs", "/highlights/status",
         "/highlights/clips/jobs", "/highlights/clips/status",
-        "/highlights/exports/jobs", "/highlights/exports/status"].includes(route) || request.method !== "POST") {
+        "/highlights/exports/jobs", "/highlights/exports/status",
+        "/highlights/more/jobs"].includes(route) || request.method !== "POST") {
     return reply({ error: "not_found" }, 404);
   }
   if (!await verifiedRequest(request, env.SURFSIDE_PODCAST_SHARED_SECRET)) {
@@ -86,6 +88,11 @@ async function incoming(request, env) {
       return reply({ error: "unexpected_highlight_option" }, 400);
     return route === "/highlights/status"
       ? highlightStatus(env, id) : requestHighlightPreparation(env, id);
+  }
+  if (route === "/highlights/more/jobs") {
+    if (Object.keys(data).some((field) => field !== "video_id"))
+      return reply({ error: "unexpected_more_option" }, 400);
+    return queueMoreHighlights(env, id);
   }
   if (route === "/highlights/clips/status" || route === "/highlights/clips/jobs") {
     if (Object.keys(data).some((field) =>
@@ -215,10 +222,21 @@ export default {
         }
         continue;
       }
+      if (message.body?.kind === "highlight_more") {
+        if (test) { message.ack(); continue; }
+        try {
+          await processMoreHighlights(env, id, message.body.base_count, message.body.round);
+          message.ack();
+        } catch (error) {
+          console.error("Additional highlight search Queue job failed", id, String(error));
+          message.retry({ delaySeconds: 120 });
+        }
+        continue;
+      }
       if (message.body?.kind === "highlight_clips") {
         if (test) { message.ack(); continue; }
         try {
-          await processClipJob(env, id, message.body.clips);
+          await processClipJob(env, id, message.body.clips, message.body.manifest);
           message.ack();
         } catch (error) {
           console.error("Manual highlight clip Queue job failed", id, String(error));
