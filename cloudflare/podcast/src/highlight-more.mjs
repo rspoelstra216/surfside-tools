@@ -1,10 +1,9 @@
 import {
-  normalizeSegments, transcriptWindows, highlightPrompt, HIGHLIGHT_SCHEMA,
+  transcriptWindows, highlightPrompt, HIGHLIGHT_SCHEMA,
   parseHighlightCandidates, selectHighlights,
 } from "./highlight-selection.mjs";
 import { refineHighlightCandidates } from "./highlight-refinement.mjs";
 import { paddedHighlightPicks } from "./highlight-automation.mjs";
-import { enqueueClips } from "./highlight-clips.mjs";
 import { validId } from "./validation.mjs";
 
 const prefix = "sermon-highlights/";
@@ -100,7 +99,9 @@ export async function queueMoreHighlights(env, id) {
   }
 }
 
-export async function processMoreHighlights(env, id, baseCount, round) {
+export async function processMoreHighlights(env, id, baseCount, round, enqueuePreviews) {
+  if (typeof enqueuePreviews !== "function")
+    throw Error("additional_preview_queue_unavailable");
   if (!validId(id) || !Number.isInteger(baseCount) || baseCount < 1 ||
       baseCount > 9 || !Number.isInteger(round) || round < 1 || round > 4)
     throw Error("invalid_more_highlights_job");
@@ -167,7 +168,7 @@ export async function processMoreHighlights(env, id, baseCount, round) {
     if (added.length) {
       const picks = paddedHighlightPicks(added);
       if (picks.length) {
-        const queued = await enqueueClips(env, id, picks);
+        const queued = await enqueuePreviews(env, id, picks);
         previewState = queued.ok ? (await queued.json()).status : "pending_retry";
         if (!queued.ok)
           console.error("Additional clip previews not queued", id, queued.status);
