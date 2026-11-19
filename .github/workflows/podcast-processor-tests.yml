@@ -15,9 +15,12 @@ jobs:
         with:
           node-version: '22'
       - name: Install FFmpeg for actual dual-output smoke testing
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg python3-opencv opencv-data
       - name: Check source syntax
         run: npm run check
+        working-directory: cloudflare/podcast
+      - name: Check offline moving-subject tracker and fallback
+        run: /usr/bin/python3 -m unittest discover -s container -p 'test_track_subject.py'
         working-directory: cloudflare/podcast
       - name: Run Node tests (including required real FFmpeg smoke test)
         run: npm test
