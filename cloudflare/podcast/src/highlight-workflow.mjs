@@ -1,6 +1,7 @@
 import { validId } from "./validation.mjs";
 import { enqueueHighlights } from "./highlights.mjs";
 import { enqueueClips } from "./highlight-clips.mjs";
+import { previewKey } from "./highlight-video.mjs";
 import { paddedHighlightPicks } from "./highlight-automation.mjs";
 
 const resultKey = (id) => `sermon-highlights/results/${id}.json`;
@@ -16,9 +17,18 @@ export async function queueAutomaticPreviews(env, id) {
   const analysis = await getHighlightResult(env, id);
   const clips = paddedHighlightPicks(analysis?.highlights);
   if (!clips.length) throw Error("no_valid_highlight_previews");
-  // Reuses existing private, staff-scoped renderer and its queue status. The
-  // result is idempotent for matching completed or in-flight previews.
-  const result = await enqueueClips(env, id, clips);
+  // A second-pass search can add more than five total suggestions. Detect
+  // missing videos, then prepare a bounded batch without regenerating
+  // already persisted R2 previews or overwriting saved decisions.
+  const pending = [];
+  for (const clip of clips) {
+    if (!await env.SERMONS_BUCKET.head(previewKey(id, clip))) pending.push(clip);
+  }
+  if (!pending.length) {
+    return Response.json({ video_id: id, status: "ready",
+      already_exists: true }, { headers: { "cache-control": "no-store" } });
+  }
+  const result = await enqueueClips(env, id, pending.slice(0, 5));
   if (!result.ok) throw Error("automatic_previews_not_queued_" + result.status);
   return result;
 }
