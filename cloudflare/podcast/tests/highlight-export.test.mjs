@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { exportKey, resolveApprovedExports, sameExports } from "../src/highlight-video.mjs";
+import {
+  exportKey, resolveApprovedExports, sameExports,
+  exportQueueClips, exportJobStalled,
+} from "../src/highlight-video.mjs";
 import { exportKey as containerExportKey } from "../container/highlight-video.mjs";
 import { validStorageAccess } from "../src/validation.mjs";
 import { statusExports, serveExportDownload } from "../src/highlight-export-downloads.mjs";
@@ -30,6 +33,39 @@ test("final exports use exact approved staff cuts, different from padded preview
   ]), false);
 });
 
+test("export Queue round trip strips title metadata before strict revalidation", () => {
+  // PR #524 bug: resolveApprovedExports adds a title, but
+  // resolveClipPicks rejects title on revalidation in processExportJob.
+  const requested = [{ number: 2, start: 456.74, end: 491.24 }];
+  const resolved = resolveApprovedExports(highlights, requested);
+  assert.equal(resolved[0].title, "Celebrating While Imperfect");
+  assert.throws(() => resolveApprovedExports(highlights, resolved), /invalid_clip_times/);
+  const serializedQueueClips = JSON.parse(JSON.stringify(exportQueueClips(resolved)));
+  assert.deepEqual(serializedQueueClips, requested);
+  assert.deepEqual(resolveApprovedExports(highlights, serializedQueueClips), resolved);
+  // Previously queued jobs already contain a title; the consumer strips
+  // only that known display field without weakening numeric validation.
+  assert.deepEqual(resolveApprovedExports(highlights, exportQueueClips(resolved)), resolved);
+  for (const extra of [
+    { ...resolved[0], admin: true },
+    { ...resolved[0], title: { text: "unsafe" } },
+  ]) assert.throws(() => exportQueueClips([extra]), /invalid_clip_times/);
+  assert.throws(() => resolveApprovedExports(highlights,
+    exportQueueClips([{ ...resolved[0], start: 450 }])), /export_outside_review_adjustment/);
+});
+
+test("stale queued exports may be retried; active processing never duplicates", () => {
+  const now = Date.parse("2026-11-19T15:00:00Z");
+  const old = { updated_at: "2026-11-19T14:35:00Z" };
+  assert.equal(exportJobStalled({ ...old, status: "queued" }, now), true);
+  assert.equal(exportJobStalled({ ...old, status: "processing" }, now), false);
+  assert.equal(exportJobStalled({ ...old, status: "failed" }, now), false);
+  assert.equal(exportJobStalled({ ...old, status: "ready" }, now), false);
+  assert.equal(exportJobStalled({ ...old, status: "queued",
+    updated_at: "2026-11-19T14:50:00Z" }, now), false);
+  assert.equal(exportJobStalled({ status: "queued" }, now), false);
+});
+
 test("only bounded private final export keys are permitted to Container", () => {
   assert.equal(validStorageAccess(
     "sermon-highlights/exports/AjkoDHgFdeA/4-95278-101052.mp4", "PUT"), true);
@@ -51,6 +87,29 @@ test("approved exact export rejects fabricated, missing, or out-of-window times"
     [{ ...valid, start: -1 }],
     [{ number: 3, start: 456.74, end: 491.24 }],
   ]) assert.throws(() => resolveApprovedExports(highlights, invalid));
+});
+
+test("export status exposes abandoned old queued jobs as retryable", async () => {
+  const env = {
+    SERMONS_BUCKET: {
+      async get(key) {
+        assert.equal(key, "sermon-highlights/export-jobs/" + id + ".json");
+        return { async json() {
+          return {
+            video_id: id, status: "queued",
+            updated_at: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+            clips: [{ number: 2, start: 456.74, end: 491.24 }],
+          };
+        } };
+      },
+    },
+  };
+  const response = await statusExports(
+    new Request("https://example.workers.dev/highlights/exports/status"), env, id);
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.status, "stalled");
+  assert.equal(data.detail, "old_export_attempt_stalled");
 });
 
 test("final MP4 download links are scoped, short-lived, private and attachment-only", async () => {

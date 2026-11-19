@@ -83,3 +83,31 @@ export function sameExports(a, b) {
       return y && x.number === y.number && x.start === y.start && x.end === y.end;
     });
 }
+
+/**
+ * Exports selected in the Worker include the AI title for staff display, but
+ * the Queue's revalidation contract intentionally accepts ONLY numeric cuts.
+ * Strip exactly the known display-only field before queuing or revalidating.
+ * Strictly reject any other unknown fields rather than weakening validation.
+ */
+export function exportQueueClips(clips) {
+  if (!Array.isArray(clips)) throw Error("invalid_clip_selection");
+  return clips.map((clip) => {
+    if (!clip || typeof clip !== "object" || Array.isArray(clip) ||
+        Object.keys(clip).some((key) =>
+          !["number", "start", "end", "title"].includes(key)) ||
+        (Object.hasOwn(clip, "title") && typeof clip.title !== "string"))
+      throw Error("invalid_clip_times");
+    return { number: clip.number, start: clip.start, end: clip.end };
+  });
+}
+
+// All configured Queue retries have elapsed by this point. An old deployment
+// could leave the status queued forever when validation threw before its catch.
+export function exportJobStalled(job, now = Date.now()) {
+  // A running FFmpeg batch may legitimately last longer than the timeout.
+  // Only queued jobs are recoverable automatically; never duplicate active renders.
+  if (!job || job.status !== "queued") return false;
+  const timestamp = Date.parse(job.updated_at || "");
+  return Number.isFinite(timestamp) && now - timestamp > 20 * 60 * 1000;
+}

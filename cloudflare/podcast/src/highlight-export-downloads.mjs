@@ -1,4 +1,4 @@
-import { exportKey, requestedByteRange } from "./highlight-video.mjs";
+import { exportKey, requestedByteRange, exportJobStalled } from "./highlight-video.mjs";
 
 // Download-only short-lived URLs. The R2 bucket and final exports remain private.
 const statusKey = (id) => `sermon-highlights/export-jobs/${id}.json`;
@@ -31,6 +31,8 @@ export async function statusExports(request, env, id) {
   const object = await env.SERMONS_BUCKET.get(statusKey(id));
   const stored = object ? await object.json().catch(() => null) : null;
   const job = stored || { video_id: id, status: "not_queued" };
+  if (exportJobStalled(job))
+    return reply({ ...job, status: "stalled", detail: "old_export_attempt_stalled" });
   if (job.status !== "ready") return reply(job);
   const clips = [];
   for (const clip of job.clips || []) {

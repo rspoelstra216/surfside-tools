@@ -1,6 +1,6 @@
 import { getContainer } from "@cloudflare/containers";
 import { PROCESSOR_CONTAINER_ID, sourceKey, validId } from "./validation.mjs";
-import { exportKey, resolveApprovedExports, sameExports } from "./highlight-video.mjs";
+import { exportKey, resolveApprovedExports, sameExports, exportQueueClips, exportJobStalled } from "./highlight-video.mjs";
 
 // Final export jobs are strictly separate from 5-second-padded review previews.
 // Output keys are immutable and contain exact reviewed source-MP4 timestamps.
@@ -32,7 +32,10 @@ export async function queueExports(env, id, requested) {
   catch (error) { return reply({ error: error.message }, 400); }
 
   const prior = await getJson(env.SERMONS_BUCKET, jobKey(id));
-  if (prior && ["queued", "processing"].includes(prior.status)) {
+  // Recover the historical stuck-"queued" job after the short Queue retries
+  // have ended. Do not allow duplicate work during a live export.
+  if (prior && ["queued", "processing"].includes(prior.status) &&
+      !exportJobStalled(prior)) {
     if (sameExports(prior.clips, clips))
       return reply({ video_id: id, status: prior.status, already_exists: true });
     return reply({ error: "export_in_progress" }, 409);
@@ -44,7 +47,10 @@ export async function queueExports(env, id, requested) {
 
   await save(env, id, "queued", clips);
   try {
-    await env.PODCAST_QUEUE.send({ kind: "highlight_exports", video_id: id, clips });
+    await env.PODCAST_QUEUE.send({
+      kind: "highlight_exports", video_id: id,
+      clips: exportQueueClips(clips),
+    });
     return reply({ video_id: id, status: "queued", clips }, 202);
   } catch (error) {
     console.error("Unable to queue private highlight exports", id, String(error));
@@ -55,14 +61,19 @@ export async function queueExports(env, id, requested) {
 
 export async function processExportJob(env, id, requested) {
   if (!validId(id)) throw Error("invalid_export_id");
-  const analysis = await getJson(env.SERMONS_BUCKET, resultKey(id));
-  const clips = resolveApprovedExports(analysis?.highlights, requested);
+  let clips = [];
   try {
+    const analysis = await getJson(env.SERMONS_BUCKET, resultKey(id));
+    // Old messages may already contain the AI title attached by
+    // resolveApprovedExports(). Remove display-only metadata, but still
+    // validate every time against the authoritative AI transcript result.
+    const clean = exportQueueClips(requested);
+    clips = resolveApprovedExports(analysis?.highlights, clean);
     await save(env, id, "processing", clips);
     const response = await getContainer(env.PODCAST_CONTAINER, PROCESSOR_CONTAINER_ID)
       .fetch(new Request("http://container/highlights/export", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ video_id: id, clips }),
+        body: JSON.stringify({ video_id: id, clips: clean }),
       }));
     if (!response.ok) throw Error("export_container_failed");
     for (const clip of clips) {
@@ -71,6 +82,8 @@ export async function processExportJob(env, id, requested) {
     }
     await save(env, id, "ready", clips);
   } catch (error) {
+    // Validation failures must also leave a retryable "failed" status.
+    // Previously a throw outside the try left the job stuck at "queued".
     console.error("Approved highlight export failed", id, String(error));
     await save(env, id, "failed", clips, "export_failed");
     throw error;
