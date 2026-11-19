@@ -41,10 +41,10 @@ or unauthenticated REST endpoint is added.
    WordPress option**, along with reviewer ID and UTC update timestamp.
    Selections reload when staff reopen the sermon.
 
-**Approve** is an internal editorial marker only. None of these controls
-publishes, exports, captions, reframes, uploads to social media, or modifies
-the original R2 sermon/podcast. The actual final, precisely trimmed export
-belongs to a later PR.
+**Approve** is an internal editorial marker only and does not automatically
+publish or export. The separate, manually initiated **Export approved clips**
+action creates precisely trimmed private MP4s. Nothing publishes to social media,
+Spreaker, or the website without a separate staff action.
 
 ## Security and architecture
 
@@ -67,9 +67,9 @@ belongs to a later PR.
   each edge must stay within ±5 seconds; clips must remain 15–120 seconds.
   The backend revalidates on Save/Approve/Reject rather than trusting
   JavaScript sliders. Padded previews remain unpublished private assets.
-- The dashboard action dispatcher accepts only six supported review modes
-  (`sermons`, `analyze`, `status`, `previews`, `preview-status`, `review`).
-  WordPress forwards only four explicitly approved highlights Worker routes.
+- The dashboard action dispatcher accepts eight allowlisted review modes
+  (including the new `export` and `export-status` actions). WordPress
+  forwards only explicit authorized highlights Worker routes.
   The podcast
   `/jobs`, Spreaker draft/publish, livestream and public sermon APIs
   remain untouched.
@@ -99,8 +99,8 @@ php scripts/test-sermon-highlights-review.php
 node --check assets/js/sermon-highlights-review.js
 ```
 
-All application behavior remains a manual pilot until production validation;
-there is no automatic share/export pipeline.
+All application behavior remains manual until production validation.
+The final export action makes downloadable MP4s, **not** automatic publication.
 
 ## Configuration-check troubleshooting
 
@@ -170,3 +170,61 @@ existing nonce, staff role and HMAC checks.
 This change does not touch the established MP4 upload, podcast queue,
 Cloudflare Worker, Spreaker or sermon source files. Re-test using the
 already-analyzed November 15 sermon; there is no need to re-upload it.
+
+## Approved Highlights: final MP4 downloads
+
+After reviewing actual MP4 previews and saving adjusted start/end times:
+
+1. Click **Approve** on the clips you want to export. **Save changes** alone
+   creates a draft; rejected and draft suggestions are never exported.
+2. The **Approved Clips** panel near the top of the Sermon Highlights page
+   counts approved suggestions and offers **Export approved clips**.
+3. This explicit action reads the exact persisted trim times on the **WordPress
+   server**, checks staff permissions/nonce, and sends only approved ranges in
+   a signed Worker request. The Worker independently compares each range to
+   the immutable AI result, enforcing each edge within ±5 seconds, 15–120
+   second clips and at most five unique clips. No browser-supplied timestamps
+   can override the saved reviews.
+4. The existing Queue/FFmpeg Container downloads the original sermon MP4
+   once for the batch, renders accurate H.264/AAC final clips with **no padded
+   video handles**, and writes private, immutable R2 objects under
+   `sermon-highlights/exports/<video-id>/<number>-<start-cs>-<end-cs>.mp4`.
+   Review previews under `sermon-highlights/previews/` are unaffected.
+5. The panel polls export progress independently of previews. Once ready,
+   **Download MP4** appears for every approved clip. Download URLs are
+   HMAC-signed, scoped to that single export, expire in ten minutes, and
+   use `Content-Disposition: attachment`. Use **Refresh download links**
+   for new short-lived URLs; the MP4s are retained privately in R2.
+6. Changing a review to **Rejected** or **Saved**, or changing an approved
+   range, hides any old export links. Re-run the manual export for the current
+   approval set. Existing private R2 objects are not automatically deleted
+   in this PR; lifecycle cleanup can be considered separately.
+
+**Privacy:** There is no public archive, public R2 bucket, social-media
+posting, sharing webhook, or automatic Spreaker/YouTube/Facebook publishing.
+Only authorized staff can initiate export and fetch download URLs. A bearer
+download URL may be opened by its possessor until it expires, so do not share
+the private links publicly. Download the MP4 and upload/share it wherever staff
+choose after final review.
+
+**Scope:** No AI re-analysis is needed for sermons with existing results;
+no source MP4 modifications; no podcast, livestream, or Spreaker changes.
+This uses the existing Cloudflare Container and adds billable FFmpeg compute
+for each manually requested export batch.
+
+### Export live verification
+
+1. Deploy the Cloudflare Worker and Container from this PR, then update
+   Surfside Tools WordPress plugin.
+2. Open an already analyzed sermon. Confirm **Approved Clips** initially shows
+   the number of approved reviews.
+3. Approve one clip and leave another as **Saved**; only the approved one
+   should be included in the export.
+4. Click **Export approved clips** and wait for `ready`, then download
+   the MP4 and confirm the player starts and ends at the saved timestamps.
+5. Refresh the page and use **Refresh download links**. The same exported
+   private MP4 should be available without re-rendering.
+6. Reject the previously approved clip; confirm the old download link
+   disappears and the existing WordPress review decision persists.
+7. Verify no other weekly MP4/podcast workflow changes and no public
+   R2 objects were created.
