@@ -260,3 +260,89 @@ After PR #525 is merged and the Cloudflare Worker is deployed:
 **No WordPress plugin redeploy is required for this server-side fix unless
 the site needs the updated stalled-job help text.** The normal sermon/podcast,
 Spreaker publishing, and original R2 MP4 flows are untouched.
+
+## PR #526 — Automatic weekly preparation and faster final export
+
+### Normal weekly workflow
+
+The successful **production** podcast Queue job now schedules private AI
+analysis **automatically** after the podcast MP3 has been stored. This runs
+in the **existing background Cloudflare Queue** and is deliberately best-effort
+so AI errors cannot block the podcast or Spreaker publication. The process
+reuses the sermon-only MP3 sidecar when available; historical records still
+use the existing one-time sidecar backfill.
+
+When the AI result is ready, a subsequent Queue job **automatically renders
+up to five private MP4 previews** with 5-second editable handles on either
+side of each selected clip. Both phases use the existing Queue with
+single-consumer concurrency and private R2 storage, so there are no concurrent
+FFmpeg Container requests fighting for the same instance. Staff can simply
+open **Messages & Media → Sermon Highlights** later and review the ready videos.
+
+The pipeline does **not** automatically approve, export, publicly share, or
+post anything. Existing saved review decisions and previous exports persist.
+Test-mode podcast jobs **do not** schedule AI/highlight analysis, preventing
+unexpected charges from regular audio test runs.
+
+### Manual preparation and retries
+
+The existing **Analyze / Prepare now** button remains available. It calls
+the signed `/highlights/jobs` Worker endpoint, now an idempotent preparation
+orchestrator:
+
+- No analysis result: queue AI analysis. Its Queue success queues padded clips.
+- Existing AI result and missing/failed previews: queue only the previews,
+  reusing the saved transcription and AI recommendations.
+- Existing AI result and ready matching previews: return ready **without**
+  re-transcribing or re-rendering any video.
+- In-flight matching jobs: return existing status, not a duplicate job.
+
+The old **Generate video previews** action remains as a manual fallback.
+Only known, verified sermon video IDs from the staff interface are accepted.
+No Cloudflare secrets are exposed to the browser.
+
+### Optimized exact-clip export
+
+Final approved video export now preferentially uses the already generated
+**short padded preview MP4s as FFmpeg inputs**, cutting with time offsets
+relative to each preview, rather than downloading and transcoding the full
+sermon MP4 again.
+
+The Worker reads the stored private preview-job manifest and checks:
+matching number, preview start at/before approved start, preview end
+at/after approved end, valid bounded time fields and R2 object existence.
+The Container derives the R2 key using the verified timestamps; no arbitrary
+URL, path or public bucket access is possible. It downloads only each short
+matching preview MP4, re-encodes the exact approved cut, then writes a
+private immutable final export. **If a valid matching preview is absent,
+that clip falls back to the original sermon MP4**, preserving compatibility
+for older or manually generated results. A batch with all matching previews
+does not download the source sermon at all.
+
+The final output is H.264/AAC MP4, using the original source-time timestamps
+for final filenames. Exact trims still require manual approval. All podcast
+MP3, source video, Spreaker and public site routes remain unchanged.
+
+### Deployment and acceptance
+
+1. Merge PR #526 after the podcast FFmpeg tests and WordPress plugin build pass.
+2. Deploy the **Cloudflare Worker and Container** from the merged commit.
+   Deploy the updated Surfside Tools plugin to show the revised dashboard
+   descriptions. No new credentials, database tables or Worker bindings.
+3. For **existing** November 15 or older test sermons: use
+   **Analyze / Prepare now** if necessary. If the analysis and previews are
+   ready, this must return quickly without a second AI run.
+4. Test on the **next weekly uploaded sermon**. After its normal podcast has
+   successfully processed, visit Sermon Highlights and verify analysis and
+   five video previews are already ready (or show independent progress).
+5. Approve a clip and export it; confirm the final MP4 matches its trimmed
+   video/audio boundaries. Cloudflare logs should indicate how many exports
+   used `previews` versus `original_fallbacks`.
+6. Test the existing production podcast/Spreaker path and a test-mode audio
+   job: the latter must not trigger highlight AI/video processing.
+
+**Cost:** This makes one AI analysis and video preview batch automatic for
+each successful production sermon upload. Jobs are idempotent to prevent
+accidental repeated inference/transcoding. It does consume Cloudflare Workers
+AI, R2 and Container resources; the account's billing and usage limits
+remain applicable. No OpenAI API key is used.
