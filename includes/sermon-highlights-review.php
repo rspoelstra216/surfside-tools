@@ -180,8 +180,8 @@ function surfside_tools_highlights_rest_decision($request) {
     if (!$original) return new WP_Error('highlights_unknown_clip', 'Unknown suggestion.', array('status' => 404));
     $a = round((float) $start, 2);
     $b = round((float) $end, 2);
-    if (abs($a - (float) $original['start']) > 5.011 ||
-        abs($b - (float) $original['end']) > 5.011 || $a < 0 ||
+    if (abs($a - (float) $original['start']) > 5.001 ||
+        abs($b - (float) $original['end']) > 5.001 || $a < 0 ||
         $b > 72 * 60 || $b - $a < 15 || $b - $a > 120) {
         return new WP_Error('highlights_invalid_trim',
             'Start and end must each remain within five seconds of the AI suggestion.',
