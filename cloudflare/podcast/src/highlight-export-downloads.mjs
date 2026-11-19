@@ -5,7 +5,7 @@ const statusKey = (id) => `sermon-highlights/export-jobs/${id}.json`;
 const ttlSeconds = 600;
 const reply = (data, status = 200) =>
   Response.json(data, { status, headers: { "cache-control": "no-store" } });
-const expectedPath = /^\/highlights\/exports\/download\/([A-Za-z0-9_-]{11})\/([1-5]-\d+-\d+\.mp4)$/;
+const expectedPath = /^\/highlights\/exports\/download\/([A-Za-z0-9_-]{11})\/((?:[1-9]|10)-\d+-\d+\.mp4)$/;
 
 async function signature(secret, data) {
   if (typeof secret !== "string" || secret.length < 32)
@@ -18,7 +18,7 @@ async function signature(secret, data) {
 }
 const signingInput = (key, exp) => `surfside-approved-export\n${exp}\n${key}`;
 async function makeLink(request, env, key) {
-  const match = key.match(/^sermon-highlights\/exports\/([A-Za-z0-9_-]{11})\/([1-5]-\d+-\d+\.mp4)$/);
+  const match = key.match(/^sermon-highlights\/exports\/([A-Za-z0-9_-]{11})\/((?:[1-9]|10)-\d+-\d+\.mp4)$/);
   if (!match) throw Error("invalid_export_key");
   const exp = Math.floor(Date.now() / 1000) + ttlSeconds;
   const sig = await signature(env.SURFSIDE_PODCAST_SHARED_SECRET, signingInput(key, exp));
@@ -69,7 +69,7 @@ export async function serveExportDownload(request, env) {
     "cache-control": "private, no-store",
     "referrer-policy": "no-referrer",
     "x-content-type-options": "nosniff",
-    "content-disposition": `attachment; filename="surfside-sermon-${match[1]}-highlight-${match[2][0]}.mp4"`,
+    "content-disposition": `attachment; filename="surfside-sermon-${match[1]}-highlight-${match[2].split("-")[0]}.mp4"`,
   });
   if (range === false) {
     headers.set("content-range", `bytes */${head.size}`);
