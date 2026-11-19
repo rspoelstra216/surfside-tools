@@ -7,6 +7,8 @@ import { validDraftMetadata, spreakerConfigured, canRetryKnownRedirectFailure, c
 import { enqueueHighlights, highlightStatus, processHighlights } from "./highlights.mjs";
 import { enqueueClips, processClipJob } from "./highlight-clips.mjs";
 import { statusClips, servePreview } from "./highlight-clip-preview.mjs";
+import { queueExports, processExportJob } from "./highlight-export-jobs.mjs";
+import { statusExports, serveExportDownload } from "./highlight-export-downloads.mjs";
 
 const reply = (data, status = 200) => Response.json(data, {
   status,
@@ -32,7 +34,7 @@ export class PodcastContainer extends Container {
 
 // Only the processor can read sermon MP4 and the two fixed bumper files.
 // No R2 credentials enter the container. Writes are limited to podcast audio,
- // temporary ASR chunks, or unpublished highlight MP4 previews.
+ // temporary ASR chunks, or private highlight previews/final exports.
 PodcastContainer.outboundByHost = {
   "storage.internal": async (request, env) => {
     const pathname = new URL(request.url).pathname;
@@ -54,8 +56,11 @@ async function incoming(request, env) {
   const route = new URL(request.url).pathname;
   if (route.startsWith("/highlights/clips/view/"))
     return servePreview(request, env);
+  if (route.startsWith("/highlights/exports/download/"))
+    return serveExportDownload(request, env);
   if (!["/jobs", "/status", "/retry-test-spreaker", "/recover-spreaker", "/highlights/jobs", "/highlights/status",
-        "/highlights/clips/jobs", "/highlights/clips/status"].includes(route) || request.method !== "POST") {
+        "/highlights/clips/jobs", "/highlights/clips/status",
+        "/highlights/exports/jobs", "/highlights/exports/status"].includes(route) || request.method !== "POST") {
     return reply({ error: "not_found" }, 404);
   }
   if (!await verifiedRequest(request, env.SURFSIDE_PODCAST_SHARED_SECRET)) {
@@ -88,6 +93,14 @@ async function incoming(request, env) {
     return route.endsWith("/jobs")
       ? enqueueClips(env, id, data.clips)
       : statusClips(request, env, id);
+  }
+  if (route === "/highlights/exports/status" || route === "/highlights/exports/jobs") {
+    if (Object.keys(data).some((field) =>
+      !["video_id", ...(route.endsWith("/jobs") ? ["clips"] : [])].includes(field)))
+      return reply({ error: "unexpected_export_option" }, 400);
+    return route.endsWith("/jobs")
+      ? queueExports(env, id, data.clips)
+      : statusExports(request, env, id);
   }
   if (route === "/recover-spreaker") {
     // Admin-confirmed production backfill for a weekly upload missing
@@ -190,6 +203,17 @@ export default {
       const id = message.body?.video_id;
       if (!validId(id)) { message.ack(); continue; }
       const test = message.body?.test === true;
+      if (message.body?.kind === "highlight_exports") {
+        if (test) { message.ack(); continue; }
+        try {
+          await processExportJob(env, id, message.body.clips);
+          message.ack();
+        } catch (error) {
+          console.error("Private highlight export Queue job failed", id, String(error));
+          message.retry({ delaySeconds: 120 });
+        }
+        continue;
+      }
       if (message.body?.kind === "highlight_clips") {
         if (test) { message.ack(); continue; }
         try {
