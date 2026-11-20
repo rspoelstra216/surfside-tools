@@ -182,6 +182,83 @@ def tracked_centers(video, anchor_pct):
     }
 
 
+def median_filtered_centers(centers):
+    """Reject single-sample face swaps without blunting genuine walks."""
+    if len(centers) < 3:
+        return list(centers)
+    result = list(centers)
+    for i in range(1, len(centers) - 1):
+        result[i] = statistics.median(centers[i - 1:i + 2])
+    return result
+
+
+def camera_positions(track, fps=OUTPUT_FPS):
+    """A virtual camera operator: center-safe-zone, eased 24fps pans.
+
+    Face detection remains 2Hz, but the *crop* must move on every 24fps
+    output frame. Frequent FFmpeg 8Hz jumps previously produced ~70px
+    discontinuities in the portrait output.
+    """
+    if fps != OUTPUT_FPS or track["duration"] <= 0:
+        raise ValueError("invalid_camera_fps")
+    width, height = track["width"], track["height"]
+    crop_w = max(2, int(height * 9 / 16) // 2 * 2)
+    if crop_w >= width:
+        raise RuntimeError("vertical_source_already_narrow")
+    times = track["times"]
+    centers = median_filtered_centers(track["centers"])
+    if len(times) != len(centers) or not times:
+        raise ValueError("invalid_tracking_samples")
+    if any(not math.isfinite(v) for v in times + centers):
+        raise ValueError("invalid_tracking_samples")
+
+    dt = 1.0 / fps
+    safe_radius = crop_w * 0.14  # Subject can move inside central 28%.
+    max_x = width - crop_w
+    position = max(0.0, min(max_x, track["initial_center"] - crop_w / 2))
+    velocity = 0.0
+    index = 0
+    positions = []
+    count = max(1, int(math.ceil(track["duration"] * fps)))
+    for i in range(count):
+        t = i * dt
+        while index + 1 < len(times) and times[index + 1] <= t:
+            index += 1
+        right = min(index + 1, len(times) - 1)
+        span = times[right] - times[index]
+        mix = 0 if span <= 0 else max(0.0, min(1.0, (t - times[index]) / span))
+        # The detected target moves between 2Hz samples. Interpolate it,
+        # then move the virtual camera continuously with limited velocity
+        # and acceleration rather than issuing discrete pan jumps.
+        subject = centers[index] * (1 - mix) + centers[right] * mix
+        offset = subject - (position + crop_w / 2)
+        if abs(offset) <= safe_radius:
+            desired = position
+        else:
+            desired = max(0.0, min(max_x,
+                subject - math.copysign(safe_radius * 0.72, offset) -
+                crop_w / 2))
+
+        # Allow a moderately faster *smooth* catch-up only when the speaker
+        # is approaching the edge. In normal motion the frame is deliberately
+        # more stable than the face detections.
+        urgent = abs(offset) > crop_w * 0.4
+        max_speed = width * (0.20 if urgent else 0.12)
+        max_accel = width * (0.58 if urgent else 0.34)
+        requested_velocity = max(-max_speed, min(max_speed,
+            (desired - position) * (1.7 if urgent else 1.1)))
+        acceleration = max(-max_accel * dt, min(max_accel * dt,
+            requested_velocity - velocity))
+        velocity += acceleration
+        position = max(0.0, min(max_x, position + velocity * dt))
+        if position <= 0 and velocity < 0 or position >= max_x and velocity > 0:
+            velocity = 0.0
+        # Two-pixel alignment preserves YUV420 chroma sampling at source.
+        x = max(0, min(max_x, int(round(position / 2)) * 2))
+        positions.append(x)
+    return crop_w, positions
+
+
 def make_commands(track, output):
     width, height = track["width"], track["height"]
     crop_w = max(2, int(height * 9 / 16) // 2 * 2)
@@ -190,43 +267,26 @@ def make_commands(track, output):
     confidence = (track["face_samples"] +
                   0.5 * track.get("feature_samples", 0)) / max(1, track["samples"])
     mode = "tracked" if confidence >= 0.12 else "wide_fallback"
-    # Avoid a static crop if the visual detector cannot reliably identify
-    # the moving subject. Full-width-in-portrait is the safe beta fallback.
     if mode == "wide_fallback":
         with open(output, "w", encoding="utf-8") as handle:
-            handle.write("0.000 crop@subject x 0;\n")
+            handle.write("0.000 crop@subject x 0;\\n")
         return {"mode": mode, "confidence": round(confidence, 3),
                 "face_samples": track["face_samples"],
                 "samples": track["samples"], "crop_width": crop_w, "height": height}
 
-    step = 1 / 8
-    maximum_x = width - crop_w
-    previous = max(0, min(maximum_x, track["initial_center"] - crop_w / 2))
-    # Smooth at 8 updates/sec, constrain panning velocity to avoid whip-pans.
-    max_delta = width * 0.28 * step
+    crop_w, positions = camera_positions(track)
+    # FFmpeg applies the commands after its fps=24 filter. Using one command
+    # per frame produces a continuous pan instead of the former 8Hz steps.
     with open(output, "w", encoding="utf-8") as handle:
-        index = 0
-        count = int(math.ceil(track["duration"] / step))
-        for i in range(count):
-            seconds = i * step
-            while index + 1 < len(track["times"]) and (
-                    track["times"][index + 1] <= seconds):
-                index += 1
-            j = min(index + 1, len(track["times"]) - 1)
-            left_t, right_t = track["times"][index], track["times"][j]
-            ratio = 0 if right_t <= left_t else max(
-                0, min(1, (seconds - left_t) / (right_t - left_t)))
-            # Smoothstep reduces abrupt changes when detections return.
-            ratio = ratio * ratio * (3 - 2 * ratio)
-            center = (track["centers"][index] * (1 - ratio) +
-                      track["centers"][j] * ratio)
-            wanted = max(0, min(maximum_x, center - crop_w / 2))
-            previous += max(-max_delta, min(max_delta, wanted - previous))
-            x = max(0, min(maximum_x, int(round(previous / 2)) * 2))
-            handle.write(f"{seconds:.3f} crop@subject x {x};\n")
+        for frame, x in enumerate(positions):
+            handle.write(f"{frame / OUTPUT_FPS:.6f} crop@subject x {x};\\n")
+    max_jump = max((abs(a - b) for a, b in zip(positions, positions[1:])),
+                   default=0)
     return {"mode": mode, "confidence": round(confidence, 3),
             "face_samples": track["face_samples"],
-            "samples": track["samples"], "crop_width": crop_w, "height": height}
+            "samples": track["samples"], "crop_width": crop_w,
+            "height": height, "camera_fps": OUTPUT_FPS,
+            "max_source_pan_px_per_frame": max_jump}
 
 
 def scale_to_source(track, render_width, render_height):
