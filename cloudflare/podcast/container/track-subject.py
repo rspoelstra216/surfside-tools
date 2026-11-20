@@ -213,7 +213,10 @@ def camera_positions(track, fps=OUTPUT_FPS):
         raise ValueError("invalid_tracking_samples")
 
     dt = 1.0 / fps
-    safe_radius = crop_w * 0.14  # Subject can move inside central 28%.
+    # Retain a quiet center zone while standing still, but frame sustained
+    # walking a little tighter. The prior 28% zone and slow edge catch-up
+    # let the pastor drift toward a side in the real November 15 clip.
+    safe_radius = crop_w * 0.12  # Subject can move inside central 24%.
     max_x = width - crop_w
     position = max(0.0, min(max_x, track["initial_center"] - crop_w / 2))
     velocity = 0.0
@@ -236,15 +239,15 @@ def camera_positions(track, fps=OUTPUT_FPS):
             desired = position
         else:
             desired = max(0.0, min(max_x,
-                subject - math.copysign(safe_radius * 0.72, offset) -
+                subject - math.copysign(safe_radius * 0.60, offset) -
                 crop_w / 2))
 
-        # Allow a moderately faster *smooth* catch-up only when the speaker
-        # is approaching the edge. In normal motion the frame is deliberately
-        # more stable than the face detections.
-        urgent = abs(offset) > crop_w * 0.4
-        max_speed = width * (0.20 if urgent else 0.12)
-        max_accel = width * (0.58 if urgent else 0.34)
+        # Begin catch-up sooner, *without* returning to coarse 8Hz jumps.
+        # Every update still has bounded per-frame velocity/acceleration.
+        # Stationary gesture jitter inside the safe zone remains ignored.
+        urgent = abs(offset) > crop_w * 0.33
+        max_speed = width * (0.22 if urgent else 0.14)
+        max_accel = width * (0.65 if urgent else 0.40)
         requested_velocity = max(-max_speed, min(max_speed,
             (desired - position) * (1.7 if urgent else 1.1)))
         acceleration = max(-max_accel * dt, min(max_accel * dt,

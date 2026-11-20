@@ -82,6 +82,32 @@ class TrackerTests(unittest.TestCase):
             "camera pan must use many small steps, not 8Hz teleports")
         self.assertTrue(all(x % 2 == 0 for x in positions))
 
+    def test_camera_catches_up_earlier_during_sustained_stage_walk(self):
+        # Representative 1920x1080 horizontal movement: hold center for
+        # two seconds, then walk to stage right and stop. The old camera
+        # allowed >230 source-pixel offsets near t=3.5; follow-up should
+        # stay closer while retaining smooth individual frame steps.
+        track = {
+            "width": 1920, "height": 1080, "duration": 8,
+            "times": [i * 0.5 for i in range(16)],
+            "centers": [960, 960, 960, 960, 1020, 1100, 1240, 1370,
+                        1490, 1520, 1500, 1500, 1500, 1500, 1500, 1500],
+            "initial_center": 960,
+            "face_samples": 16, "feature_samples": 0, "samples": 16,
+        }
+        crop_width, positions = module.camera_positions(track)
+        self.assertEqual(len(positions), 192)
+        self.assertLessEqual(max(abs(b - a) for a, b in
+                                 zip(positions, positions[1:])), 18)
+        target_at_3_5s = track["centers"][7]
+        camera_center = positions[84] + crop_width / 2
+        self.assertLess(abs(target_at_3_5s - camera_center), 205,
+                        "walking pastor should not linger near frame edge")
+        # Once the pastor stops, settle toward the middle, with no
+        # substantial hunting or momentum-driven overshoot.
+        settled = positions[round(6.5 * 24):]
+        self.assertLessEqual(max(settled) - min(settled), 6)
+
     def test_single_false_face_does_not_throw_camera_across_stage(self):
         track = {
             "width": 1920, "height": 1080, "duration": 3,
