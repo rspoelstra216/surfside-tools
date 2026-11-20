@@ -14,6 +14,7 @@ import { verticalStatus, serveVertical } from "../src/highlight-vertical-downloa
 import {
   verticalFilter, verticalRenderArgs,
   verticalTrackingProxyArgs, parseVerticalDimensions,
+  VERTICAL_RENDER_VERSION as CONTAINER_RENDER_VERSION,
 } from "../container/vertical-video.mjs";
 
 const id = "AjkoDHgFdeA", clip = { number: 4, start: 952.78, end: 1010.52 };
@@ -22,6 +23,8 @@ const exists = spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status ===
 
 test("smoother tracking must regenerate legacy READY exports, but reuse current ones", () => {
   assert.equal(VERTICAL_RENDER_VERSION, "smooth-pan-v3");
+  assert.equal(CONTAINER_RENDER_VERSION, VERTICAL_RENDER_VERSION,
+    "Worker and Container must agree on the live renderer protocol");
   assert.equal(verifiedContainerRender({ render_version: VERTICAL_RENDER_VERSION }), true);
   assert.equal(verifiedContainerRender({ render_version: "smooth-pan-v2" }), false);
   assert.equal(verifiedContainerRender({ render_version: "unknown" }), false);
