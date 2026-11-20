@@ -210,6 +210,15 @@ check(is_string($highlight_js) &&
     str_contains($highlight_js, 'Array.isArray(cfg.sermons)') &&
     !str_contains($highlight_js, 'json("sermons")'),
     'Startup uses server-rendered sermons and does not make a second inconsistent config POST');
+check(str_contains($highlight_js, 'current.searchParams.get("view")') &&
+    str_contains($highlight_js, '.includes(current.pathname)') &&
+    str_contains($highlight_js, 'redirect: "manual"') &&
+    str_contains($highlight_js, 'response.type === "opaqueredirect"') &&
+    str_contains($highlight_js, 'credentials: "same-origin"') &&
+    str_contains($highlight_js, 'application/json') &&
+    !str_contains($highlight_js, 'redirect: "error"'),
+    'Staff actions use canonical same-origin dashboard path, never follow login redirects, and distinguish failures');
+
 check(str_contains($highlight_js, 'syncVerticalFocusFrame') &&
     str_contains($highlight_js, 'getBoundingClientRect()') &&
     str_contains($highlight_js, 'verticalAnchor.value = String(percent)') &&

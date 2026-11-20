@@ -544,3 +544,57 @@ container job failed** / **Experimental vertical pipeline failed** Cloudflare
 Observability event corresponding to the request. On the frontend,
 the focus picker is mobile-friendly and no longer asks staff to guess
 horizontal percentages without showing the source frame.
+
+## PR #530 — Surfside staff action redirects and session-expiry guidance
+
+The first phone trial of the tap-to-select portrait focus successfully displayed
+the source MP4 and a marker on the pastor. On **Generate vertical test**, however,
+the browser displayed `The staff authorization request failed. Check your login
+and connection.`
+
+Code review confirms this message came from the browser `fetch()` **throwing**
+before an HTTP/JSON response was available. It is **not** evidence of a failed
+FFmpeg/Cloudflare portrait render. The existing AJAX transport used
+`redirect: "error"`, which throws on any redirect (including an expired
+staff login or canonical host/path rewrite) and incorrectly labels it
+an authorization/network problem.
+
+WordPress and Firebase custom Surfside staff sessions are currently created
+with a **maximum one-hour expiration**. Because the browser page and private
+preview video can remain visible after a session expires, staff may still see
+the form even though subsequent POSTs cannot authorize.
+
+This fix:
+
+- Posts to the **actual canonical staff page currently displayed in the browser**
+  when it is `/dashboard/site-management/?view=sermon-highlights`, instead of
+  relying on a possibly redirected WordPress configured URL.
+- Uses `redirect: "manual"` (never follows a potential login/cross-origin
+  redirect carrying request parameters). An opaque or HTTP redirect now shows
+  a clear **reload/sign in again** instruction.
+- Distinguishes transport/network failures from login redirects, invalid
+  JSON/HTML login pages, structured WordPress 403/nonce-expiry errors, and
+  Worker queue failures.
+- Keeps the existing session lifetime, nonce, staff permissions, HTTPS,
+  `same-origin` credentials, and server-side HMAC. No new public API,
+  secrets, background network polling, or session bypass.
+- Does **not** retry or duplicate portrait Queue requests automatically:
+  only a fresh staff click can enqueue work.
+- Adds a guard in the staff browser tests that canonical page POSTs never
+  follow redirects and still preserve same-origin credentials.
+
+### How to verify
+
+1. Deploy the updated Surfside Tools plugin. This change is frontend-only
+   and requires **no Cloudflare redeployment**.
+2. On a previously open Sermon Highlights page, refresh and sign in again
+   if asked. The approved clips and private R2 previews remain saved.
+3. Choose Nov 15 #4, select the pastor on the paused frame, and click
+   **Generate vertical test** once.
+4. If the request redirects, the UI should explicitly request a reload/sign-in
+   instead of the generic authorization/network error. If an actual Worker
+   render fails, the prior PR's safe **source / extraction / tracking /
+   encoding / upload** stage is displayed separately after the job completes.
+5. Preserve any Cloudflare Observability errors if generation proceeds but
+   fails, because this PR improves the request transport, not the unverified
+   FFmpeg/OpenCV failure from the earlier screenshot.
