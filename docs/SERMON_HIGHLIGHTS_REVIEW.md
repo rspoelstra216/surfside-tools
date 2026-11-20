@@ -703,3 +703,45 @@ portrait/audio tests and HMAC security checks continue to run.
    an abrupt camera layout change or an incorrect face lock can still
    confuse the detector. Those need separate shot/subject reacquisition
    logic if encountered in the next real examples.
+
+
+## Next portrait validation — verified Container provenance
+
+The November 15 clip #2 was regenerated after PR #532 and was still jerky.
+Frame-by-frame review of the uploaded 35-second 720×1280, 24fps file found
+background discontinuities of approximately 81 and 86 output pixels at
+0.125s and 0.250s; other abrupt jumps continue on the old 8Hz interval.
+This strongly suggests the Container is still using the older 8Hz crop,
+though the original full-width footage and live deployment have not been
+inspected. Simply producing 24fps MP4 or labeling a job `smooth-pan-v2`
+does **not** confirm which version of the Container rendered it.
+
+The Worker previously set `render_version` on a queued job **before** the
+Container was called. The Container returned no version, yet the Worker marked
+the video READY, and matching `smooth-pan-v2` jobs could reuse that stale MP4.
+
+The narrow correction introduces **smooth-pan-v3** as a provenance-verified
+revision (the actual 24fps smoothing algorithm from #532 is unchanged):
+
+- The Container explicitly returns its own `render_version` after it renders
+  and uploads the MP4. The Worker checks it against the required version
+  **before** accepting a READY result. Missing/outdated versions mark the job
+  FAILED with `container_version_mismatch`, without a costly Queue retry;
+  staff get an actionable Cloudflare deployment message.
+- `smooth-pan-v3` forces a new staff-requested rendering instead of accepting
+  an old READY `smooth-pan-v2` cache entry for the same approved clip and
+  anchor. No deletion of old outputs or changes to approved edits are needed.
+- This does not itself deploy Cloudflare or improve face tracking. It prevents
+  a mixed Worker/Container deployment from falsely claiming an old video is
+  new. No changes to podcast generation, sermon analysis, Spreaker or posting.
+
+**Acceptance:** Merge this PR after tests pass. Check Cloudflare's deployment
+for the merged commit, including the **Container image** (GitHub merge alone
+need not update the running Container). For a manual deployment from
+`cloudflare/podcast` with Docker running, use `npm install`, then
+`npx wrangler deploy`; otherwise verify the connected Cloudflare GitHub
+build deployed the new image. In the staff review panel, generate November 15
+clip #2 again. If the Container remains old, it should fail explicitly with
+`container_version_mismatch`; if it returns READY, it has supplied the new
+version proof. Compare visible background movement in the fresh MP4. Do not
+infer playback quality from the version check alone.
