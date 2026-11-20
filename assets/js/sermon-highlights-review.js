@@ -468,7 +468,7 @@
           : state.fallback_reason === "tracking_unavailable"
             ? "Speaker tracking could not complete. A safe wide-shot portrait was created instead; Cloudflare logs record the tracker error."
             : "Face tracking found too few reliable detections. The full wide shot is retained in the phone-format frame.") +
-        (state.render_version !== "smooth-pan-v2"
+        (state.render_version !== "smooth-pan-v3"
           ? " This video uses the older, jerky crop. Click Generate vertical test to replace it with smoother 24fps camera movement."
           : " Smooth 24fps virtual-camera movement enabled.");
       if (state.preview_url) {
@@ -496,6 +496,11 @@
       verticalMessage.textContent = "The previous vertical job stalled in the queue. Click Generate vertical test to retry.";
     } else if (state?.status === "outdated") {
       verticalMessage.textContent = "The approved clip has changed. Generate a new vertical test.";
+    } else if (state?.status === "failed" &&
+               state?.detail === "container_version_mismatch") {
+      verticalMessage.textContent = "Cloudflare is running an older video Container. " +
+        "Deploy the current Worker and Container image before retrying. " +
+        "This video was not accepted as a smooth render.";
     } else if (state?.status === "failed" || state?.status === "incomplete") {
       const stage = {
         source: "downloading the original sermon",
