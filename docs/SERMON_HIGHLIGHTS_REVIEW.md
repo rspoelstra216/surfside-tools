@@ -745,3 +745,41 @@ clip #2 again. If the Container remains old, it should fail explicitly with
 `container_version_mismatch`; if it returns READY, it has supplied the new
 version proof. Compare visible background movement in the fresh MP4. Do not
 infer playback quality from the version check alone.
+
+
+## Portrait tracking follow-up — smoother, closer stage framing
+
+The uploaded 35-second November 15 clip #2 following the verified v3
+Container rollout no longer exhibits the distracting 8Hz crop jumps.
+The pastor still drifts toward the left edge in the opening seconds,
+toward the right around 6–10 seconds, and again around 18–21 seconds.
+This clip is **already substantially smoother**; do not undo the
+per-frame FFmpeg crop, false-detection median filter, or 24fps smoothing.
+
+The next manual experiment makes only a modest follow-controller
+adjustment in `track-subject.py`:
+
+- Reduce the quiet center zone from 28% to 24% of the visible portrait
+  crop width. The camera still stays put during minor gestures.
+- When the pastor leaves that zone, aim slightly nearer the portrait
+  center (60% rather than 72% of the safe-zone radius).
+- Start the bounded speed-up when the offset exceeds 33% rather than 40%
+  of crop width; slightly increase speed/acceleration ceilings for a
+  real stage walk. Every pan remains 24fps, even-pixel aligned and
+  acceleration-limited. The tracking proxy remains 2fps.
+- Increment the **verified Worker + Container** renderer version to
+  `follow-pan-v4`, so generating the same approved clip/anchor again
+  does not return the prior v3 MP4. The staff UI distinguishes revisions.
+
+Tests retain the strict stationary-gesture jitter and single-false-face
+protections and verify closer camera catch-up during a sustained walk
+without discontinuities. This is not identity recognition or a
+shot-change recovery algorithm; footage with scene edits or incorrect
+face acquisition may still need separate work. Source files, trims,
+podcasts, approval gates, and private-only handling are unchanged.
+
+**Acceptance:** After CI passes, deploy both Cloudflare Worker and
+Container (and update the WordPress plugin), then regenerate November 15
+clip #2 once. Compare 0–3s, 6–10s, and 18–21s against the smoother v3
+sample. Keep this change only if the pastor stays more comfortably
+framed **without** adding camera hunting or jitter.
