@@ -11,7 +11,7 @@ import { detectSpeechPauses } from "./pause-detection.mjs";
 import { clipVideoArgs, previewKey, exportKey } from "./highlight-video.mjs";
 import {
   verticalExtractArgs, verticalFilter, verticalRenderArgs,
-  verticalTrackingProxyArgs, parseVerticalDimensions,
+  verticalTrackingProxyArgs, parseVerticalDimensions, VERTICAL_RENDER_VERSION,
 } from "./vertical-video.mjs";
 
 const STORAGE = "http://storage.internal/";
@@ -347,7 +347,8 @@ async function renderVertical(id, clip, anchor) {
     const bytes = await upload(key, output, "video/mp4");
     return { key, mode: tracking.mode, confidence: tracking.confidence,
       face_samples: tracking.face_samples, samples: tracking.samples,
-      fallback_reason: tracking.fallback_reason || null, bytes };
+      fallback_reason: tracking.fallback_reason || null,
+      render_version: VERTICAL_RENDER_VERSION, bytes };
   } catch (error) {
     // Detailed stderr stays in Cloudflare logs. The UI receives only a safe
     // bounded stage code, never internal file paths, command lines or secrets.
