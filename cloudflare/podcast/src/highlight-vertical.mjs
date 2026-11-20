@@ -3,7 +3,7 @@ import { PROCESSOR_CONTAINER_ID, sourceKey, validId } from "./validation.mjs";
 import { resolveApprovedExports, exportJobStalled } from "./highlight-video.mjs";
 import {
   verticalKey, validVerticalClip, sameVerticalJob,
-  currentVerticalRender, VERTICAL_RENDER_VERSION,
+  currentVerticalRender, verifiedContainerRender, VERTICAL_RENDER_VERSION,
 } from "./highlight-vertical-video.mjs";
 
 const jobKey = (id) => `sermon-highlights/vertical-jobs/${id}.json`;
@@ -85,6 +85,10 @@ export async function processVertical(env, id, requestClip, anchor) {
       throw Error("vertical_failed_" + stage);
     }
     const info = await response.json();
+    // A deployed Worker can call an older Container image. Never label its
+    // existing 8Hz MP4 as the smooth renderer or cache it as verified.
+    if (!verifiedContainerRender(info))
+      throw Error("vertical_container_version_mismatch");
     if (!await env.SERMONS_BUCKET.head(verticalKey(id, clip, anchor)))
       throw Error("vertical_output_missing");
     const currentAfter = await getJson(env.SERMONS_BUCKET, jobKey(id));
@@ -100,9 +104,12 @@ export async function processVertical(env, id, requestClip, anchor) {
     const current = await getJson(env.SERMONS_BUCKET, jobKey(id));
     if (clip && sameVerticalJob(current, clip, anchor))
       await save(env, id, "failed", clip, anchor, {
-        detail: /^vertical_failed_(source|extraction|tracking|encoding|upload)$/
-          .test(String(error.message)) ? String(error.message).replace("vertical_failed_", "")
-          : "unknown",
+        detail: String(error.message) === "vertical_container_version_mismatch"
+          ? "container_version_mismatch"
+          : /^vertical_failed_(source|extraction|tracking|encoding|upload)$/
+            .test(String(error.message))
+            ? String(error.message).replace("vertical_failed_", "")
+            : "unknown",
       });
     throw error;
   }
