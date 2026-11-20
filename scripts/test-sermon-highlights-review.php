@@ -187,6 +187,11 @@ check(str_contains($html, 'Sermon Highlights') &&
     str_contains($html, 'Generate video previews') &&
     str_contains($html, 'Nothing publishes automatically'),
     'Staff editor exposes private video review tools');
+check(str_contains($html, 'Tap or click on the pastor') &&
+    str_contains($html, 'surfside-vertical-focus-picker') &&
+    str_contains($html, 'surfside-vertical-focus-marker') &&
+    str_contains($html, 'Fine-tune starting position'),
+    'Visual portrait focus picker includes accessible touch marker and range fallback');
 check(str_contains($GLOBALS['highlight_inline_script'], 'test-nonce') &&
     str_contains($GLOBALS['highlight_inline_script'], 'site-management') &&
     str_contains($GLOBALS['highlight_inline_script'], 'sermon-highlights') &&
@@ -205,6 +210,11 @@ check(is_string($highlight_js) &&
     str_contains($highlight_js, 'Array.isArray(cfg.sermons)') &&
     !str_contains($highlight_js, 'json("sermons")'),
     'Startup uses server-rendered sermons and does not make a second inconsistent config POST');
+check(str_contains($highlight_js, 'syncVerticalFocusFrame') &&
+    str_contains($highlight_js, 'getBoundingClientRect()') &&
+    str_contains($highlight_js, 'verticalAnchor.value = String(percent)') &&
+    str_contains($highlight_js, 'failed while '),
+    'Touch focus uses actual padded-preview image, stays synced with slider and exposes safe failures');
 
 // Exercise the real browser form transport: WordPress's custom staff cookie
 // works on /dashboard, unlike wp_rest cookie nonce authentication.

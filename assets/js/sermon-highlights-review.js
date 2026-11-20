@@ -23,9 +23,14 @@
   const verticalGenerate = root.querySelector("#surfside-vertical-generate");
   const verticalMessage = root.querySelector("#surfside-vertical-message");
   const verticalWrap = root.querySelector("#surfside-vertical-video-wrap");
+  const verticalFocusArea = root.querySelector("#surfside-vertical-focus-area");
+  const verticalFocusVideo = root.querySelector("#surfside-vertical-focus-video");
+  const verticalFocusPicker = root.querySelector("#surfside-vertical-focus-picker");
+  const verticalFocusMarker = root.querySelector("#surfside-vertical-focus-marker");
   let activeId = "", analysis = null, previews = null, exportsState = null, token = 0, timer = null;
   let exportTimer = null, exportBusy = false, busy = false;
   let verticalTimer = null, verticalBusy = false, verticalState = null;
+  let focusPreviewUrl = "", focusPreviewNumber = 0, focusSeek = 0;
 
   const fmt = (seconds) => {
     const s = Math.max(0, Math.round(seconds * 100) / 100);
@@ -304,6 +309,94 @@
     results.append(section);
   }
 
+  const focusLabel = (value) => {
+    const percent = Math.max(0, Math.min(100, Number(value) || 0));
+    if (percent === 50) return "Center";
+    if (percent < 50) return percent + "% from left";
+    return percent + "% from left";
+  };
+  const updateFocusMarker = () => {
+    const percent = Math.max(0, Math.min(100, Number(verticalAnchor?.value) || 0));
+    if (verticalAnchorValue) verticalAnchorValue.textContent = focusLabel(percent);
+    if (verticalFocusMarker) verticalFocusMarker.style.left = percent + "%";
+    if (verticalFocusPicker) verticalFocusPicker.setAttribute("aria-label",
+      "Pastor starting position: " + focusLabel(percent) +
+      ". Tap the video to choose a different position.");
+  };
+
+  function syncVerticalFocusFrame() {
+    if (!verticalFocusArea || !verticalFocusVideo || !verticalSelect) return;
+    const number = Number(verticalSelect.value);
+    const approved = approvedReviews().find((clip) => clip.number === number);
+    const clip = Array.isArray(previews?.clips) ?
+      previews.clips.find((item) => item.number === number &&
+        Number(item.start) <= Number(approved?.start) + 0.02 &&
+        Number(item.end) >= Number(approved?.end) - 0.02 &&
+        item.preview_url) : null;
+    const ready = !!clip && !!approved && analysis?.status === "ready";
+    verticalFocusArea.hidden = !ready;
+    if (!ready) {
+      focusPreviewUrl = ""; focusPreviewNumber = 0;
+      verticalFocusVideo.removeAttribute("src");
+      verticalFocusVideo.load();
+      updateFocusMarker();
+      return;
+    }
+    focusSeek = Math.max(0.1, Number(approved.start) - Number(clip.start));
+    if (clip.preview_url !== focusPreviewUrl || number !== focusPreviewNumber) {
+      focusPreviewUrl = clip.preview_url;
+      focusPreviewNumber = number;
+      verticalFocusVideo.src = clip.preview_url;
+      verticalFocusVideo.load();
+    } else if (verticalFocusVideo.readyState >= 1 &&
+               Math.abs(verticalFocusVideo.currentTime - focusSeek) > 0.1) {
+      verticalFocusVideo.currentTime = focusSeek;
+    }
+    updateFocusMarker();
+  }
+
+  if (verticalFocusVideo) {
+    verticalFocusVideo.addEventListener("loadedmetadata", () => {
+      if (verticalFocusVideo.duration > 0) {
+        verticalFocusVideo.currentTime =
+          Math.min(focusSeek, Math.max(0, verticalFocusVideo.duration - 0.1));
+      }
+    });
+    verticalFocusVideo.addEventListener("seeked", () => verticalFocusVideo.pause());
+    verticalFocusVideo.addEventListener("error", () => {
+      if (verticalMessage && verticalFocusArea && !verticalFocusArea.hidden)
+        verticalMessage.textContent =
+          "Could not load the starting frame. Refresh the private video previews, then try again.";
+    });
+  }
+  if (verticalFocusPicker && verticalAnchor) {
+    verticalFocusPicker.addEventListener("click", (event) => {
+      if (!verticalFocusArea || verticalFocusArea.hidden) return;
+      const bounds = verticalFocusPicker.getBoundingClientRect();
+      if (!bounds.width) return;
+      const percent = Math.round(Math.max(0, Math.min(100,
+        (event.clientX - bounds.left) / bounds.width * 100)));
+      verticalAnchor.value = String(percent);
+      updateFocusMarker();
+      // Mobile browsers can keep a muted, seeked video black until the first
+      // user gesture. Use this tap to unlock the paused frame if necessary.
+      if (verticalFocusVideo?.paused && verticalFocusVideo.readyState >= 1) {
+        verticalFocusVideo.play().then(() => {
+          verticalFocusVideo.pause();
+          verticalFocusVideo.currentTime = focusSeek;
+        }).catch(() => {});
+      }
+    });
+    verticalFocusPicker.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+      event.preventDefault();
+      const change = event.key === "ArrowLeft" ? -5 : 5;
+      verticalAnchor.value = String(Math.max(0, Math.min(100,
+        Number(verticalAnchor.value) + change)));
+      updateFocusMarker();
+    });
+  }
+
   function renderVerticalPanel() {
     if (!verticalPanel || !verticalSelect || !verticalMessage || !verticalWrap) return;
     verticalPanel.hidden = analysis?.status !== "ready";
@@ -324,7 +417,7 @@
         approved.find((c) => c.number === 4) || approved[0];
       if (preferred) verticalSelect.value = String(preferred.number);
     }
-    if (verticalAnchorValue) verticalAnchorValue.textContent = verticalAnchor.value + "%";
+    syncVerticalFocusFrame();
     verticalWrap.replaceChildren();
     if (!approved.length) {
       verticalMessage.textContent = "Approve a clip above to test moving-speaker tracking.";
@@ -364,10 +457,18 @@
     } else if (state?.status === "outdated") {
       verticalMessage.textContent = "The approved clip has changed. Generate a new vertical test.";
     } else if (state?.status === "failed" || state?.status === "incomplete") {
-      verticalMessage.textContent = "Vertical generation failed. The regular clips are unaffected; inspect Cloudflare logs and retry.";
+      const stage = {
+        source: "downloading the original sermon",
+        extraction: "extracting the approved video",
+        tracking: "detecting and following the speaker",
+        encoding: "rendering the vertical MP4",
+        upload: "saving the video to R2",
+      }[state?.detail] || "processing the vertical video";
+      verticalMessage.textContent = "Vertical generation failed while " + stage +
+        ". Your original clips are safe. See Cloudflare logs for the detailed error before retrying.";
     } else {
-      verticalMessage.textContent = "Beta: track movement using an offline face detector. " +
-        "Set where the pastor starts, then generate a private portrait MP4.";
+      verticalMessage.textContent = "Tap the pastor in the still above to choose his starting position, " +
+        "then generate the private phone-format video. If the still is missing, refresh the preview links.";
     }
     controls();
   }
@@ -457,6 +558,7 @@
       if (currentToken !== token) return;
       previews = data;
       renderResults();
+      renderVerticalPanel();
       if (data.status === "queued" || data.status === "processing") {
         note("Generating MP4 previews from the original sermon. No publishing occurs.");
         poll(() => refreshPreviews(currentToken));
@@ -562,10 +664,9 @@
       exportBusy = false; controls();
     }
   });
-  if (verticalAnchor) verticalAnchor.addEventListener("input", () => {
-    if (verticalAnchorValue) verticalAnchorValue.textContent = verticalAnchor.value + "%";
-  });
+  if (verticalAnchor) verticalAnchor.addEventListener("input", updateFocusMarker);
   if (verticalSelect) verticalSelect.addEventListener("change", () => {
+    syncVerticalFocusFrame();
     controls();
   });
   if (verticalGenerate) verticalGenerate.addEventListener("click", async () => {

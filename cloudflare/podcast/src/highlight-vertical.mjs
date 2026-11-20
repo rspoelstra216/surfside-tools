@@ -73,7 +73,12 @@ export async function processVertical(env, id, requestClip, anchor) {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ video_id: id, clip, anchor }),
       }));
-    if (!response.ok) throw Error("vertical_container_failed");
+    if (!response.ok) {
+      const failure = await response.json().catch(() => null);
+      const stage = ["source", "extraction", "tracking", "encoding", "upload"]
+        .includes(failure?.stage) ? failure.stage : "unknown";
+      throw Error("vertical_failed_" + stage);
+    }
     const info = await response.json();
     if (!await env.SERMONS_BUCKET.head(verticalKey(id, clip, anchor)))
       throw Error("vertical_output_missing");
@@ -88,7 +93,9 @@ export async function processVertical(env, id, requestClip, anchor) {
     const current = await getJson(env.SERMONS_BUCKET, jobKey(id));
     if (clip && sameVerticalJob(current, clip, anchor))
       await save(env, id, "failed", clip, anchor, {
-        detail: "vertical_render_failed",
+        detail: /^vertical_failed_(source|extraction|tracking|encoding|upload)$/
+          .test(String(error.message)) ? String(error.message).replace("vertical_failed_", "")
+          : "unknown",
       });
     throw error;
   }

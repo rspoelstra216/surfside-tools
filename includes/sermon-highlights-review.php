@@ -548,13 +548,24 @@ function surfside_tools_staff_sermon_highlights_shortcode() {
       </section>
       <section class="surfside-highlight-export-panel" id="surfside-highlight-vertical-panel" hidden>
         <h2>Vertical Phone Clip <small>(experimental)</small></h2>
-        <p>Track the pastor in a 9:16 video for phones. Choose an approved clip and approximately where he starts in the wide shot. This is a private test and will not publish anything.</p>
+        <p>Try a private 9:16 clip with automatic speaker tracking. Select an approved highlight, then tap the pastor in the original wide video frame to set where tracking should begin. Nothing publishes automatically.</p>
         <div class="surfside-vertical-controls">
           <label for="surfside-vertical-number">Approved clip</label>
           <select id="surfside-vertical-number" aria-label="Approved clip for vertical test"></select>
-          <label for="surfside-vertical-anchor">Pastor starts (left ↔ right)</label>
-          <input id="surfside-vertical-anchor" type="range" min="0" max="100" step="5" value="50" />
-          <output id="surfside-vertical-anchor-value" for="surfside-vertical-anchor">50%</output>
+        </div>
+        <div id="surfside-vertical-focus-area" class="surfside-vertical-focus-area" hidden>
+          <p class="surfside-vertical-focus-help">Tap or click on the pastor in this frame to mark his starting position.</p>
+          <div class="surfside-vertical-focus-frame">
+            <video id="surfside-vertical-focus-video" muted playsinline preload="metadata" aria-label="Frame from the approved sermon clip"></video>
+            <button type="button" id="surfside-vertical-focus-picker" aria-label="Choose the pastor's horizontal position in the video frame">
+              <span id="surfside-vertical-focus-marker" class="surfside-vertical-focus-marker" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+        <div class="surfside-vertical-controls">
+          <label for="surfside-vertical-anchor">Fine-tune starting position</label>
+          <input id="surfside-vertical-anchor" type="range" min="0" max="100" step="1" value="50" />
+          <output id="surfside-vertical-anchor-value" for="surfside-vertical-anchor">Center</output>
           <button type="button" id="surfside-vertical-generate" disabled>Generate vertical test</button>
         </div>
         <p id="surfside-vertical-message" role="status" aria-live="polite"></p>
