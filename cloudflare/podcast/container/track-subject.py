@@ -228,6 +228,25 @@ def make_commands(track, output):
             "samples": track["samples"], "crop_width": crop_w, "height": height}
 
 
+def scale_to_source(track, render_width, render_height):
+    """Map proxy-face x coordinates back to the full-quality source frame."""
+    if (render_width < 320 or render_width > 8192 or
+            render_height < 180 or render_height > 4320):
+        raise ValueError("invalid_render_dimensions")
+    old_ratio = track["width"] / track["height"]
+    new_ratio = render_width / render_height
+    if abs(old_ratio - new_ratio) / new_ratio > 0.04:
+        raise ValueError("tracking_proxy_aspect_mismatch")
+    scale_x = render_width / track["width"]
+    return {
+        **track,
+        "centers": [x * scale_x for x in track["centers"]],
+        "initial_center": track["initial_center"] * scale_x,
+        "width": render_width,
+        "height": render_height,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("source")
@@ -240,21 +259,10 @@ def main():
         raise ValueError("invalid_subject_anchor")
     tracked = tracked_centers(args.source, args.anchor)
     if args.render_width is not None or args.render_height is not None:
-        if (args.render_width is None or args.render_height is None or
-                args.render_width < 320 or args.render_width > 8192 or
-                args.render_height < 180 or args.render_height > 4320):
+        if args.render_width is None or args.render_height is None:
             raise ValueError("invalid_render_dimensions")
-        old_ratio = tracked["width"] / tracked["height"]
-        new_ratio = args.render_width / args.render_height
-        if abs(old_ratio - new_ratio) / new_ratio > 0.04:
-            raise ValueError("tracking_proxy_aspect_mismatch")
-        # The tracking proxy is a smaller 16:9 image. Convert every tracked
-        # horizontal coordinate back to the approved source MP4 resolution.
-        scale_x = args.render_width / tracked["width"]
-        tracked["centers"] = [x * scale_x for x in tracked["centers"]]
-        tracked["initial_center"] *= scale_x
-        tracked["width"] = args.render_width
-        tracked["height"] = args.render_height
+        tracked = scale_to_source(
+            tracked, args.render_width, args.render_height)
     result = make_commands(tracked, args.commands)
     print(json.dumps(result, separators=(",", ":")))
 
