@@ -1,4 +1,4 @@
-export const VERTICAL_RENDER_VERSION = "smooth-pan-v3";
+export const VERTICAL_RENDER_VERSION = "follow-pan-v4";
 
 // Offline MP4 portrait composition. Sendcmd operates on FFmpeg video frames
 // and follows smoothed per-frame crop coordinates from track-subject.py.
