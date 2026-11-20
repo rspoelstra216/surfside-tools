@@ -1,4 +1,4 @@
-export const VERTICAL_RENDER_VERSION = "smooth-pan-v3";
+export const VERTICAL_RENDER_VERSION = "follow-pan-v4";
 
 // Optional private vertical pilot; does not alter existing preview/export keys.
 export function validVerticalClip(clip, anchor) {
