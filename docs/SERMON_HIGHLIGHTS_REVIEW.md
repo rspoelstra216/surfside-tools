@@ -598,3 +598,54 @@ This fix:
 5. Preserve any Cloudflare Observability errors if generation proceeds but
    fails, because this PR improves the request transport, not the unverified
    FFmpeg/OpenCV failure from the earlier screenshot.
+
+## PR #531 — Recover from portrait speaker-tracking failures
+
+The first live November 15 clip #4 vertical export reached the **tracking**
+stage and reported **"Vertical generation failed while detecting and following
+the speaker"**. The source MP4 download and approved segment extraction
+completed. The dashboard's safe stage code does not expose the actual Python
+error or prove the tracker exceeded its timeout; that exact reason remains in
+Cloudflare's private Container observability log.
+
+This change addresses two specific weaknesses in the original beta:
+
+1. **Stop repeatedly seeking full-resolution H.264 video during tracking.**
+   FFmpeg creates a temporary 480px-wide, **2-frame-per-second** private
+   local tracking proxy from the already-extracted short clip. Python reads
+   its frames sequentially, tracks face/feature positions, and scales the
+   resulting horizontal positions back to the **original source dimensions**
+   before FFmpeg applies smoothed movement. The 720×1280 final portrait is
+   **still encoded from the original-quality approved segment**, never from
+   the low-resolution tracking proxy. No frames leave the Container.
+2. **Graceful and explicit safe fallback.** If OpenCV/Python cannot track
+   within a 120-second bounded step, the job logs the private Python/FFmpeg
+   failure and renders the full landscape scene inside a blurred-background
+   phone video, rather than losing the whole export. The dashboard clearly
+   reports `tracking_unavailable` versus `insufficient_face_detections`.
+   It never claims to follow the pastor if automatic detection failed.
+   The Queue can still retry if the final FFmpeg encode/upload fails.
+
+Other safeguards: clip approval, exact cut boundaries, staff nonce,
+signed private download URLs, and WordPress-only manual opt-in behavior
+are unchanged. No additional Workers AI model, identity recognition,
+external CV API, or social-media posting.
+
+### Retest
+
+1. Merge and deploy **Cloudflare Worker and Container**, then update the
+   Surfside Tools plugin for the new fallback message.
+2. Reopen November 15, approved clip #4. Tap the pastor in the frame.
+3. Click **Generate vertical test** once. Previously failed jobs are
+   retryable. The proxy stage now has bounded work, and should progress
+   to **Ready** if the final FFmpeg encoding and R2 upload succeed.
+4. Inspect the full 9:16 result. If it says **tracked**, evaluate whether
+   the pastor stays in frame while walking. If it says **wide fallback**,
+   confirm no speaker was cropped off, then inspect the matching Cloudflare
+   `Private vertical tracking unavailable` log for the exact detector error.
+5. Do not switch this on for every weekly sermon until we have watched
+   multiple real clips and measured Container compute and tracking quality.
+
+Validation includes actual ffmpeg 2fps proxy production, bounded original
+coordinate mapping, offline OpenCV synthetic-video tests, and existing
+portrait H.264/AAC + signed/download/privacy regression checks.
