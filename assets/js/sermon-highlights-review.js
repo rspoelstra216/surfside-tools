@@ -60,10 +60,29 @@
     stopPolling();
     timer = setTimeout(callback, wait);
   };
+  const staffEndpoint = () => {
+    // Use the already-loaded, browser-canonical same-origin staff URL for
+    // POSTs, not a possibly different www/URL-scheme/site-settings URL.
+    // The WordPress dashboard handler checks the exact page and view.
+    const current = new URL(window.location.href);
+    const configured = new URL(cfg.endpoint, current);
+    if (current.origin === configured.origin &&
+        /^\\/dashboard\\/site-management\\/?$/.test(current.pathname) &&
+        current.searchParams.get("view") === "sermon-highlights") {
+      current.hash = "";
+      return current.toString();
+    }
+    if (configured.origin !== current.origin) {
+      throw Error("The dashboard action URL differs from this site's address. Reload the Surfside staff page.", {
+        cause: "staff-origin-mismatch",
+      });
+    }
+    return configured.toString();
+  };
   const json = async (mode, body = null) => {
-    // The Surfside Tools staff session is scoped to /dashboard/, not to
-    // generic WordPress REST cookie authentication. Like Weekly Media,
-    // authorize via an own-nonce POST to the current signed-in staff page.
+    // Surfside staff sessions are scoped to the dashboard and expire.
+    // Do not follow redirects with a signed, authenticated POST: it could
+    // silently become a login-page GET or cross an origin boundary.
     const fields = new URLSearchParams({
       action: "surfside_highlights_browser_review",
       highlight_nonce: cfg.nonce,
@@ -74,22 +93,38 @@
         if (value !== undefined && value !== null) fields.set(key, String(value));
       }
     }
+    const target = staffEndpoint();
     let response;
     try {
-      response = await fetch(cfg.endpoint, {
+      response = await fetch(target, {
         method: "POST",
         credentials: "same-origin",
-        redirect: "error",
+        redirect: "manual",
         cache: "no-store",
-        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "Accept": "application/json" },
         body: fields.toString(),
       });
     } catch {
-      throw Error("The staff authorization request failed. Check your login and connection.");
+      throw Error("Could not reach the staff dashboard. Check your connection, then reload the page and retry.");
     }
-    const payload = await response.json().catch(() => ({}));
+    if (response.type === "opaqueredirect" ||
+        (response.status >= 300 && response.status < 400)) {
+      throw Error("Your staff session may have expired or the request was redirected. Reload the page, sign in again if prompted, and retry.");
+    }
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.toLowerCase().includes("application/json")) {
+      throw Error("The staff dashboard returned a page instead of an action response. Reload the page and sign in again if needed.");
+    }
+    const payload = await response.json().catch(() => null);
+    if (!payload || typeof payload !== "object") {
+      throw Error("The staff dashboard sent an unreadable response. Reload the page before retrying.");
+    }
     if (!response.ok || payload.success !== true) {
-      throw Error(payload.data?.message || "Staff authorization failed (HTTP " + response.status + ").");
+      throw Error(payload.data?.message ||
+        (response.status === 401 || response.status === 403
+          ? "The staff session is no longer authorized. Reload and sign in again."
+          : "The staff request failed (HTTP " + response.status + ")."));
     }
     return payload.data;
   };
