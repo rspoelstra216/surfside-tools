@@ -52,3 +52,25 @@ export function verticalExtractArgs(source, output, start, end) {
     "-movflags", "+faststart", "-avoid_negative_ts", "make_zero", output,
   ];
 }
+
+/** Downsample only the TRACKING input; final MP4 still uses the original-quality approved cut. */
+export function verticalTrackingProxyArgs(source, proxy) {
+  return [
+    "-hide_banner", "-nostdin", "-loglevel", "error", "-y",
+    "-i", source, "-map", "0:v:0",
+    "-vf", "fps=2,scale=480:-2:flags=fast_bilinear",
+    "-an", "-sn", "-dn", "-c:v", "libx264",
+    "-preset", "ultrafast", "-crf", "32", "-pix_fmt", "yuv420p",
+    "-movflags", "+faststart", proxy,
+  ];
+}
+
+/** Validate video dimensions measured by ffprobe before scaling tracking into the source frame. */
+export function parseVerticalDimensions(text) {
+  const match = /^(\d{3,5})x(\d{3,5})$/.exec(String(text).trim());
+  if (!match) throw Error("invalid_vertical_dimensions");
+  const width = Number(match[1]), height = Number(match[2]);
+  if (width < 320 || width > 8192 || height < 180 || height > 4320)
+    throw Error("invalid_vertical_dimensions");
+  return { width, height };
+}

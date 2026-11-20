@@ -9,7 +9,10 @@ import { pipeline } from "node:stream/promises";
 import { sermonAudioKey, podcastAudioArgs, extractSermonAudioArgs, chunkSermonAudioArgs, highlightChunkResponse } from "./sermon-audio.mjs";
 import { detectSpeechPauses } from "./pause-detection.mjs";
 import { clipVideoArgs, previewKey, exportKey } from "./highlight-video.mjs";
-import { verticalExtractArgs, verticalFilter, verticalRenderArgs } from "./vertical-video.mjs";
+import {
+  verticalExtractArgs, verticalFilter, verticalRenderArgs,
+  verticalTrackingProxyArgs, parseVerticalDimensions,
+} from "./vertical-video.mjs";
 
 const STORAGE = "http://storage.internal/";
 const idPattern = /^[A-Za-z0-9_-]{11}$/;
@@ -102,8 +105,11 @@ async function produce(id, test = false) {
 function runCommand(command, args, timeoutMs = 11 * 60 * 1000) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { stdio: ["ignore", "pipe", "pipe"] });
-    let stdout = "", stderr = "", settled = false;
-    const timer = setTimeout(() => child.kill("SIGKILL"), timeoutMs);
+    let stdout = "", stderr = "", settled = false, timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGKILL");
+    }, timeoutMs);
     child.stdout.on("data", (data) => { stdout = (stdout + data.toString()).slice(-2048); });
     child.stderr.on("data", (data) => { stderr = (stderr + data.toString()).slice(-2048); });
     child.once("error", (error) => {
@@ -113,7 +119,8 @@ function runCommand(command, args, timeoutMs = 11 * 60 * 1000) {
       if (settled) return;
       settled = true; clearTimeout(timer);
       if (code === 0) resolve(stdout);
-      else reject(Error(command + "_failed: " + stderr.slice(-160)));
+      else reject(Error(command + (timedOut ? "_timed_out" : "_failed") +
+        ": exit=" + code + " " + stderr.slice(-500)));
     });
   });
 }
@@ -295,13 +302,42 @@ async function renderVertical(id, clip, anchor) {
     // Full source is no longer needed after the accurate short extraction.
     await rm(original, { force: true });
     stage = "tracking";
-    const outputText = await runCommand("/usr/bin/python3",
-      ["/app/track-subject.py", short, commands, String(anchor)], 5 * 60 * 1000);
-    let tracking;
-    try { tracking = JSON.parse(outputText.trim()); }
-    catch { throw Error("vertical_tracking_response_invalid"); }
-    if (!["tracked", "wide_fallback"].includes(tracking.mode))
-      throw Error("vertical_tracking_mode_invalid");
+    // Track a tiny, 2-fps copy of the approved segment. Never send video
+    // frames elsewhere or sacrifice quality of the final original-source
+    // render. A failed detector is not a failed MP4: explicitly return a
+    // full-width vertical layout instead of retrying costly analysis.
+    const proxy = path.join(dir, "tracking-proxy.mp4");
+    let tracking = {
+      mode: "wide_fallback", confidence: 0,
+      face_samples: 0, samples: 0,
+      fallback_reason: "tracking_unavailable",
+    };
+    try {
+      const sourceSize = parseVerticalDimensions(await runCommand("ffprobe", [
+        "-v", "error", "-select_streams", "v:0",
+        "-show_entries", "stream=width,height",
+        "-of", "csv=p=0:s=x", short,
+      ], 30_000));
+      await runCommand("ffmpeg",
+        verticalTrackingProxyArgs(short, proxy), 120_000);
+      const outputText = await runCommand("/usr/bin/python3", [
+        "/app/track-subject.py", proxy, commands, String(anchor),
+        String(sourceSize.width), String(sourceSize.height),
+      ], 120_000);
+      tracking = JSON.parse(outputText.trim());
+      if (!["tracked", "wide_fallback"].includes(tracking.mode))
+        throw Error("vertical_tracking_mode_invalid");
+      if (tracking.mode === "wide_fallback")
+        tracking.fallback_reason = "insufficient_face_detections";
+    } catch (error) {
+      console.error("Private vertical tracking unavailable: switching to full-width portrait fallback",
+        id, String(error));
+      tracking = {
+        mode: "wide_fallback", confidence: 0,
+        face_samples: 0, samples: 0,
+        fallback_reason: "tracking_unavailable",
+      };
+    }
     const filter = verticalFilter(tracking.mode, commands,
       tracking.crop_width, tracking.height);
     stage = "encoding";
@@ -310,7 +346,8 @@ async function renderVertical(id, clip, anchor) {
     stage = "upload";
     const bytes = await upload(key, output, "video/mp4");
     return { key, mode: tracking.mode, confidence: tracking.confidence,
-      face_samples: tracking.face_samples, samples: tracking.samples, bytes };
+      face_samples: tracking.face_samples, samples: tracking.samples,
+      fallback_reason: tracking.fallback_reason || null, bytes };
   } catch (error) {
     // Detailed stderr stays in Cloudflare logs. The UI receives only a safe
     // bounded stage code, never internal file paths, command lines or secrets.

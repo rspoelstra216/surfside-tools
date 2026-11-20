@@ -87,6 +87,8 @@ export async function processVertical(env, id, requestClip, anchor) {
       await save(env, id, "ready", clip, anchor, {
         mode: info.mode, confidence: info.confidence,
         face_samples: info.face_samples, samples: info.samples,
+        fallback_reason: ["tracking_unavailable", "insufficient_face_detections"]
+          .includes(info.fallback_reason) ? info.fallback_reason : null,
       });
   } catch (error) {
     console.error("Experimental portrait conversion failed", id, String(error));
