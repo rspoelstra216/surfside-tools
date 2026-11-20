@@ -279,7 +279,11 @@ def make_commands(track, output):
     # per frame produces a continuous pan instead of the former 8Hz steps.
     with open(output, "w", encoding="utf-8") as handle:
         for frame, x in enumerate(positions):
-            handle.write(f"{frame / OUTPUT_FPS:.6f} crop@subject x {x};\n")
+            # Schedule just ahead of each frame timestamp: FFmpeg timestamps
+            # are rational 1/24 seconds, and rounding .041667 upward could
+            # delay an update to the following frame and combine two pans.
+            at = max(0.0, frame / OUTPUT_FPS - 0.001)
+            handle.write(f"{at:.6f} crop@subject x {x};\n")
     max_jump = max((abs(a - b) for a, b in zip(positions, positions[1:])),
                    default=0)
     return {"mode": mode, "confidence": round(confidence, 3),
