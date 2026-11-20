@@ -1,3 +1,5 @@
+export const VERTICAL_RENDER_VERSION = "smooth-pan-v2";
+
 // Optional private vertical pilot; does not alter existing preview/export keys.
 export function validVerticalClip(clip, anchor) {
   return clip && typeof clip === "object" && !Array.isArray(clip) &&
@@ -21,4 +23,10 @@ export function sameVerticalJob(job, clip, anchor) {
     job?.clip?.start === clip.start &&
     job?.clip?.end === clip.end &&
     job?.anchor === anchor;
+}
+
+/** Render-version-aware cache: improvements must not return the old jerky MP4. */
+export function currentVerticalRender(job, clip, anchor) {
+  return sameVerticalJob(job, clip, anchor) &&
+    job.render_version === VERTICAL_RENDER_VERSION;
 }
