@@ -89,7 +89,11 @@ def tracked_centers(video, anchor_pct):
     try:
         for i in range(attempts):
             seconds = i / SAMPLE_RATE
-            cap.set(cv2.CAP_PROP_POS_MSEC, seconds * 1000)
+            # A 2-fps proxy needs only sequential reads. Repeated timestamp
+            # seeks previously forced FFmpeg to decode from nearby keyframes
+            # for each sample, doing far more work on the full-resolution MP4.
+            if not 1.95 <= fps <= 2.05:
+                cap.set(cv2.CAP_PROP_POS_MSEC, seconds * 1000)
             okay, frame = cap.read()
             if not okay:
                 break
@@ -229,10 +233,28 @@ def main():
     parser.add_argument("source")
     parser.add_argument("commands")
     parser.add_argument("anchor", type=int)
+    parser.add_argument("render_width", nargs="?", type=int)
+    parser.add_argument("render_height", nargs="?", type=int)
     args = parser.parse_args()
     if not 0 <= args.anchor <= 100:
         raise ValueError("invalid_subject_anchor")
     tracked = tracked_centers(args.source, args.anchor)
+    if args.render_width is not None or args.render_height is not None:
+        if (args.render_width is None or args.render_height is None or
+                args.render_width < 320 or args.render_width > 8192 or
+                args.render_height < 180 or args.render_height > 4320):
+            raise ValueError("invalid_render_dimensions")
+        old_ratio = tracked["width"] / tracked["height"]
+        new_ratio = args.render_width / args.render_height
+        if abs(old_ratio - new_ratio) / new_ratio > 0.04:
+            raise ValueError("tracking_proxy_aspect_mismatch")
+        # The tracking proxy is a smaller 16:9 image. Convert every tracked
+        # horizontal coordinate back to the approved source MP4 resolution.
+        scale_x = args.render_width / tracked["width"]
+        tracked["centers"] = [x * scale_x for x in tracked["centers"]]
+        tracked["initial_center"] *= scale_x
+        tracked["width"] = args.render_width
+        tracked["height"] = args.render_height
     result = make_commands(tracked, args.commands)
     print(json.dumps(result, separators=(",", ":")))
 
