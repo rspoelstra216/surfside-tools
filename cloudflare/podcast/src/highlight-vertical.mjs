@@ -111,6 +111,9 @@ export async function processVertical(env, id, requestClip, anchor) {
             ? String(error.message).replace("vertical_failed_", "")
             : "unknown",
       });
+    // A stale Container image is a deployment mismatch, not a transient
+    // encoding failure. Do not retry expensive uploads on the Queue.
+    if (error.message === "vertical_container_version_mismatch") return;
     throw error;
   }
 }
