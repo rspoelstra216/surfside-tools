@@ -4,7 +4,10 @@ import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { verticalKey, validVerticalClip, sameVerticalJob }
+import {
+  verticalKey, validVerticalClip, sameVerticalJob,
+  currentVerticalRender, VERTICAL_RENDER_VERSION,
+}
   from "../src/highlight-vertical-video.mjs";
 import { validStorageAccess } from "../src/validation.mjs";
 import { verticalStatus, serveVertical } from "../src/highlight-vertical-downloads.mjs";
@@ -16,6 +19,16 @@ import {
 const id = "AjkoDHgFdeA", clip = { number: 4, start: 952.78, end: 1010.52 };
 const key = verticalKey(id, clip, 50);
 const exists = spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status === 0;
+
+test("smoother tracking must regenerate legacy READY exports, but reuse current ones", () => {
+  assert.equal(VERTICAL_RENDER_VERSION, "smooth-pan-v2");
+  const legacy = { clip, anchor: 50, status: "ready" };
+  assert.equal(currentVerticalRender(legacy, clip, 50), false);
+  const current = { ...legacy, render_version: VERTICAL_RENDER_VERSION };
+  assert.equal(currentVerticalRender(current, clip, 50), true);
+  assert.equal(currentVerticalRender(current, clip, 45), false);
+  assert.equal(currentVerticalRender(current, { ...clip, start: clip.start - 0.5 }, 50), false);
+});
 
 test("private portrait paths and approved clip limits are strict", () => {
   assert.equal(validVerticalClip(clip, 50), true);
