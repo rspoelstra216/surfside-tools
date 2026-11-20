@@ -6,7 +6,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import {
   verticalKey, validVerticalClip, sameVerticalJob,
-  currentVerticalRender, VERTICAL_RENDER_VERSION,
+  currentVerticalRender, verifiedContainerRender, VERTICAL_RENDER_VERSION,
 }
   from "../src/highlight-vertical-video.mjs";
 import { validStorageAccess } from "../src/validation.mjs";
@@ -21,8 +21,14 @@ const key = verticalKey(id, clip, 50);
 const exists = spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status === 0;
 
 test("smoother tracking must regenerate legacy READY exports, but reuse current ones", () => {
-  assert.equal(VERTICAL_RENDER_VERSION, "smooth-pan-v2");
-  const legacy = { clip, anchor: 50, status: "ready" };
+  assert.equal(VERTICAL_RENDER_VERSION, "smooth-pan-v3");
+  assert.equal(verifiedContainerRender({ render_version: VERTICAL_RENDER_VERSION }), true);
+  assert.equal(verifiedContainerRender({ render_version: "smooth-pan-v2" }), false);
+  assert.equal(verifiedContainerRender({ render_version: "unknown" }), false);
+  assert.equal(verifiedContainerRender({}), false);
+  assert.equal(verifiedContainerRender(null), false);
+  const legacy = { clip, anchor: 50, status: "ready",
+    render_version: "smooth-pan-v2" };
   assert.equal(currentVerticalRender(legacy, clip, 50), false);
   const current = { ...legacy, render_version: VERTICAL_RENDER_VERSION };
   assert.equal(currentVerticalRender(current, clip, 50), true);
