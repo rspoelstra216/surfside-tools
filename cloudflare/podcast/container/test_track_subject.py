@@ -54,7 +54,13 @@ class TrackerTests(unittest.TestCase):
             result = module.make_commands(track, str(commands))
             lines = commands.read_text().strip().splitlines()
             self.assertEqual(len(lines), 120)
-            self.assertIn("0.041667 crop@subject x", lines[1])
+            self.assertIn("0.040667 crop@subject x", lines[1])
+            # Command times precede the corresponding exact 24fps PTS,
+            # avoiding frame-late jumps from decimal timestamp rounding.
+            for i, line in enumerate(lines[1:], 1):
+                at = float(line.split()[0])
+                self.assertGreater(at, (i - 1) / 24)
+                self.assertLess(at, i / 24)
             self.assertEqual(result["camera_fps"], 24)
             self.assertEqual(result["max_source_pan_px_per_frame"], 0)
 
