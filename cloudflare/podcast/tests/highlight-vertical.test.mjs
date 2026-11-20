@@ -8,7 +8,10 @@ import { verticalKey, validVerticalClip, sameVerticalJob }
   from "../src/highlight-vertical-video.mjs";
 import { validStorageAccess } from "../src/validation.mjs";
 import { verticalStatus, serveVertical } from "../src/highlight-vertical-downloads.mjs";
-import { verticalFilter, verticalRenderArgs } from "../container/vertical-video.mjs";
+import {
+  verticalFilter, verticalRenderArgs,
+  verticalTrackingProxyArgs, parseVerticalDimensions,
+} from "../container/vertical-video.mjs";
 
 const id = "AjkoDHgFdeA", clip = { number: 4, start: 952.78, end: 1010.52 };
 const key = verticalKey(id, clip, 50);
@@ -129,4 +132,34 @@ test("actual FFmpeg renders moving 9:16 crop and safe wide fallback with audio",
         assert.equal(video?.height, 1280);
       }
     } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+test("tracking proxy is short 2fps 480px video, never the final output",
+  { skip: !exists }, () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "surfside-tracker-proxy-"));
+    try {
+      assert.deepEqual(parseVerticalDimensions("1920x1080\n"),
+        { width: 1920, height: 1080 });
+      assert.throws(() => parseVerticalDimensions("0x0"));
+      const full = path.join(dir, "source.mp4");
+      const proxy = path.join(dir, "tracking.mp4");
+      ffmpeg(["-hide_banner", "-loglevel", "error", "-y",
+        "-f", "lavfi", "-i", "testsrc2=size=640x360:rate=24:duration=4",
+        "-c:v", "libx264", "-preset", "ultrafast", full]);
+      ffmpeg(verticalTrackingProxyArgs(full, proxy));
+      const probe = spawnSync("ffprobe", [
+        "-v", "error", "-select_streams", "v:0",
+        "-show_entries", "stream=width,height,r_frame_rate,nb_frames",
+        "-of", "json", proxy,
+      ], { encoding: "utf8" });
+      assert.equal(probe.status, 0);
+      const info = JSON.parse(probe.stdout).streams[0];
+      assert.equal(info.width, 480);
+      assert.equal(info.height, 270);
+      assert.equal(info.r_frame_rate, "2/1");
+      assert.equal(Number(info.nb_frames), 8);
+      assert.ok(statSync(proxy).size > 1024);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
