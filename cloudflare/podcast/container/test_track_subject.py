@@ -51,6 +51,43 @@ class TrackerTests(unittest.TestCase):
             self.assertEqual(result["confidence"], 0)
             self.assertEqual(result["height"], 720)
 
+    def test_tracking_coordinates_scale_to_full_quality_source(self):
+        tiny = {
+            "width": 480, "height": 270, "duration": 2,
+            "times": [0, 0.5, 1, 1.5],
+            "centers": [120, 170, 240, 360],
+            "initial_center": 120,
+            "face_samples": 3, "feature_samples": 0, "samples": 4,
+        }
+        mapped = module.scale_to_source(tiny, 1920, 1080)
+        self.assertEqual(mapped["centers"], [480, 680, 960, 1440])
+        self.assertEqual(mapped["initial_center"], 480)
+        self.assertEqual(mapped["height"], 1080)
+        self.assertEqual(tiny["width"], 480)
+        with self.assertRaisesRegex(ValueError, "tracking_proxy_aspect_mismatch"):
+            module.scale_to_source(tiny, 1920, 800)
+
+    @unittest.skipUnless(shutil.which("ffmpeg"), "FFmpeg not installed")
+    def test_sequential_proxy_frames_and_full_source_mapping(self):
+        with tempfile.TemporaryDirectory() as folder:
+            file = pathlib.Path(folder) / "proxy.mp4"
+            subprocess.run([
+                "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                "-f", "lavfi", "-i",
+                "color=c=gray:size=480x270:rate=2:duration=4",
+                "-c:v", "libx264", "-preset", "ultrafast", str(file),
+            ], check=True, timeout=30)
+            result = module.tracked_centers(str(file), 53)
+            self.assertEqual(result["samples"], 8)
+            self.assertEqual(result["face_samples"], 0)
+            mapped = module.scale_to_source(result, 1920, 1080)
+            self.assertAlmostEqual(mapped["initial_center"], 1017.6)
+            with tempfile.TemporaryDirectory() as out:
+                info = module.make_commands(
+                    mapped, str(pathlib.Path(out) / "commands.txt"))
+                self.assertEqual(info["mode"], "wide_fallback")
+                self.assertEqual(info["height"], 1080)
+
     @unittest.skipUnless(shutil.which("ffmpeg"), "FFmpeg not installed")
     def test_real_video_without_face_enters_safe_fallback(self):
         with tempfile.TemporaryDirectory() as folder:
