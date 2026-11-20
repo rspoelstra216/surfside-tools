@@ -465,7 +465,9 @@
         " (" + fmt(clip.start) + "–" + fmt(clip.end) + "), starting focus " +
         state.anchor + "%. " + (state.mode === "tracked"
           ? "Moving face tracking used. Check that it follows the pastor throughout."
-          : "Face tracking was unreliable. The whole wide shot is retained inside the vertical frame.");
+          : state.fallback_reason === "tracking_unavailable"
+            ? "Speaker tracking could not complete. A safe wide-shot portrait was created instead; Cloudflare logs record the tracker error."
+            : "Face tracking found too few reliable detections. The full wide shot is retained in the phone-format frame.");
       if (state.preview_url) {
         const player = el("video", "surfside-vertical-video");
         player.controls = true;
