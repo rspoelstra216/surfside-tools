@@ -61,7 +61,8 @@ def tracked_centers(video, anchor_pct):
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     if not all(math.isfinite(x) for x in (fps, total, width, height)) or (
-            fps < 8 or width < 320 or height < 180 or total <= 0):
+            (fps < 1.95 or (fps > 2.05 and fps < 8)) or
+            width < 320 or height < 180 or total <= 0):
         cap.release()
         raise RuntimeError("vertical_source_invalid")
     duration = total / fps
