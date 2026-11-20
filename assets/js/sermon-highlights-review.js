@@ -67,7 +67,8 @@
     const current = new URL(window.location.href);
     const configured = new URL(cfg.endpoint, current);
     if (current.origin === configured.origin &&
-        /^\\/dashboard\\/site-management\\/?$/.test(current.pathname) &&
+        ["/dashboard/site-management/", "/dashboard/site-management"]
+          .includes(current.pathname) &&
         current.searchParams.get("view") === "sermon-highlights") {
       current.hash = "";
       return current.toString();
