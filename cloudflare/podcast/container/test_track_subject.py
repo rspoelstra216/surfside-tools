@@ -37,6 +37,64 @@ class TrackerTests(unittest.TestCase):
             self.assertTrue(all(abs(a - b) < 80 for a, b in zip(x, x[1:])))
             self.assertTrue(all(line.endswith(";") for line in lines))
 
+    def test_smooth_camera_is_stable_when_pastor_stays_near_center(self):
+        track = {
+            "width": 1920, "height": 1080, "duration": 5,
+            "times": [i * 0.5 for i in range(10)],
+            "centers": [960, 974, 940, 971, 956, 983, 960, 948, 972, 959],
+            "initial_center": 960,
+            "face_samples": 10, "feature_samples": 0, "samples": 10,
+        }
+        crop_width, points = module.camera_positions(track)
+        self.assertEqual(crop_width, 606)  # nearest even 9:16 crop
+        self.assertEqual(len(points), 120)  # one update per 24fps frame
+        self.assertEqual(len(set(points)), 1, "minor face jitter must not pan the camera")
+        with tempfile.TemporaryDirectory() as folder:
+            commands = pathlib.Path(folder) / "commands.txt"
+            result = module.make_commands(track, str(commands))
+            lines = commands.read_text().strip().splitlines()
+            self.assertEqual(len(lines), 120)
+            self.assertIn("0.040667 crop@subject x", lines[1])
+            # Command times precede the corresponding exact 24fps PTS,
+            # avoiding frame-late jumps from decimal timestamp rounding.
+            for i, line in enumerate(lines[1:], 1):
+                at = float(line.split()[0])
+                self.assertGreater(at, (i - 1) / 24)
+                self.assertLess(at, i / 24)
+            self.assertEqual(result["camera_fps"], 24)
+            self.assertEqual(result["max_source_pan_px_per_frame"], 0)
+
+    def test_smooth_camera_tracks_real_walk_without_8hz_jump_cuts(self):
+        track = {
+            "width": 1920, "height": 1080, "duration": 7,
+            "times": [i * 0.5 for i in range(14)],
+            "centers": [660, 690, 750, 870, 980, 1120, 1290, 1470,
+                        1480, 1510, 1390, 1250, 1130, 1070],
+            "initial_center": 660,
+            "face_samples": 14, "feature_samples": 0, "samples": 14,
+        }
+        width, positions = module.camera_positions(track)
+        self.assertEqual(len(positions), 168)
+        self.assertGreater(max(positions) - min(positions), 200)
+        jumps = [abs(a - b) for a, b in zip(positions, positions[1:])]
+        self.assertLessEqual(max(jumps), 18, "each camera step must be bounded")
+        self.assertGreater(sum(1 for x in jumps if x), 35,
+            "camera pan must use many small steps, not 8Hz teleports")
+        self.assertTrue(all(x % 2 == 0 for x in positions))
+
+    def test_single_false_face_does_not_throw_camera_across_stage(self):
+        track = {
+            "width": 1920, "height": 1080, "duration": 3,
+            "times": [0, 0.5, 1, 1.5, 2, 2.5],
+            "centers": [960, 962, 965, 1650, 963, 961],
+            "initial_center": 960,
+            "face_samples": 6, "feature_samples": 0, "samples": 6,
+        }
+        self.assertEqual(module.median_filtered_centers(track["centers"])[3], 965)
+        _, positions = module.camera_positions(track)
+        self.assertLessEqual(max(positions) - min(positions), 6,
+            "single false detection must not cause a whip-pan")
+
     def test_face_detection_failure_uses_safe_wide_background(self):
         track = {
             "width": 1280, "height": 720, "duration": 2,

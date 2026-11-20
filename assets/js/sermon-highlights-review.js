@@ -467,7 +467,10 @@
           ? "Moving face tracking used. Check that it follows the pastor throughout."
           : state.fallback_reason === "tracking_unavailable"
             ? "Speaker tracking could not complete. A safe wide-shot portrait was created instead; Cloudflare logs record the tracker error."
-            : "Face tracking found too few reliable detections. The full wide shot is retained in the phone-format frame.");
+            : "Face tracking found too few reliable detections. The full wide shot is retained in the phone-format frame.") +
+        (state.render_version !== "smooth-pan-v2"
+          ? " This video uses the older, jerky crop. Click Generate vertical test to replace it with smoother 24fps camera movement."
+          : " Smooth 24fps virtual-camera movement enabled.");
       if (state.preview_url) {
         const player = el("video", "surfside-vertical-video");
         player.controls = true;

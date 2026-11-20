@@ -649,3 +649,57 @@ external CV API, or social-media posting.
 Validation includes actual ffmpeg 2fps proxy production, bounded original
 coordinate mapping, offline OpenCV synthetic-video tests, and existing
 portrait H.264/AAC + signed/download/privacy regression checks.
+
+## PR #532 — Stabilized 24fps portrait camera movement
+
+The uploaded **November 15 clip #2 portrait MP4** plays correctly and keeps the
+pastor mostly in view but shows visible stuttering/whip-pans. The video
+is H.264/AAC at 720×1280 and 24fps. Its stationary background shifts abruptly
+up to roughly 60–70 output pixels within an individual frame at several
+points. This matches the existing implementation's **8 updates/second**
+`sendcmd` crop events, even though FFmpeg outputs 24fps: individual frames
+hold position, then jump to a new source crop.
+
+This fix changes **only the optional portrait camera path**, not its AI
+suggestions, original MP4 extraction, staff controls, podcasts or landscape
+exports:
+
+- Keep face/feature detection on the efficient, small **2fps tracking proxy**.
+  Filter isolated false face detections with a 3-sample median.
+- The virtual camera updates **once per output frame at 24fps**.
+  Interpolate observed subject location, then apply a center safe-zone (~28%
+  of the visible crop width), speed limiting, and **acceleration limiting**.
+  The crop remains steady while the pastor gestures without changing
+  position, follows real walking gradually, and accelerates only when the
+  speaker approaches the portrait frame's edge.
+- Preserve even-pixel source crop positions, clip duration, original audio,
+  720×1280 H.264/AAC output, no extra model APIs or third-party inference.
+- Generated jobs carry `render_version: smooth-pan-v2`. The backend **does not
+  reuse an older READY video** with the same clip and starting anchor; clicking
+  **Generate vertical test** again renders the smoother version in the same
+  private clip key. Matching new-version results remain idempotent, and
+  queued/processing jobs remain protected from duplicates.
+- The dashboard labels whether a ready MP4 is the earlier, jerky version or
+  the smooth 24fps camera.
+
+Regression tests assert: jitter within the safe zone produces **no camera
+motion**, a sustained walk is followed by **many small 24fps steps** with
+bounded per-frame displacement, an isolated false detection does not cause a
+pan, and older export cache versions are re-rendered. Existing real FFmpeg
+portrait/audio tests and HMAC security checks continue to run.
+
+### Deploy and retest
+
+1. Merge PR #532 after both GitHub CI checks pass.
+2. Deploy updated **Cloudflare Worker + Container**; update Surfside Tools
+   WordPress plugin for the cache-version message.
+3. Open November 15, approved **clip #2 — Celebrating While Imperfect**.
+   Tap the pastor at his initial location and click **Generate vertical test**
+   again. The existing cached old version will not prevent re-rendering.
+4. Play/download the new portrait MP4 and compare the camera movement with
+   the first 35-second sample. Check that the pastor stays visible and there
+   are no sudden background jumps every 0.125 seconds.
+5. This improves smoothness, **not identity tracking**. Split-screen video,
+   an abrupt camera layout change or an incorrect face lock can still
+   confuse the detector. Those need separate shot/subject reacquisition
+   logic if encountered in the next real examples.
