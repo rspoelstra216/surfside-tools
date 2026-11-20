@@ -66,8 +66,7 @@
     // The WordPress dashboard handler checks the exact page and view.
     const current = new URL(window.location.href);
     const configured = new URL(cfg.endpoint, current);
-    if (current.origin === configured.origin &&
-        ["/dashboard/site-management/", "/dashboard/site-management"]
+    if (["/dashboard/site-management/", "/dashboard/site-management"]
           .includes(current.pathname) &&
         current.searchParams.get("view") === "sermon-highlights") {
       current.hash = "";
