@@ -573,7 +573,7 @@ function surfside_tools_staff_r2_sermons_shortcode() {
               (<?php echo esc_html(number_format_i18n((int) ($youtube_state['requests'] ?? 0))); ?> API pages so far)</p>
             <p><a href="<?php echo esc_url(surfside_tools_staff_page_url('settings') . '#surfside-youtube'); ?>">View sync status in Integrations</a></p>
             <?php if ($youtube_stalled) : ?>
-              <p role="alert"><strong>Sync may be stalled:</strong> No new YouTube API page has completed for at least 10 minutes. You can still find this week's message while the series scan is paused.</p>
+              <p role="alert"><strong>Sync may be stalled:</strong> No new YouTube API page has completed for at least 10 minutes. Resuming will continue from the saved scan position.</p>
               <form method="post" action="<?php echo esc_url(surfside_tools_r2_manager_url()); ?>">
                 <input type="hidden" name="action" value="surfside_r2_youtube_refresh">
                 <input type="hidden" name="refresh_mode" value="resume">
