@@ -187,6 +187,13 @@ foreach (array(
     assert_r2(strpos($staff_ui, $weekly) !== false,
         'Roku Copies retains the weekly workflow: ' . $weekly);
 }
+assert_r2(strpos($staff_ui, 'disabled(!$youtube_can_lookup)') !== false &&
+    strpos($staff_ui, 'Resume stalled YouTube sync') !== false &&
+    strpos($staff_ui, 'View sync status in Integrations') !== false &&
+    strpos($source, "mode === 'resume'") !== false &&
+    strpos($source, 'surfside_tools_youtube_resume_stalled_sync()') !== false,
+    'weekly message lookup remains usable during series scans and staff can resume stale syncs');
+
 // The one-time end-to-end test is retired from the staff Tools page and
 // browser request routes; production weekly upload and preview remain.
 $test_client = file_get_contents(dirname(__DIR__) . '/assets/js/r2-sermon-upload.js');

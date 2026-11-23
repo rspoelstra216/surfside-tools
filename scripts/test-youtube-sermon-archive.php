@@ -6,6 +6,7 @@
 define('ABSPATH', __DIR__ . '/');
 define('DAY_IN_SECONDS', 86400);
 define('HOUR_IN_SECONDS', 3600);
+define('MINUTE_IN_SECONDS', 60);
 
 $GLOBALS['options'] = array();
 $GLOBALS['actions'] = array();
@@ -289,4 +290,50 @@ check(isset($GLOBALS['wpdb']->members['PLMESSAGES1234/abcdEF12_36']),
 check(count(array_filter($GLOBALS['wpdb']->members, fn($row) => $row['playlist_id'] === 'PLSERIES123456'))
     === count($original_series), 'Master-only refresh retains series memberships');
 
-echo "YouTube sermon archive + targeted/master-only refresh regression checks passed.\n";
+// A series-only scan does not mutate the master playlist: weekly lookup remains safe.
+$series_state = surfside_tools_youtube_state();
+check(!surfside_tools_youtube_can_quick_import($series_state),
+    'Quick import remains blocked while the master playlist is scanning');
+$series_state['phase'] = 'series';
+unset($series_state['mode']);
+$series_state['series_offset'] = 0;
+$series_state['started_at'] = time() - 1200;
+$series_state['last_progress_at'] = time() - 1200;
+update_option(SURFSIDE_YT_STATE_OPTION, $series_state);
+check(surfside_tools_youtube_can_quick_import($series_state),
+    'Quick import is permitted while only series playlists are scanning');
+$before_calls = count($GLOBALS['api_calls']);
+check(surfside_tools_youtube_quick_import_video('abcdEF12_36') === true,
+    'Weekly sermon lookup succeeds during an active series scan');
+check(count($GLOBALS['api_calls']) === $before_calls + 1,
+    'Concurrent series-phase lookup consumes only one scoped API request');
+
+check(surfside_tools_youtube_sync_is_stalled($series_state),
+    'Ten-minute-old progress heartbeat is recognized as stalled');
+$recent_state = $series_state;
+$recent_state['last_progress_at'] = time();
+check(!surfside_tools_youtube_sync_is_stalled($recent_state),
+    'Fresh worker heartbeat prevents false stalled status');
+$legacy_state = $series_state;
+unset($legacy_state['last_progress_at']);
+check(surfside_tools_youtube_sync_is_stalled($legacy_state),
+    'Pre-upgrade running jobs use their saved start time');
+
+update_option('surfside_tools_youtube_sync_lock', time());
+check(is_wp_error(surfside_tools_youtube_resume_stalled_sync()),
+    'Resume refuses to overlap with a genuinely active worker lock');
+delete_option('surfside_tools_youtube_sync_lock');
+$before_requests = $series_state['requests'];
+check(surfside_tools_youtube_resume_stalled_sync() === true,
+    'Staff recovery runs a batch from the saved series offset');
+$resumed = surfside_tools_youtube_state();
+check($resumed['requests'] === $before_requests + 2,
+    'Recovery advances the saved API page counter');
+check(!surfside_tools_youtube_sync_is_stalled($resumed),
+    'Recovery persists a fresh progress heartbeat');
+check(isset($GLOBALS['events'][SURFSIDE_YT_TICK]),
+    'Recovery schedules the next bounded cron batch');
+check(is_wp_error(surfside_tools_youtube_resume_stalled_sync()),
+    'A just-resumed worker cannot be resumed again without stalling');
+
+echo "YouTube sermon archive + targeted/master-only refresh and recovery regression checks passed.\n";
