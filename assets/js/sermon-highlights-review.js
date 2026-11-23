@@ -154,6 +154,22 @@
   const approvedReviews = () => Object.values(readReviews())
     .filter((r) => r?.decision === "approved" && Number.isInteger(r.number));
 
+  const EDIT_WINDOW = 10;
+  // Mirrors Cloudflare's 120-second-bounded preview range. Two-sided
+  // padding is smaller only when the suggested clip is already very long.
+  function expectedPreviewRange(start, end) {
+    const a = Math.round(start * 100), b = Math.round(end * 100);
+    const duration = b - a;
+    if (a < 0 || b > 432000 || duration < 1500 || duration > 12000) return null;
+    const spare = 12000 - duration;
+    const before = Math.min(EDIT_WINDOW * 100, a);
+    const after = Math.min(EDIT_WINDOW * 100, 432000 - b);
+    let left = Math.min(before, Math.floor(spare / 2));
+    const right = Math.min(after, spare - left);
+    left = Math.min(before, spare - right);
+    return { start: (a - left) / 100, end: (b + right) / 100 };
+  }
+
   function makeTrimControl(card, label, original, initial, update) {
     const group = el("div", "surfside-highlight-trim");
     const heading = el("div", "surfside-highlight-trim-heading");
@@ -163,15 +179,18 @@
     group.append(heading);
     const row = el("div", "surfside-highlight-trim-row");
     const slider = el("input");
-    slider.type = "range"; slider.min = "-5"; slider.max = "5"; slider.step = "0.5";
-    slider.value = String(Math.max(-5, Math.min(5, round(initial - original))));
+    slider.type = "range"; slider.min = String(-EDIT_WINDOW);
+    slider.max = String(EDIT_WINDOW); slider.step = "0.5";
+    slider.value = String(Math.max(-EDIT_WINDOW,
+      Math.min(EDIT_WINDOW, round(initial - original))));
     slider.setAttribute("aria-label", label + " adjustment in seconds");
     const minus = action("−", () => change(-0.5), "surfside-highlight-nudge");
     const plus = action("+", () => change(0.5), "surfside-highlight-nudge");
     minus.setAttribute("aria-label", "Move " + label.toLowerCase() + " half a second earlier");
     plus.setAttribute("aria-label", "Move " + label.toLowerCase() + " half a second later");
     const change = (amount) => {
-      slider.value = String(Math.max(-5, Math.min(5, round(Number(slider.value) + amount))));
+      slider.value = String(Math.max(-EDIT_WINDOW,
+        Math.min(EDIT_WINDOW, round(Number(slider.value) + amount))));
       slider.dispatchEvent(new Event("input"));
     };
     slider.addEventListener("input", () => {
@@ -211,7 +230,7 @@
     if (!Array.isArray(highlights) || !highlights.length) return;
     const intro = el("div", "surfside-highlights-intro");
     intro.append(el("h2", "", "Suggested clips"));
-    intro.append(el("p", "", "All timestamps refer to the original MP4. Adjust each edge up to five seconds. Additional AI suggestions appear after the original clips, without replacing saved reviews. Use Save, Approve, or Reject to record your decision."));
+    intro.append(el("p", "", "All timestamps refer to the original MP4. Adjust each edge up to ten seconds. Additional AI suggestions appear after the original clips, without replacing saved reviews. Use Save, Approve, or Reject to record your decision."));
     if (previews?.status === "ready") {
       intro.append(action("Refresh preview links", () => refreshPreviews(token),
         "surfside-highlight-secondary"));
@@ -247,9 +266,11 @@
         "AI clip: " + fmt(baselineStart) + "–" + fmt(baselineEnd) +
         " · Score " + (suggestion.score ?? "—") + "/5"));
 
-      const clip = Array.isArray(previews?.clips) ? previews.clips.find(c => c.number === number &&
-        Math.abs(Number(c.start) - Math.max(0, round(baselineStart - 5))) < 0.06 &&
-        Math.abs(Number(c.end) - Math.min(4320, round(baselineEnd + 5))) < 0.06) : null;
+      const expected = expectedPreviewRange(baselineStart, baselineEnd);
+      const clip = expected && Array.isArray(previews?.clips) ? previews.clips.find(c =>
+        c.number === number &&
+        Math.abs(Number(c.start) - expected.start) < 0.06 &&
+        Math.abs(Number(c.end) - expected.end) < 0.06) : null;
       const playerWrap = el("div", "surfside-highlight-player");
       let video = null;
       if (clip?.preview_url) {
@@ -294,7 +315,7 @@
       makeTrimControl(trims, "Start", baselineStart, state.start, updateStart);
       makeTrimControl(trims, "End", baselineEnd, state.end, updateEnd);
       const cue = el("p", "surfside-highlight-help",
-        "Each edge adjusts independently in 0.5-second steps (±5 seconds).");
+        "Each edge adjusts independently in 0.5-second steps (±10 seconds).");
       card.append(trims, cue);
       if (suggestion.excerpt) {
         const details = el("details", "surfside-highlight-transcript");
