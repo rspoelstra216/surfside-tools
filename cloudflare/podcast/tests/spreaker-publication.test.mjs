@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { publishReadyEpisode, MAX_PUBLISH_CHECKS } from "../src/spreaker-publication.mjs";
+import { publishReadyEpisode, canRetryAudioReadinessReview, MAX_PUBLISH_CHECKS } from "../src/spreaker-publication.mjs";
 import { readDraftState, saveDraftState } from "../src/spreaker.mjs";
 
 const id = "e0NnCrrshM4";
@@ -138,20 +138,58 @@ test("encoding timeout keeps draft unpublished instead of retrying forever", asy
   assert.equal(postCount, 0);
 });
 
-test("does not publish a draft without verified podcast MP3 or media identity", async () => {
+test("Spreaker READY is sufficient even when supplemental media fields are missing", async () => {
   const binding = env();
   await setUploaded(binding);
-  binding.SERMONS_BUCKET.head = async () => null;
-  assert.equal((await publishReadyEpisode(binding, id, 0, () => {
-    throw Error("should not fetch");
-  })).detail, "podcast_audio_missing");
-  const second = env();
-  await setUploaded(second);
-  let posts = 0;
-  const result = await publishReadyEpisode(second, id, 0, (_url, opts) => {
-    if (opts.method === "POST") posts++;
-    return json(draft("READY", { media_id: null, media_url: null }));
+  let postCount = 0;
+  const outcome = await publishReadyEpisode(binding, id, 0, (_url, opts) => {
+    if (opts.method === "GET") return json(draft("READY", { media_id: null, media_url: null }));
+    postCount++;
+    return json(published());
   });
-  assert.equal(result.detail, "audio_not_confirmed_ready");
-  assert.equal(posts, 0);
+  assert.equal(outcome.status, "published");
+  assert.equal(postCount, 1);
+});
+
+test("missing MP3 blocks publication, unknown encoding waits instead of wrongly failing", async () => {
+  const missing = env();
+  await setUploaded(missing);
+  missing.SERMONS_BUCKET.head = async () => null;
+  assert.equal((await publishReadyEpisode(missing, id, 0, () => {
+    throw Error("unexpected external request");
+  })).detail, "podcast_audio_missing");
+
+  const unknown = env();
+  await setUploaded(unknown);
+  let postCount = 0;
+  const client = (_url, opts) => {
+    if (opts.method === "POST") postCount++;
+    return json(draft(undefined, { encoding_status: null, media_id: null }));
+  };
+  assert.equal((await publishReadyEpisode(unknown, id, 0, client)).status, "check_again");
+  assert.equal((await readDraftState(unknown, id)).status, "encoding_wait");
+  const stopped = await publishReadyEpisode(unknown, id, MAX_PUBLISH_CHECKS, client);
+  assert.equal(stopped.status, "publish_review_required");
+  assert.equal(stopped.detail, "encoding_status_unknown");
+  assert.equal(postCount, 0, "unknown encoding status cannot be auto-published");
+});
+
+test("existing-episode readiness recovery rejects unrelated states, missing media or IDs", () => {
+  const ready = { status: "ready" };
+  const mp3 = { size: 100 };
+  const mp4 = { size: 1000 };
+  const prior = { video_id: id, status: "publish_review_required",
+    detail: "audio_not_confirmed_ready", episode_id: episodeId };
+  assert.equal(canRetryAudioReadinessReview(ready, mp3, mp4, prior), true);
+  assert.equal(canRetryAudioReadinessReview({ status: "failed" }, mp3, mp4, prior), false);
+  assert.equal(canRetryAudioReadinessReview(ready, null, mp4, prior), false);
+  assert.equal(canRetryAudioReadinessReview(ready, mp3, null, prior), false);
+  assert.equal(canRetryAudioReadinessReview(ready, mp3, mp4, null), false);
+  for (const status of ["uploaded", "encoding_wait", "publishing", "published", "publication_uncertain"]) {
+    assert.equal(canRetryAudioReadinessReview(ready, mp3, mp4, { ...prior, status }), false);
+  }
+  for (const detail of ["publish_response_uncertain", "episode_identity_mismatch", "publish_http_500"]) {
+    assert.equal(canRetryAudioReadinessReview(ready, mp3, mp4, { ...prior, detail }), false);
+  }
+  assert.equal(canRetryAudioReadinessReview(ready, mp3, mp4, { ...prior, episode_id: null }), false);
 });
