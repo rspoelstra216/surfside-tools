@@ -26,7 +26,7 @@ test("weekly automatic preview padding matches the WordPress editor ±10 seconds
 test("ten-second preview padding stays within 120s while retaining long AI suggestions", () => {
   assert.deepEqual(paddedHighlightRange(200, 305), { start: 192.5, end: 312.5 });
   assert.deepEqual(paddedHighlightRange(3, 108), { start: 0, end: 118 });
-  assert.deepEqual(paddedHighlightRange(4215, 4320), { start: 4202.5, end: 4320 });
+  assert.deepEqual(paddedHighlightRange(4215, 4320), { start: 4205, end: 4320 });
   assert.deepEqual(paddedHighlightRange(100, 200), { start: 90, end: 210 });
   assert.equal(paddedHighlightRange(100, 221), null);
   const results = paddedHighlightPicks([
