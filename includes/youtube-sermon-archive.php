@@ -194,6 +194,19 @@ function surfside_tools_youtube_state() {
     return is_array($state) ? $state : array();
 }
 
+/** A running import is stalled only if no page has finished for ten minutes. */
+function surfside_tools_youtube_sync_is_stalled($state) {
+    if (($state['status'] ?? '') !== 'running') return false;
+    // Older in-progress jobs predate the heartbeat; use their start time.
+    $progress_at = (int) ($state['last_progress_at'] ?? $state['started_at'] ?? 0);
+    return $progress_at > 0 && $progress_at <= time() - 10 * MINUTE_IN_SECONDS;
+}
+
+/** Series scans only update series membership, not the master playlist. */
+function surfside_tools_youtube_can_quick_import($state) {
+    return ($state['status'] ?? '') !== 'running' || ($state['phase'] ?? '') === 'series';
+}
+
 function surfside_tools_youtube_queue_tick($delay = 30) {
     if (!wp_next_scheduled(SURFSIDE_YT_TICK)) {
         wp_schedule_single_event(time() + max(20, (int) $delay), SURFSIDE_YT_TICK);
@@ -219,6 +232,7 @@ function surfside_tools_youtube_start_sync() {
         'channel_id' => '',
         'requests' => 0,
         'started_at' => time(),
+        'last_progress_at' => time(),
         'last_success' => (int) (surfside_tools_youtube_state()['last_success'] ?? 0),
         'last_master_refresh' => (int) (surfside_tools_youtube_state()['last_master_refresh'] ?? 0),
         'message' => 'Discovering public playlists.',
@@ -260,6 +274,7 @@ function surfside_tools_youtube_start_master_refresh() {
     $state['page_token'] = '';
     $state['requests'] = 0;
     $state['started_at'] = time();
+    $state['last_progress_at'] = $state['started_at'];
     $state['message'] = 'Refreshing the master Messages playlist (without scanning series).';
     update_option(SURFSIDE_YT_STATE_OPTION, $state, false);
     wp_clear_scheduled_hook(SURFSIDE_YT_TICK);
@@ -276,8 +291,8 @@ function surfside_tools_youtube_quick_import_video($id) {
         return new WP_Error('surfside_youtube_invalid_video', 'Enter a valid YouTube video link or 11-character ID.');
     }
     $state = surfside_tools_youtube_state();
-    if (($state['status'] ?? '') === 'running') {
-        return new WP_Error('surfside_youtube_busy', 'A YouTube synchronization is already running. Check its progress before starting another.');
+    if (!surfside_tools_youtube_can_quick_import($state)) {
+        return new WP_Error('surfside_youtube_busy', 'The master Messages playlist is being synchronized. Retry shortly.');
     }
     $master = (string) ($state['master_id'] ?? '');
     if ((int) get_option(SURFSIDE_YT_SCHEMA_OPTION, 0) < SURFSIDE_YT_SCHEMA_VERSION
@@ -493,6 +508,35 @@ function surfside_tools_youtube_process_page(&$state) {
     return new WP_Error('surfside_youtube_state', 'Unknown YouTube synchronization phase.');
 }
 
+/**
+ * Staff-only recovery entry point: run a single normal worker batch right now,
+ * retaining its saved page token and series offset instead of restarting.
+ * The caller must enforce its own capability and nonce checks.
+ */
+function surfside_tools_youtube_resume_stalled_sync() {
+    $previous = surfside_tools_youtube_state();
+    if (!surfside_tools_youtube_sync_is_stalled($previous)) {
+        return new WP_Error('surfside_youtube_not_stalled', 'The sync is not stalled. Check its progress again shortly.');
+    }
+    $locked_at = (int) get_option('surfside_tools_youtube_sync_lock', 0);
+    if ($locked_at > time() - 120) {
+        return new WP_Error('surfside_youtube_worker_active', 'A sync worker is active. Check progress again shortly.');
+    }
+
+    // An overdue or lost cron event must not block the replacement event.
+    wp_clear_scheduled_hook(SURFSIDE_YT_TICK);
+    surfside_tools_youtube_sync_tick();
+    $current = surfside_tools_youtube_state();
+    if (($current['status'] ?? '') === 'error') {
+        return new WP_Error('surfside_youtube_resume_failed', (string) ($current['message'] ?? 'YouTube synchronization failed.'));
+    }
+    if (($current['status'] ?? '') === 'running'
+        && (int) ($current['requests'] ?? 0) <= (int) ($previous['requests'] ?? 0)) {
+        return new WP_Error('surfside_youtube_resume_no_progress', 'The sync could not advance. Check the WordPress error log and cron configuration.');
+    }
+    return true;
+}
+
 /** Each cron invocation does at most two upstream playlist page requests. */
 function surfside_tools_youtube_sync_tick() {
     $state = surfside_tools_youtube_state();
@@ -522,6 +566,7 @@ function surfside_tools_youtube_sync_tick() {
                 break;
             }
             $state['requests'] = (int) ($state['requests'] ?? 0) + 1;
+            $state['last_progress_at'] = time();
             if ($state['status'] !== 'running') break;
         }
         update_option(SURFSIDE_YT_STATE_OPTION, $state, false);
