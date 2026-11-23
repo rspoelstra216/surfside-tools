@@ -34,7 +34,7 @@ const mergeClips = (prior, next) => {
   return merged.sort((a, b) => a.number - b.number);
 };
 
-export async function enqueueClips(env, id, requested) {
+export async function enqueueClips(env, id, requested, { autoContinue = false } = {}) {
   // Preview processing is deliberately bounded to five clips per Queue job.
   if (!Array.isArray(requested) || requested.length < 1 || requested.length > 5)
     return reply({ error: "invalid_clip_selection" }, 400);
@@ -69,6 +69,7 @@ export async function enqueueClips(env, id, requested) {
     await env.PODCAST_QUEUE.send({
       kind: "highlight_clips", video_id: id,
       clips: pending, manifest: combined,
+      ...(autoContinue ? { auto_continue: true } : {}),
     });
     return reply({ video_id: id, status: "queued", clips: combined }, 202);
   } catch (error) {
