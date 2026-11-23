@@ -603,7 +603,7 @@ function surfside_tools_staff_r2_sermons_shortcode() {
         </section>
         <section class="surfside-yt-panel" id="surfside-podcast-preview">
           <h2>Podcast episode preview</h2>
-          <p class="surfside-yt-muted">Preview the title and description from YouTube metadata. New verified weekly uploads generate a Spreaker draft after Cloudflare finishes the MP3. <?php echo defined('SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED') && SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED === true ? 'Automatic publishing is enabled for new sermons after Spreaker audio encoding is ready. Failed or ambiguous jobs remain unpublished for review.' : 'Publishing remains manual in Spreaker unless automatic publication is explicitly enabled.'; ?></p>
+          <p class="surfside-yt-muted">Preview the title and description from YouTube metadata. New verified weekly uploads generate a Spreaker draft after Cloudflare finishes the MP3. <?php echo defined('SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED') && SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED === true ? 'Automatic publishing is enabled after Spreaker accepts the audio upload. Episodes may be briefly visible before the audio finishes encoding. Failed or ambiguous jobs require review.' : 'Publishing remains manual in Spreaker unless automatic publication is explicitly enabled.'; ?></p>
           <label for="surfside-podcast-id">Uploaded sermon</label>
           <select id="surfside-podcast-id">
             <option value="">Choose an uploaded sermon</option>
