@@ -34,6 +34,22 @@ export function paddedHighlightPicks(highlights) {
   return selected;
 }
 
+// Keep each FFmpeg batch within the existing 420s aggregate cap.
+// Automatic processing continues with the remaining clips after completion.
+export function nextAutomaticPreviewBatch(pending) {
+  if (!Array.isArray(pending)) return [];
+  const batch = [];
+  let totalCentis = 0;
+  for (const clip of pending) {
+    const duration = Math.round(clip.end * 100) - Math.round(clip.start * 100);
+    if (duration < 1500 || duration > 12000 || batch.length >= 5 ||
+        totalCentis + duration > 42000) break;
+    batch.push(clip);
+    totalCentis += duration;
+  }
+  return batch;
+}
+
 // A private, already-rendered padded clip can serve as the input to an
 // accurate final cut, avoiding another full-sermon MP4 download.
 // Only the matching numbered clip containing the ENTIRE approved range qualifies.
