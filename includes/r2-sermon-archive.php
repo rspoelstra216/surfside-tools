@@ -236,9 +236,9 @@ function surfside_tools_r2_browser_upload_dispatch($data) {
         return new WP_Error('r2_bad_nonce', 'Upload authorization expired. Reload the Roku Copies page and try again.', array('status' => 403));
     }
     $mode = isset($data['mode']) && is_string($data['mode']) ? sanitize_key($data['mode']) : '';
-    if ($mode === 'retry_audio' || $mode === 'recover_spreaker') {
+    if (in_array($mode, array('retry_audio', 'recover_spreaker', 'retry_publication'), true)) {
         if (!current_user_can('manage_options')) {
-            return new WP_Error('podcast_recovery_forbidden', 'Only site administrators may retry podcast audio or prepare missing Spreaker drafts.', array('status' => 403));
+            return new WP_Error('podcast_recovery_forbidden', 'Only site administrators may retry podcast processing or prepare Spreaker drafts.', array('status' => 403));
         }
         $id = $data['video_id'] ?? '';
         if (!surfside_tools_r2_video_id($id) || !surfside_tools_r2_is_master_video($id)) {
@@ -250,9 +250,9 @@ function surfside_tools_r2_browser_upload_dispatch($data) {
             ($head['type'] ?? '') !== 'video/mp4') {
             return new WP_Error('podcast_missing_mp4', 'The verified sermon MP4 is not in R2.', array('status' => 409));
         }
-        return $mode === 'retry_audio'
-            ? surfside_tools_podcast_retry_failed_audio($id)
-            : surfside_tools_podcast_prepare_existing_draft($id);
+        if ($mode === 'retry_audio') return surfside_tools_podcast_retry_failed_audio($id);
+        if ($mode === 'retry_publication') return surfside_tools_podcast_retry_publication($id);
+        return surfside_tools_podcast_prepare_existing_draft($id);
     }
     if (!in_array($mode, array('ticket', 'complete'), true)) {
         return new WP_Error('r2_bad_mode', 'Unknown R2 upload operation.', array('status' => 400));
@@ -626,6 +626,13 @@ function surfside_tools_staff_r2_sermons_shortcode() {
             <button id="surfside-podcast-retry-audio" type="button" disabled>Retry failed podcast audio</button>
             <p class="surfside-yt-muted">Only retries an existing failed Cloudflare audio job using the verified R2 MP4. Does not upload the video again. If sermon metadata is valid, an unpublished Spreaker draft is also queued when audio is ready.</p>
             <p id="surfside-podcast-audio-retry-status" role="status" aria-live="polite"></p>
+          </div>
+          <?php endif; ?>
+          <?php if (current_user_can('manage_options') && defined('SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED') && SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED === true && defined('SURFSIDE_PODCAST_WORKER_URL') && defined('SURFSIDE_PODCAST_SHARED_SECRET')) : ?>
+          <div style="margin-top:12px">
+            <button id="surfside-podcast-retry-publication" type="button" disabled>Retry Spreaker publication check</button>
+            <p class="surfside-yt-muted">For a previously uploaded episode whose publication stopped at audio_not_confirmed_ready. Rechecks the existing Spreaker episode only; does not re-upload audio, recreate a draft, or publish until Spreaker confirms encoding is READY.</p>
+            <p id="surfside-podcast-publication-retry-status" role="status" aria-live="polite"></p>
           </div>
           <?php endif; ?>
           <?php if (current_user_can('manage_options') && defined('SURFSIDE_SPREAKER_DRAFTS_ENABLED') && SURFSIDE_SPREAKER_DRAFTS_ENABLED === true) : ?>

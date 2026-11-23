@@ -22,6 +22,8 @@
   const podcastRecoverStatus = root.querySelector("#surfside-podcast-recovery-status");
   const podcastAudioRetry = root.querySelector("#surfside-podcast-retry-audio");
   const podcastAudioRetryStatus = root.querySelector("#surfside-podcast-audio-retry-status");
+  const podcastPublicationRetry = root.querySelector("#surfside-podcast-retry-publication");
+  const podcastPublicationRetryStatus = root.querySelector("#surfside-podcast-publication-retry-status");
   let active = null;
 
   const showPodcastPreview = () => {
@@ -32,6 +34,9 @@
     podcastDetails.hidden = !selected;
     if (podcastAudioRetry) {
       podcastAudioRetry.disabled = !selected || podcastAudioRetry.dataset.busy === "1";
+    }
+    if (podcastPublicationRetry) {
+      podcastPublicationRetry.disabled = !selected || podcastPublicationRetry.dataset.busy === "1";
     }
     if (podcastRecover) {
       podcastRecover.disabled = !selected || option.dataset.podcastReview === "1" ||
@@ -105,6 +110,30 @@
         error.message || "Could not retry podcast audio.";
     } finally {
       delete podcastAudioRetry.dataset.busy;
+      showPodcastPreview();
+    }
+  });
+
+  // Admin-only recheck for a preexisting Spreaker draft whose publish check
+  // stopped before any publication attempt. No MP3, draft, or token is sent.
+  if (podcastPublicationRetry) podcastPublicationRetry.addEventListener("click", async () => {
+    const id = podcastSelect?.value || "";
+    if (!/^[A-Za-z0-9_-]{11}$/.test(id) || podcastPublicationRetry.dataset.busy === "1") return;
+    if (!window.confirm("Retry publishing the EXISTING Spreaker episode for this sermon? Only eligible audio_not_confirmed_ready failures are accepted. Cloudflare will first confirm encoded audio is READY; no MP3 will be uploaded and no new episode created.")) return;
+    podcastPublicationRetry.dataset.busy = "1";
+    podcastPublicationRetry.disabled = true;
+    if (podcastPublicationRetryStatus) podcastPublicationRetryStatus.textContent =
+      "Checking the existing audio and Spreaker publication status…";
+    try {
+      const result = await request("retry_publication", {video_id: id});
+      if (result.status !== "queued") throw new Error("Spreaker publication was not queued.");
+      if (podcastPublicationRetryStatus) podcastPublicationRetryStatus.textContent =
+        "Existing Spreaker episode publication recheck queued. Check podcast-spreaker in Cloudflare R2 for encoding_wait, published, or publish_review_required. No media was re-uploaded.";
+    } catch (error) {
+      if (podcastPublicationRetryStatus) podcastPublicationRetryStatus.textContent =
+        error.message || "Could not queue a Spreaker publication recheck.";
+    } finally {
+      delete podcastPublicationRetry.dataset.busy;
       showPodcastPreview();
     }
   });

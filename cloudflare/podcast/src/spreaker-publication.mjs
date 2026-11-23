@@ -10,6 +10,15 @@ const validId = (id) => typeof id === "string" && /^[A-Za-z0-9_-]{11}$/.test(id)
 const validEpisodeId = (id) => /^[1-9][0-9]*$/.test(String(id ?? ""));
 const retryLater = (reason) => ({ status: "check_again", reason });
 
+// Re-queue ONLY the historical, pre-publication audio readiness false-negative.
+// An existing episode ID is required and upload/MP3 must already be complete.
+// Unknown publishing outcomes and previous publication attempts cannot use it.
+export const canRetryAudioReadinessReview = (audioState, mp3, mp4, previous) =>
+  audioState?.status === "ready" && Boolean(mp3) && Boolean(mp4) &&
+  previous?.status === "publish_review_required" &&
+  previous?.detail === "audio_not_confirmed_ready" &&
+  validEpisodeId(previous.episode_id);
+
 export async function publishReadyEpisode(env, id, attempt = 0, fetcher = fetch) {
   if (!validId(id) || !Number.isInteger(attempt) || attempt < 0 || attempt > MAX_PUBLISH_CHECKS)
     return { status: "invalid_job" };
@@ -77,9 +86,16 @@ export async function publishReadyEpisode(env, id, attempt = 0, fetcher = fetch)
     return retryLater("encoding_pending");
   }
 
-  if (episode.encoding_status !== "READY" ||
-      !(episode.media_id || episode.media_url)) {
-    return save("publish_review_required", "audio_not_confirmed_ready");
+  // Spreaker documents encoding_status=READY as its authoritative signal
+  // that the audio has processed and is listenable. Some episode responses
+  // omit the supplemental media_id/media_url fields: requiring them as well
+  // can permanently block an otherwise valid uploaded weekly episode.
+  // We already verified our own MP3 and the acknowledged Spreaker upload.
+  if (episode.encoding_status !== "READY") {
+    if (attempt >= MAX_PUBLISH_CHECKS)
+      return save("publish_review_required", "encoding_status_unknown");
+    await save("encoding_wait", "encoding_status_unknown");
+    return retryLater("encoding_status_unknown");
   }
 
   // Spreaker documents POST /v2/episodes/{id} with published_at in UTC to
