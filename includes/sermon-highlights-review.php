@@ -176,6 +176,7 @@ function surfside_tools_highlights_rest_previews($request) {
     $known = ($prior['status'] ?? '') === 'ready' && isset($prior['clips']) &&
         is_array($prior['clips']) ? $prior['clips'] : array();
     $clips = array();
+    $total_preview_centis = 0;
     foreach ($suggestions as $highlight) {
         if (!isset($highlight['number'], $highlight['start'], $highlight['end']) ||
             !is_numeric($highlight['start']) || !is_numeric($highlight['end'])) continue;
@@ -205,7 +206,12 @@ function surfside_tools_highlights_rest_previews($request) {
             }
         }
         if ($already) continue;
+        // Mirror the Worker's 420-second aggregate limit. A later manual
+        // request can pick up still-missing clips after this batch completes.
+        $preview_centis = ($original_end + $right) - ($original_start - $left);
+        if ($total_preview_centis + $preview_centis > 42000) break;
         $clips[] = array('number' => (int) $highlight['number'], 'start' => $start, 'end' => $end);
+        $total_preview_centis += $preview_centis;
         if (count($clips) >= 5) break;
     }
     if (!$clips) {
