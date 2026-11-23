@@ -29,11 +29,12 @@ or unauthenticated REST endpoint is added.
    WordPress server authenticates to Cloudflare and shows queue/processing/
    ready status; it **does not** start podcast or Spreaker operations.
 3. Click **Generate video previews** when analysis is ready. WordPress requests
-   a preview padded with **five seconds before and after** each AI suggestion,
-   up to five clips. The existing MP4 renderer uploads only private preview
-   objects; no public asset is published.
+   a preview padded with **up to ten seconds before and after** each AI suggestion,
+   up to five clips per bounded rendering batch. Additional batches run
+   automatically when the 420-second per-batch limit requires it. The existing
+   MP4 renderer uploads only private preview objects; no public asset is published.
 4. Play a video. The viewer initially plays only the suggested segment.
-   Adjust **Start** and **End** independently ±5.0 seconds, in 0.5-second
+   Adjust **Start** and **End** independently ±10.0 seconds, in 0.5-second
    increments; the player seeks or stops at the edited boundaries without
    another FFmpeg render.
 5. Click **Save changes**, **Approve**, or **Reject**. Decisions and exact
@@ -64,7 +65,7 @@ Spreaker, or the website without a separate staff action.
   with browser seek support, entirely outside the public sermon bucket.
   Use **Refresh preview links** if a previously generated preview expires.
 - Saved decisions are verified **against the immutable AI recommendation**:
-  each edge must stay within ±5 seconds; clips must remain 15–120 seconds.
+  each edge must stay within ±10 seconds; clips must remain 15–120 seconds.
   The backend revalidates on Save/Approve/Reject rather than trusting
   JavaScript sliders. Padded previews remain unpublished private assets.
 - The dashboard action dispatcher accepts eight allowlisted review modes
@@ -85,7 +86,7 @@ and confirm PR #518 Cloudflare Worker/Container is deployed.
 4. Move the Start control for #2 earlier and the End control later; verify
    the video seeks/stops at adjusted points **without rendering another clip**.
 5. Save #2, approve #4 and reject #3; reload and confirm each decision persists.
-6. Try to adjust either boundary beyond five seconds (the UI blocks it;
+6. Try to adjust either boundary beyond ten seconds (the UI blocks it;
    the REST handler also rejects forged requests).
 7. Verify a nonstaff account receives 403 from all highlights REST endpoints,
    and no WordPress/Cloudflare output shows the HMAC secret.
@@ -783,3 +784,37 @@ Container (and update the WordPress plugin), then regenerate November 15
 clip #2 once. Compare 0–3s, 6–10s, and 18–21s against the smoother v3
 sample. Keep this change only if the pastor stays more comfortably
 framed **without** adding camera hunting or jitter.
+
+## Current trim policy — ten-second adjustments (November 23, 2026)
+
+The staff clip editor now allows **±10 seconds independently on Start and End**
+in 0.5-second steps, up from ±5 seconds. Both the WordPress Save/Approve
+handler and Cloudflare's final/vertical export validators enforce the same
+new limit against the original AI suggestion. Total final clip duration must
+remain **15–120 seconds**; saved decisions and the private/publication
+approval boundary are unchanged.
+
+New automatic and staff-requested preview renders use **up to ten seconds of
+padding on both ends**, clamped to the sermon timeline. Longer suggestions
+cannot fit the full 20 seconds of added context into a 120-second preview:
+the available extra time is distributed between both edges without dropping
+the AI-suggested segment. For example, a 105-second suggestion receives
+7.5 seconds on each end rather than being skipped. An approved cut that
+extends outside a shorter preview is still exported from the original MP4.
+
+The Cloudflare renderer retains its **120-second single-preview** and
+**420-second total per-job** safety limits. When five newly padded previews
+would exceed the combined limit, automatic processing runs successive bounded
+batches; each completed batch triggers the next, with stored/complete
+previews reused. The staff can use Generate video previews to recover
+missing previews without regenerating finished ones.
+
+Previously generated five-second-padded private previews are not deleted;
+the new preview ranges have different immutable object keys, so the
+staff editor will request/show matching ten-second versions. This is
+limited to review usability and private previews; AI highlights selection,
+podcast production, Spreaker publication, and social posting are unaffected.
+
+Historical PR notes in this file describing five-second limits reflect the
+older implementation at the time of those changes; this section and the
+top-level workflow describe the current behavior.
