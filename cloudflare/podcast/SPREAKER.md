@@ -11,7 +11,7 @@ a Spreaker draft.
 
 By default, the integration creates only an **unpublished draft**. An
 additional explicit WordPress opt-in automatically publishes **new weekly
-episodes** once Spreaker confirms `encoding_status: READY`. The workflow
+episodes** once Spreaker has accepted the audio upload. The workflow
 still creates the draft, uploads its audio, and records the episode ID first.
 Existing drafts, historical imports, manual recovery jobs, and test jobs are
 not retroactively published.
