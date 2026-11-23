@@ -229,7 +229,7 @@ assert_r2(strpos($staff_ui, 'surfside-podcast-recover-spreaker') !== false &&
 assert_r2(strpos($test_client, 'request("recover_spreaker"') !== false &&
     strpos($test_client, 'podcastRecover.dataset.busy') !== false,
     'recovery is explicit and guards against double-clicks');
-assert_r2(strpos($source, "\$mode === 'recover_spreaker'") !== false &&
+assert_r2(strpos($source, "'recover_spreaker'") !== false &&
     strpos($source, "current_user_can('manage_options')") !== false &&
     strpos($source, 'surfside_tools_r2_object_head($id)') !== false,
     'recovery route requires site administrator and existing verified MP4');
@@ -243,6 +243,23 @@ assert_r2(strpos($test_client, 'request("retry_audio"') !== false &&
 assert_r2(strpos($source, "\$mode === 'retry_audio'") !== false &&
     strpos($source, 'surfside_tools_podcast_retry_failed_audio($id)') !== false,
     'retry is routed through the admin-verified MP4 authorization path');
+
+// A separate admin-only publication recovery must recheck the existing episode
+// through WordPress without exposing the token or creating duplicate drafts.
+assert_r2(strpos($staff_ui, 'surfside-podcast-retry-publication') !== false &&
+    strpos($staff_ui, 'Retry Spreaker publication check') !== false,
+    'admin preview has a separate existing-episode publication recheck');
+assert_r2(strpos($source, "in_array(\$mode, array('retry_audio', 'recover_spreaker', 'retry_publication')") !== false &&
+    strpos($source, 'surfside_tools_podcast_retry_publication($id)') !== false &&
+    strpos($source, "current_user_can('manage_options')") !== false,
+    'Spreaker publication retry uses the admin-only R2 verification route');
+assert_r2(strpos($test_client, 'request("retry_publication"') !== false &&
+    strpos($test_client, 'podcastPublicationRetry.dataset.busy') !== false,
+    'browser requests only a tiny publication recheck with double-click protection');
+assert_r2(strpos($podcast_backend, "function surfside_tools_podcast_retry_publication(") !== false &&
+    strpos($podcast_backend, "confirmed_existing_episode") !== false &&
+    strpos($podcast_backend, "SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED") !== false,
+    'publication retry requires explicit opt-in and existing-episode confirmation');
 
 assert_r2(strpos($source, 'function surfside_tools_r2_reconcile_post()') !== false
     && strpos($source, 'function surfside_tools_r2_export_post()') !== false,
