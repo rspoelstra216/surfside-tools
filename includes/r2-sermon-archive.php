@@ -458,6 +458,8 @@ function surfside_tools_r2_youtube_refresh_post() {
         }
     } elseif ($mode === 'playlist') {
         $result = surfside_tools_youtube_start_master_refresh();
+    } elseif ($mode === 'resume') {
+        $result = surfside_tools_youtube_resume_stalled_sync();
     } else {
         $result = new WP_Error('surfside_youtube_invalid_action', 'Unknown YouTube refresh action.');
     }
@@ -467,7 +469,9 @@ function surfside_tools_r2_youtube_refresh_post() {
     $message = is_wp_error($result) ? $result->get_error_message()
         : ($mode === 'video'
             ? 'YouTube message added or updated. Current message notes were assigned to this sermon ID, and it is now available for an R2 upload.'
-            : 'Master-only YouTube refresh queued. Use Check progress until it completes.');
+            : ($mode === 'resume'
+                ? 'Stalled YouTube sync resumed from its saved position. Check progress for further updates.'
+                : 'Master-only YouTube refresh queued. Use Check progress until it completes.'));
     set_transient($notice_key, array('text' => $message, 'error' => is_wp_error($result)), 120);
     $destination = surfside_tools_r2_manager_url($highlight !== '' ? array('highlight' => $highlight) : array());
     if (!wp_safe_redirect($destination, 303, 'Surfside Tools')) {
@@ -515,6 +519,8 @@ function surfside_tools_staff_r2_sermons_shortcode() {
     $master = surfside_tools_r2_master_id();
     $youtube_state = surfside_tools_youtube_state();
     $youtube_running = ($youtube_state['status'] ?? '') === 'running';
+    $youtube_can_lookup = surfside_tools_youtube_can_quick_import($youtube_state);
+    $youtube_stalled = surfside_tools_youtube_sync_is_stalled($youtube_state);
     $highlight = isset($_GET['highlight']) && is_string($_GET['highlight'])
         ? sanitize_text_field(wp_unslash($_GET['highlight'])) : '';
     if (!surfside_tools_r2_video_id($highlight)) $highlight = '';
@@ -560,12 +566,21 @@ function surfside_tools_staff_r2_sermons_shortcode() {
             <label for="surfside-r2-youtube-url" style="display:block">YouTube video link or ID</label>
             <input id="surfside-r2-youtube-url" name="youtube_url" type="text" required
               placeholder="https://www.youtube.com/watch?v=…" style="width:100%;max-width:580px;padding:10px">
-            <button type="submit" <?php disabled($youtube_running); ?>>Find This YouTube Message</button>
+            <button type="submit" <?php disabled(!$youtube_can_lookup); ?>>Find This YouTube Message</button>
           </form>
           <?php if ($youtube_running) : ?>
             <p role="status"><strong>YouTube sync running:</strong> <?php echo esc_html((string) ($youtube_state['message'] ?? 'Processing')); ?>
               (<?php echo esc_html(number_format_i18n((int) ($youtube_state['requests'] ?? 0))); ?> API pages so far)</p>
-            <p><a href="<?php echo esc_url(surfside_tools_r2_manager_url()); ?>">Check sync progress</a></p>
+            <p><a href="<?php echo esc_url(surfside_tools_staff_page_url('settings') . '#surfside-youtube'); ?>">View sync status in Integrations</a></p>
+            <?php if ($youtube_stalled) : ?>
+              <p role="alert"><strong>Sync may be stalled:</strong> No new YouTube API page has completed for at least 10 minutes. You can still find this week's message while the series scan is paused.</p>
+              <form method="post" action="<?php echo esc_url(surfside_tools_r2_manager_url()); ?>">
+                <input type="hidden" name="action" value="surfside_r2_youtube_refresh">
+                <input type="hidden" name="refresh_mode" value="resume">
+                <?php wp_nonce_field('surfside_r2_youtube_refresh', 'surfside_r2_youtube_nonce'); ?>
+                <button type="submit">Resume stalled YouTube sync</button>
+              </form>
+            <?php endif; ?>
           <?php endif; ?>
         </section>
         <section class="surfside-yt-panel"><h2>Upload this week's MP4</h2>
