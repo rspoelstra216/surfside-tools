@@ -54,7 +54,7 @@ a completed Roku MP4 or R2 podcast MP3 to failed.
    Leave this setting **unset/false** until the Cloudflare secrets exist
    and you're ready for a controlled **new weekly upload** test.
 
-6. To automatically publish **new weekly** episodes after Spreaker encoding,
+6. To automatically publish **new weekly** episodes after Spreaker accepts the audio upload,
    add this separate opt-in to `wp-config.php`:
 
    ```php
@@ -87,11 +87,14 @@ a completed Roku MP4 or R2 podcast MP3 to failed.
 6. For an explicitly opted-in new weekly upload, a separate delayed
    `kind: "publish"` queue job checks the **same** Spreaker episode ID,
    confirms the correct show and finished R2 MP3, and waits until Spreaker
-   reports encoding `READY`. Pending processing is checked with bounded
-   90-second delayed messages; then Cloudflare sets `published_at` in UTC,
-   verifies `RECORDED` + `PUBLIC`, and saves `published`. Failed,
-   unknown, or ambiguous publication stays in manual review; an uncertain
-   response never causes a blind second publish request.
+   confirms the show and existing R2 MP3, and checks that the Spreaker
+   media_file upload has already succeeded. It sets `published_at` in UTC,
+   verifies `RECORDED` + `PUBLIC`, and saves `published`. Spreaker allows
+   publication while server-side encoding is pending; public playback only
+   becomes available once that processing succeeds. Known encoding errors,
+   undocumented nonempty encoding states, failed publication, or ambiguous
+   publication require manual review. An uncertain response never causes a
+   blind second publish request.
 
 ## Status and recovery
 
@@ -313,12 +316,15 @@ authoritative signal that the audio has been encoded and is listenable.
 Those extra fields are not necessary once our uploaded MP3 has been
 acknowledged and Spreaker returns `READY`.
 
-This fix checks `READY` alone, after verifying that the original MP3 exists
-in R2 and the existing Spreaker episode ID matches the configured show.
-`PENDING` or `PROCESSING` still trigger bounded retries; unknown or missing
-encoding states are also polled within the same bounded window instead of
-failing immediately. `ERROR`, mismatched episode/show, missing R2 audio,
-timeouts, and uncertain publication responses remain **manual review only**.
+The follow-up improvement uses Spreaker's documented draft-publishing behavior:
+once the audio upload succeeds, `published_at` can be set even before the
+audio finishes encoding. The Worker verifies the original MP3 in R2, the
+existing episode ID and correct show, and the earlier Spreaker upload
+acknowledgement. `PENDING`, `PROCESSING`, or an omitted encoding field do
+not block publication; a known `ERROR`, an undocumented nonempty encoding
+state, mismatched episode/show, missing R2 audio or ambiguous publication
+response still require manual review. Spreaker makes the public audio playable
+only after its encoding succeeds.
 
 ### Recover the existing un-published episode without duplication
 
@@ -326,7 +332,9 @@ timeouts, and uncertain publication responses remain **manual review only**.
    current, and keep `SURFSIDE_SPREAKER_DRAFTS_ENABLED=true` and
    `SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED=true` in `wp-config.php`.
 2. Confirm Spreaker's episode `76538361` is still unpublished and the R2
-   status remains `publish_review_required` with `audio_not_confirmed_ready`.
+   status remains `publish_review_required` with `audio_not_confirmed_ready`
+   or `encoding_status_unknown`. Do not retry while the existing queued
+   `encoding_wait` checks are still active.
 3. In Surfside Tools → Weekly Media Publishing → Podcast episode preview,
    select `How Can I Live a Life of Gratitude? – 22 November 2026`.
 4. Click **Retry Spreaker publication check** and confirm. WordPress verifies
@@ -335,11 +343,11 @@ timeouts, and uncertain publication responses remain **manual review only**.
    record has precisely that historical failure detail. It does **not** send
    MP3 bytes, create another draft, or change the episode ID.
 5. The delayed/serialized publish job looks up the existing Spreaker episode
-   by ID, confirms the show, and publishes it **only** when its
-   `encoding_status` is `READY`. Inspect
-   `podcast-spreaker/fb8lV8I-KtQ.json` for `published`, or
-   `encoding_wait` while Spreaker is still processing. A final
-   `publish_review_required` means inspect the new detail before retrying.
+   by ID and confirms the show and previous successful audio upload.
+   It may publish before Spreaker completes encoding, after which the audio
+   becomes playable. Inspect `podcast-spreaker/fb8lV8I-KtQ.json` for
+   `published`; a final `publish_review_required` requires reviewing the
+   detail before another retry.
 6. Verify that the same episode is public and plays correctly on Spreaker.
 
 The retry button is restricted to WordPress administrators and the existing
