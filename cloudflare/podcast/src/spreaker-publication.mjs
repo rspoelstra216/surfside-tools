@@ -16,7 +16,7 @@ const retryLater = (reason) => ({ status: "check_again", reason });
 export const canRetryAudioReadinessReview = (audioState, mp3, mp4, previous) =>
   audioState?.status === "ready" && Boolean(mp3) && Boolean(mp4) &&
   previous?.status === "publish_review_required" &&
-  previous?.detail === "audio_not_confirmed_ready" &&
+  ["audio_not_confirmed_ready", "encoding_status_unknown"].includes(previous?.detail) &&
   validEpisodeId(previous.episode_id);
 
 export async function publishReadyEpisode(env, id, attempt = 0, fetcher = fetch) {
@@ -80,26 +80,21 @@ export async function publishReadyEpisode(env, id, attempt = 0, fetcher = fetch)
   if (episode.encoding_status === "ERROR")
     return save("publish_review_required", "spreaker_encoding_error");
 
-  if (episode.encoding_status === "PENDING" || episode.encoding_status === "PROCESSING") {
-    if (attempt >= MAX_PUBLISH_CHECKS) return save("publish_review_required", "encoding_timeout");
-    await save("encoding_wait", `encoding_${episode.encoding_status.toLowerCase()}`);
-    return retryLater("encoding_pending");
-  }
-
-  // Spreaker documents encoding_status=READY as its authoritative signal
-  // that the audio has processed and is listenable. Some episode responses
-  // omit the supplemental media_id/media_url fields: requiring them as well
-  // can permanently block an otherwise valid uploaded weekly episode.
-  // We already verified our own MP3 and the acknowledged Spreaker upload.
-  if (episode.encoding_status !== "READY") {
-    if (attempt >= MAX_PUBLISH_CHECKS)
-      return save("publish_review_required", "encoding_status_unknown");
-    await save("encoding_wait", "encoding_status_unknown");
-    return retryLater("encoding_status_unknown");
+  // Spreaker's published draft workflow explicitly permits publishing after
+  // a successful media_file upload *before* encoding completes. Only once
+  // encoding reaches READY will listeners be able to play it. Our R2 MP3 and
+  // Spreaker's successful draft upload acknowledgment have both been checked,
+  // so an absent encoding_status in GET is not evidence of missing audio.
+  // A known encoding failure or an undocumented non-empty state still fails
+  // closed. Spreaker itself rejects publishing if an audio file is absent.
+  if (typeof episode.encoding_status === "string" &&
+      !["READY", "PENDING", "PROCESSING"].includes(episode.encoding_status)) {
+    return save("publish_review_required", "unexpected_encoding_status");
   }
 
   // Spreaker documents POST /v2/episodes/{id} with published_at in UTC to
-  // publish an existing DRAFT. Only now, after encoded audio is READY.
+  // publish an existing DRAFT after an acknowledged audio upload. Spreaker
+  // may still be encoding; public playback becomes available when READY.
   await save("publishing");
   const publishedAt = new Date().toISOString().slice(0, 19).replace("T", " ");
   let publishedResponse;
