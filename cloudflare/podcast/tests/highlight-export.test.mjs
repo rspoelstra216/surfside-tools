@@ -51,7 +51,7 @@ test("export Queue round trip strips title metadata before strict revalidation",
     { ...resolved[0], title: { text: "unsafe" } },
   ]) assert.throws(() => exportQueueClips([extra]), /invalid_clip_times/);
   assert.throws(() => resolveApprovedExports(highlights,
-    exportQueueClips([{ ...resolved[0], start: 450 }])), /export_outside_review_adjustment/);
+    exportQueueClips([{ ...resolved[0], start: 447.23 }])), /export_outside_review_adjustment/);
 });
 
 test("stale queued exports may be retried; active processing never duplicates", () => {
@@ -77,12 +77,17 @@ test("only bounded private final export keys are permitted to Container", () => 
     assert.equal(validStorageAccess(key, "PUT"), false);
 });
 
-test("approved exact export rejects fabricated, missing, or out-of-window times", () => {
+test("approved exact export accepts ±10s but rejects fabricated or out-of-window times", () => {
+  const fullWindow = resolveApprovedExports(highlights, [
+    { number: 2, start: 447.24, end: 505.24 },
+  ]);
+  assert.equal(fullWindow[0].start, 447.24);
+  assert.equal(fullWindow[0].end, 505.24);
   const valid = { number: 2, start: 456.74, end: 491.24 };
   for (const invalid of [
     [{ number: 2 }],
-    [{ ...valid, start: 452.23 }],
-    [{ ...valid, end: 500.25 }],
+    [{ ...valid, start: 447.23 }],
+    [{ ...valid, end: 505.25 }],
     [{ ...valid, end: valid.start }],
     [{ ...valid, start: -1 }],
     [{ number: 3, start: 456.74, end: 491.24 }],
