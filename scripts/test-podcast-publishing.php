@@ -195,4 +195,38 @@ verify_podcast($blocked instanceof WP_Error && count($GLOBALS['podcast_requests'
 
 verify_podcast(surfside_tools_podcast_retry_failed_audio('invalid') instanceof WP_Error,
     'invalid video ID is rejected by the retry helper');
-echo "PASS: podcast previews, standalone drafts, recovery and signed failed-audio retry safety\n";
+
+// Existing Spreaker-episode publication can be rechecked from the same
+// authenticated WordPress surface; no new draft or MP3 upload is requested.
+$GLOBALS['podcast_requests'] = array();
+$GLOBALS['podcast_response'] = array(
+    'status' => 202,
+    'body' => '{"video_id":"e0NnCrrshM4","status":"queued","episode_id":"76538361"}');
+$publication = surfside_tools_podcast_retry_publication('e0NnCrrshM4');
+verify_podcast(($publication['status'] ?? '') === 'queued' &&
+    ($publication['episode_id'] ?? '') === '76538361',
+    'Spreaker publication retry targets the existing episode only');
+verify_podcast(count($GLOBALS['podcast_requests']) === 1 &&
+    $GLOBALS['podcast_requests'][0]['url'] ===
+    'https://podcast.example.workers.dev/retry-publication',
+    'staff signs only one existing-episode recheck request');
+$sent = $GLOBALS['podcast_requests'][0]['options'];
+$payload = json_decode($sent['body'], true);
+verify_podcast($payload['video_id'] === 'e0NnCrrshM4' &&
+    $payload['confirmed_existing_episode'] === true &&
+    !isset($payload['spreaker']) && !isset($payload['auto_publish']) &&
+    !isset($payload['test']) && !isset($payload['mp3']),
+    'publication retry payload cannot create a draft or upload media');
+verify_podcast($sent['headers']['X-Surfside-Signature'] === hash_hmac(
+    'sha256', $sent['headers']['X-Surfside-Time'] . '.' . $sent['body'],
+    SURFSIDE_PODCAST_SHARED_SECRET), 'publication retry HMAC uses existing secret');
+
+$GLOBALS['podcast_response'] = array(
+    'status' => 409, 'body' => '{"error":"publication_retry_not_eligible"}');
+$invalid = surfside_tools_podcast_retry_publication('e0NnCrrshM4');
+verify_podcast($invalid instanceof WP_Error,
+    'non-eligible existing episode is not retried by WordPress');
+verify_podcast(surfside_tools_podcast_retry_publication('invalid') instanceof WP_Error,
+    'publication retry rejects invalid video IDs');
+
+echo "PASS: podcast previews, standalone drafts, audio recovery and safe publication retry\n";
