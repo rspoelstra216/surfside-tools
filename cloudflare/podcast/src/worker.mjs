@@ -2,7 +2,7 @@ import { Container, ContainerProxy, getContainer } from "@cloudflare/containers"
 export { ContainerProxy };
 import { PROCESSOR_CONTAINER_ID, validId, sourceKey, audioKey, statusKey, validStorageAccess, verifiedRequest } from "./validation.mjs";
 import { uploadAudioToR2 } from "./audio-upload.mjs";
-import { publishReadyEpisode, PUBLISH_CHECK_DELAY_SECONDS, MAX_PUBLISH_CHECKS } from "./spreaker-publication.mjs";
+import { publishReadyEpisode, canRetryAudioReadinessReview, PUBLISH_CHECK_DELAY_SECONDS, MAX_PUBLISH_CHECKS } from "./spreaker-publication.mjs";
 import { validDraftMetadata, spreakerConfigured, canRetryKnownRedirectFailure, canPrepareMissingDraft, processSpreakerDraft, readDraftState, saveDraftState } from "./spreaker.mjs";
 import { highlightStatus, processHighlights } from "./highlights.mjs";
 import { queueMoreHighlights, processMoreHighlights } from "./highlight-more.mjs";
@@ -65,7 +65,7 @@ async function incoming(request, env) {
   if (route.startsWith("/highlights/vertical/view/") ||
       route.startsWith("/highlights/vertical/download/"))
     return serveVertical(request, env);
-  if (!["/jobs", "/status", "/retry-test-spreaker", "/recover-spreaker", "/highlights/jobs", "/highlights/status",
+  if (!["/jobs", "/status", "/retry-test-spreaker", "/recover-spreaker", "/retry-publication", "/highlights/jobs", "/highlights/status",
         "/highlights/clips/jobs", "/highlights/clips/status",
         "/highlights/exports/jobs", "/highlights/exports/status",
         "/highlights/more/jobs",
@@ -87,6 +87,44 @@ async function incoming(request, env) {
   if (route === "/status") {
     const [audio, spreaker] = await Promise.all([readState(env, id, test), readDraftState(env, id, test)]);
     return reply(spreaker ? { ...audio, spreaker } : audio);
+  }
+  if (route === "/retry-publication") {
+    // The WordPress-only admin recovery route rechecks the EXISTING episode
+    // after our previous overly strict media field readiness test. It never
+    // creates a draft, uploads audio or retries uncertain publication POSTs.
+    if (test || data?.confirmed_existing_episode !== true ||
+        Object.keys(data).some((field) =>
+          !["video_id", "confirmed_existing_episode"].includes(field))) {
+      return reply({ error: "publication_retry_requires_confirmation" }, 400);
+    }
+    if (!spreakerConfigured(env))
+      return reply({ error: "spreaker_not_configured" }, 409);
+    const [audio, mp3, mp4, previous] = await Promise.all([
+      readState(env, id),
+      env.SERMONS_BUCKET.head(audioKey(id)),
+      env.SERMONS_BUCKET.head(sourceKey(id)),
+      readDraftState(env, id),
+    ]);
+    if (!canRetryAudioReadinessReview(audio, mp3, mp4, previous))
+      return reply({ error: "publication_retry_not_eligible" }, 409);
+    // Queue serialized consumer rechecks the existing ID against Spreaker
+    // show ID and encoding_status before it makes any publication request.
+    await saveDraftState(env, id, "encoding_wait", previous.episode_id,
+      "manual_audio_readiness_recheck");
+    try {
+      await env.PODCAST_QUEUE.send({
+        kind: "publish", video_id: id, auto_publish: true, attempt: 0,
+      });
+      return reply({ video_id: id, status: "queued",
+        episode_id: previous.episode_id }, 202);
+    } catch (error) {
+      console.error("Spreaker readiness recheck queue failed", id, String(error));
+      // Do not allow blind repeated publication retries after a possibly
+      // ambiguous queue send; an operator must inspect status/logs.
+      await saveDraftState(env, id, "publish_review_required", previous.episode_id,
+        "publication_retry_queue_uncertain");
+      return reply({ error: "queue_unavailable" }, 503);
+    }
   }
   if (route === "/highlights/jobs" || route === "/highlights/status") {
     // A manual, production-MP4 analysis pilot; no Spreaker/test/publish options.
