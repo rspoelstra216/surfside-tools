@@ -2,7 +2,7 @@ import { validId } from "./validation.mjs";
 import { enqueueHighlights } from "./highlights.mjs";
 import { enqueueClips } from "./highlight-clips.mjs";
 import { previewKey } from "./highlight-video.mjs";
-import { paddedHighlightPicks } from "./highlight-automation.mjs";
+import { paddedHighlightPicks, nextAutomaticPreviewBatch } from "./highlight-automation.mjs";
 
 const resultKey = (id) => `sermon-highlights/results/${id}.json`;
 
@@ -28,7 +28,9 @@ export async function queueAutomaticPreviews(env, id) {
     return Response.json({ video_id: id, status: "ready",
       already_exists: true }, { headers: { "cache-control": "no-store" } });
   }
-  const result = await enqueueClips(env, id, pending.slice(0, 5));
+  const batch = nextAutomaticPreviewBatch(pending);
+  if (!batch.length) throw Error("no_valid_highlight_preview_batch");
+  const result = await enqueueClips(env, id, batch, { autoContinue: true });
   if (!result.ok) throw Error("automatic_previews_not_queued_" + result.status);
   return result;
 }
