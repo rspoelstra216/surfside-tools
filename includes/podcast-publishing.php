@@ -260,3 +260,61 @@ function surfside_tools_podcast_retry_failed_audio($id) {
         'spreaker_auto_publish_requested' => !empty($outcome['spreaker_auto_publish_requested']),
     );
 }
+
+/**
+ * Administrator-only recheck of an existing Spreaker episode after the former
+ * overly strict READY/media check. Never re-uploads audio or creates drafts.
+ */
+function surfside_tools_podcast_retry_publication($id) {
+    if (!is_string($id) || !preg_match('/^[A-Za-z0-9_-]{11}$/D', $id)) {
+        return new WP_Error('podcast_invalid_video', 'Invalid YouTube video ID.', array('status' => 400));
+    }
+    if (!defined('SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED') ||
+        SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED !== true ||
+        !defined('SURFSIDE_SPREAKER_DRAFTS_ENABLED') ||
+        SURFSIDE_SPREAKER_DRAFTS_ENABLED !== true) {
+        return new WP_Error('podcast_publish_disabled', 'Automatic podcast publication is not enabled.', array('status' => 409));
+    }
+    if (!defined('SURFSIDE_PODCAST_WORKER_URL') || !defined('SURFSIDE_PODCAST_SHARED_SECRET') ||
+        !is_string(SURFSIDE_PODCAST_WORKER_URL) || !is_string(SURFSIDE_PODCAST_SHARED_SECRET) ||
+        strlen(SURFSIDE_PODCAST_SHARED_SECRET) < 32) {
+        return new WP_Error('podcast_not_configured', 'The podcast Worker is not configured.', array('status' => 409));
+    }
+    $url = untrailingslashit(SURFSIDE_PODCAST_WORKER_URL);
+    if (!preg_match('~^https://[a-z0-9.-]+(?::443)?$~iD', $url)) {
+        return new WP_Error('podcast_invalid_configuration', 'Invalid podcast Worker URL.', array('status' => 409));
+    }
+    $payload = wp_json_encode(array(
+        'video_id' => $id,
+        'confirmed_existing_episode' => true,
+    ));
+    $timestamp = (string) time();
+    $signature = hash_hmac('sha256', $timestamp . '.' . $payload, SURFSIDE_PODCAST_SHARED_SECRET);
+    $response = wp_remote_post($url . '/retry-publication', array(
+        'method' => 'POST',
+        'headers' => array(
+            'Content-Type' => 'application/json',
+            'X-Surfside-Time' => $timestamp,
+            'X-Surfside-Signature' => $signature,
+        ),
+        'body' => $payload,
+        'timeout' => 8,
+        'redirection' => 0,
+        'reject_unsafe_urls' => true,
+    ));
+    if (is_wp_error($response)) {
+        return new WP_Error('podcast_worker_unavailable', 'Could not reach the podcast Worker.', array('status' => 503));
+    }
+    $code = (int) wp_remote_retrieve_response_code($response);
+    $body = json_decode(wp_remote_retrieve_body($response), true);
+    if ($code !== 202 || !is_array($body) || ($body['status'] ?? '') !== 'queued' ||
+        ($body['video_id'] ?? '') !== $id) {
+        $reason = is_array($body) && is_string($body['error'] ?? null)
+            ? $body['error'] : 'HTTP ' . $code;
+        return new WP_Error('podcast_publication_retry_rejected',
+            'Spreaker publication retry was not queued (' . sanitize_text_field($reason) .
+            '). Review podcast-spreaker status before retrying.', array('status' => 409));
+    }
+    return array('status' => 'queued', 'video_id' => $id,
+        'episode_id' => $body['episode_id'] ?? null);
+}
