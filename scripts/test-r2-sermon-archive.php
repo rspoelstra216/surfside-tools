@@ -190,7 +190,7 @@ foreach (array(
 assert_r2(strpos($staff_ui, 'disabled(!$youtube_can_lookup)') !== false &&
     strpos($staff_ui, 'Resume stalled YouTube sync') !== false &&
     strpos($staff_ui, 'View sync status in Integrations') !== false &&
-    strpos($source, "$mode === 'resume'") !== false &&
+    strpos($source, "mode === 'resume'") !== false &&
     strpos($source, 'surfside_tools_youtube_resume_stalled_sync()') !== false,
     'weekly message lookup remains usable during series scans and staff can resume stale syncs');
 
