@@ -101,7 +101,7 @@
       if (podcastAudioRetryStatus) podcastAudioRetryStatus.textContent =
         "Podcast audio retry queued. Check podcast-jobs in Cloudflare R2 for ready." +
         (result.spreaker_auto_publish_requested
-          ? " Spreaker will publish automatically after encoding the audio."
+          ? " Spreaker will publish automatically after the audio upload is accepted (playback may finish processing shortly afterward)."
           : result.spreaker_draft_requested
             ? " An unpublished Spreaker draft is planned after audio processing."
             : " If no Spreaker draft appears, use Prepare missing Spreaker draft once audio is ready.");
@@ -119,11 +119,11 @@
   if (podcastPublicationRetry) podcastPublicationRetry.addEventListener("click", async () => {
     const id = podcastSelect?.value || "";
     if (!/^[A-Za-z0-9_-]{11}$/.test(id) || podcastPublicationRetry.dataset.busy === "1") return;
-    if (!window.confirm("Retry publishing the EXISTING Spreaker episode for this sermon? Only eligible audio_not_confirmed_ready failures are accepted. Cloudflare will first confirm encoded audio is READY; no MP3 will be uploaded and no new episode created.")) return;
+    if (!window.confirm("Retry publishing the EXISTING Spreaker episode for this sermon? Only eligible audio_not_confirmed_ready failures are accepted. Cloudflare will check the existing episode and its previously accepted MP3; no media will be uploaded and no new episode created. The episode may publish before Spreaker completes encoding.")) return;
     podcastPublicationRetry.dataset.busy = "1";
     podcastPublicationRetry.disabled = true;
     if (podcastPublicationRetryStatus) podcastPublicationRetryStatus.textContent =
-      "Checking the existing audio and Spreaker publication status…";
+      "Checking the existing uploaded episode and publication status…";
     try {
       const result = await request("retry_publication", {video_id: id});
       if (result.status !== "queued") throw new Error("Spreaker publication was not queued.");
@@ -211,7 +211,7 @@
       if (podcastStatus === "queued" || podcastStatus === "processing") {
         message("MP4 verified for Roku. Podcast audio processing queued." +
           (completion.podcast?.spreaker_auto_publish_requested
-            ? " Spreaker will publish automatically after audio encoding completes."
+            ? " Spreaker will publish automatically after accepting the audio upload (playback may finish processing shortly afterward)."
             : completion.podcast?.spreaker_draft_requested
               ? " An unpublished Spreaker draft is planned after audio processing."
               : ""));
