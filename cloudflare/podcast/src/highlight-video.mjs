@@ -68,8 +68,8 @@ export function resolveApprovedExports(highlights, requested) {
   for (const clip of clips) {
     const source = highlights.find((h) => h.number === clip.number);
     if (!Number.isFinite(source?.start) || !Number.isFinite(source?.end) ||
-        Math.abs(clip.start - source.start) > 5.001 ||
-        Math.abs(clip.end - source.end) > 5.001)
+        Math.abs(clip.start - source.start) > 10.001 ||
+        Math.abs(clip.end - source.end) > 10.001)
       throw Error("export_outside_review_adjustment");
   }
   // Sort for a stable same-selection comparison across requests.

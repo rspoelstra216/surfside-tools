@@ -293,7 +293,7 @@ check(is_wp_error(surfside_tools_highlights_browser_dispatch(
     'Malformed numeric form fields do not bypass canonical validation');
 check(is_wp_error(surfside_tools_highlights_browser_dispatch(
     array_merge($decisionForm, array('start' => '940')))),
-    'Server checks five-second trim limits even for forged browser requests');
+    'Server checks ten-second trim limits even for forged browser requests');
 check(is_wp_error(surfside_tools_highlights_browser_dispatch(array(
     'highlight_nonce' => 'wrong', 'mode' => 'find-more',
     'video_id' => 'AjkoDHgFdeA',
@@ -347,12 +347,20 @@ check($render['status'] === 'queued', 'Video previews queue through signed Worke
 $last = end($GLOBALS['worker_calls']);
 check($last['path'] === '/highlights/clips/jobs', 'Preview request only reaches private render job');
 check(count($last['request']['clips']) === 2, 'One private preview per supplied AI suggestion');
-check(abs($last['request']['clips'][0]['start'] - 452.24) < .001 &&
-    abs($last['request']['clips'][0]['end'] - 500.24) < .001,
-    'Preview supplies five seconds of handles on both sides');
-check(abs($last['request']['clips'][1]['start'] - 947.78) < .001 &&
-    abs($last['request']['clips'][1]['end'] - 1015.52) < .001,
-    'Second preview has five seconds of padding too');
+check(abs($last['request']['clips'][0]['start'] - 447.24) < .001 &&
+    abs($last['request']['clips'][0]['end'] - 505.24) < .001,
+    'Preview supplies ten seconds of handles on both sides');
+check(abs($last['request']['clips'][1]['start'] - 942.78) < .001 &&
+    abs($last['request']['clips'][1]['end'] - 1020.52) < .001,
+    'Second preview has ten seconds of padding too');
+$fullAdjustment = surfside_tools_highlights_rest_decision(new FakeRequest(array(
+    'video_id' => 'AjkoDHgFdeA', 'number' => 2, 'decision' => 'saved',
+    'start' => 447.24, 'end' => 505.24,
+)));
+check(!is_wp_error($fullAdjustment) &&
+    abs($fullAdjustment['review']['start'] - 447.24) < .001 &&
+    abs($fullAdjustment['review']['end'] - 505.24) < .001,
+    'Both independent ten-second trim adjustments are accepted');
 
 $review = array('video_id' => 'AjkoDHgFdeA', 'number' => 2,
     'decision' => 'approved', 'start' => 456.74, 'end' => 491.24);
@@ -374,7 +382,7 @@ check($last['path'] === '/highlights/exports/jobs' &&
     'Only two explicitly approved highlights are sent to the final export Worker');
 check($last['request']['clips'][0] === array('number'=>2, 'start'=>456.74, 'end'=>491.24) &&
     $last['request']['clips'][1] === array('number'=>4, 'start'=>952.78, 'end'=>1010.52),
-    'Final export uses exact stored trims, not five-second-padded previews');
+    'Final export uses exact stored trims, not padded previews');
 $GLOBALS['export_status'] = 'ready';
 $downloads = surfside_tools_highlights_browser_dispatch(array_merge(
     $sermonForm, array('mode' => 'export-status')));
@@ -398,8 +406,8 @@ check($save['review']['decision'] === 'saved' &&
 
 
 foreach (array(
-    array('start' => 451.74, 'end' => 491.24),
-    array('start' => 456.74, 'end' => 501.24),
+    array('start' => 447.23, 'end' => 491.24),
+    array('start' => 456.74, 'end' => 505.25),
     array('start' => 456.74, 'end' => 456.74),
 ) as $bad) {
     check(is_wp_error(surfside_tools_highlights_rest_decision(

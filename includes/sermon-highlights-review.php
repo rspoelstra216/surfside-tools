@@ -155,7 +155,7 @@ function surfside_tools_highlights_rest_status($request) {
     return rest_ensure_response($worker);
 }
 
-/** Render five seconds of editable handles on both sides, once per suggestion. */
+/** Render up to ten seconds of editable handles on both sides of a suggestion. */
 function surfside_tools_highlights_rest_previews($request) {
     $id = surfside_tools_highlights_request_id($request);
     if (is_wp_error($id)) return $id;
@@ -176,13 +176,26 @@ function surfside_tools_highlights_rest_previews($request) {
     $known = ($prior['status'] ?? '') === 'ready' && isset($prior['clips']) &&
         is_array($prior['clips']) ? $prior['clips'] : array();
     $clips = array();
+    $total_preview_centis = 0;
     foreach ($suggestions as $highlight) {
         if (!isset($highlight['number'], $highlight['start'], $highlight['end']) ||
             !is_numeric($highlight['start']) || !is_numeric($highlight['end'])) continue;
-        $start = max(0, round((float) $highlight['start'] - 5, 2));
-        $end = min(72 * 60, round((float) $highlight['end'] + 5, 2));
-        // The existing video renderer requires 15–120 seconds per preview.
-        if ($end - $start < 15 || $end - $start > 120) continue;
+        // Match the Worker's ±10s centisecond planner. If a suggestion
+        // is longer than 100s, share the available 120s preview budget
+        // between both sides without trimming the original AI window.
+        $original_start = (int) round((float) $highlight['start'] * 100);
+        $original_end = (int) round((float) $highlight['end'] * 100);
+        $length = $original_end - $original_start;
+        if ($original_start < 0 || $original_end > 432000 ||
+            $length < 1500 || $length > 12000) continue;
+        $spare = 12000 - $length;
+        $before = min(1000, $original_start);
+        $after = min(1000, 432000 - $original_end);
+        $left = min($before, intdiv($spare, 2));
+        $right = min($after, $spare - $left);
+        $left = min($before, $spare - $right);
+        $start = ($original_start - $left) / 100;
+        $end = ($original_end + $right) / 100;
         $already = false;
         foreach ($known as $clip) {
             if (isset($clip['number'], $clip['start'], $clip['end']) &&
@@ -193,7 +206,12 @@ function surfside_tools_highlights_rest_previews($request) {
             }
         }
         if ($already) continue;
+        // Mirror the Worker's 420-second aggregate limit. A later manual
+        // request can pick up still-missing clips after this batch completes.
+        $preview_centis = ($original_end + $right) - ($original_start - $left);
+        if ($total_preview_centis + $preview_centis > 42000) break;
         $clips[] = array('number' => (int) $highlight['number'], 'start' => $start, 'end' => $end);
+        $total_preview_centis += $preview_centis;
         if (count($clips) >= 5) break;
     }
     if (!$clips) {
@@ -238,7 +256,7 @@ function surfside_tools_highlights_rest_export($request) {
     if (!$clips) return new WP_Error('highlights_no_approvals',
         'Approve at least one highlight before exporting.', array('status' => 409));
     // The signed Worker independently validates every exact trim against
-    // immutable AI timestamps and refuses jobs outside the ±5s edit range.
+    // immutable AI timestamps and refuses jobs outside the ±10s edit range.
     return rest_ensure_response(surfside_tools_highlights_worker(
         '/highlights/exports/jobs', array('video_id' => $id, 'clips' => $clips)));
 }
@@ -353,11 +371,11 @@ function surfside_tools_highlights_rest_decision($request) {
     if (!$original) return new WP_Error('highlights_unknown_clip', 'Unknown suggestion.', array('status' => 404));
     $a = round((float) $start, 2);
     $b = round((float) $end, 2);
-    if (abs($a - (float) $original['start']) > 5.001 ||
-        abs($b - (float) $original['end']) > 5.001 || $a < 0 ||
+    if (abs($a - (float) $original['start']) > 10.001 ||
+        abs($b - (float) $original['end']) > 10.001 || $a < 0 ||
         $b > 72 * 60 || $b - $a < 15 || $b - $a > 120) {
         return new WP_Error('highlights_invalid_trim',
-            'Start and end must each remain within five seconds of the AI suggestion.',
+            'Start and end must each remain within ten seconds of the AI suggestion.',
             array('status' => 400));
     }
     $items = surfside_tools_highlights_saved_review($id);
@@ -528,7 +546,7 @@ function surfside_tools_staff_sermon_highlights_shortcode() {
       <section class="surfside-staff-hero">
         <p class="surfside-staff-eyebrow">Messages &amp; Media</p>
         <h1>Sermon Highlights</h1>
-        <p class="surfside-staff-muted">New weekly sermon uploads automatically prepare AI highlights and private video previews alongside podcast processing. Review up to five clips, adjust each edge by five seconds, and approve or reject. Nothing publishes automatically.</p>
+        <p class="surfside-staff-muted">New weekly sermon uploads automatically prepare AI highlights and private video previews alongside podcast processing. Review up to five clips, adjust each edge by ten seconds, and approve or reject. Nothing publishes automatically.</p>
       </section>
       <div class="surfside-highlights-toolbar">
         <label for="surfside-highlights-sermon">Uploaded sermon</label>
