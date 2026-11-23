@@ -300,3 +300,50 @@ This is an explicit single-sermon, admin-only recovery action, not a bulk
 historical backfill. Existing Spreaker statuses (even `review_required` or
 `queue_unavailable`) block blind recovery to prevent duplicate episodes.
 Never delete a status record to bypass this safety check.
+
+## Existing episode stopped at `audio_not_confirmed_ready` (November 23, 2026)
+
+The production episode for `fb8lV8I-KtQ` was created and its MP3 uploaded
+successfully to Spreaker (episode `76538361`), but our first automatic
+publication check set `publish_review_required` with detail
+`audio_not_confirmed_ready`. The earlier predicate required
+`encoding_status === "READY"` **and** `media_id` or `media_url` from the
+Spreaker response. Per the Spreaker episode API, `READY` is the documented
+authoritative signal that the audio has been encoded and is listenable.
+Those extra fields are not necessary once our uploaded MP3 has been
+acknowledged and Spreaker returns `READY`.
+
+This fix checks `READY` alone, after verifying that the original MP3 exists
+in R2 and the existing Spreaker episode ID matches the configured show.
+`PENDING` or `PROCESSING` still trigger bounded retries; unknown or missing
+encoding states are also polled within the same bounded window instead of
+failing immediately. `ERROR`, mismatched episode/show, missing R2 audio,
+timeouts, and uncertain publication responses remain **manual review only**.
+
+### Recover the existing un-published episode without duplication
+
+1. Merge/deploy the updated Worker **and** WordPress plugin, verify both are
+   current, and keep `SURFSIDE_SPREAKER_DRAFTS_ENABLED=true` and
+   `SURFSIDE_SPREAKER_AUTO_PUBLISH_ENABLED=true` in `wp-config.php`.
+2. Confirm Spreaker's episode `76538361` is still unpublished and the R2
+   status remains `publish_review_required` with `audio_not_confirmed_ready`.
+3. In Surfside Tools → Weekly Media Publishing → Podcast episode preview,
+   select `How Can I Live a Life of Gratitude? – 22 November 2026`.
+4. Click **Retry Spreaker publication check** and confirm. WordPress verifies
+   the original R2 MP4 and signs `POST /retry-publication`. The Worker checks
+   that the original MP3 and audio job are ready and the *existing* publication
+   record has precisely that historical failure detail. It does **not** send
+   MP3 bytes, create another draft, or change the episode ID.
+5. The delayed/serialized publish job looks up the existing Spreaker episode
+   by ID, confirms the show, and publishes it **only** when its
+   `encoding_status` is `READY`. Inspect
+   `podcast-spreaker/fb8lV8I-KtQ.json` for `published`, or
+   `encoding_wait` while Spreaker is still processing. A final
+   `publish_review_required` means inspect the new detail before retrying.
+6. Verify that the same episode is public and plays correctly on Spreaker.
+
+The retry button is restricted to WordPress administrators and the existing
+WordPress nonce, requires an explicit confirmation, and is **rejected** for
+already published, ambiguously published, never-uploaded, other error states,
+or test episodes. No PowerShell or shared secret handling in the browser.
+Do not delete R2 job state or repeat an MP4 upload to force a retry.
