@@ -3,7 +3,7 @@ import { PROCESSOR_CONTAINER_ID, sourceKey, validId } from "./validation.mjs";
 import { exportKey, previewKey, resolveApprovedExports, sameExports, exportQueueClips, exportJobStalled } from "./highlight-video.mjs";
 import { exportPreviewPlan } from "./highlight-automation.mjs";
 
-// Final export jobs are strictly separate from 5-second-padded review previews.
+// Final export jobs remain separate from up-to-10-second-padded review previews.
 // Output keys are immutable and contain exact reviewed source-MP4 timestamps.
 const jobKey = (id) => `sermon-highlights/export-jobs/${id}.json`;
 const resultKey = (id) => `sermon-highlights/results/${id}.json`;
@@ -71,7 +71,7 @@ export async function processExportJob(env, id, requested) {
     const clean = exportQueueClips(requested);
     clips = resolveApprovedExports(analysis?.highlights, clean);
     await save(env, id, "processing", clips);
-    // Prefer the already-encoded, private five-second-padded previews for
+    // Prefer the already-encoded, private up-to-ten-second-padded previews for
     // final trims. This avoids downloading the entire sermon MP4 again.
     // For an older sermon with missing/insufficient previews, preserve the
     // original-MP4 fallback rather than breaking previously approved cuts.
