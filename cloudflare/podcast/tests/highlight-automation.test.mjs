@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { paddedHighlightPicks, paddedHighlightRange, exportPreviewPlan } from "../src/highlight-automation.mjs";
+import {
+  paddedHighlightPicks, paddedHighlightRange, nextAutomaticPreviewBatch,
+  exportPreviewPlan,
+} from "../src/highlight-automation.mjs";
 import { previewKey } from "../src/highlight-video.mjs";
 import { validStorageAccess } from "../src/validation.mjs";
 
@@ -34,6 +37,20 @@ test("ten-second preview padding stays within 120s while retaining long AI sugge
     { number: 2, start: 100, end: 221 }, // Invalid >120s AI cut.
   ]);
   assert.deepEqual(results, [{ number: 1, start: 192.5, end: 312.5 }]);
+});
+
+test("five longer previews are split into bounded automatic batches", () => {
+  const picks = Array.from({ length: 5 }, (_, index) => ({
+    number: index + 1, start: index * 200, end: index * 200 + 90,
+  }));
+  const first = nextAutomaticPreviewBatch(picks);
+  assert.deepEqual(first.map((clip) => clip.number), [1, 2, 3, 4]);
+  assert.deepEqual(nextAutomaticPreviewBatch(picks.slice(first.length))
+    .map((clip) => clip.number), [5]);
+  assert.equal(nextAutomaticPreviewBatch(null).length, 0);
+  const veryLong = picks.map((p) => ({ ...p, end: p.start + 120 }));
+  assert.deepEqual(nextAutomaticPreviewBatch(veryLong)
+    .map((clip) => clip.number), [1, 2, 3]);
 });
 
 test("private padded video input covers exact approved trim; fallback for any mismatch", () => {
