@@ -1,17 +1,35 @@
 // Shared pure orchestration helpers for automatic weekly highlight preparation.
 // These cannot publish, change staff approvals, or touch podcast/Spreaker state.
+export const HIGHLIGHT_EDIT_WINDOW_SECONDS = 10;
+
+// Extend previews to cover each edge's ±10s editor range. Since the existing
+// renderer caps a private preview at 120 seconds, split any smaller available
+// padding budget between the two sides, never cutting the AI-suggested clip.
+// Work in centiseconds so R2 keys, WordPress and FFmpeg all agree exactly.
+export function paddedHighlightRange(start, end) {
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  const from = Math.round(start * 100), to = Math.round(end * 100);
+  const duration = to - from;
+  if (from < 0 || to > 432000 || duration < 1500 || duration > 12000) return null;
+  const remaining = 12000 - duration;
+  const before = Math.min(HIGHLIGHT_EDIT_WINDOW_SECONDS * 100, from);
+  const after = Math.min(HIGHLIGHT_EDIT_WINDOW_SECONDS * 100, 432000 - to);
+  let left = Math.min(before, Math.floor(remaining / 2));
+  const right = Math.min(after, remaining - left);
+  left = Math.min(before, remaining - right);
+  return { start: (from - left) / 100, end: (to + right) / 100 };
+}
+
 export function paddedHighlightPicks(highlights) {
   if (!Array.isArray(highlights)) return [];
   const selected = [], seen = new Set();
   for (const h of highlights.slice(0, 10)) {
     if (!Number.isInteger(h?.number) || h.number < 1 || h.number > 10 ||
-        seen.has(h.number) || !Number.isFinite(h.start) || !Number.isFinite(h.end))
-      continue;
+        seen.has(h.number)) continue;
+    const range = paddedHighlightRange(h.start, h.end);
+    if (!range) continue;
     seen.add(h.number);
-    const start = Math.round(Math.max(0, h.start - 5) * 100) / 100;
-    const end = Math.round(Math.min(4320, h.end + 5) * 100) / 100;
-    if (end - start < 15 || end - start > 120) continue;
-    selected.push({ number: h.number, start, end });
+    selected.push({ number: h.number, ...range });
   }
   return selected;
 }
