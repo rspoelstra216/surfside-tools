@@ -301,6 +301,18 @@ export default {
         if (test) { message.ack(); continue; }
         try {
           await processClipJob(env, id, message.body.clips, message.body.manifest);
+          if (message.body.auto_continue === true) {
+            // A larger ±10s review window may push five previews past the
+            // 420s job cap. Continue only after this batch is marked ready;
+            // optional follow-on failure must not re-render completed clips.
+            try {
+              const next = await queueAutomaticPreviews(env, id);
+              if (!next.ok)
+                console.error("Additional automatic previews not queued", id, next.status);
+            } catch (error) {
+              console.error("Additional automatic preview batch failed", id, String(error));
+            }
+          }
           message.ack();
         } catch (error) {
           console.error("Manual highlight clip Queue job failed", id, String(error));
